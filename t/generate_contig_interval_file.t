@@ -74,7 +74,7 @@ my %bed_file_path = generate_contig_interval_file(
         contigs_ref           => \@contigs,
         exome_target_bed_file => $exome_target_bed_file,
         filehandle            => $filehandle,
-        max_cores_per_node    => 1,
+        max_process_number    => 1,
         outdirectory          => $outdirectory,
         reference_dir         => $reference_dir,
     }
@@ -97,7 +97,7 @@ my %bed_file_path_with_ending = generate_contig_interval_file(
         exome_target_bed_file => $exome_target_bed_file,
         filehandle            => $filehandle,
         file_ending           => $file_suffix,
-        max_cores_per_node    => 1,
+        max_process_number    => 1,
         outdirectory          => $outdirectory,
         reference_dir         => $reference_dir,
     }

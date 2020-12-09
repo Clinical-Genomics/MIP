@@ -135,7 +135,7 @@ sub get_gatk_intervals {
                 contigs_ref           => $contigs_ref,
                 exome_target_bed_file => $exome_target_bed_file,
                 filehandle            => $filehandle,
-                max_cores_per_node    => $max_cores_per_node,
+                max_process_number    => $max_cores_per_node,
                 outdirectory          => $outdirectory,
                 reference_dir         => $reference_dir,
             }

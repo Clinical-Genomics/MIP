@@ -268,7 +268,7 @@ sub generate_contig_interval_file {
 ##          : $exome_target_bed_file => Interval file to split
 ##          : $file_ending           => File ending to add {Optional}
 ##          : $filehandle            => Filehandle to write to
-##          : $max_cores_per_node    => Maximum core per node
+##          : $max_process_number    => Maximum processes to use
 ##          : $outdirectory          => Outdirectory
 ##          : $reference_dir         => MIP reference directory
 
@@ -283,7 +283,7 @@ sub generate_contig_interval_file {
     my $reference_dir;
 
     ## Default(s)
-    my $max_cores_per_node;
+    my $max_process_number;
 
     my $tmpl = {
         contigs_ref => {
@@ -301,10 +301,10 @@ sub generate_contig_interval_file {
         },
         file_ending        => { strict_type => 1, store => \$file_ending },
         filehandle         => { store       => \$filehandle, },
-        max_cores_per_node => {
+        max_process_number => {
             allow       => qr/ \A \d+ \z /sxm,
             default     => 1,
-            store       => \$max_cores_per_node,
+            store       => \$max_process_number,
             strict_type => 1,
         },
         outdirectory => {
@@ -336,7 +336,7 @@ sub generate_contig_interval_file {
         $process_batches_count = print_wait(
             {
                 filehandle            => $filehandle,
-                max_process_number    => $max_cores_per_node,
+                max_process_number    => $max_process_number,
                 process_batches_count => $process_batches_count,
                 process_counter       => $contig_index,
             }
