@@ -35,10 +35,12 @@ sub chromograph {
 
 ## Function : Perl wrapper for chromograph.
 ## Returns  : @commands
-## Arguments: $coverage_file_path     => Coverage data infile
+## Arguments: $autozyg_file_path      => Autozygosity data, bed file
+##          : $coverage_file_path     => Coverage data infile
 ##          : $euploid                => Generate png files for all chromosomes
 ##          : $filehandle             => Filehandle to write to
-##          : $ideo_file_path         => Bed file with ideogram data
+##          : $fracsnp_file_path      => Fraction of homozygous SNP, wig file
+##          : $ideogram_file_path     => Bed file with ideogram data
 ##          : $outdir_path            => Outdir path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -51,10 +53,12 @@ sub chromograph {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $autozyg_file_path;
     my $coverage_file_path;
     my $euploid;
     my $filehandle;
-    my $ideo_file_path;
+    my $fracsnp_file_path;
+    my $ideogram_file_path;
     my $outdir_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -65,7 +69,13 @@ sub chromograph {
     my $upd_sites_file_path;
 
     my $tmpl = {
+        autozyg_file_path => {
+            allow       => qr/ [.] bed \z /xms,
+            store       => \$autozyg_file_path,
+            strict_type => 1,
+        },
         coverage_file_path => {
+            allow       => qr/ [.] wig \z /xms,
             store       => \$coverage_file_path,
             strict_type => 1,
         },
@@ -77,8 +87,14 @@ sub chromograph {
         filehandle => {
             store => \$filehandle,
         },
-        ideo_file_path => {
-            store       => \$ideo_file_path,
+        fracsnp_file_path => {
+            allow       => qr/ [.] wig \z /xms,
+            store       => \$fracsnp_file_path,
+            strict_type => 1,
+        },
+        ideogram_file_path => {
+            allow       => qr/ [.] bed \z /xms,
+            store       => \$ideogram_file_path,
             strict_type => 1,
         },
         outdir_path => {
@@ -106,10 +122,12 @@ sub chromograph {
             strict_type => 1,
         },
         upd_regions_file_path => {
+            allow       => qr/ [.] bed \z /xms,
             store       => \$upd_regions_file_path,
             strict_type => 1,
         },
         upd_sites_file_path => {
+            allow       => qr/ [.] bed \z /xms,
             store       => \$upd_sites_file_path,
             strict_type => 1,
         },
@@ -119,6 +137,11 @@ sub chromograph {
 
     my @commands =
       ( get_executable_base_command( { base_command => q{chromograph}, } ), );
+
+    if ($autozyg_file_path) {
+
+        push @commands, q{--autozyg} . $SPACE . $autozyg_file_path;
+    }
 
     if ($coverage_file_path) {
 
@@ -130,9 +153,14 @@ sub chromograph {
         push @commands, q{--euploid};
     }
 
-    if ($ideo_file_path) {
+    if ($fracsnp_file_path) {
 
-        push @commands, q{--ideo} . $SPACE . $ideo_file_path;
+        push @commands, q{--fracsnp} . $SPACE . $fracsnp_file_path;
+    }
+
+    if ($ideogram_file_path) {
+
+        push @commands, q{--ideogram} . $SPACE . $ideogram_file_path;
     }
 
     push @commands, q{--outd} . $SPACE . $outdir_path;

@@ -25,7 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.15;
+    our $VERSION = 1.16;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_rhocall_annotate analysis_rhocall_viz };
@@ -415,6 +415,7 @@ sub analysis_rhocall_viz {
     use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_index bcftools_roh bcftools_view };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Program::Picardtools qw{ picardtools_updatevcfsequencedictionary };
     use MIP::Program::Rhocall qw{ rhocall_viz };
     use MIP::Program::Ucsc qw{ ucsc_wig_to_big_wig };
@@ -564,6 +565,21 @@ sub analysis_rhocall_viz {
     );
     say {$filehandle} $NEWLINE;
 
+    ## Rename files
+  FILE_SUFFIX:
+    foreach my $file_suffix (qw{ .bed .wig }) {
+
+        gnu_mv(
+            {
+                filehandle   => $filehandle,
+                infile_path  => catfile( $outdir_path, q{output} . $file_suffix ),
+                outfile_path => $sample_outfile_path_prefix . $file_suffix,
+            }
+        );
+        print {$filehandle} $NEWLINE;
+    }
+    print {$filehandle} $NEWLINE;
+
     ## Create chromosome name and size file
     my $contigs_size_file_path =
       catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
@@ -581,7 +597,7 @@ sub analysis_rhocall_viz {
             clip                   => 1,
             contigs_size_file_path => $contigs_size_file_path,
             filehandle             => $filehandle,
-            infile_path            => catfile( $outdir_path, q{output.wig} ),
+            infile_path            => $sample_outfile_path_prefix . $DOT . q{wig},
             outfile_path           => $outfile_path,
         }
     );

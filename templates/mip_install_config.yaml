@@ -48,7 +48,7 @@ container:
   chromograph:
     executable:
       chromograph:
-    uri: docker.io/clinicalgenomics/chromograph:0.3.3
+    uri: docker.io/clinicalgenomics/chromograph:1.0.0
   cyrius:
     executable:
       star_caller.py:

@@ -25,7 +25,7 @@ use MIP::Test::Commands qw{ test_function };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.05;
+our $VERSION = 1.06;
 
 $VERBOSE = test_standard_cli(
     {
@@ -94,17 +94,25 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    autozyg_file_path => {
+        input           => catfile(qw{ a file.bed }),
+        expected_output => q{--autozyg} . $SPACE . catfile(qw{ a file.bed }),
+    },
     coverage_file_path => {
-        input           => catfile(qw{ path to wig }),
-        expected_output => q{--coverage} . $SPACE . catfile(qw{ path to wig }),
+        input           => catfile(qw{ path to file.wig }),
+        expected_output => q{--coverage} . $SPACE . catfile(qw{ path to file.wig }),
     },
     euploid => {
         input           => 1,
         expected_output => q{--euploid},
     },
-    ideo_file_path => {
+    fracsnp_file_path => {
+        input           => catfile(qw{ a file.wig }),
+        expected_output => q{--fracsnp} . $SPACE . catfile(qw{ a file.wig }),
+    },
+    ideogram_file_path => {
         input           => catfile(qw{ a file.bed }),
-        expected_output => q{--ideo} . $SPACE . catfile(qw{ a file.bed }),
+        expected_output => q{--ideogram} . $SPACE . catfile(qw{ a file.bed }),
     },
     outdir_path => {
         input           => catdir(qw{ path to out_dir }),
@@ -115,12 +123,12 @@ my %specific_argument = (
         expected_output => q{--step} . $SPACE . $STEP,
     },
     upd_regions_file_path => {
-        input           => catfile(qw{ path to bed }),
-        expected_output => q{--regions} . $SPACE . catfile(qw{ path to bed }),
+        input           => catfile(qw{ path to file.bed }),
+        expected_output => q{--regions} . $SPACE . catfile(qw{ path to file.bed }),
     },
     upd_sites_file_path => {
-        input           => catfile(qw{ path to bed }),
-        expected_output => q{--sites} . $SPACE . catfile(qw{ path to bed }),
+        input           => catfile(qw{ path to file.bed }),
+        expected_output => q{--sites} . $SPACE . catfile(qw{ path to file.bed }),
     },
 );
 

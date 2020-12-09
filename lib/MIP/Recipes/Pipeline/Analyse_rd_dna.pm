@@ -452,7 +452,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Chromograph
-      qw{ analysis_chromograph_cov analysis_chromograph_upd };
+      qw{ analysis_chromograph_cov analysis_chromograph_rhoviz analysis_chromograph_upd };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
     use MIP::Recipes::Analysis::Deepvariant qw { analysis_deepvariant };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
@@ -556,15 +556,16 @@ sub pipeline_analyse_rd_dna {
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        analysisrunstatus => \&analysis_analysisrunstatus,
-        bwa_mem           => undef,                           # Depends on genome build
-        bwa_mem2          => undef,
-        cadd_ar           => \&analysis_cadd,
-        chanjo_sexcheck   => \&analysis_chanjo_sex_check,
-        chromograph_cov   => \&analysis_chromograph_cov,
-        chromograph_upd   => \$sample_info_href->{has_trio}
+        analysisrunstatus  => \&analysis_analysisrunstatus,
+        bwa_mem            => undef,                           # Depends on genome build
+        bwa_mem2           => undef,
+        cadd_ar            => \&analysis_cadd,
+        chanjo_sexcheck    => \&analysis_chanjo_sex_check,
+        chromograph_cov    => \&analysis_chromograph_cov,
+        chromograph_rhoviz => \&analysis_chromograph_rhoviz,
+        chromograph_upd    => \$sample_info_href->{has_trio}
         ? \&analysis_chromograph_upd
-        : undef,                                              # Depends on pedigree
+        : undef,                                               # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
         deepvariant                 => \&analysis_deepvariant,
         delly_call                  => \&analysis_delly_call,
