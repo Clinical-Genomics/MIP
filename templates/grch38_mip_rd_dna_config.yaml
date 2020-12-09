@@ -52,7 +52,6 @@ nist_call_set_vcf:
     NA24143: grch38_nist_hg004_-na24143_v3.3.2-.vcf.gz
     NA24385: grch38_nist_hg002_-na24385_v3.3.2-.vcf.gz
     NA24631: grch38_nist_hg005_-na24631_v3.3.2-.vcf.gz
-qccollect_regexp_file: qc_regexp_-v1.26-.yaml
 rank_model_file: grch38_rank_model_-v0.1-.ini
 rhocall_frequency_file: grch38_gnomad_reformated_-r3.0-.tab.gz
 sambamba_depth_bed: grch38_scout_exons_-2020-09-17-.bed
