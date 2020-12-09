@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Switched to using container manager instead of proxy bins in recipes
 - Removed support to run variant_integrity
 - Added deepvariant as variant caller and glnexus to merge samples to case vcf 
+- Use median coverage instead of expected coverage when evaluating whether expected coverage has been reached or not [#1719](https://github.com/Clinical-Genomics/MIP/issues/1719)
 
 **Tools**
 chanjo: 4.2.0 -> 4.6

@@ -24,7 +24,7 @@ use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.02;
+our $VERSION = 1.03;
 
 $VERBOSE = test_standard_cli(
     {
@@ -84,7 +84,7 @@ my %evaluate_metric = define_evaluate_metric(
 my %expected = (
     ADM1059A1 => {
         collecthsmetrics => {
-            MEAN_TARGET_COVERAGE => {
+            MEDIAN_TARGET_COVERAGE => {
                 lt => 150,
             },
         },
@@ -99,7 +99,7 @@ my %expected = (
     },
     ADM1059A2 => {
         collecthsmetrics => {
-            MEAN_TARGET_COVERAGE => {
+            MEDIAN_TARGET_COVERAGE => {
                 lt => 150,
             },
         },
@@ -114,7 +114,7 @@ my %expected = (
     },
     ADM1059A3 => {
         collecthsmetrics => {
-            MEAN_TARGET_COVERAGE => {
+            MEDIAN_TARGET_COVERAGE => {
                 lt => 150,
             },
         },

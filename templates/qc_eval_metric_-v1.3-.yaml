@@ -6,7 +6,7 @@ panel:
   collecthsmetrics:
     PCT_TARGET_BASES_10X:
       lt: 0.95
-    MEAN_TARGET_COVERAGE:
+    MEDIAN_TARGET_COVERAGE:
       lt: 26
   collectmultiplemetrics:
     PCT_PF_READS_ALIGNED:
@@ -23,7 +23,7 @@ wgs:
   collecthsmetrics:
     PCT_TARGET_BASES_10X:
       lt: 0.95
-    MEAN_TARGET_COVERAGE:
+    MEDIAN_TARGET_COVERAGE:
       lt: 26
   collectmultiplemetrics:
     PCT_PF_READS_ALIGNED:
@@ -40,7 +40,7 @@ wes:
   collecthsmetrics:
     PCT_TARGET_BASES_10X:
       lt: 0.95
-    MEAN_TARGET_COVERAGE:
+    MEDIAN_TARGET_COVERAGE:
       lt: 26
   collectmultiplemetrics:
     PCT_PF_READS_ALIGNED:

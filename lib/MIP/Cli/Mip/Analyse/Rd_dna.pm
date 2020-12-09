@@ -16,7 +16,7 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.63;
+our $VERSION = 1.64;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -149,7 +149,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     option(
         q{expected_coverage} => (
             cmd_tags      => [q{sample_id=expected_coverage}],
-            documentation => q{Expected mean target coverage for analysis},
+            documentation => q{Expected median target coverage for analysis},
             is            => q{rw},
             isa           => HashRef,
         )

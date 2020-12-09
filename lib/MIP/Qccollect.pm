@@ -24,7 +24,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.05;
+    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -726,7 +726,7 @@ sub get_parent_ids {
 
         ## Return father_id and mother_id if defined and not 0
         next SAMPLE_ID if ( not defined $father_id and not defined $mother_id );
-        next SAMPLE_ID if ( $father_id eq 0 and $mother_id eq 0 );
+        next SAMPLE_ID if ( $father_id eq 0        and $mother_id eq 0 );
 
         return $father_id, $mother_id;
     }
@@ -1347,7 +1347,7 @@ sub set_sample_eval_metrics {
     if ($expected_coverage) {
 
         my %eval_expression = (
-            MEAN_TARGET_COVERAGE => {
+            MEDIAN_TARGET_COVERAGE => {
                 lt => $expected_coverage,
             },
         );
