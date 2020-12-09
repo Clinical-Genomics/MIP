@@ -1205,7 +1205,7 @@ qccollect_regexp_file:
   associated_recipe:
     - qccollect_ar
   data_type: SCALAR
-  default: qc_regexp_-v1.24-.yaml
+  default: qc_regexp_-v1.27-.yaml
   exists_check: file
   is_reference: 1
   reference: reference_dir
