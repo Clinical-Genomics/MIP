@@ -23,7 +23,7 @@ use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_standard_cli };
 
 my $VERBOSE = 1;
-our $VERSION = 1.01;
+our $VERSION = 1.02;
 
 $VERBOSE = test_standard_cli(
     {
@@ -39,17 +39,17 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::File::Interval} => [qw{ generate_contig_interval_file }],
+        q{MIP::Contigs}        => [qw{ generate_contig_interval_file }],
         q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File::Interval qw{ generate_contig_interval_file };
+use MIP::Contigs qw{ generate_contig_interval_file };
 
-diag(   q{Test generate_contig_interval_file from Interval.pm v}
-      . $MIP::File::Interval::VERSION
+diag(   q{Test generate_contig_interval_file from Contigs.pm v}
+      . $MIP::Contigs::VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -84,12 +84,13 @@ my %expected_bed_file_path = (
     2 => [ catfile( $outdirectory, q{2_} . $exome_target_bed_file ) ]
 );
 
-## Then bed file paths in outdirectory should be returned
+## Then contig bed file paths for each contig should be returned
 is_deeply( \%bed_file_path, \%expected_bed_file_path, q{Generated bed file} );
 
 ## Given a file ending
 my $file_suffix = q{.custom};
 
+## When writing instructions to generate seperate contig files
 my %bed_file_path_with_ending = generate_contig_interval_file(
     {
         contigs_ref           => \@contigs,
@@ -108,11 +109,11 @@ my %expected_bed_file_path_with_ending = (
 ## Close the filehandle
 close $filehandle;
 
-## Then bed file paths in outdirectory should be returned
+## Then contig bed file paths with file suffix for each contig should be returned
 is_deeply(
     \%bed_file_path_with_ending,
     \%expected_bed_file_path_with_ending,
-    q{Generated bed file with supplied file ending}
+    q{Generated bed file with supplied file suffix}
 );
 
 done_testing();

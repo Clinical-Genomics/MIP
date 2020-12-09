@@ -345,6 +345,7 @@ sub perl_nae_oneliners {
         remove_decomposed_asterisk_records   => \&_remove_decomposed_asterisk_records,
         synonyms_grch37_to_grch38            => \&_synonyms_grch37_to_grch38,
         synonyms_grch38_to_grch37            => \&_synonyms_grch38_to_grch37,
+        write_header_for_contig              => \&_write_header_for_contig,
         write_contigs_size_file              => \&_write_contigs_size_file,
     );
 
@@ -358,7 +359,10 @@ sub perl_nae_oneliners {
         get_vcf_header_id_line => {
             id => $oneliner_parameter,
         },
-        reformat_sacct_headers => { sacct_header => $oneliner_parameter, },
+        reformat_sacct_headers  => { sacct_header => $oneliner_parameter, },
+        write_header_for_contig => => {
+            contig => $oneliner_parameter,
+        },
     );
 
     ## Stores commands depending on input parameters
@@ -867,6 +871,43 @@ sub _synonyms_grch38_to_grch37 {
     $modify_chr_prefix .= q?print $_'?;
 
     return $modify_chr_prefix;
+}
+
+sub _write_header_for_contig {
+
+## Function : Write only header line for specific contig and rest of header
+## Returns  : $write_header_for_contig
+## Arguments: $contig => Contig to create header for
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $contig;
+
+    my $tmpl = {
+        contig => {
+            defined     => 1,
+            required    => 1,
+            store       => \$contig,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## If header line
+    my $write_header_for_contig = q?'if($_=~/^\@/) { ?;
+
+    ## Write to STDOUT
+    $write_header_for_contig .= q?print $_;} ?;
+
+    ## If line begin with specific $contig
+    $write_header_for_contig .= q?elsif($_=~/^? . $contig . q?\s+/) { ?;
+
+    ## Write to STDOUT
+    $write_header_for_contig .= q?print $_;}'?;
+
+    return $write_header_for_contig;
 }
 
 sub _write_contigs_size_file {
