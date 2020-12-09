@@ -1,10 +1,11 @@
+---
 
 name: Publish bleeding edge to Docker Hub
 
-on:
+"on":
   push:
     branches:
-     - develop
+      - develop
 
 jobs:
   docker-image-CI:

@@ -1,10 +1,11 @@
+---
 
 name: Publish production release to Docker Hub
 
-on:
+"on":
   release:
-   types:
-     - created
+    types:
+      - created
 
 jobs:
   docker-image-CI:
