@@ -114,7 +114,7 @@ sub get_gatk_intervals {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_exome_target_bed_file };
-    use MIP::File::Interval qw{ generate_contig_interval_file };
+    use MIP::Contigs qw{ generate_contig_interval_file };
 
     ## Store gatk interval
     my %gatk_intervals;
@@ -135,7 +135,7 @@ sub get_gatk_intervals {
                 contigs_ref           => $contigs_ref,
                 exome_target_bed_file => $exome_target_bed_file,
                 filehandle            => $filehandle,
-                max_cores_per_node    => $max_cores_per_node,
+                max_process_number    => $max_cores_per_node,
                 outdirectory          => $outdirectory,
                 reference_dir         => $reference_dir,
             }

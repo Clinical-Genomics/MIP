@@ -57,7 +57,7 @@ sub name_of_subroutine {
             strict_type => 1,
         },
         scalar => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr/ \A \d+ \z /sxm,
             default     => 1,
             store       => \$scalar,
             strict_type => 1,
