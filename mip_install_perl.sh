@@ -83,7 +83,7 @@ if [ "$DEV" = true ]; then
     cpanm Perl::Critic@1.138 Data::Printer@0.40
 
     ## Install pre-commit
-    conda install --name "$ENV_NAME" --yes -c conda-forge pre-commit
+    conda install --name "$ENV_NAME" --yes -c conda-forge pre-commit=2.9.3
 
     ## Install hooks
     pre-commit install --install-hooks
