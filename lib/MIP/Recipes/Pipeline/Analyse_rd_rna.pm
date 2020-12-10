@@ -22,7 +22,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.39;
+    our $VERSION = 1.40;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_rna pipeline_analyse_rd_rna };
@@ -105,6 +105,7 @@ sub parse_rd_rna {
       update_recipe_mode_for_fastq_compatibility
       update_recipe_mode_for_pedigree };
     use MIP::Config qw{ write_mip_config };
+    use MIP::Constants qw{ set_container_constants };
     use MIP::Contigs qw{ update_contigs_for_run };
     use MIP::Environment::Container qw{ parse_containers };
     use MIP::Fastq qw{ parse_fastq_infiles };
@@ -116,6 +117,9 @@ sub parse_rd_rna {
 
     ## Constants
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+    
+    ## Set analysis constants
+    set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
     parse_containers(
         {
@@ -365,8 +369,6 @@ sub pipeline_analyse_rd_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Constants qw{ set_container_constants };
-
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
@@ -417,9 +419,6 @@ sub pipeline_analyse_rd_rna {
             sample_info_href      => $sample_info_href,
         }
     );
-
-    ## Set analysis constants
-    set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
