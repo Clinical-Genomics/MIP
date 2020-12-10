@@ -28,7 +28,8 @@ The --deployment flag makes sure that carton will only install modules and versi
 Another flavor of this is [Carmel]. Unlike traditional CPAN module installer, Carmel keeps the build of your dependencies in a central repository, then select the library paths to include upon runtime.
 
 ## Code style
-MIP uses Perl::Tidy, Perl::Critic and Yamllint in order to maintain readability and a consistent code style across the repo. These tools can be installed by running mip_install_perl.sh with the `-d` option when installing MIP's perl distribution and cpan modules.  
+MIP uses Perl::Tidy, Perl::Critic and Yamllint in order to maintain readability and a consistent code style across the repo. The repo uses [pre-commit] to ensure that commits have been formated correctly, setup with `pre-commit install`.
+By using the `-d` flag with the mip_install_perl.sh script the extra dependecies together with pre-commit will be automatically installed.
 
 Each commit will be tested with these tools using pre-commit.
 
@@ -42,3 +43,4 @@ Try to keep the number of warnings to a minimum. This ensures that your new code
 [Carmel]: https://metacpan.org/pod/Carmel
 [Carton]: https://metacpan.org/pod/Carton
 [semantic versioning]: https://semver.org/
+[pre-commit]: https://pre-commit.com
