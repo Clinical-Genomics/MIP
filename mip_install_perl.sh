@@ -82,7 +82,7 @@ if [ "$DEV" = true ]; then
     ## Install dev modules from cpan
     cpanm Perl::Tidy@20200110 Perl::Critic@1.138 Data::Printer@0.40
 
-    ## Install pre-commit
+    ## Install pre-commit and yamllint
     conda install --name "$ENV_NAME" --yes -c conda-forge pre-commit=2.9.3 yamllint=1.20.0
 
     ## Install hooks
