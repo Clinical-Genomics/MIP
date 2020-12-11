@@ -28,8 +28,8 @@ The --deployment flag makes sure that carton will only install modules and versi
 Another flavor of this is [Carmel]. Unlike traditional CPAN module installer, Carmel keeps the build of your dependencies in a central repository, then select the library paths to include upon runtime.
 
 ## Code style
-MIP uses Perl::Tidy, Perl::Critic and Yamllint in order to maintain readability and a consistent code style across the repo. The repo uses [pre-commit] to ensure that commits have been formated correctly, setup with `pre-commit install`.
-By using the `-d` flag with the mip_install_perl.sh script the extra dependecies together with pre-commit will be automatically installed.
+MIP uses Perl::Tidy, Perl::Critic and Yamllint in order to maintain readability and a consistent code style across the repo. The repo uses [pre-commit] to ensure that commits have been formatted correctly. You can set this up yourself with  setup with `pre-commit install`.
+Alternatively by using the `-d` flag with the mip_install_perl.sh script the extra dependencies will be installed for use with your IDE. The flag also ensures that pre-commit is installed in the develop environment and setups pre-commit to autoamtically run on commits.
 
 Each commit will be tested with these tools using pre-commit.
 
