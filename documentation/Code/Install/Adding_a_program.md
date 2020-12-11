@@ -1,50 +1,23 @@
-# Adding a program
+# Adding or updating  a program
 
-## Define the program and version
-Add the program to an environment in the `templates/mip_install_<pipeline>_config_-<version>-.yaml` file.
+1. Define the program and version in `templates/mip_install_config.yaml`
 
+    ```Yaml
+    container:
+      <container>:
+        bind_path:   #Optional
+          <executable>: <path outside container>:<path inside container>
+        executables:
+          <executable>: <path to executable in container> | <blank if executable in container PATH> | "no_executable_in_image"
+        uri: <uri_to_image>
+    ```
+    If you are only updating a program, skip to step 4
 
-- Add your program according to which method the installation process uses:
+1. Add the program to the install CLI `lib/MIP/Cli/Mip/Install.pm`:
 
-```Yaml
-conda:
-  <program_name>: <program_version>=<program_version_subpatch>
-pip:
-  <program_name>: <program_version>
-shell:
-  <program_name>:
-    conda_dependency:
-      <dependency>: <dependency_version>
-    version: <program_version>
-singularity:
-  uri: <uri_to_program>
-  executables:
-    <executable>: <path to executable in container> | <blank if executable in container path>
-```
+    1. Add the new program to the option `select_programs` under the `isa` key
+    2. Add the new program to the option `skip_programs` under the `isa` key
 
-## Add the program to the CLI
-In `lib/MIP/Cli/Mip/Install/<pipeline>`:
+1. Add the program to the correct pipeline (rd_dna/rd_rna) in`defintions/install_parameters`  
 
-1. Add the new program to the option `select_programs` under the `isa` key
-
-2. Add the new program to the option `skip_programs` under the `isa` key
-
-## Add program to integration test
-
-  1. Add the executable of your program to the test envs:
-
-```
-$ touch t/data/modules/miniconda/envs/mip_ci/bin/<program_executable>
-$ chmod a+x t/data/modules/miniconda/envs/mip_ci/bin/<program_executable>
-```
-2. Add the program to the template config
-
-## Add installation tests
-Add a path and/or a execution test to `templates/program_test_cmds.yaml`.
-```Yaml
-program_test_command:
-  <program_name>:
-    execution: '<program_command>'
-    path: '<program_executable>'
-```
-The path test checks that the file is in your $PATH and is executable while the execution test executes a command and checks the exit status. Note that the command must return a zero exit status for the test to succeed.
+1. Install the program by running mip install --environment_name <mip_env> --select_program <your program>
