@@ -8,7 +8,7 @@ MIP follows a gitflow [branching model].
 We use [Carton] to lock MIP's perl dependencies in the `cpanfile.snapshot`file.
 
 ### Initializing the environment
-Carton will use the local directory to install modules into. You're recommended to exclude these directories from git by adding the `local/` to `.gitignore`. 
+Carton will use the local directory to install modules into. You're recommended to exclude these directories from git by adding the `local/` to `.gitignore`.
 After installing Carton with `cpanm install Carton`, you can create/update the snapshot file by:
 
 ```
@@ -28,17 +28,19 @@ The --deployment flag makes sure that carton will only install modules and versi
 Another flavor of this is [Carmel]. Unlike traditional CPAN module installer, Carmel keeps the build of your dependencies in a central repository, then select the library paths to include upon runtime.
 
 ## Code style
-MIP uses Perl::Tidy, Perl::Critic and Yamllint in order to maintain readability and a consistent code style across the repo. These tools can be installed by running mip_install_perl.sh with the `-d` option when installing MIP's perl distribution and cpan modules.  
- 
-Prior to opening a pull request each commit should be tested with the supplied bash script `mip-check`. Running `bash mip-check` will test the code newly edited code using perltidy, perlcritic and yamllint.
+MIP uses Perl::Tidy, Perl::Critic and Yamllint in order to maintain readability and a consistent code style across the repo. The repo uses [pre-commit] to ensure that commits have been formatted correctly. You can set this up yourself with  setup with `pre-commit install`.
+Alternatively by using the `-d` flag with the mip_install_perl.sh script the extra dependencies will be installed for use with your IDE. The flag also ensures that pre-commit is installed in the develop environment and setups pre-commit to autoamtically run on commits.
 
- - Perltidy will automatically check and reformat your perl code. 
- - Perlcritic will lint the code and ensure that it follows perl best practice. 
- - Yamllint check any yaml files that have been altered. 
+Each commit will be tested with these tools using pre-commit.
 
-Try to keep the number of warnings to a minimum. This ensures that your new code adheres to the style that has been agreed upon for the MIP repo.
+ - Perltidy will automatically check and reformat your perl code.
+ - Perlcritic will lint the code and ensure that it follows perl best practice.
+ - Yamllint check any yaml files that have been altered.
+
+Try to keep the number of warnings to a minimum. This ensures that your new code adheres to the style that has been agreed upon for the MIP repo. The pre-commit hooks can be disabled by using the flag `-n`, i.e. `git commit -n`
 
 [branching model]: http://www.clinicalgenomics.se/development/dev/gitflow/
 [Carmel]: https://metacpan.org/pod/Carmel
 [Carton]: https://metacpan.org/pod/Carton
 [semantic versioning]: https://semver.org/
+[pre-commit]: https://pre-commit.com

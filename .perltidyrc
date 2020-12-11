@@ -1,0 +1,6 @@
+## Modifications to perl tidy policies for MIP development
+--maximum-line-length=100
+--iterations=2
+--backup-and-modify-in-place
+--backup-file-extension='/'
+--standard-error-output

@@ -77,13 +77,16 @@ conda activate "$ENV_NAME"
 
 cpanm --installdeps .
 
-if [ "$DEV" = true ]; then 
-    
+if [ "$DEV" = true ]; then
+
     ## Install dev modules from cpan
     cpanm Perl::Tidy@20200110 Perl::Critic@1.138 Data::Printer@0.40
 
-    ## Install yamllint 
-    conda install --name "$ENV_NAME" --yes -c conda-forge yamllint=1.20.0
+    ## Install pre-commit and yamllint
+    conda install --name "$ENV_NAME" --yes -c conda-forge pre-commit=2.9.3 yamllint=1.20.0
+
+    ## Install hooks
+    pre-commit install --install-hooks
 fi
 
 conda deactivate

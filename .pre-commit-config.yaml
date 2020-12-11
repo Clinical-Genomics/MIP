@@ -1,0 +1,28 @@
+---
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+    - id: trailing-whitespace
+      args: [--markdown-linebreak-ext=md]
+    - id: check-merge-conflict
+  - repo: https://github.com/perltidy/perltidy
+    rev: '20201207'
+    hooks:
+    - id: perltidy
+      types: [file]
+      files: \.(t|pm|pl|test)$
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.25.0
+    hooks:
+    - id: yamllint
+  - repo: local
+    hooks:
+    - id: perlcritic
+      name: perlcritc
+      language: system
+      entry: perlcritic
+      types: [file]
+      files: \.(t|pm|pl|test)$
