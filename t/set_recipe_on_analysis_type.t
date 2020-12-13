@@ -20,17 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $COMMA => q{,};
@@ -44,8 +34,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Set::Analysis}  => [qw{ set_recipe_on_analysis_type }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -54,8 +43,7 @@ use MIP::Set::Analysis qw{ set_recipe_on_analysis_type };
 use MIP::Recipes::Analysis::Mip_vcfparser
   qw{ analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
 
-diag(   q{Test set_recipe_on_analysis_type from Analysis.pm v}
-      . $MIP::Set::Analysis::VERSION
+diag(   q{Test set_recipe_on_analysis_type from Analysis.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

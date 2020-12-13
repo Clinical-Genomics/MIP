@@ -25,7 +25,6 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -45,7 +44,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -86,8 +85,7 @@ BEGIN {
 use MIP::Program::Gnu::Software::Gnu_make qw{gnu_make };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test gnu_make from Software.pm v}
-      . $MIP::Program::Gnu::Software::Gnu_make::VERSION
+diag(   q{Test gnu_make from Software.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

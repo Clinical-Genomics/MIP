@@ -23,17 +23,10 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
+
 
 my $VERBOSE = 0;
-our $VERSION = 1.01;
 
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -51,8 +44,7 @@ BEGIN {
         q{MIP::Program::Gnu::Coreutils} => [qw{ gnu_mkdir gnu_rm }],
         q{MIP::Language::Shell} =>
           [qw{ build_shebang enable_trap create_error_trap_function }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -61,8 +53,7 @@ use MIP::Program::Gnu::Bash qw{ gnu_set };
 use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_rm };
 use MIP::Language::Shell qw{ build_shebang enable_trap create_error_trap_function };
 
-diag(   q{Test create_error_trap_function from Shell.pm v}
-      . $MIP::Language::Shell::VERSION
+diag(   q{Test create_error_trap_function from Shell.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

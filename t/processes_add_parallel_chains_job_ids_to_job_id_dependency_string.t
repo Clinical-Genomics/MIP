@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
 use Modern::Perl qw{ 2018 };
 use warnings qw{FATAL utf8};
 use autodie;
@@ -32,7 +30,6 @@ Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
 
 my $VERBOSE = 1;
-our $VERSION = q{1.0.0};
 
 ###User Options
 GetOptions(
@@ -43,7 +40,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,

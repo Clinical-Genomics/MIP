@@ -16,8 +16,6 @@ use Moose::Util::TypeConstraints;
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
 
-our $VERSION = 1.13;
-
 extends(qw{ MIP::Cli::Mip::Analyse });
 
 command_short_description(q{Rare disease DNA analysis of panels});

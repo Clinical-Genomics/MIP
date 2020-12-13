@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,16 +31,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Gnu::Coreutils} => [qw{ gnu_rm_and_echo }],
-        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Gnu::Coreutils qw{ gnu_rm_and_echo };
 
-diag(   q{Test gnu_rm_and_echo from Coreutils.pm v}
-      . $MIP::Program::Gnu::Coreutils::VERSION
+diag(   q{Test gnu_rm_and_echo from Coreutils.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

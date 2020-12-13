@@ -25,7 +25,6 @@ use MIP::Script::Utils qw{help};
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
 
 ## Constants
 Readonly my $SPACE   => q{ };
@@ -40,7 +39,7 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE, basename($PROGRAM_NAME), $SPACE, $VERSION, $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
         exit;
     },    #Display version number
     q{vb|verbose} => $VERBOSE,
@@ -81,8 +80,7 @@ BEGIN {
 use MIP::Program::Gnu::Coreutils qw{gnu_chmod};
 use MIP::Test::Commands qw{test_function};
 
-diag(   q{Test gnu_chmod in Coreutils.pm v}
-      . $MIP::Program::Gnu::Coreutils::VERSION
+diag(   q{Test gnu_chmod in Coreutils.pm }
       . q{, Perl }
       . $PERL_VERSION
       . $SPACE

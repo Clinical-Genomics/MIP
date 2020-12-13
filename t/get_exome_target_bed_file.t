@@ -21,17 +21,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 ## Constants
 Readonly my $COMMA => q{,};
@@ -45,7 +35,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Get::File}      => [qw{ get_exome_target_bed_file }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -53,8 +43,7 @@ BEGIN {
 
 use MIP::Get::File qw{ get_exome_target_bed_file };
 
-diag(   q{Test get_exome_target_bed_file from File.pm v}
-      . $MIP::Get::File::VERSION
+diag(   q{Test get_exome_target_bed_file from File.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

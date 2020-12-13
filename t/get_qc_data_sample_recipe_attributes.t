@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,16 +31,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Qc_data}        => [qw{ get_qc_data_sample_recipe_attributes }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Qc_data qw{ get_qc_data_sample_recipe_attributes };
 
-diag(   q{Test get_qc_data_sample_recipe_attributes from Qc_data.pm v}
-      . $MIP::Qc_data::VERSION
+diag(   q{Test get_qc_data_sample_recipe_attributes from Qc_data.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

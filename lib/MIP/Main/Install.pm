@@ -25,9 +25,6 @@ use MIP::Set::Parameter qw{ set_conda_path };
 BEGIN {
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 2.19;
-
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
 

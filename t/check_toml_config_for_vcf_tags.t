@@ -22,18 +22,8 @@ use Test::Trap qw{ :stderr:output(systemsafe) };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_constants test_log test_standard_cli };
+use MIP::Test::Fixtures qw{ test_constants test_log };
 use MIP::Test::Writefile qw{ write_toml_config };
-
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -43,7 +33,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Reference}      => [qw{ check_toml_config_for_vcf_tags }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -51,8 +41,7 @@ BEGIN {
 
 use MIP::Reference qw{ check_toml_config_for_vcf_tags };
 
-diag(   q{Test check_toml_config_for_vcf_tags from Reference.pm v}
-      . $MIP::Reference::VERSION
+diag(   q{Test check_toml_config_for_vcf_tags from Reference.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

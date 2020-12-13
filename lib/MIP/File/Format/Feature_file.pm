@@ -23,9 +23,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.02;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ parse_feature_file_data parse_feature_file_header read_feature_file set_vcf_header_info tree_annotations };

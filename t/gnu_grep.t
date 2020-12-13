@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,7 +32,6 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Gnu::Software::Gnu_grep} => [qw{ gnu_grep }],
-        q{MIP::Test::Fixtures}                   => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -50,8 +39,7 @@ BEGIN {
 
 use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
 
-diag(   q{Test gnu_grep from Gnu_grep.pm v}
-      . $MIP::Program::Gnu::Software::Gnu_grep::VERSION
+diag(   q{Test gnu_grep from Gnu_grep.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

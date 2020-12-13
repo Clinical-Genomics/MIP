@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,16 +30,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Contigs}        => [qw{ generate_contig_interval_file }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Contigs qw{ generate_contig_interval_file };
 
-diag(   q{Test generate_contig_interval_file from Contigs.pm v}
-      . $MIP::Contigs::VERSION
+diag(   q{Test generate_contig_interval_file from Contigs.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

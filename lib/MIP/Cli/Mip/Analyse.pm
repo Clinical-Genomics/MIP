@@ -21,8 +21,6 @@ use Moose::Util::TypeConstraints;
 use MIP::Cli::Utils qw{ run };
 
 # Set the version for version checking
-our $VERSION = 1.16;
-
 extends(qw{ MIP::Cli::Mip });
 
 command_short_description(q{MIP analyse command});

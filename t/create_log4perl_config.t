@@ -27,7 +27,6 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -47,7 +46,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -85,8 +84,7 @@ BEGIN {
 
 use MIP::Log::MIP_log4perl qw{ create_log4perl_config };
 
-diag(   q{Test create_log4perl_config from MIP_log4perl.pm v}
-      . $MIP::Log::MIP_log4perl::VERSION
+diag(   q{Test create_log4perl_config from MIP_log4perl.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

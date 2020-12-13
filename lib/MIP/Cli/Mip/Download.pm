@@ -19,8 +19,6 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Main::Download qw{ mip_download };
 
-our $VERSION = 1.05;
-
 extends(qw{ MIP::Cli::Mip });
 
 command_short_description(q{Generate bash or sbatch for download of references});

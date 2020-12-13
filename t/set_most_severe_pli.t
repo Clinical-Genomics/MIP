@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,16 +31,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Vcfparser}      => [qw{ set_most_severe_pli }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Vcfparser qw{ set_most_severe_pli };
 
-diag(   q{Test set_most_severe_pli from Vcfparser.pm v}
-      . $MIP::Vcfparser::VERSION
+diag(   q{Test set_most_severe_pli from Vcfparser.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

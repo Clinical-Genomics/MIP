@@ -22,9 +22,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.03;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ parse_references parse_reference_for_vt parse_toml_config_for_vcf_tags };

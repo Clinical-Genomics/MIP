@@ -25,9 +25,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.29;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ analysis_markduplicates analysis_markduplicates_panel analysis_markduplicates_rna };

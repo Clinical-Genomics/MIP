@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,16 +32,14 @@ BEGIN {
     my %perl_module = (
         q{MIP::Store} =>
           [qw{ define_analysis_files_to_store set_analysis_files_to_store }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Store qw{ define_analysis_files_to_store set_analysis_files_to_store };
 
-diag(   q{Test set_analysis_files_to_store from Store.pm v}
-      . $MIP::Store::VERSION
+diag(   q{Test set_analysis_files_to_store from Store.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -22,17 +22,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
 BEGIN {
 
@@ -43,7 +33,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Download::Sv_vcfanno_config} =>
           [qw{ download_sv_vcfanno_config }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -51,8 +41,7 @@ BEGIN {
 
 use MIP::Recipes::Download::Sv_vcfanno_config qw{ download_sv_vcfanno_config };
 
-diag(   q{Test download_sv_vcfanno_config from Sv_vcfanno_config.pm v}
-      . $MIP::Recipes::Download::Sv_vcfanno_config::VERSION
+diag(   q{Test download_sv_vcfanno_config from Sv_vcfanno_config.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -26,8 +26,6 @@ use MIP::Constants qw{ %ANALYSIS $COLON $DASH $NEWLINE };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 use MIP::Main::Vcfparser qw{ mip_vcfparser };
 
-our $VERSION = 1.02;
-
 command_short_description(q{MIP vcfparser command});
 
 command_long_description(

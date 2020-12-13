@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $MAX_SV_SIZE => 50_000_000;
@@ -46,16 +36,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Delly} => [qw{ delly_filter }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Delly qw{ delly_filter };
 
-diag(   q{Test delly_filter from Delly.pm v}
-      . $MIP::Program::Delly::VERSION
+diag(   q{Test delly_filter from Delly.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

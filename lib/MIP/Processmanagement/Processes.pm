@@ -24,9 +24,6 @@ BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
-    # Set the version for version checking
-    our $VERSION = 1.10;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       add_to_job_id_dependency_string

@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
 
-#### Copyright 2017 Henrik Stranneheim
-
 use Modern::Perl qw{ 2018 };
 use warnings qw(FATAL utf8);
 use autodie;
@@ -30,7 +28,6 @@ use MIP::Test::Writefile qw(test_write_to_file);
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
 
 ###User Options
 GetOptions(
@@ -41,7 +38,7 @@ GetOptions(
     },    #Display help text
     'v|version' => sub {
         done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION, "\n\n";
+        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  }, "\n\n";
         exit;
     },    #Display version number
     'vb|verbose' => $VERBOSE,

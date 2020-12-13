@@ -23,17 +23,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.08;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 BEGIN {
 
@@ -43,7 +33,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Environment::Child_process} => [qw{child_process}],
-        q{MIP::Test::Fixtures}             => [qw{test_log test_standard_cli}],
+        q{MIP::Test::Fixtures}             => [qw{test_log}],
         q{MIP::Toml}                       => [qw{ load_toml write_toml }],
         q{MIP::Vcfanno}                    => [qw{check_vcfanno_toml}],
     );
@@ -55,8 +45,7 @@ use MIP::Environment::Child_process qw{ child_process };
 use MIP::Toml qw{ load_toml write_toml };
 use MIP::Vcfanno qw{ check_vcfanno_toml };
 
-diag(   q{Test check_vcfanno_toml from Vcfanno.pm v}
-      . $MIP::Vcfanno::VERSION
+diag(   q{Test check_vcfanno_toml from Vcfanno.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

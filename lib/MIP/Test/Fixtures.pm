@@ -26,12 +26,9 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.13;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
-      qw{ test_add_io_for_recipe test_constants test_import test_log test_mip_hashes test_standard_cli };
+      qw{ test_add_io_for_recipe test_constants test_import test_log test_mip_hashes };
 }
 
 sub test_add_io_for_recipe {
@@ -383,73 +380,6 @@ sub test_mip_hashes {
         $hash_to_return{$recipe_name}{chain} = q{TEST};
     }
     return %hash_to_return;
-}
-
-sub test_standard_cli {
-
-## Function : Generate standard command line interface for test scripts
-## Returns  : $verbose
-## Arguments: $verbose => Verbosity of test
-##          : $version => Version of test
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $verbose;
-    my $version;
-
-    my $tmpl = {
-        verbose => {
-            default     => 1,
-            defined     => 1,
-            required    => 1,
-            store       => \$verbose,
-            strict_type => 1,
-        },
-        version => {
-            default     => 1,
-            defined     => 1,
-            required    => 1,
-            store       => \$version,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use Getopt::Long;
-
-    my $USAGE = build_usage( {} );
-
-    ### User Options
-    GetOptions(
-
-        # Display help text
-        q{h|help} => sub {
-            say {*STDOUT} $USAGE;
-            exit;
-        },
-
-        # Display version number
-        q{v|version} => sub {
-            say {*STDOUT} $NEWLINE
-              . basename($PROGRAM_NAME)
-              . $SPACE
-              . $version
-              . $NEWLINE;
-            exit;
-        },
-        q{vb|verbose} => $verbose,
-      )
-      or (
-        help(
-            {
-                USAGE     => $USAGE,
-                exit_code => 1,
-            }
-        )
-      );
-    return $verbose;
 }
 
 sub test_constants {

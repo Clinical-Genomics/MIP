@@ -26,9 +26,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.08;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ create_log4perl_config get_default_log4perl_file get_log log_display_recipe_for_user initiate_logger retrieve_log };

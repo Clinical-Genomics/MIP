@@ -21,17 +21,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE $NEWLINE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,7 +31,6 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::File::Decompression} => [qw{ decompress_files }],
-        q{MIP::Test::Fixtures}      => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -49,8 +38,7 @@ BEGIN {
 
 use MIP::File::Decompression qw{ decompress_files };
 
-diag(   q{Test decompress_files from Decompression.pm v}
-      . $MIP::File::Decompression::VERSION
+diag(   q{Test decompress_files from Decompression.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

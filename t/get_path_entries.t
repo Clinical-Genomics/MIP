@@ -26,7 +26,6 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = '1.0.0';
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -46,7 +45,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -84,8 +83,7 @@ BEGIN {
 
 use MIP::Get::File qw{ get_path_entries };
 
-diag(   q{Test get_path_entries from File.pm v}
-      . $MIP::Get::File::VERSION
+diag(   q{Test get_path_entries from File.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

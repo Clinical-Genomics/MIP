@@ -25,8 +25,6 @@ use MIP::Language::Perl qw{ check_modules_existance };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.17;
-
 our $USAGE = build_usage( {} );
 
 BEGIN {
@@ -101,7 +99,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -120,7 +118,6 @@ use TAP::Harness;
 use Cwd;
 
 diag(   q{Test mip_core.t version }
-      . $VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

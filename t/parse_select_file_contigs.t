@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 BEGIN {
 
@@ -40,7 +30,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::File_info}      => [qw{ parse_select_file_contigs }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -48,8 +38,7 @@ BEGIN {
 
 use MIP::File_info qw{ parse_select_file_contigs };
 
-diag(   q{Test parse_select_file_contigs from File_info.pm v}
-      . $MIP::File_info::VERSION
+diag(   q{Test parse_select_file_contigs from File_info.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

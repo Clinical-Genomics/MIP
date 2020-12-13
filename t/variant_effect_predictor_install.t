@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $VEP_VERSION => 91;
@@ -45,16 +35,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Vep}   => [qw{ variant_effect_predictor_install }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Vep qw{ variant_effect_predictor_install };
 
-diag(   q{Test variant_effect_predictor_install from Vep.pm v}
-      . $MIP::Program::Vep::VERSION
+diag(   q{Test variant_effect_predictor_install from Vep.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

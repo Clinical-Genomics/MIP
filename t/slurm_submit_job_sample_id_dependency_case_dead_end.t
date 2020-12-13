@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_mip_hashes test_log };
 
 BEGIN {
 
@@ -41,7 +31,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Processmanagement::Slurm_processes} =>
           [qw{ slurm_submit_job_sample_id_dependency_case_dead_end }],
-        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -51,8 +41,7 @@ use MIP::Processmanagement::Slurm_processes
   qw{ slurm_submit_job_sample_id_dependency_case_dead_end };
 
 diag(
-    q{Test slurm_submit_job_sample_id_dependency_case_dead_end from Slurm_processes.pm v}
-      . $MIP::Processmanagement::Slurm_processes::VERSION
+    q{Test slurm_submit_job_sample_id_dependency_case_dead_end from Slurm_processes.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -22,17 +22,7 @@ use Test::Trap;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures
-  qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+  qw{ test_add_io_for_recipe test_log test_mip_hashes };
 
 BEGIN {
 
@@ -44,7 +34,7 @@ BEGIN {
         q{MIP::Recipes::Analysis::Analysisrunstatus} =>
           [qw{ analysis_analysisrunstatus }],
         q{MIP::Test::Fixtures} => [
-            qw{ test_add_io_for_recipe test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }
+            qw{ test_add_io_for_recipe test_add_io_for_recipe test_log test_mip_hashes }
         ],
     );
 
@@ -53,8 +43,7 @@ BEGIN {
 
 use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
 
-diag(   q{Test analysis_analysisrunstatus from Analysisrunstatus.pm v}
-      . $MIP::Recipes::Analysis::Analysisrunstatus::VERSION
+diag(   q{Test analysis_analysisrunstatus from Analysisrunstatus.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

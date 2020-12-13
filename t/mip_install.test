@@ -109,8 +109,6 @@ my $reference_dir = catdir( dirname($Bin), qw{ t data mip_install_test } );
 my $log_file_path    = catfile( cwd(), qw{mip_install_test.log} );
 my $environment_name = q{mip_install_test};
 my $verbose          = 1;
-our $VERSION = 1.39;
-
 ###User Options
 GetOptions(
     q{vb|verbose} => $verbose,

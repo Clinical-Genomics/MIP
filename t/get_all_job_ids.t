@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,16 +30,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Processmanagement::Processes} => [qw{ get_all_job_ids }],
-        q{MIP::Test::Fixtures}               => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Processmanagement::Processes qw{ get_all_job_ids };
 
-diag(   q{Test get_all_job_ids from Processes.pm v}
-      . $MIP::Processmanagement::Processes::VERSION
+diag(   q{Test get_all_job_ids from Processes.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

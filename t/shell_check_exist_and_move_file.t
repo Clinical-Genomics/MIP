@@ -29,7 +29,6 @@ use MIP::Script::Utils qw{ help };
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.0.0;
 
 ## Constants
 Readonly my $COMMA   => q{,};
@@ -49,7 +48,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -88,8 +87,7 @@ BEGIN {
 use MIP::Language::Shell qw{ check_exist_and_move_file };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test check_exist_and_move_file from Shell.pm v}
-      . $MIP::Language::Shell::VERSION
+diag(   q{Test check_exist_and_move_file from Shell.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
