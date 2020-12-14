@@ -29,7 +29,7 @@ BEGIN {
       MODULE:
         foreach my $module ( @{$modules_ref} ) {
 
-  # Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
+            # Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
             $module =~ s/::/\//gxms;
 
             # Add perl module ending for the same reason
@@ -99,13 +99,13 @@ use Test::More;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
-use MIP::Constants qw{ $EMPTY_STR $NEWLINE $SPACE };
+use MIP::Constants qw{ $EMPTY_STR $MIP_VERSION $NEWLINE $SPACE };
 use MIP::Environment::Child_process qw{ child_process };
 
 our $USAGE = build_usage( {} );
 
-my $conda_path    = catdir( dirname($Bin), qw{ t data modules miniconda} );
-my $reference_dir = catdir( dirname($Bin), qw{ t data mip_install_test } );
+my $conda_path       = catdir( dirname($Bin), qw{ t data modules miniconda} );
+my $reference_dir    = catdir( dirname($Bin), qw{ t data mip_install_test } );
 my $log_file_path    = catfile( cwd(), qw{mip_install_test.log} );
 my $environment_name = q{mip_install_test};
 my $verbose          = 1;
@@ -119,7 +119,7 @@ GetOptions(
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        print {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
+        print {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $MIP_VERSION, $NEWLINE;
         exit;
     },    #Display version number
   )
@@ -133,8 +133,7 @@ GetOptions(
     )
   );
 
-ok( catfile( dirname($Bin), qw{ lib MIP Cli Mip Install.pm } ),
-    q{Locating install script} );
+ok( catfile( dirname($Bin), qw{ lib MIP Cli Mip Install.pm } ), q{Locating install script} );
 
 ## Test execution of install script
 my $cmds_ref = [
