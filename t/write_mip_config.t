@@ -23,17 +23,7 @@ use Test::Trap;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 BEGIN {
 
@@ -44,7 +34,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Config}         => [qw{ write_mip_config }],
         q{MIP::Io::Read}       => [qw{ read_from_file }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -53,8 +43,7 @@ BEGIN {
 use MIP::Config qw{ write_mip_config };
 use MIP::Io::Read qw{ read_from_file };
 
-diag(   q{Test write_mip_config from Config.pm v}
-      . $MIP::Config::VERSION
+diag(   q{Test write_mip_config from Config.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

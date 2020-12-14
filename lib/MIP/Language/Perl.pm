@@ -23,9 +23,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.16;
-
     our @EXPORT_OK =
       qw{ check_modules_existance get_cpan_file_modules perl_base perl_nae_oneliners };
 }

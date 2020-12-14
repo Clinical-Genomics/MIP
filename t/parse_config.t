@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,8 +32,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Config}         => [qw{ parse_config }],
         q{MIP::Io::Read}       => [qw{ read_from_file }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -51,8 +40,7 @@ BEGIN {
 use MIP::Config qw{ parse_config };
 use MIP::Io::Read qw{ read_from_file };
 
-diag(   q{Test parse_config from Config.pm v}
-      . $MIP::Config::VERSION
+diag(   q{Test parse_config from Config.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

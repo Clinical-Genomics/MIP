@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,7 +32,6 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Gffcompare} => [qw{ gffcompare }],
-        q{MIP::Test::Fixtures}      => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -50,8 +39,7 @@ BEGIN {
 
 use MIP::Program::Gffcompare qw{ gffcompare };
 
-diag(   q{Test gffcompare from Gffcompare.pm v}
-      . $MIP::Program::Gffcompare::VERSION
+diag(   q{Test gffcompare from Gffcompare.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

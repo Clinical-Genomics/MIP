@@ -25,9 +25,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.27;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ analysis_mip_vcfparser analysis_mip_vcfparser_panel analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };

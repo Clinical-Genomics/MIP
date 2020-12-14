@@ -22,17 +22,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $BACKWARD_SLASH $COLON $COMMA $DOUBLE_QUOTE $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,16 +32,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Set::Parameter} => [qw{ set_container_bind_paths }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Set::Parameter qw{ set_container_bind_paths };
 
-diag(   q{Test set_container_bind_paths from Parameter.pm v}
-      . $MIP::Set::Parameter::VERSION
+diag(   q{Test set_container_bind_paths from Parameter.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -23,17 +23,7 @@ use Test::Trap;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures
-  qw{ test_add_io_for_recipe test_constants test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+  qw{ test_add_io_for_recipe test_constants test_log test_mip_hashes };
 
 BEGIN {
 
@@ -43,7 +33,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Parse::Reference} => [qw{ parse_reference_for_vt }],
-        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -51,8 +41,7 @@ BEGIN {
 
 use MIP::Parse::Reference qw{ parse_reference_for_vt };
 
-diag(   q{Test parse_reference_for_vt from Reference.pm v}
-      . $MIP::Parse::Reference::VERSION
+diag(   q{Test parse_reference_for_vt from Reference.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

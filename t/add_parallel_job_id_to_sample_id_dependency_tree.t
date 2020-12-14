@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE $UNDERSCORE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,8 +31,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Processmanagement::Processes} =>
           [qw{ add_parallel_job_id_to_sample_id_dependency_tree }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -50,8 +39,7 @@ BEGIN {
 use MIP::Processmanagement::Processes
   qw{add_parallel_job_id_to_sample_id_dependency_tree};
 
-diag(   q{Test add_parallel_job_id_to_sample_id_dependency_tree from Processes.pm v}
-      . $MIP::Processmanagement::Processes::VERSION
+diag(   q{Test add_parallel_job_id_to_sample_id_dependency_tree from Processes.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

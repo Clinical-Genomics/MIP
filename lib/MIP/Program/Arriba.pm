@@ -23,8 +23,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    our $VERSION = 1.01;
-
     our @EXPORT_OK = qw{ arriba draw_fusions };
 }
 

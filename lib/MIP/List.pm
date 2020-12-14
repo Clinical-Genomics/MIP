@@ -17,9 +17,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.01;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ check_allowed_array_values check_element_exist_hash_of_array get_splitted_lists };

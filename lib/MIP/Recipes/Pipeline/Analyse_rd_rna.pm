@@ -21,9 +21,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.40;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_rna pipeline_analyse_rd_rna };
 }

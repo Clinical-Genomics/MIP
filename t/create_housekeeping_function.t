@@ -23,17 +23,10 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
+
 
 my $VERBOSE = 0;
-our $VERSION = 1.03;
 
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -46,8 +39,7 @@ BEGIN {
         q{MIP::Program::Gnu::Bash}         => [qw{ gnu_set }],
         q{MIP::Program::Gnu::Coreutils}    => [qw{ gnu_mkdir }],
         q{MIP::Language::Shell} => [qw{ build_shebang create_housekeeping_function }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -57,8 +49,7 @@ use MIP::Program::Gnu::Bash qw{ gnu_set };
 use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Language::Shell qw{ build_shebang create_housekeeping_function };
 
-diag(   q{Test create_housekeeping_function from Shell.pm v}
-      . $MIP::Language::Shell::VERSION
+diag(   q{Test create_housekeeping_function from Shell.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

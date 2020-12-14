@@ -20,17 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $COMMA => q{,};
@@ -44,16 +34,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Cluster}        => [qw{ get_core_number }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Cluster qw{ get_core_number };
 
-diag(   q{Test get_core_number from Cluster.pm v}
-      . $MIP::Cluster::VERSION
+diag(   q{Test get_core_number from Cluster.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SINGLE_QUOTE $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,16 +32,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Language::Awk}  => [qw{ awk }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Language::Awk qw{ awk };
 
-diag(   q{Test awk from Awk.pm v}
-      . $MIP::Language::Awk::VERSION
+diag(   q{Test awk from Awk.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

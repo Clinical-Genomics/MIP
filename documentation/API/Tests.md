@@ -53,8 +53,7 @@ use MIP::Program::Conda qw{conda_install};
 #### Diagnose string
 Change:
 ```Perl
-diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
-      . $MIP::PATH::TO::MODULE::VERSION
+diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -64,8 +63,7 @@ diag(   q{Test SUB_ROUTINE from MODULE_NAME.pm v}
 ```
 To:
 ```Perl
-diag(   q{Test conda_install from Conda.pm v}
-      . $MIP::Program::Conda::VERSION
+diag(   q{Test conda_install from Conda.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

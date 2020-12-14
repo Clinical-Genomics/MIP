@@ -16,21 +16,12 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,16 +31,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Sample_info}    => [qw{ set_no_dry_run_parameters }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Sample_info qw{ set_no_dry_run_parameters };
 
-diag(   q{Test set_no_dry_run_parameters from Sample_info.pm v}
-      . $MIP::Sample_info::VERSION
+diag(   q{Test set_no_dry_run_parameters from Sample_info.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -57,26 +46,27 @@ diag(   q{Test set_no_dry_run_parameters from Sample_info.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given dry run
-my $analysis_date = q{1999};
 
+## Given dry run
+Readonly my $ANALYSIS_DATE => 1999;
+Readonly my $MIP_VERSION => 1;
 my %active_parameter = ( dry_run_all => 1, );
 
 my %dry_run_info;
 
 my %no_dry_run_info = (
     analysisrunstatus => q{not_finished},
-    analysis_date     => $analysis_date,
-    mip_version       => $VERSION,
+    analysis_date     => $ANALYSIS_DATE,
+    mip_version       => $MIP_VERSION,
 );
 
 my %sample_info;
 
 set_no_dry_run_parameters(
     {
+        analysis_date    => $ANALYSIS_DATE,
         is_dry_run_all   => $active_parameter{dry_run_all},
-        analysis_date    => $analysis_date,
-        mip_version      => $VERSION,
+        mip_version      => $MIP_VERSION,
         sample_info_href => \%sample_info,
     }
 );
@@ -89,9 +79,9 @@ $active_parameter{dry_run_all} = 0;
 
 set_no_dry_run_parameters(
     {
+        analysis_date    => $ANALYSIS_DATE,
         is_dry_run_all   => $active_parameter{dry_run_all},
-        analysis_date    => $analysis_date,
-        mip_version      => $VERSION,
+        mip_version      => $MIP_VERSION,
         sample_info_href => \%sample_info,
     }
 );

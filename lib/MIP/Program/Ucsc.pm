@@ -23,9 +23,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.01;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ ucsc_bed_to_big_bed ucsc_gtf_to_genepred ucsc_wig_to_big_wig };
 }

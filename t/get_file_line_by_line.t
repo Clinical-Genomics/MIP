@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,16 +31,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::File::Path}     => [qw{ get_file_line_by_line }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::File::Path qw{ get_file_line_by_line };
 
-diag(   q{Test get_file_line_by_line from Path.pm v}
-      . $MIP::File::Path::VERSION
+diag(   q{Test get_file_line_by_line from Path.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

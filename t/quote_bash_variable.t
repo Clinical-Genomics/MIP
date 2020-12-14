@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,16 +30,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Language::Shell} => [qw{ quote_bash_variable }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Language::Shell qw{ quote_bash_variable };
 
-diag(   q{Test quote_bash_variable from Shell.pm v}
-      . $MIP::Language::Shell::VERSION
+diag(   q{Test quote_bash_variable from Shell.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -24,15 +24,13 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $NEWLINE $SPACE };
+use MIP::Constants qw{ $MIP_VERSION $NEWLINE $SPACE };
 use MIP::Environment::Child_process qw{ child_process };
 use MIP::Script::Utils qw{ help };
 
 our $USAGE = build_usage( {} );
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
-
 ## Set paths
 my $conda_path       = catdir( dirname($Bin), qw{ t data modules miniconda} );
 my $config_files_ref = [
@@ -56,7 +54,7 @@ GetOptions(
     ## Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $MIP_VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,

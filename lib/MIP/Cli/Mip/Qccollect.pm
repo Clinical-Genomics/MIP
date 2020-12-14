@@ -19,8 +19,6 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 ## MIPs lib/
 use MIP::Constants qw{ $NEWLINE };
 
-our $VERSION = 1.02;
-
 command_short_description(q{MIP qccollect command});
 
 command_long_description(q{Entry point for collecting MIP QC metrics});

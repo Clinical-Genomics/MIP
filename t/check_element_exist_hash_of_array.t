@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,16 +30,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::List}           => [qw{ check_element_exist_hash_of_array }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::List qw{ check_element_exist_hash_of_array };
 
-diag(   q{Test check_element_exist_hash_of_array from List.pm v}
-      . $MIP::List::VERSION
+diag(   q{Test check_element_exist_hash_of_array from List.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

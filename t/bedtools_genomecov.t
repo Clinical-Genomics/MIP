@@ -22,11 +22,9 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
+
 
 my $VERBOSE = 1;
-our $VERSION = 1.00;
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -35,8 +33,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Bedtools} => [qw{ bedtools_genomecov }],
-        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -44,8 +41,7 @@ BEGIN {
 use MIP::Program::Bedtools qw{ bedtools_genomecov };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bedtools_genomecov from Bedtools.pm v}
-      . $MIP::Program::Bedtools::VERSION
+diag(   q{Test bedtools_genomecov from Bedtools.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

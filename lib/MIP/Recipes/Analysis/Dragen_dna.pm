@@ -24,9 +24,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.06;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_dragen_dna_align_vc analysis_dragen_dna_joint_calling };
 

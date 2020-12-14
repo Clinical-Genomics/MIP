@@ -23,17 +23,7 @@ use Test::Trap;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Io::Read qw{ read_from_file };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -44,16 +34,14 @@ BEGIN {
     my %perl_module = (
         q{MIP::Config}         => [qw{ check_cmd_config_vs_definition_file }],
         q{MIP::Io::Read}       => [qw{ read_from_file }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Config qw{ check_cmd_config_vs_definition_file };
 
-diag(   q{Test check_cmd_config_vs_definition_file from Config.pm v}
-      . $MIP::Config::VERSION
+diag(   q{Test check_cmd_config_vs_definition_file from Config.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

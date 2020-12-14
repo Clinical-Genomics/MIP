@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_mip_hashes test_log };
 
 BEGIN {
 
@@ -41,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Processmanagement::Slurm_processes} => [qw{ submit_slurm_recipe }],
-        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -49,8 +39,7 @@ BEGIN {
 
 use MIP::Processmanagement::Slurm_processes qw{ submit_slurm_recipe };
 
-diag(   q{Test submit_slurm_recipe from Slurm_processes.pm v}
-      . $MIP::Processmanagement::Slurm_processes::VERSION
+diag(   q{Test submit_slurm_recipe from Slurm_processes.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

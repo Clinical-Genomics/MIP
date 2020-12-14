@@ -21,17 +21,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes };
 
 BEGIN {
 
@@ -41,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Rtg_vcfeval} => [qw{ analysis_rtg_vcfeval }],
-        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -49,8 +39,7 @@ BEGIN {
 
 use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval };
 
-diag(   q{Test analysis_rtg_vcfeval from Rtg_vcfeval.pm v}
-      . $MIP::Recipes::Analysis::Rtg_vcfeval::VERSION
+diag(   q{Test analysis_rtg_vcfeval from Rtg_vcfeval.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

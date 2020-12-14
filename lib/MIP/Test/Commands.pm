@@ -32,9 +32,6 @@ BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
-    # Set the version for version checking
-    our $VERSION = 1.07;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_call test_command test_function };
 }

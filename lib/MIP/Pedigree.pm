@@ -26,9 +26,6 @@ BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
-    # Set the version for version checking
-    our $VERSION = 1.24;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_founder_id

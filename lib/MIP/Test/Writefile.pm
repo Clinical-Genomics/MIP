@@ -23,9 +23,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.06;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ test_write_to_file write_toml_config };
 }

@@ -20,17 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 ## Constants
 Readonly my $COMMA => q{,};
@@ -44,7 +34,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Log::MIP_log4perl} => [qw{ retrieve_log }],
-        q{MIP::Test::Fixtures}    => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures}    => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -52,8 +42,7 @@ BEGIN {
 
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
 
-diag(   q{Test retrieve_log from MIP_log4perl.pm v}
-      . $MIP::Log::MIP_log4perl::VERSION
+diag(   q{Test retrieve_log from MIP_log4perl.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

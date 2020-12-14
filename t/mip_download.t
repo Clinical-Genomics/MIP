@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,8 +30,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Mip}   => [qw{ mip_download }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -49,8 +38,7 @@ BEGIN {
 use MIP::Program::Mip qw{ mip_download };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test mip_download from Mip.pm v}
-      . $MIP::Program::Mip::VERSION
+diag(   q{Test mip_download from Mip.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

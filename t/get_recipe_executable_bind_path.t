@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $EMPTY_STR $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,16 +30,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Environment::Container} => [qw{ get_recipe_executable_bind_path }],
-        q{MIP::Test::Fixtures}         => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Environment::Container qw{ get_recipe_executable_bind_path };
 
-diag(   q{Test get_recipe_executable_bind_path from Container.pm v}
-      . $MIP::Environment::Container::VERSION
+diag(   q{Test get_recipe_executable_bind_path from Container.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

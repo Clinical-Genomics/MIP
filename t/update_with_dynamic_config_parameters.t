@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,16 +31,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Update::Parameters} => [qw{ update_with_dynamic_config_parameters }],
-        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Update::Parameters qw{ update_with_dynamic_config_parameters };
 
-diag(   q{Test update_with_dynamic_config_parameters from Update::Parameters.pm v}
-      . $MIP::Update::Parameters::VERSION
+diag(   q{Test update_with_dynamic_config_parameters from Update::Parameters.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -24,17 +24,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.07;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 ## Constants
 Readonly my $READ_LENGTH => 151;
@@ -47,7 +37,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Sample_info}    => [qw{ set_infile_info }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -57,8 +47,7 @@ use MIP::Fastq qw{ define_mip_fastq_file_features };
 use MIP::File_info qw{ get_sample_file_attribute };
 use MIP::Sample_info qw{ set_infile_info };
 
-diag(   q{Test set_infile_info from Sample_info.pm v}
-      . $MIP::Sample_info::VERSION
+diag(   q{Test set_infile_info from Sample_info.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.06;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $MAXBND        => 5000;
@@ -47,7 +37,6 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Vcf2cytosure} => [qw{ vcf2cytosure_convert }],
-        q{MIP::Test::Fixtures}        => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -55,8 +44,7 @@ BEGIN {
 
 use MIP::Program::Vcf2cytosure qw{ vcf2cytosure_convert };
 
-diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm v}
-      . $MIP::Program::Vcf2cytosure::VERSION
+diag(   q{Test vcf2cytosure_convert from Vcf2cytosure.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

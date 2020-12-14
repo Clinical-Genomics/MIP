@@ -24,9 +24,6 @@ BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
-    # Set the version for version checking
-    our $VERSION = 1.07;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ gnu_cd gnu_export gnu_set gnu_trap gnu_ulimit gnu_unset gnu_wait };
