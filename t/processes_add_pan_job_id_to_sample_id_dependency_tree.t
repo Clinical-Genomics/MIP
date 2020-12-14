@@ -1,89 +1,49 @@
-#!/usr/bin/env perl
+#! /usr/bin/env perl
 
-use Modern::Perl qw{ 2018 };
-use warnings qw{FATAL utf8};
-use autodie;
-use 5.026;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
-
-use FindBin qw{$Bin};    #Find directory of script
-use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catdir};
-use Getopt::Long;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
-use Readonly;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw{help};
-
-our $USAGE = build_usage( {} );
-
-##Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
-
-my $VERBOSE = 1;
-
-###User Options
-GetOptions(
-    'h|help' => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },    #Display help text
-    'v|version' => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
-        exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE $UNDERSCORE };
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
+## Modules with import
+    my %perl_module = (
+        q{MIP::Processmanagement::Processes} => [qw{ add_pan_job_id_to_sample_id_dependency_tree }],
 
-    ## Modules with import
-    my %perl_module;
+    );
 
-    $perl_module{'MIP::Script::Utils'} = [qw{help}];
-
-  MODULES:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load } . $module;
-    }
-
-    ## Modules
-    my @modules = ('MIP::Processmanagement::Processes');
-
-  MODULES:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Processmanagement::Processes qw{add_pan_job_id_to_sample_id_dependency_tree};
+use MIP::Processmanagement::Processes qw{ add_pan_job_id_to_sample_id_dependency_tree };
 
-diag(
-"Test add_pan_job_id_to_sample_id_dependency_tree $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag(   q{Test add_pan_job_id_to_sample_id_dependency_tree from Processes.pm}
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
 my $sample_id           = q{sample2};
@@ -106,14 +66,13 @@ my $pan_chain_key = $case_id_chain_key . $UNDERSCORE . $sample_id_chain_key;
 
 add_pan_job_id_to_sample_id_dependency_tree(
     {
-        job_id_href         => \%job_id,
         case_id_chain_key   => $case_id_chain_key,
+        job_id_href         => \%job_id,
         sample_id_chain_key => $sample_id_chain_key,
     }
 );
 
-my $no_pan_push_result = join $SPACE,
-  @{ $job_id{$case_id_chain_key}{$sample_id_chain_key} };
+my $no_pan_push_result = join $SPACE, @{ $job_id{$case_id_chain_key}{$sample_id_chain_key} };
 is( $no_pan_push_result, q{job_id_3}, q{No pan job_id} );
 
 ## Add previous pan job
@@ -121,8 +80,8 @@ $job_id{$case_id_chain_key}{$pan_chain_key} = [qw{job_id_0 job_id_1}];
 
 add_pan_job_id_to_sample_id_dependency_tree(
     {
-        job_id_href         => \%job_id,
         case_id_chain_key   => $case_id_chain_key,
+        job_id_href         => \%job_id,
         sample_id_chain_key => $sample_id_chain_key,
     }
 );
@@ -131,39 +90,3 @@ my $pan_push_result = join $SPACE, @{ $job_id{$case_id_chain_key}{$sample_id_cha
 is( $pan_push_result, q{job_id_3 job_id_0 job_id_1}, q{Pushed pan job_id} );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}
