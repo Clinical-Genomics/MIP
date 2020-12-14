@@ -23,7 +23,7 @@ use autodie qw{open close :all};
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $NEWLINE $SPACE };
+use MIP::Constants qw{ $MIP_VERSION $NEWLINE $SPACE };
 use MIP::Environment::Child_process qw{ child_process };
 use MIP::Script::Utils qw{ help };
 use MIP::Test::Writefile qw{ write_toml_config };
@@ -34,15 +34,14 @@ my $VERBOSE = 1;
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data} );
-my $config_file = catfile( dirname($Bin), qw{ templates mip_rd_dna_panel_config.yaml } );
+my $config_file           = catfile( dirname($Bin), qw{ templates mip_rd_dna_panel_config.yaml } );
 my $mip_install_config =
   catfile( dirname($Bin), qw{ t data test_data miptest_install_config.yaml } );
 my $mip_path            = catfile( dirname($Bin), q{mip} );
 my $test_reference_path = catdir( $cluster_constant_path, q{references} );
 my $toml_template_path =
   catfile( $test_reference_path, q{grch37_vcfanno_config_template-v1.0-.toml} );
-my $toml_config_path =
-  catfile( $test_reference_path, q{grch37_vcfanno_config-v1.0-.toml} );
+my $toml_config_path = catfile( $test_reference_path, q{grch37_vcfanno_config-v1.0-.toml} );
 
 ### User Options
 GetOptions(
@@ -59,7 +58,7 @@ GetOptions(
     ## Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $MIP_VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -100,17 +99,11 @@ my $cmds_ref = [
     q{--cluster_constant_path},
     $cluster_constant_path,
     q{--ifd},
-    catfile(
-        $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A1 fastq=ADM1059A1 }
-    ),
+    catfile( $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A1 fastq=ADM1059A1 } ),
     q{--ifd},
-    catfile(
-        $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A2 fastq=ADM1059A2 }
-    ),
+    catfile( $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A2 fastq=ADM1059A2 } ),
     q{--ifd},
-    catfile(
-        $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A3 fastq=ADM1059A3 }
-    ),
+    catfile( $cluster_constant_path, qw{ 643594-miptest test_data ADM1059A3 fastq=ADM1059A3 } ),
     qw{ --dra --vb },
     q{--vcfanno_config},
     $toml_config_path,

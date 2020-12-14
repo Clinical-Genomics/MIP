@@ -25,7 +25,7 @@ use Readonly;
 
 ##MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $NEWLINE $SEMICOLON $SPACE $TAB };
+use MIP::Constants qw{ $COMMA $MIP_VERSION $NEWLINE $SEMICOLON $SPACE $TAB };
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Language::Perl qw{ check_modules_existance };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
@@ -74,7 +74,7 @@ GetOptions(
 
     # Display version number
     q{v|version} => sub {
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $MIP_VERSION . $NEWLINE;
         exit;
     },
   )
@@ -143,7 +143,7 @@ if ( $infile =~ /.selected.vcf/sxm ) {
         ## Reads a file containg features to be annotated using range queries
         read_range_file(
             {
-                infile_path => catfile( $active_parameter{vcfparser_select_file} ),
+                infile_path        => catfile( $active_parameter{vcfparser_select_file} ),
                 range_coulumns_ref =>
                   \@{ $active_parameter{vcfparser_select_feature_annotation_columns} },
                 range_file_key      => q{select_file},
@@ -162,7 +162,7 @@ else {
         ## Reads a file containg features to be annotated using range queries
         read_range_file(
             {
-                infile_path => catfile( $active_parameter{vcfparser_range_feature_file} ),
+                infile_path        => catfile( $active_parameter{vcfparser_range_feature_file} ),
                 range_coulumns_ref =>
                   \@{ $active_parameter{vcfparser_range_feature_annotation_columns} },
                 range_file_key      => q{range_file},
@@ -251,8 +251,7 @@ sub test_modules {
     ## Strip the last part of directory
     use File::Basename qw{ dirname };
 
-    ok( dirname($Bin),
-        q{File::Basename qw{ dirname }: Strip the last part of directory} );
+    ok( dirname($Bin), q{File::Basename qw{ dirname }: Strip the last part of directory} );
 
     use File::Spec::Functions qw{ catdir };
 
@@ -294,7 +293,7 @@ sub test_modules {
     push @ARGV, qw{ -verbose 2 };
     my $verbose = 1;
     ok( GetOptions( q{verbose:n} => \$verbose ), q{Getopt::Long: Get options call} );
-    ok( $verbose == 2, q{Getopt::Long: Get options modified} );
+    ok( $verbose == 2,                           q{Getopt::Long: Get options modified} );
 
     return;
 }
@@ -369,8 +368,7 @@ sub read_infile_vcf {
 
     ## Read file
     open my $filehandle, q{<}, $infile_vcf
-      or
-      $log->logdie( q{Cannot open} . $SPACE . $infile_vcf . q{:} . $OS_ERROR, $NEWLINE );
+      or $log->logdie( q{Cannot open} . $SPACE . $infile_vcf . q{:} . $OS_ERROR, $NEWLINE );
 
   LINE:
     while (<$filehandle>) {
@@ -467,8 +465,7 @@ sub read_infile_vcf {
         }
 
         ## VCF body lines
-        my %vcf_record =
-          parse_vcf_line( { vcf_format_columns_ref => \@vcf_format_columns, } );
+        my %vcf_record = parse_vcf_line( { vcf_format_columns_ref => \@vcf_format_columns, } );
 
         ## Count incedence of keys
       INFO_KEY:
@@ -506,8 +503,7 @@ sub read_infile_vcf {
     close $filehandle;
 
     ## Check keys found in INFO field
-    $log->info( q{Testing vcf INFO fields and presence in header: } . $infile_vcf,
-        $NEWLINE x 2 );
+    $log->info( q{Testing vcf INFO fields and presence in header: } . $infile_vcf, $NEWLINE x 2 );
 
   INFO_KEY:
     foreach my $info_key ( keys %vcf_info_key ) {
@@ -631,8 +627,7 @@ sub read_sv_infile_vcf {
 
     ## Read file
     open $filehandle, q{<}, $infile_vcf
-      or
-      $log->logdie( q{Cannot open} . $SPACE . $infile_vcf . q{:} . $OS_ERROR, $NEWLINE );
+      or $log->logdie( q{Cannot open} . $SPACE . $infile_vcf . q{:} . $OS_ERROR, $NEWLINE );
   LINE:
     while (<$filehandle>) {
 
@@ -735,8 +730,7 @@ sub read_sv_infile_vcf {
         }
 
         ## VCF body lines
-        my %vcf_record =
-          parse_vcf_line( { vcf_format_columns_ref => \@vcf_format_columns, } );
+        my %vcf_record = parse_vcf_line( { vcf_format_columns_ref => \@vcf_format_columns, } );
 
         ## Count incedence of keys
       INFO_KEY:
@@ -774,8 +768,7 @@ sub read_sv_infile_vcf {
     close $filehandle;
 
     ## Check keys found in INFO field
-    $log->info( q{Testing vcf INFO fields and presence in header: } . $infile_vcf,
-        $NEWLINE x 2 );
+    $log->info( q{Testing vcf INFO fields and presence in header: } . $infile_vcf, $NEWLINE x 2 );
 
   INFO_KEY:
     foreach my $info_key ( keys %vcf_info_key ) {
@@ -941,8 +934,7 @@ sub read_range_file {
 
     ## Read file
     open $filehandle, q{<}, $infile_path
-      or
-      $log->logdie( q{Cannot open} . $SPACE . $infile_path . q{:} . $OS_ERROR, $NEWLINE );
+      or $log->logdie( q{Cannot open} . $SPACE . $infile_path . q{:} . $OS_ERROR, $NEWLINE );
 
   LINE:
     while (<$filehandle>) {
@@ -966,8 +958,7 @@ sub read_range_file {
           COLUMNS:
             for my $extract_columns_counter ( 0 .. $MAX_RANGE_COLUMNS ) {
 
-                my $header_key_ref =
-                  \$headers[ $range_coulumns_ref->[$extract_columns_counter] ];
+                my $header_key_ref = \$headers[ $range_coulumns_ref->[$extract_columns_counter] ];
 
                 ## Column position in supplied range input file
                 $vcfparser_data_href->{ ${$header_key_ref} } = $extract_columns_counter;
@@ -976,8 +967,7 @@ sub read_range_file {
         }
     }
     close $filehandle;
-    $log->info( q{Finished reading } . $range_file_key . q{ file: } . $infile_path,
-        $NEWLINE );
+    $log->info( q{Finished reading } . $range_file_key . q{ file: } . $infile_path, $NEWLINE );
     return;
 }
 
@@ -1188,8 +1178,7 @@ sub _test_sv_combinevariantcallsets_in_vcf_header {
 
     return if ( not $sv_vt_decompose_mode );
 
-    ok( exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC},
-        q{VTDecompose key: OLD_MULTIALLELIC} );
+    ok( exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC}, q{VTDecompose key: OLD_MULTIALLELIC} );
 
     return;
 }
@@ -1254,8 +1243,7 @@ sub _test_vt_in_vcf_header {
     }
     if ($vt_normalize_mode) {
 
-        ok( exists $vcf_header_href->{INFO}{OLD_VARIANT},
-            q{VTNormalize key: OLD_VARIANT} );
+        ok( exists $vcf_header_href->{INFO}{OLD_VARIANT}, q{VTNormalize key: OLD_VARIANT} );
     }
     return;
 }
@@ -1388,8 +1376,7 @@ sub _test_vcfparser_in_vcf_header {
   VCFPARSER_KEY:
     for my $vcfparser_key ( keys %{$vcfparser_data_href} ) {
 
-        ok( defined $vcf_header_href->{INFO}{$vcfparser_key},
-            q{Vcfparser key: } . $vcfparser_key );
+        ok( defined $vcf_header_href->{INFO}{$vcfparser_key}, q{Vcfparser key: } . $vcfparser_key );
     }
 
     ## Keys from vcfparser.pl that are dynamically created from parsing the data

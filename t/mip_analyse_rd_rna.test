@@ -23,7 +23,7 @@ use autodie qw{open close :all};
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $EMPTY_STR $NEWLINE $SPACE };
+use MIP::Constants qw{ $EMPTY_STR $MIP_VERSION $NEWLINE $SPACE };
 use MIP::Environment::Child_process qw{ child_process };
 use MIP::Script::Utils qw{ help };
 
@@ -33,12 +33,12 @@ my $VERBOSE = 1;
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data } );
-my $config_file = catfile( dirname($Bin), qw{ templates mip_rd_rna_config.yaml } );
+my $config_file           = catfile( dirname($Bin), qw{ templates mip_rd_rna_config.yaml } );
 my $mip_install_config =
   catfile( dirname($Bin), qw{ t data test_data miptest_install_config.yaml } );
-my $mip_path     = catfile( dirname($Bin), q{mip} );
-my $dna_vcf_file = catfile( dirname($Bin),
-    qw{ t data test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf } );
+my $mip_path = catfile( dirname($Bin), q{mip} );
+my $dna_vcf_file =
+  catfile( dirname($Bin), qw{ t data test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf } );
 
 ### User Options
 GetOptions(
@@ -55,7 +55,7 @@ GetOptions(
     ## Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $MIP_VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -87,17 +87,11 @@ my @base_cmds = (
     q{--cluster_constant_path},
     $cluster_constant_path,
     q{--ifd},
-    catfile(
-        $cluster_constant_path, qw{ 118-rnatest test_data 118-1-2A fastq=118-1-2A }
-    ),
+    catfile( $cluster_constant_path, qw{ 118-rnatest test_data 118-1-2A fastq=118-1-2A } ),
     q{--ifd},
-    catfile(
-        $cluster_constant_path, qw{ 118-rnatest test_data 118-2-1U fastq=118-2-1U }
-    ),
+    catfile( $cluster_constant_path, qw{ 118-rnatest test_data 118-2-1U fastq=118-2-1U } ),
     q{--ifd},
-    catfile(
-        $cluster_constant_path, qw{ 118-rnatest test_data 118-2-2U fastq=118-2-2U }
-    ),
+    catfile( $cluster_constant_path, qw{ 118-rnatest test_data 118-2-2U fastq=118-2-2U } ),
     qw{--dra --vb },
 );
 
@@ -110,8 +104,8 @@ my %process_return = child_process(
 );
 ok( $process_return{success}, q{Executed mip rd_rna} );
 
-my $qc_sample_info_file = catfile( $cluster_constant_path,
-    qw{ 118-rnatest analysis 118-rnatest_qc_sample_info.yaml } );
+my $qc_sample_info_file =
+  catfile( $cluster_constant_path, qw{ 118-rnatest analysis 118-rnatest_qc_sample_info.yaml } );
 ok( -f $qc_sample_info_file, q{Checking for 118-rnatest_qc_sample_info.yaml} );
 
 ## Clean-up

@@ -1,90 +1,50 @@
-#!/usr/bin/env perl
+#! /usr/bin/env perl
 
-use Modern::Perl qw{ 2018 };
-use warnings qw{FATAL utf8};
-use autodie;
-use 5.026;    #Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
-
-use FindBin qw{$Bin};    #Find directory of script
-use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catdir};
-use Getopt::Long;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
-use Readonly;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
-use lib catdir( dirname($Bin), 'lib' );
-use MIP::Script::Utils qw{help};
-
-our $USAGE = build_usage( {} );
-
-##Constants
-Readonly my $NEWLINE    => qq{\n};
-Readonly my $SPACE      => q{ };
-Readonly my $UNDERSCORE => q{_};
-
-my $VERBOSE = 1;
-
-###User Options
-GetOptions(
-    'h|help' => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },    #Display help text
-    'v|version' => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
-        exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
+use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE $UNDERSCORE };
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
+## Modules with import
+    my %perl_module = (
+        q{MIP::Processmanagement::Processes} =>
+          [qw{ add_parallel_job_ids_to_job_id_dependency_string }],
 
-    ## Modules with import
-    my %perl_module;
+    );
 
-    $perl_module{'MIP::Script::Utils'} = [qw{help}];
-
-  MODULES:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load } . $module;
-    }
-
-    ## Modules
-    my @modules = ('MIP::Processmanagement::Processes');
-
-  MODULES:
-    for my $module (@modules) {
-        require_ok($module) or BAIL_OUT q{Cannot load } . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Processmanagement::Processes
-  qw{add_parallel_job_ids_to_job_id_dependency_string};
+use MIP::Processmanagement::Processes qw{ add_parallel_job_ids_to_job_id_dependency_string };
 
-diag(
-"Test add_parallel_job_ids_to_job_id_dependency_string $MIP::Processmanagement::Processes::VERSION, Perl $^V, $EXECUTABLE_NAME"
-);
+diag(   q{Test add_parallel_job_ids_to_job_id_dependency_string from Processes.pm}
+      . $COMMA
+      . $SPACE . q{Perl}
+      . $SPACE
+      . $PERL_VERSION
+      . $SPACE
+      . $EXECUTABLE_NAME );
 
 ## Base arguments
 my $case_id               = q{case1};
@@ -110,8 +70,8 @@ my %job_id = (
 
 my $no_job_id_string = add_parallel_job_ids_to_job_id_dependency_string(
     {
-        job_id_href       => \%job_id,
         case_id_chain_key => $case_id_chain_key . q{no_parallel},
+        job_id_href       => \%job_id,
     }
 );
 
@@ -119,47 +79,11 @@ is( $no_job_id_string, undef, q{No parallel job_ids} );
 
 my $job_id_string = add_parallel_job_ids_to_job_id_dependency_string(
     {
-        job_id_href       => \%job_id,
         case_id_chain_key => $case_id_chain_key,
+        job_id_href       => \%job_id,
     }
 );
 
 is( $job_id_string, q{:job_id_10:job_id_11}, q{Added parallel job_ids to job id string} );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak qw{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}
