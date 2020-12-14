@@ -146,35 +146,6 @@ sub test_add_io_for_recipe {
     return;
 }
 
-sub build_usage {
-
-## Function  : Build the USAGE instructions
-## Returns   :
-## Arguments : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}
-
 sub test_import {
 
 ## Function : Test modules and imports
@@ -331,16 +302,13 @@ sub test_mip_hashes {
     use MIP::Io::Read qw{ read_from_file };
 
     my %test_hash = (
-        active_parameter =>
-          catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
-        define_parameter => catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
-        dependency_tree_dna =>
-          catfile( $Bin, qw{ data test_data rd_dna_initiation_map.yaml } ),
-        dependency_tree_rna =>
-          catfile( $Bin, qw{ data test_data rd_rna_initiation_map.yaml } ),
+        active_parameter    => catfile( $Bin, qw{ data test_data recipe_active_parameter.yaml } ),
+        define_parameter    => catfile( $Bin, qw{ data test_data define_parameters.yaml } ),
+        dependency_tree_dna => catfile( $Bin, qw{ data test_data rd_dna_initiation_map.yaml } ),
+        dependency_tree_rna => catfile( $Bin, qw{ data test_data rd_rna_initiation_map.yaml } ),
         download_active_parameter =>
           catfile( $Bin, qw{ data test_data download_active_parameters.yaml } ),
-        file_info => catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
+        file_info                => catfile( $Bin, qw{ data test_data recipe_file_info.yaml } ),
         install_active_parameter =>
           catfile( $Bin, qw{ data test_data install_active_parameters.yaml } ),
         io               => catfile( $Bin, qw{ data test_data io.yaml } ),
@@ -349,8 +317,7 @@ sub test_mip_hashes {
         job_id           => catfile( $Bin, qw{ data test_data job_id.yaml } ),
         recipe_parameter => catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
         pedigree         => catfile( $Bin, qw{ data test_data pedigree_wes.yaml } ),
-        qc_sample_info =>
-          catfile( $Bin, qw{ data test_data 643594-miptest_qc_sample_info.yaml } ),
+        qc_sample_info => catfile( $Bin, qw{ data test_data 643594-miptest_qc_sample_info.yaml } ),
     );
 
     my %hash_to_return = read_from_file(
@@ -370,8 +337,8 @@ sub test_mip_hashes {
         $hash_to_return{reference_dir} = catfile( $Bin, qw{ data test_data references } );
 
         ## Adds parameters with temp directory
-        $hash_to_return{outdata_dir}   = catfile( $temp_directory, q{test_data_dir} );
-        $hash_to_return{outscript_dir} = catfile( $temp_directory, q{test_script_dir} );
+        $hash_to_return{outdata_dir}    = catfile( $temp_directory, q{test_data_dir} );
+        $hash_to_return{outscript_dir}  = catfile( $temp_directory, q{test_script_dir} );
         $hash_to_return{temp_directory} = $temp_directory;
     }
     if ( $mip_hash_name eq q{recipe_parameter} ) {
