@@ -337,7 +337,7 @@ sub parse_fastq_for_gender {
         my @bwa_infiles = build_stream_file_cmd( { fastq_files_ref => \@fastq_files, } );
 
         ## Make reference dir available
-        my @command =
+        my @commands =
           ( q{SINGULARITY_BIND} . $EQUALS . $active_parameter_href->{reference_dir} );
 
         ## Build bwa mem command
