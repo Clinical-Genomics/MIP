@@ -55,6 +55,7 @@ CHAIN_ALL:
     - PARALLEL:
       - CHAIN_DEEPVAR:
         - deepvariant
+        - deeptrio
         - glnexus_merge
       - GATK_HAPLOTYPECALLER:
         - gatk_haplotypecaller

@@ -454,6 +454,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Chromograph
       qw{ analysis_chromograph_cov analysis_chromograph_rhoviz analysis_chromograph_upd };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
+    use MIP::Recipes::Analysis::Deeptrio qw { analysis_deeptrio };
     use MIP::Recipes::Analysis::Deepvariant qw { analysis_deepvariant };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
@@ -567,7 +568,8 @@ sub pipeline_analyse_rd_dna {
         ? \&analysis_chromograph_upd
         : undef,                                               # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
-        deepvariant                 => \&analysis_deepvariant,
+        deepvariant                 => $sample_info_href->{has_trio} ? undef : \&analysis_deepvariant,
+        deeptrio                    => $sample_info_href->{has_trio} ? \&analysis_deeptrio : undef,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
