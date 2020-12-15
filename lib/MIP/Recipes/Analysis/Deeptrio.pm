@@ -284,7 +284,7 @@ sub analysis_deeptrio {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile           => \%variable_name_map,
+                infile           => $variable_name_map{output_gvcf_child},
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
@@ -294,7 +294,7 @@ sub analysis_deeptrio {
             {
                 base_command         => $profile_base_command,
                 case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
+                dependency_method    => q{sample_to_case},
                 job_id_chain         => $job_id_chain,
                 job_id_href          => $job_id_href,
                 job_reservation_name => $active_parameter_href->{job_reservation_name},
