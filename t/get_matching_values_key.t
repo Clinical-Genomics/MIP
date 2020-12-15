@@ -21,17 +21,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 BEGIN {
 
@@ -41,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Active_parameter} => [qw{ get_matching_values_key }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -49,8 +39,7 @@ BEGIN {
 
 use MIP::Active_parameter qw{ get_matching_values_key };
 
-diag(   q{Test get_matching_values_key from Active_parameter.pm v}
-      . $MIP::Active_parameter::VERSION
+diag(   q{Test get_matching_values_key from Active_parameter.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

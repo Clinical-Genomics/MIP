@@ -22,17 +22,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw { $COMMA $DOT $SPACE $UNDERSCORE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.20;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 BEGIN {
 
@@ -44,7 +34,7 @@ BEGIN {
         q{MIP::Io::Read} => [qw{ read_from_file }],
         q{MIP::Parameter} =>
           [qw{ get_capture_kit set_custom_default_to_active_parameter }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -53,8 +43,7 @@ BEGIN {
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Parameter qw{ get_capture_kit set_custom_default_to_active_parameter };
 
-diag(   q{Test set_custom_default_to_active_parameter from Parameter.pm v}
-      . $MIP::Parameter::VERSION
+diag(   q{Test set_custom_default_to_active_parameter from Parameter.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -22,17 +22,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $COLON $NEWLINE $SPACE $TAB };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,8 +32,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Workloadmanager::Slurm} => [qw{ slurm_reformat_sacct_output}],
-        q{MIP::Test::Fixtures}         => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -52,8 +41,7 @@ use MIP::Language::Shell qw{ build_shebang };
 use MIP::Program::Gnu::Bash qw{ gnu_set };
 use MIP::Workloadmanager::Slurm qw{ slurm_reformat_sacct_output };
 
-diag(   q{Test slurm_reformat_sacct_output from Slurm.pm v}
-      . $MIP::Workloadmanager::Slurm::VERSION
+diag(   q{Test slurm_reformat_sacct_output from Slurm.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

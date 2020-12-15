@@ -75,9 +75,6 @@ BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
-    # Set the version for version checking
-    our $VERSION = 1.60;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ mip_analyse };
 }

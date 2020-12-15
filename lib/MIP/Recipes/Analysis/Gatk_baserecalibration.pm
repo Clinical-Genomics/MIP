@@ -24,9 +24,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.25;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ analysis_gatk_baserecalibration analysis_gatk_baserecalibration_panel analysis_gatk_baserecalibration_rna };

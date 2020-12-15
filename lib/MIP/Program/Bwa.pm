@@ -23,9 +23,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.07;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ bwa_index bwa_mem bwa_mem2_mem bwa_mem2_index run_bwamem };
 

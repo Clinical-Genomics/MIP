@@ -28,9 +28,6 @@ BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
-    # Set the version for version checking
-    our $VERSION = 1.20;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       build_script_directories_and_paths

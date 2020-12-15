@@ -22,17 +22,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,16 +32,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Sample_info}    => [qw{ get_pedigree_sample_id_attributes }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
-diag(   q{Test get_pedigree_sample_id_attributes from Parameter.pm v}
-      . $MIP::Sample_info::VERSION
+diag(   q{Test get_pedigree_sample_id_attributes from Parameter.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

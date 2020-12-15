@@ -22,18 +22,8 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
+
 use MIP::Test::Writefile qw{ test_write_to_file };
-
-my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $CORE_NR => 8;
@@ -47,8 +37,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Slurm}  => [qw{ slurm_build_sbatch_header }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-        q{MIP::Test::Writefile} => [qw{ test_write_to_file }],
+q{MIP::Test::Writefile} => [qw{ test_write_to_file }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -58,8 +47,7 @@ use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
 
 my $separator = q{\n};
 
-diag(   q{Test slurm_build_sbatch_header from Slurm.pm v}
-      . $MIP::Program::Slurm::VERSION
+diag(   q{Test slurm_build_sbatch_header from Slurm.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

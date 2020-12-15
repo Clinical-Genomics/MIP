@@ -24,18 +24,8 @@ use Test::Trap;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Io::Read qw{ read_from_file };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
+use MIP::Test::Fixtures qw{ test_log };
 use MIP::Update::Parameters qw{ update_with_dynamic_config_parameters };
-
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -45,7 +35,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Vep}            => [qw{ check_vep_plugin }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -53,8 +43,7 @@ BEGIN {
 
 use MIP::Vep qw{ check_vep_plugin };
 
-diag(   q{Test check_vep_plugin from Vep.pm v}
-      . $MIP::Vep::VERSION
+diag(   q{Test check_vep_plugin from Vep.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

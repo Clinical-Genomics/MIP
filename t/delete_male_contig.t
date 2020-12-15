@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 BEGIN {
 
@@ -40,7 +30,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Contigs}        => [qw{ delete_male_contig }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -48,8 +38,7 @@ BEGIN {
 
 use MIP::Contigs qw{ delete_male_contig };
 
-diag(   q{Test delete_male_contig from Contigs.pm v}
-      . $MIP::Contigs::VERSION
+diag(   q{Test delete_male_contig from Contigs.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

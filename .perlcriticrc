@@ -9,6 +9,8 @@ lines = 100
 functions = :builtins
 exclude_functions = print say
 
+[-Perl::Critic::Policy::Modules::RequireVersionVar]
+
 ## Perltidy has already been run with a diffrent slightlty modified rules
 [-CodeLayout::RequireTidyCode]
 

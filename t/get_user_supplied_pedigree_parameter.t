@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $EXPECTED_COVERAGE => 30;
@@ -44,16 +34,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Active_parameter} => [qw{ get_user_supplied_pedigree_parameter }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Active_parameter qw{ get_user_supplied_pedigree_parameter };
 
-diag(   q{Test get_user_supplied_pedigree_parameter from Active_parameter.pm v}
-      . $MIP::Active_parameter::VERSION
+diag(   q{Test get_user_supplied_pedigree_parameter from Active_parameter.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

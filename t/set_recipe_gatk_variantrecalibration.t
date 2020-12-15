@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 BEGIN {
 
@@ -41,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Set::Analysis}  => [qw{ set_recipe_gatk_variantrecalibration }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -50,8 +40,7 @@ BEGIN {
 use MIP::Set::Analysis qw{ set_recipe_gatk_variantrecalibration };
 use MIP::Recipes::Analysis::Gatk_cnnscorevariants qw{ analysis_gatk_cnnscorevariants };
 
-diag(   q{Test set_recipe_gatk_variantrecalibration from Analysis.pm v}
-      . $MIP::Set::Analysis::VERSION
+diag(   q{Test set_recipe_gatk_variantrecalibration from Analysis.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

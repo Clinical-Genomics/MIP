@@ -21,17 +21,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,16 +31,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::File_info}      => [qw{ get_sample_file_attribute }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::File_info qw{ get_sample_file_attribute };
 
-diag(   q{Test get_sample_file_attribute from File_info.pm v}
-      . $MIP::File_info::VERSION
+diag(   q{Test get_sample_file_attribute from File_info.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

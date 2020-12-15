@@ -22,8 +22,6 @@ use MIP::Definition qw{ get_parameter_from_definition_files };
 use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 
-our $VERSION = 1.26;
-
 extends(qw{ MIP::Cli::Mip });
 
 command_short_description(q{MIP install command});

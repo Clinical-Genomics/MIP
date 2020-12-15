@@ -32,7 +32,6 @@ Readonly my $SPACE      => q{ };
 Readonly my $UNDERSCORE => q{_};
 
 my $VERBOSE = 1;
-our $VERSION = q{1.0.0};
 
 ###User Options
 GetOptions(
@@ -47,7 +46,7 @@ GetOptions(
     # Display version number
     'v|version' => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
         exit;
     },
     'vb|verbose' => $VERBOSE,
@@ -89,8 +88,7 @@ BEGIN {
 use MIP::Get::File qw{ get_merged_infile_prefix };
 use MIP::Set::File qw{ set_merged_infile_prefix };
 
-diag(   q{Test get_merged_infile_prefix from File.pm v}
-      . $MIP::Get::File::VERSION
+diag(   q{Test get_merged_infile_prefix from File.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

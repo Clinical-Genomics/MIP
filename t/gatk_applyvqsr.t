@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $TS_FILTER_LEVEL => q{99.0};
@@ -43,16 +33,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Gatk}  => [qw{ gatk_applyvqsr }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Gatk qw{ gatk_applyvqsr };
 
-diag(   q{Test gatk_applyvqsr from Variantcalling::Gatk.pm v}
-      . $MIP::Program::Gatk::VERSION
+diag(   q{Test gatk_applyvqsr from Variantcalling::Gatk.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

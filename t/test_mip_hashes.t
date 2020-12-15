@@ -21,17 +21,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = '1.0.0';
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 ## Constants
 Readonly my $COLON => q{:};
@@ -45,15 +35,14 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module =
-      ( q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }], );
+      ( q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Test::Fixtures qw{ test_mip_hashes };
 
-diag(   q{Test test_mip_hashes from Fixtures.pm v}
-      . $MIP::Test::Fixtures::VERSION
+diag(   q{Test test_mip_hashes from Fixtures.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,7 +31,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Active_parameter} => [qw{ get_user_supplied_pedigree_parameter }],
         q{MIP::Pedigree}         => [qw{ set_active_parameter_pedigree_keys }],
-        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -50,8 +40,7 @@ BEGIN {
 use MIP::Active_parameter qw{ get_user_supplied_pedigree_parameter };
 use MIP::Pedigree qw{ set_active_parameter_pedigree_keys };
 
-diag(   q{Test set_active_parameter_pedigree_keys from Pedigree.pm v}
-      . $MIP::Pedigree::VERSION
+diag(   q{Test set_active_parameter_pedigree_keys from Pedigree.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

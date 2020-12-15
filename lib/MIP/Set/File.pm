@@ -22,9 +22,6 @@ BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
-    # Set the version for version checking
-    our $VERSION = 1.11;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ set_io_files set_merged_infile_prefix };
 }

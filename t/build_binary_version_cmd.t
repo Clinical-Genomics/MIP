@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,16 +31,14 @@ BEGIN {
     my %perl_module = (
         q{MIP::Environment::Executable} =>
           [qw{ build_binary_version_cmd get_executable }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Environment::Executable qw{ build_binary_version_cmd get_executable };
 
-diag(   q{Test build_binary_version_cmd from Executable.pm v}
-      . $MIP::Environment::Executable::VERSION
+diag(   q{Test build_binary_version_cmd from Executable.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

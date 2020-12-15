@@ -20,13 +20,11 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
+use MIP::Constants qw{ $COMMA $MIP_VERSION $NEWLINE $SPACE };
 use MIP::Language::Perl qw{ check_modules_existance };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.17;
-
 our $USAGE = build_usage( {} );
 
 BEGIN {
@@ -101,7 +99,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $MIP_VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -120,7 +118,6 @@ use TAP::Harness;
 use Cwd;
 
 diag(   q{Test mip_core.t version }
-      . $VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -189,14 +186,12 @@ sub test_modules {
     ok( defined $Bin, q{FindBin: Locate directory of script} );
 
     use File::Basename qw{ dirname };
-    ok( dirname($Bin),
-        q{File::Basename qw{ dirname }: Strip the last part of directory} );
+    ok( dirname($Bin), q{File::Basename qw{ dirname }: Strip the last part of directory} );
 
     use File::Spec::Functions qw{ catfile catdir devnull };
     ok( catdir( dirname($Bin), q{t} ),
         q{File::Spec::Functions qw{ catdir }: Concatenate directories} );
-    ok( catfile( $Bin, q{mip_core.t} ),
-        q{File::Spec::Functions qw{ catfile }: Concatenate files} );
+    ok( catfile( $Bin, q{mip_core.t} ), q{File::Spec::Functions qw{ catfile }: Concatenate files} );
     ok(
         catfile( dirname( devnull() ), q{stdout} ),
         q{File::Spec::Functions qw{ devnull }: Use devnull}
@@ -259,7 +254,7 @@ sub test_modules {
 
     my $verbose = 1;
     ok( GetOptions( q{verbose:n} => \$verbose ), q{Getopt::Long: Get options call} );
-    ok( $verbose == 2, q{Getopt::Long: Get options modified} );
+    ok( $verbose == 2,                           q{Getopt::Long: Get options modified} );
 
     ## Check time
     use Time::Piece;
@@ -275,7 +270,7 @@ sub test_modules {
 
     ## Execution of programs
     use IPC::Cmd qw{ can_run run };
-    ok( can_run(q{perl}), q{Can run IPC::Cmd} );
+    ok( can_run(q{perl}),                        q{Can run IPC::Cmd} );
     ok( my $bool = IPC::Cmd->can_capture_buffer, q{IPC::Cmd can capture buffer} );
 
     return;
@@ -346,8 +341,7 @@ sub mip_scripts {
   DIRECTORY:
     foreach my $directory (@mip_directories) {
 
-        is( -e catfile( dirname($Bin), $directory ),
-            1, q{Found MIP sub dir: } . $directory );
+        is( -e catfile( dirname($Bin), $directory ), 1, q{Found MIP sub dir: } . $directory );
     }
   DIRECTORY:
     foreach my $directory ( keys %mip_sub_scripts ) {

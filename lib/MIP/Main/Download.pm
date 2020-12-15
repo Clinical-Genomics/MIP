@@ -48,9 +48,6 @@ use MIP::Recipes::Parse qw{ parse_recipes };
 BEGIN {
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.23;
-
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
 

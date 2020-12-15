@@ -21,18 +21,8 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE $TAB };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
+use MIP::Test::Fixtures qw{ test_log };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
-
-my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,7 +32,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Pedigree}       => [qw{ create_fam_file }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -50,8 +40,7 @@ BEGIN {
 
 use MIP::Pedigree qw{ create_fam_file };
 
-diag(   q{Test create_fam_file from Pedigree.pm v}
-      . $MIP::Pedigree::VERSION
+diag(   q{Test create_fam_file from Pedigree.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

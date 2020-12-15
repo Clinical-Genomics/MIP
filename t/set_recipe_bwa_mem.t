@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -43,8 +33,7 @@ BEGIN {
         q{MIP::Recipes::Analysis::Bwa_mem} =>
           [qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem }],
         q{MIP::Set::Analysis}  => [qw{ set_recipe_bwa_mem }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -53,8 +42,7 @@ use MIP::Set::Analysis qw{ set_recipe_bwa_mem };
 use MIP::Recipes::Analysis::Bwa_mem
   qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
 
-diag(   q{Test set_recipe_bwa_mem from Analysis.pm v}
-      . $MIP::Set::Analysis::VERSION
+diag(   q{Test set_recipe_bwa_mem from Analysis.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

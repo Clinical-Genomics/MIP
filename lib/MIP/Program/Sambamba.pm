@@ -24,9 +24,6 @@ use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 BEGIN {
     require Exporter;
 
-    # Set the version for version checking
-    our $VERSION = 1.05;
-
     # Inherit from Exporter to export functions and variables
     use base qw {Exporter};
 

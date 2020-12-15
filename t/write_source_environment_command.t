@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,16 +30,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Environment::Manager} => [qw{ write_source_environment_command }],
-        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Environment::Manager qw{ write_source_environment_command };
 
-diag(   q{Test write_source_environment_command from Manager.pm v}
-      . $MIP::Environment::Manager::VERSION
+diag(   q{Test write_source_environment_command from Manager.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
