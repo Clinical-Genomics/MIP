@@ -604,9 +604,7 @@ sub has_trio {
       if ( scalar @{ $active_parameter_href->{sample_ids} } < $TRIO_MEMBERS_COUNT );
 
   SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-        use Data::Printer;
-        
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {        
 
         my $mother = get_pedigree_sample_id_attributes(
             {
