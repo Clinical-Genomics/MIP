@@ -133,7 +133,7 @@ sub deeptrio {
     }
 
     if ($bedfile) {
-        push @commands, q{--regions} . $EQUALS . $bedfile;
+        push @commands, q{--regions} . $SPACE . $bedfile;
     }
 
     push @commands,
