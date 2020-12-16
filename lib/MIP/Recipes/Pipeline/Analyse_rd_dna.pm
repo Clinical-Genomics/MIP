@@ -565,8 +565,8 @@ sub pipeline_analyse_rd_dna {
         ? \&analysis_chromograph_upd
         : undef,                                               # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
-        deepvariant                 => $sample_info_href->{has_trio} ? undef : \&analysis_deepvariant,
-        deeptrio                    => $sample_info_href->{has_trio} ? \&analysis_deeptrio : undef,
+        deepvariant                 => $sample_info_href->{has_duo_or_trio} ? undef : \&analysis_deepvariant,
+        deeptrio                    => $sample_info_href->{has_duo_or_trio} ? \&analysis_deeptrio : undef,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,

@@ -34,7 +34,7 @@ sub deeptrio {
 ## Returns  : @commands
 ## Arguments: $bedfile                => Bed file containing the list of regions we want to process
 ##          : $filehandle             => Filehandle to write to
-##          : $iofile_parameters_ref  => Path to input and output files, and sample ids
+##          : $iofile_parameters_href  => Path to input and output files, and sample ids
 ##          : $model_type             => Type of model to use for variant calling. Allowed values WES, WGS, or PACBIO
 ##          : $num_shards             => Number of files the input is split into for the make examples step
 ##          : $referencefile_path     => Path to genome reference
@@ -48,7 +48,7 @@ sub deeptrio {
     ## Flatten argument(s)
     my $bedfile;
     my $filehandle;
-    my $iofile_parameters_ref;
+    my $iofile_parameters_href;
     my $model_type;
     my $num_shards;
     my $referencefile_path;
@@ -66,11 +66,11 @@ sub deeptrio {
         filehandle => {
             store => \$filehandle,
         },
-        iofile_parameters_ref => {
+        iofile_parameters_href => {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$iofile_parameters_ref,
+            store       => \$iofile_parameters_href,
             strict_type => 1,
         },
         model_type => {
@@ -117,19 +117,19 @@ sub deeptrio {
     push @commands, q{--model_type} . $SPACE . $model_type;
     push @commands, q{--ref} . $SPACE . $referencefile_path;
     push @commands, q{--num_shards} . $SPACE . $num_shards;
-    push @commands, q{--reads_child} . $SPACE . $iofile_parameters_ref->{reads_child};
-    push @commands, q{--sample_name_child} . $SPACE . $iofile_parameters_ref->{sample_name_child};
-    push @commands, q{--output_gvcf_child} . $SPACE . $iofile_parameters_ref->{output_gvcf_child};
-    push @commands, q{--output_vcf_child} . $SPACE . $iofile_parameters_ref->{output_vcf_child};
-    push @commands, q{--reads_parent1} . $SPACE . $iofile_parameters_ref->{reads_parent1};
-    push @commands, q{--sample_name_parent1} . $SPACE . $iofile_parameters_ref->{sample_name_parent1};
-    push @commands, q{--output_gvcf_parent1} . $SPACE . $iofile_parameters_ref->{output_gvcf_parent1};
-    push @commands, q{--output_vcf_parent1} . $SPACE . $iofile_parameters_ref->{output_vcf_parent1};
-    if ($iofile_parameters_ref->{sample_name_parent2}){
-        push @commands, q{--reads_parent2} . $SPACE . $iofile_parameters_ref->{reads_parent2};
-        push @commands, q{--sample_name_parent2} . $SPACE . $iofile_parameters_ref->{sample_name_parent2};
-        push @commands, q{--output_gvcf_parent2} . $SPACE . $iofile_parameters_ref->{output_gvcf_parent2};
-        push @commands, q{--output_vcf_parent2} . $SPACE . $iofile_parameters_ref->{output_vcf_parent2};
+    push @commands, q{--reads_child} . $SPACE . $iofile_parameters_href->{reads_child};
+    push @commands, q{--sample_name_child} . $SPACE . $iofile_parameters_href->{sample_name_child};
+    push @commands, q{--output_gvcf_child} . $SPACE . $iofile_parameters_href->{output_gvcf_child};
+    push @commands, q{--output_vcf_child} . $SPACE . $iofile_parameters_href->{output_vcf_child};
+    push @commands, q{--reads_parent1} . $SPACE . $iofile_parameters_href->{reads_parent1};
+    push @commands, q{--sample_name_parent1} . $SPACE . $iofile_parameters_href->{sample_name_parent1};
+    push @commands, q{--output_gvcf_parent1} . $SPACE . $iofile_parameters_href->{output_gvcf_parent1};
+    push @commands, q{--output_vcf_parent1} . $SPACE . $iofile_parameters_href->{output_vcf_parent1};
+    if ($iofile_parameters_href->{sample_name_parent2}){
+        push @commands, q{--reads_parent2} . $SPACE . $iofile_parameters_href->{reads_parent2};
+        push @commands, q{--sample_name_parent2} . $SPACE . $iofile_parameters_href->{sample_name_parent2};
+        push @commands, q{--output_gvcf_parent2} . $SPACE . $iofile_parameters_href->{output_gvcf_parent2};
+        push @commands, q{--output_vcf_parent2} . $SPACE . $iofile_parameters_href->{output_vcf_parent2};
     }
 
     if ($bedfile) {

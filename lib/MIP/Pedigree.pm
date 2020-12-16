@@ -35,6 +35,7 @@ BEGIN {
       create_fam_file
       get_is_trio
       gatk_pedigree_flag
+      has_duo_or_trio
       has_trio
       is_sample_proband_in_trio
       parse_pedigree
@@ -48,6 +49,7 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $DUO_MEMBERS_COUNT => 2;
 Readonly my $TRIO_MEMBERS_COUNT => 3;
 
 sub check_founder_id {
@@ -491,6 +493,78 @@ sub get_is_trio {
     return;
 }
 
+sub has_duo_or_trio {
+
+## Function  : Check if case has a parent-child duo or a trio
+## Returns   : 0 | 1
+## Arguments : $active_parameter_href => Active parameters for this analysis hash {REF}
+##           : $sample_info_href      => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+
+    ## At least three samples
+    return 0
+      if ( scalar @{ $active_parameter_href->{sample_ids} } < $DUO_MEMBERS_COUNT );
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        my $mother = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{mother},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+        my $father = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{father},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        ## Find a child
+        next SAMPLE_ID if ( not ( $father or $mother ));
+
+        my $phenotype = get_pedigree_sample_id_attributes(
+            {
+                attribute        => q{phenotype},
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        return 1 if ( $phenotype eq q{affected} );
+    }
+    return 0;
+}
+
 sub has_trio {
 
 ## Function  : Check if case has trio
@@ -531,6 +605,8 @@ sub has_trio {
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+        use Data::Printer;
+        
 
         my $mother = get_pedigree_sample_id_attributes(
             {

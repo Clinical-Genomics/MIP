@@ -118,7 +118,7 @@ sub analysis_deeptrio {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Deeptrio qw{ deeptrio };
     use MIP::Sample_info
-      qw{ get_family_member_id set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+      qw{ get_family_member_id get_family_member_id_in_duos set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -127,8 +127,9 @@ sub analysis_deeptrio {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Get family hash
-    my %family_member_id =
-      get_family_member_id( { sample_info_href => $sample_info_href } );
+    my %family_member_id = scalar @{ $active_parameter_href->{sample_ids} } == 2
+    ? get_family_member_id_in_duos( { sample_info_href => $sample_info_href } )
+    : get_family_member_id( { sample_info_href => $sample_info_href } );
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
@@ -269,7 +270,7 @@ sub analysis_deeptrio {
     deeptrio(
         {
             filehandle         => $filehandle,
-            iofile_parameters_ref=> \%variable_name_map,
+            iofile_parameters_href=> \%variable_name_map,
             model_type         => uc $consensus_analysis_type,
             num_shards         => $recipe_resource{core_number},
             referencefile_path => $active_parameter_href->{human_genome_reference},
