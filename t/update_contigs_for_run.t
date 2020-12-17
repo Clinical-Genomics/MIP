@@ -73,6 +73,7 @@ my %file_info = (
     bam_contigs_size_ordered => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
     contigs                  => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
     contigs_size_ordered     => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
+    primary_contigs          => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
     select_file_contigs      => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
 );
 
@@ -91,6 +92,7 @@ my %expected_result = (
     bam_contigs_size_ordered => [qw{ 5 6 Y }],
     contigs                  => [qw{ 5 6 }],
     contigs_size_ordered     => [qw{ 5 6 }],
+    primary_contigs          => [ ( $MIN_CONTIG_NR .. $MAX_CONTIG_NR ), qw{ MT Y} ],
     select_file_contigs      => [qw{ 5 6 }],
 );
 

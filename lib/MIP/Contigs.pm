@@ -84,8 +84,7 @@ sub check_select_file_contigs {
 
         $log->fatal( q{Option 'vcfparser_select_file' contig(s): } . join $SPACE,
             @unique_select_contigs );
-        $log->fatal(
-            q{Is not a subset of the human genome reference contigs: } . join $SPACE,
+        $log->fatal( q{Is not a subset of the human genome reference contigs: } . join $SPACE,
             @{$contigs_ref} );
         exit 1;
     }
@@ -289,7 +288,7 @@ sub set_contigs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ set_alt_loci_contigs set_bam_contigs set_primary_contigs };
+    use MIP::File_info qw{ set_alt_loci_contigs set_primary_contigs };
 
     ## Make a modifiable copy for downstream use of global constant
     my %primary_contig_clone = Readonly::Clone %PRIMARY_CONTIG;
@@ -307,35 +306,23 @@ sub set_contigs {
         }
     );
 
-    ## Set contigs sets for primary assembly
-    my @primary_contig_sets = qw{ contigs contigs_size_ordered };
+    ## Set contigs sets for bam level processing downstream
+    my %contig_set = (
+        bam_contigs              => q{contigs},
+        bam_contigs_size_ordered => q{contigs_size_ordered},
+        contigs                  => q{contigs},
+        contigs_size_ordered     => q{contigs_size_ordered},
+        primary_contigs          => q{contigs},
+    );
 
-  PRIMARY_CONTIG_SET:
-    foreach my $contig_set (@primary_contig_sets) {
+  CONTIG_SET:
+    while ( my ( $contig_set_name, $contig_set ) = each %contig_set ) {
 
         set_primary_contigs(
             {
                 file_info_href      => $file_info_href,
                 primary_contigs_ref => \@{ $primary_contig_clone{$version}{$contig_set} },
-                primary_contig_set_name => $contig_set,
-            }
-        );
-    }
-
-## Set contigs sets for bam level processing downstream
-    my %bam_contig_set = (
-        bam_contigs              => q{contigs},
-        bam_contigs_size_ordered => q{contigs_size_ordered},
-    );
-
-  BAM_CONTIG_SET:
-    while ( my ( $bam_contig_set, $contig_set ) = each %bam_contig_set ) {
-
-        set_bam_contigs(
-            {
-                file_info_href      => $file_info_href,
-                primary_contigs_ref => \@{ $primary_contig_clone{$version}{$contig_set} },
-                bam_contig_set_name => $bam_contig_set,
+                contig_set_name     => $contig_set_name,
             }
         );
     }

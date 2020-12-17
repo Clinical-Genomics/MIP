@@ -40,13 +40,12 @@ BEGIN {
       parse_sample_fastq_file_attributes
       parse_select_file_contigs
       set_alt_loci_contigs
-      set_bam_contigs
+      set_primary_contigs
       set_dict_contigs
       set_file_tag
       set_infiles
       set_is_sample_files_compressed
       set_human_genome_reference_features
-      set_primary_contigs
       set_sample_file_attribute
       set_sample_max_parallel_processes_count
       set_select_file_contigs
@@ -152,8 +151,7 @@ sub add_sample_no_direction_infile_prefixes {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Add no_direction_infile_prefixes
-    push @{ $file_info_href->{$sample_id}{no_direction_infile_prefixes} },
-      $mip_file_format;
+    push @{ $file_info_href->{$sample_id}{no_direction_infile_prefixes} }, $mip_file_format;
 
     return;
 }
@@ -231,12 +229,11 @@ sub check_parameter_metafiles {
                 ## Checks files to be built by combining filename stub with fileendings
                 parse_meta_file_suffixes(
                     {
-                        active_parameter_href => $active_parameter_href,
-                        file_name             => $path,
-                        meta_file_suffixes_ref =>
-                          \@{ $file_info_href->{$parameter_name} },
-                        parameter_href => $parameter_href,
-                        parameter_name => $parameter_name,
+                        active_parameter_href  => $active_parameter_href,
+                        file_name              => $path,
+                        meta_file_suffixes_ref => \@{ $file_info_href->{$parameter_name} },
+                        parameter_href         => $parameter_href,
+                        parameter_name         => $parameter_name,
                     }
                 );
 
@@ -317,8 +314,7 @@ sub get_consensus_sequence_run_type {
         );
 
       INFILE_PREFIX:
-        foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } )
-        {
+        foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
 
             my $sequence_run_type = get_sample_file_attribute(
                 {
@@ -843,26 +839,26 @@ sub set_alt_loci_contigs {
     return;
 }
 
-sub set_bam_contigs {
+sub set_primary_contigs {
 
-## Function : Set bam contigs
+## Function : Set primary contigs
 ## Returns  :
-## Arguments: $bam_contig_set_name => Bam contig set identifier
+## Arguments: $contig_set_name     => Contig set identifier
 ##          : $file_info_href      => File info hash {REF}
 ##          : $primary_contigs_ref => Primary contig hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $bam_contig_set_name;
+    my $contig_set_name;
     my $file_info_href;
     my $primary_contigs_ref;
 
     my $tmpl = {
-        bam_contig_set_name => {
+        contig_set_name => {
             defined     => 1,
             required    => 1,
-            store       => \$bam_contig_set_name,
+            store       => \$contig_set_name,
             strict_type => 1,
         },
         file_info_href => {
@@ -884,7 +880,7 @@ sub set_bam_contigs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Set bam contig sets
-    @{ $file_info_href->{$bam_contig_set_name} } = @{$primary_contigs_ref};
+    @{ $file_info_href->{$contig_set_name} } = @{$primary_contigs_ref};
 
     return;
 }
@@ -1086,7 +1082,7 @@ sub set_human_genome_reference_features {
     if ( not $file_info_href->{human_genome_reference_version} ) {
 
         $log->fatal(
-            q{MIP cannot detect what version of human_genome_reference you have supplied.}
+                q{MIP cannot detect what version of human_genome_reference you have supplied.}
               . $SPACE
               . q{Please supply the reference on this format: [sourceversion]_[species] e.g. 'grch37_homo_sapiens' or 'hg19_homo_sapiens'}
               . $NEWLINE );
@@ -1214,52 +1210,6 @@ sub set_is_sample_files_compressed {
     return;
 }
 
-sub set_primary_contigs {
-
-## Function : Set primary contigs
-## Returns  :
-## Arguments: $file_info_href          => File info hash {REF}
-##          : $primary_contigs_ref     => Primary contig hash {REF}
-##          : $primary_contig_set_name => Primary contig set identifier
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_info_href;
-    my $primary_contigs_ref;
-    my $primary_contig_set_name;
-
-    my $tmpl = {
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        primary_contigs_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$primary_contigs_ref,
-            strict_type => 1,
-        },
-        primary_contig_set_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$primary_contig_set_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Set primary contig sets
-    @{ $file_info_href->{$primary_contig_set_name} } = @{$primary_contigs_ref};
-
-    return;
-}
-
 sub set_sample_file_attribute {
 
 ## Function : Set sample file attributes
@@ -1361,8 +1311,7 @@ sub set_sample_max_parallel_processes_count {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    $file_info_href->{max_parallel_processes_count}{$sample_id} =
-      $max_parallel_processes_count;
+    $file_info_href->{max_parallel_processes_count}{$sample_id} = $max_parallel_processes_count;
     return;
 }
 

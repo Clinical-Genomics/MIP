@@ -173,7 +173,7 @@ sub analysis_chromograph_cov {
     ## Get all contigs excluding the mitochondria
     my @contigs = delete_contig_elements(
         {
-            contigs_ref        => $file_info_href->{contigs},
+            contigs_ref        => $file_info_href->{primary_contigs},
             remove_contigs_ref => [qw{ MT }],
         }
     );
@@ -261,13 +261,13 @@ sub analysis_chromograph_cov {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_island},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_island},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -425,7 +425,7 @@ sub analysis_chromograph_rhoviz {
 
     my @outfile_name_prefixes = _build_outfile_name_prefixes(
         {
-            contigs_ref        => $file_info_href->{contigs},
+            contigs_ref        => $file_info_href->{primary_contigs},
             infile_name_prefix => $infile_name_prefix,
             infile_path_href   => \%infile_path,
         }
@@ -545,12 +545,12 @@ sub analysis_chromograph_rhoviz {
 
         submit_recipe(
             {
-                base_command      => $profile_base_command,
-                case_id           => $case_id,
-                dependency_method => q{sample_to_island},
-                job_id_chain      => $job_id_chain,
-                job_id_href       => $job_id_href,
-                log               => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_island},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -712,7 +712,7 @@ sub analysis_chromograph_upd {
     my @outfile_name_prefixes;
     my @contigs = delete_contig_elements(
         {
-            contigs_ref        => $file_info_href->{contigs},
+            contigs_ref        => $file_info_href->{primary_contigs},
             remove_contigs_ref => [q{MT}],
         }
     );
@@ -720,8 +720,7 @@ sub analysis_chromograph_upd {
 
     foreach my $infile_name_prefix (@infile_name_prefixes) {
 
-        push @outfile_name_prefixes,
-          map { $infile_name_prefix . $UNDERSCORE . $_ } @contigs;
+        push @outfile_name_prefixes, map { $infile_name_prefix . $UNDERSCORE . $_ } @contigs;
     }
     %io = (
         %io,
@@ -824,12 +823,12 @@ sub analysis_chromograph_upd {
 
         submit_recipe(
             {
-                base_command      => $profile_base_command,
-                case_id           => $case_id,
-                dependency_method => q{sample_to_island},
-                job_id_chain      => $job_id_chain,
-                job_id_href       => $job_id_href,
-                log               => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_island},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -941,8 +940,7 @@ sub _build_outfile_name_prefixes {
     foreach my $infile_type ( keys %{$infile_path_href} ) {
 
         push @outfile_name_prefixes,
-          map { $infile_name_prefix . $DOT . $infile_type . $UNDERSCORE . $_ }
-          @outfile_contigs;
+          map { $infile_name_prefix . $DOT . $infile_type . $UNDERSCORE . $_ } @outfile_contigs;
     }
     return @outfile_name_prefixes;
 }
