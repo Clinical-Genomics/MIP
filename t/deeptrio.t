@@ -70,48 +70,50 @@ my %base_argument = (
 
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
-my %input_variable_map = ( 
-    reads_child => catfile(qw{ dir infile.bam }),
-    reads_parent1 => catfile(qw{ dir infile.bam }), 
-    reads_parent2 => catfile(qw{ dir infile.bam }), 
-    output_gvcf_child => catfile(q{ dir outfile.g.vcf }),
-    output_gvcf_parent1 => catfile(q{ dir outfile.g.vcf }),
-    output_gvcf_parent2 => catfile(q{ dir outfile.g.vcf }),
-    output_vcf_child => catfile(q{ dir outfile.vcf }),
-    output_vcf_parent1  => catfile(q{ dir outfile.vcf }),
-    output_vcf_parent2  => catfile(q{ dir outfile.vcf }),
-    sample_name_child => q{child},
-    sample_name_parent1 => q{father},
-    sample_name_parent2 => q{mother},
-);
-
 my %required_argument = (
-    model_type => {
+    model_type          => {
         input           => q{WES},
         expected_output => q{--model_type WES},
     },
-    referencefile_path => {
-        input           => q{test},
-        expected_output => q{--ref test},
-    },    
-    num_shards => {
+    num_shards          => {
         input           => q{36},
         expected_output => q{--num_shards 36},
     },
-    iofile_parameters_href => {
-        input_href           => \%input_variable_map,
-        expected_output => q{--reads_child } . catfile(qw{ dir infile.bam }) .
-                q{ --sample_name_child } . q{child} .
-                q{ --output_gvcf_child } . catfile(q{ dir outfile.g.vcf }) .
-                q{ --output_vcf_child } . catfile(q{ dir outfile.vcf }) .
-                q{ --reads_parent1 } . catfile(qw{ dir infile.bam }) .
-                q{ --sample_name_parent1 } . q{father} .
-                q{ --output_gvcf_parent1 } . catfile(q{ dir outfile.g.vcf }) .
-                q{ --output_vcf_parent1 }  . catfile(q{ dir outfile.vcf }) .
-                q{ --reads_parent2 } . catfile(qw{ dir infile.bam }) .
-                q{ --sample_name_parent2 } . q{mother} .
-                q{ --output_gvcf_parent2 } . catfile(q{ dir outfile.g.vcf }) .
-                q{ --output_vcf_parent2 }  . catfile(q{ dir outfile.vcf }),
+    output_gvcf_child   => {
+        input           => catfile(q{ dir outfile.g.vcf }),
+        expected_output => q{--output_gvcf_child } . catfile(q{ dir outfile.g.vcf }),
+    },
+    output_gvcf_parent1 => {
+        input           => catfile(q{ dir outfile.g.vcf }),
+        expected_output => q{--output_gvcf_parent1 } . catfile(q{ dir outfile.g.vcf }),
+    },
+    output_vcf_child    => {
+        input           => catfile(q{ dir outfile.vcf }),
+        expected_output => q{--output_vcf_child } . catfile(q{ dir outfile.vcf }),
+    },
+    output_vcf_parent1  => {
+        input           => catfile(q{ dir outfile.vcf }),
+        expected_output => q{--output_vcf_parent1 }  . catfile(q{ dir outfile.vcf }),
+    },
+    reads_child         => {
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--reads_child } . catfile(qw{ dir infile.bam }) ,
+    },
+    reads_parent1       => {
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--reads_parent1 } . catfile(qw{ dir infile.bam }),
+    },
+    referencefile_path  => {
+        input           => q{test},
+        expected_output => q{--ref test},
+    },
+    sample_name_child   => {
+        input           => q{child},
+        expected_output => q{--sample_name_child } . q{child},
+    },
+    sample_name_parent1 => {
+        input           => q{father},
+        expected_output => q{--sample_name_parent1 } . q{father},
     },
 );
 
@@ -120,7 +122,22 @@ my %specific_argument = (
         input           => catfile(qw{ dir infile.bed }),
         expected_output => q{--regions } . catfile(qw{ dir infile.bed }),
     },
-
+    output_gvcf_parent2 => {
+        input           => catfile(q{ dir outfile.g.vcf }),
+        expected_output => q{--output_gvcf_parent2 } . catfile(q{ dir outfile.g.vcf }),
+    },
+    output_vcf_parent2  => {
+        input => catfile(q{ dir outfile.vcf }),
+        expected_output => q{--output_vcf_parent2 }  . catfile(q{ dir outfile.vcf }),
+    },
+    reads_parent2 => {
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--reads_parent2 } . catfile(qw{ dir infile.bam }),
+    },
+    sample_name_parent2 => {
+        input => q{mother},
+        expected_output => q{--sample_name_parent2 } . q{mother},
+    },
 );
 
 ## Coderef - enables generalized use of generate call

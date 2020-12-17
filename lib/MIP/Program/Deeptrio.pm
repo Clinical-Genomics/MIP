@@ -14,7 +14,7 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE $EQUALS };
+use MIP::Constants qw{ $EQUALS $SPACE };
 use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -34,7 +34,7 @@ sub deeptrio {
 ## Returns  : @commands
 ## Arguments: $bedfile                => Bed file containing the list of regions we want to process
 ##          : $filehandle             => Filehandle to write to
-##          : $iofile_parameters_href  => Path to input and output files, and sample ids
+##          : $iofile_parameters_href => Path to input and output files, and sample ids
 ##          : $model_type             => Type of model to use for variant calling. Allowed values WES, WGS, or PACBIO
 ##          : $num_shards             => Number of files the input is split into for the make examples step
 ##          : $referencefile_path     => Path to genome reference
@@ -48,10 +48,21 @@ sub deeptrio {
     ## Flatten argument(s)
     my $bedfile;
     my $filehandle;
-    my $iofile_parameters_href;
     my $model_type;
     my $num_shards;
+    my $output_gvcf_child;
+    my $output_gvcf_parent1;
+    my $output_gvcf_parent2;
+    my $output_vcf_child;
+    my $output_vcf_parent1;
+    my $output_vcf_parent2;
+    my $reads_child;
+    my $reads_parent1;
+    my $reads_parent2;
     my $referencefile_path;
+    my $sample_name_child;
+    my $sample_name_parent1;
+    my $sample_name_parent2;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -66,13 +77,6 @@ sub deeptrio {
         filehandle => {
             store => \$filehandle,
         },
-        iofile_parameters_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$iofile_parameters_href,
-            strict_type => 1,
-        },
         model_type => {
             allow       => [qw{ WES WGS PACBIO }],
             defined     => 1,
@@ -85,10 +89,78 @@ sub deeptrio {
             store       => \$num_shards,
             strict_type => 1,
         },
+        output_gvcf_child => {
+            defined     => 1,
+            required    => 1,
+            store       => \$output_gvcf_child,
+            strict_type => 1,
+        },
+        output_gvcf_parent1 => {
+            defined     => 1,
+            required    => 1,
+            store       => \$output_gvcf_parent1,
+            strict_type => 1,
+        },
+        output_gvcf_parent2 => {
+            defined     => 1,
+            store       => \$output_gvcf_parent2,
+            strict_type => 1,
+        },
+        output_vcf_child => {
+            defined     => 1,
+            required    => 1,
+            store       => \$output_vcf_child,
+            strict_type => 1,
+        },
+        output_vcf_parent1 => {
+            defined     => 1,
+            required    => 1,
+            store       => \$output_vcf_parent1,
+            strict_type => 1,
+        },
+        output_vcf_parent2 => {
+            defined     => 1,
+            store       => \$output_vcf_parent2,
+            strict_type => 1,
+        },
+        reads_child => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reads_child,
+            strict_type => 1,
+        },
+        reads_parent1 => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reads_parent1,
+            strict_type => 1,
+        },
+        reads_parent2 => {
+            defined     => 1,
+            store       => \$reads_parent2,
+            strict_type => 1,
+        },
         referencefile_path => {
             defined     => 1,
             required    => 1,
             store       => \$referencefile_path,
+            strict_type => 1,
+        },
+        sample_name_child => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_name_child,
+            strict_type => 1,
+        },
+        sample_name_parent1 => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_name_parent1,
+            strict_type => 1,
+        },
+        sample_name_parent2 => {
+            defined     => 1,
+            store       => \$sample_name_parent2,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -117,21 +189,31 @@ sub deeptrio {
     push @commands, q{--model_type} . $SPACE . $model_type;
     push @commands, q{--ref} . $SPACE . $referencefile_path;
     push @commands, q{--num_shards} . $SPACE . $num_shards;
-    push @commands, q{--reads_child} . $SPACE . $iofile_parameters_href->{reads_child};
-    push @commands, q{--sample_name_child} . $SPACE . $iofile_parameters_href->{sample_name_child};
-    push @commands, q{--output_gvcf_child} . $SPACE . $iofile_parameters_href->{output_gvcf_child};
-    push @commands, q{--output_vcf_child} . $SPACE . $iofile_parameters_href->{output_vcf_child};
-    push @commands, q{--reads_parent1} . $SPACE . $iofile_parameters_href->{reads_parent1};
-    push @commands, q{--sample_name_parent1} . $SPACE . $iofile_parameters_href->{sample_name_parent1};
-    push @commands, q{--output_gvcf_parent1} . $SPACE . $iofile_parameters_href->{output_gvcf_parent1};
-    push @commands, q{--output_vcf_parent1} . $SPACE . $iofile_parameters_href->{output_vcf_parent1};
-    if ($iofile_parameters_href->{sample_name_parent2}){
-        push @commands, q{--reads_parent2} . $SPACE . $iofile_parameters_href->{reads_parent2};
-        push @commands, q{--sample_name_parent2} . $SPACE . $iofile_parameters_href->{sample_name_parent2};
-        push @commands, q{--output_gvcf_parent2} . $SPACE . $iofile_parameters_href->{output_gvcf_parent2};
-        push @commands, q{--output_vcf_parent2} . $SPACE . $iofile_parameters_href->{output_vcf_parent2};
-    }
 
+    ## Child
+    push @commands, q{--sample_name_child} . $SPACE . $sample_name_child;
+    push @commands, q{--reads_child} . $SPACE . $reads_child;
+    push @commands, q{--output_gvcf_child} . $SPACE . $output_gvcf_child;
+    push @commands, q{--output_vcf_child} . $SPACE . $output_vcf_child;
+    
+    ## Parent1
+    push @commands, q{--sample_name_parent1} . $SPACE . $sample_name_parent1;
+    push @commands, q{--reads_parent1} . $SPACE . $reads_parent1;
+    push @commands, q{--output_gvcf_parent1} . $SPACE . $output_gvcf_parent1;
+    push @commands, q{--output_vcf_parent1} . $SPACE . $output_vcf_parent1;
+    
+    if ($sample_name_parent2){
+        push @commands, q{--sample_name_parent2} . $SPACE . $sample_name_parent2;
+    }
+    if ($reads_parent2){
+        push @commands, q{--reads_parent2} . $SPACE . $reads_parent2;
+    }
+    if ($output_gvcf_parent2){
+        push @commands, q{--output_gvcf_parent2} . $SPACE . $output_gvcf_parent2;
+    }
+    if ($output_vcf_parent2){
+        push @commands, q{--output_vcf_parent2} . $SPACE . $output_vcf_parent2;
+    }
     if ($bedfile) {
         push @commands, q{--regions} . $SPACE . $bedfile;
     }

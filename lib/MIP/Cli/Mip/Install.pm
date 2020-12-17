@@ -134,7 +134,7 @@ sub _build_usage {
                 enum(
                     [
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit bwa-mem2 cadd chanjo
-                          chromograph cnvnator cyrius deepvariant deeptrio delly expansionhunter fastqc gatk 
+                          chromograph cnvnator cyrius deeptrio deepvariant delly expansionhunter fastqc gatk 
                           gatk4 genmod gffcompare glnexus htslib manta mip mip_scripts multiqc peddy picard plink
                           preseq python rhocall rseqc rtg-tools salmon sambamba smncopynumbercaller star
                           star-fusion stranger stringtie svdb telomerecat tiddit trim-galore ucsc upd
@@ -156,7 +156,7 @@ sub _build_usage {
                 enum(
                     [
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit bwa-mem2 cadd chanjo
-                          chromograph cnvnator cyrius deepvariant deeptrio delly expansionhunter fastqc gatk 
+                          chromograph cnvnator cyrius deeptrio deepvariant delly expansionhunter fastqc gatk 
                           gatk4 genmod gffcompare glnexus htslib manta mip mip_scripts multiqc peddy picard plink
                           preseq python rhocall rseqc rtg-tools salmon sambamba smncopynumbercaller star
                           star-fusion stranger stringtie svdb telomerecat tiddit trim-galore ucsc upd

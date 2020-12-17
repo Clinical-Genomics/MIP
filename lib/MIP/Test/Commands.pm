@@ -105,7 +105,7 @@ sub build_call {
                 # Add required_argument
                 push @keys, $required_argument;
 
-                push @values, $required_argument_href->{$required_argument}{$input_name};
+                push @values, values %{ $required_argument_href->{$required_argument}{$input_name} };
             }
             elsif ( exists $required_argument_href->{$required_argument}{$input_name} ) {
                 ## SCALAR or ARRAY_ref

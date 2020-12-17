@@ -35,7 +35,7 @@ BEGIN {
       create_fam_file
       get_is_trio
       gatk_pedigree_flag
-      has_duo_or_trio
+      has_duo
       has_trio
       is_sample_proband_in_trio
       parse_pedigree
@@ -493,9 +493,9 @@ sub get_is_trio {
     return;
 }
 
-sub has_duo_or_trio {
+sub has_duo {
 
-## Function  : Check if case has a parent-child duo or a trio
+## Function  : Check if case has a parent-child duo and child is affected
 ## Returns   : 0 | 1
 ## Arguments : $active_parameter_href => Active parameters for this analysis hash {REF}
 ##           : $sample_info_href      => Info on samples and case hash {REF}
@@ -527,40 +527,24 @@ sub has_duo_or_trio {
 
     use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
-    ## At least three samples
+    ## At least two samples
     return 0
       if ( scalar @{ $active_parameter_href->{sample_ids} } < $DUO_MEMBERS_COUNT );
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-        my $mother = get_pedigree_sample_id_attributes(
+        my %sample_attributes = get_pedigree_sample_id_attributes(
             {
-                attribute        => q{mother},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-        my $father = get_pedigree_sample_id_attributes(
-            {
-                attribute        => q{father},
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
 
         ## Find a child
-        next SAMPLE_ID if ( not ( $father or $mother ));
+        next SAMPLE_ID if ( not ( $sample_attributes{father} or $sample_attributes{mother} ) );
 
-        my $phenotype = get_pedigree_sample_id_attributes(
-            {
-                attribute        => q{phenotype},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        return 1 if ( $phenotype eq q{affected} );
+        return 1 if ( $sample_attributes{phenotype} eq q{affected} );
     }
     return 0;
 }

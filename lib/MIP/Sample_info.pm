@@ -27,8 +27,8 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      get_case_members_attributes_in_duos
       get_family_member_id
-      get_family_member_id_in_duos
       get_read_group
       get_rg_header_line
       get_pedigree_sample_id_attributes
@@ -50,6 +50,68 @@ BEGIN {
       write_sample_info_to_file
     };
 
+}
+
+sub get_case_members_attributes_in_duos {
+
+## Function : Get the sample IDs and phenotypes of the family members
+## Returns  : %case_members_attributes
+## Arguments: $sample_info_href => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %case_members_attributes = (
+        father            => 0,
+        mother            => 0,
+        children          => [],
+        affected          => [],
+        unknown           => [],
+    );
+
+  SAMPLE_ID:
+    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
+
+        my %sample_attributes = get_pedigree_sample_id_attributes(
+            {
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+ 
+        if ( $sample_attributes{phenotype} eq q{affected} ) {
+
+            push @{ $case_members_attributes{affected} }, $sample_id;
+        }
+        elsif ( $sample_attributes{phenotype} eq q{unknown} ) {
+
+            push @{ $case_members_attributes{unknown} }, $sample_id;
+        }
+
+        next SAMPLE_ID if ( not ($sample_attributes{father} or $sample_attributes{mother} ) );
+
+        ## Append child
+        push @{ $case_members_attributes{children} }, $sample_id;
+
+        $case_members_attributes{father} = $sample_attributes{father};
+        $case_members_attributes{mother} = $sample_attributes{mother};
+    }
+
+    return %case_members_attributes;
 }
 
 sub get_family_member_id {
@@ -120,85 +182,6 @@ sub get_family_member_id {
         }
 
         next if ( not $father or not $mother );
-
-        ## Append child
-        push @{ $family_member_id{children} }, $sample_id;
-
-        $family_member_id{father} = $father;
-        $family_member_id{mother} = $mother;
-    }
-
-    return %family_member_id;
-}
-
-sub get_family_member_id_in_duos {
-
-## Function : Get the sample IDs of the family members
-## Returns  : %family_member_id
-## Arguments: $sample_info_href => Sample info hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $sample_info_href;
-
-    my $tmpl = {
-        sample_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_info_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my %family_member_id = (
-        father            => 0,
-        mother            => 0,
-        children          => [],
-        affected          => [],
-        unknown_phenotype => [],
-    );
-
-  SAMPLE_ID:
-    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
-
-        my $mother = get_pedigree_sample_id_attributes(
-            {
-                attribute        => q{mother},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        my $father = get_pedigree_sample_id_attributes(
-            {
-                attribute        => q{father},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        my $phenotype = get_pedigree_sample_id_attributes(
-            {
-                attribute        => q{phenotype},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        if ( $phenotype eq q{affected} ) {
-
-            push @{ $family_member_id{affected} }, $sample_id;
-        }
-        elsif ( $phenotype eq q{unknown} ) {
-
-            push @{ $family_member_id{unknown_phenotype} }, $sample_id;
-        }
-
-        next if ( not ($father or $mother) );
 
         ## Append child
         push @{ $family_member_id{children} }, $sample_id;
@@ -1533,7 +1516,7 @@ sub set_parameter_in_sample_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Pedigree qw{ has_duo_or_trio has_trio };
+    use MIP::Pedigree qw{ has_duo has_trio };
 
     my %set_parameter_map = (
         analysis_type => {
@@ -1546,10 +1529,10 @@ sub set_parameter_in_sample_info {
             set_at => $sample_info_href,
             value  => $active_parameter_href->{expected_coverage},
         },
-        has_duo_or_trio => {
-            key    => q{has_duo_or_trio},
+        has_duo => {
+            key    => q{has_duo},
             set_at => $sample_info_href,
-            value  => has_duo_or_trio(
+            value  => has_duo(
                 {
                     active_parameter_href => $active_parameter_href,
                     sample_info_href      => $sample_info_href,
