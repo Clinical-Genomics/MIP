@@ -411,6 +411,7 @@ bwa_mem:
   outfile_suffix: ".bam"
   program_executables:
     - bwa
+    - run-bwamem
     - samtools
   recipe_type: aligners
   type: recipe
