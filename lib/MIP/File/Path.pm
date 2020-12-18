@@ -126,27 +126,18 @@ sub check_filesystem_objects_existance {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## For potential error messages
-    my $error_msg;
+    use MIP::Validate::Data qw{ %CONSTRAINT };
 
-    ## Check existance of directory
-    if ( $object_type eq q{directory} ) {
+    my %exists_constraint_map = (
+        directory => q{dir_exists},
+        file      => q{plain_file_exists},
+    );
 
-        ## Check existence of supplied directory
-        ## Directory was found
-        return 1 if ( -d $object_name );
+    my $constraint = $exists_constraint_map{$object_type};
+    return 1 if ( $CONSTRAINT{$constraint}->($object_name) );
 
-        $error_msg = q{Could not find intended } . $parameter_name . q{ directory: } . $object_name;
-        return ( 0, $error_msg );
-    }
-    ## Then object type must be file
-
-    ## Check existence of supplied file
-    ## File was found
-    return 1 if ( -f $object_name );
-
-    $error_msg = q{Could not find intended } . $parameter_name . q{ file: } . $object_name;
-    return 0, $error_msg;
+    my $error_msg = qq{Could not find intended $parameter_name $object_type: $object_name};
+    return ( 0, $error_msg );
 }
 
 sub check_filesystem_objects_and_index_existance {

@@ -116,12 +116,10 @@ sub build_script_directories_and_paths {
     ## Directory paths
     if ( not defined $recipe_data_directory_path ) {
 
-        $recipe_data_directory_path =
-          catdir( $outdata_dir, $directory_id, $recipe_directory );
+        $recipe_data_directory_path = catdir( $outdata_dir, $directory_id, $recipe_directory );
     }
-    my $recipe_info_directory_path = catdir( $recipe_data_directory_path, q{info} );
-    my $recipe_script_directory_path =
-      catdir( $outscript_dir, $directory_id, $recipe_directory );
+    my $recipe_info_directory_path   = catdir( $recipe_data_directory_path, q{info} );
+    my $recipe_script_directory_path = catdir( $outscript_dir, $directory_id, $recipe_directory );
 
     ## Create directories
     make_path( $recipe_info_directory_path, $recipe_data_directory_path,
@@ -130,11 +128,10 @@ sub build_script_directories_and_paths {
     ## File paths
     my $file_path_prefix = catfile( $recipe_script_directory_path, $file_name_prefix );
     my $file_info_path   = catfile( $recipe_info_directory_path,   $file_name_prefix );
-    my $dry_run_file_path_prefix = catfile( $recipe_script_directory_path,
-        q{dry_run} . $UNDERSCORE . $file_name_prefix );
+    my $dry_run_file_path_prefix =
+      catfile( $recipe_script_directory_path, q{dry_run} . $UNDERSCORE . $file_name_prefix );
     my $dry_run_file_info_path =
-      catfile( $recipe_info_directory_path,
-        q{dry_run} . $UNDERSCORE . $file_name_prefix );
+      catfile( $recipe_info_directory_path, q{dry_run} . $UNDERSCORE . $file_name_prefix );
 
     ## Dry run recipe - update file paths
     if ( $recipe_mode == 2 ) {
@@ -177,13 +174,15 @@ sub check_script_file_path_exist {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Validate::Data qw{ %CONSTRAINT };
+
     ## Nr of scripts with identical file names i.e. version number
     my $file_name_version = 0;
 
     my $file_path = $file_path_prefix . $file_name_version . $file_path_suffix;
 
   FILE_PATHS:
-    while ( -e $file_path ) {
+    while ( $CONSTRAINT{file_exists}->($file_path) ) {
 
         $file_name_version++;
 
@@ -244,8 +243,7 @@ sub create_script_error_trap {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Language::Shell
-      qw{ create_error_trap_function enable_trap quote_bash_variable };
+    use MIP::Language::Shell qw{ create_error_trap_function enable_trap quote_bash_variable };
 
     return 0 if ( not $error_trap );
 
@@ -265,8 +263,7 @@ sub create_script_error_trap {
     my $trap_function_name = q{error};
     my $previous_cmd =
       quote_bash_variable( { string_with_variable_to_quote => q{$previous_command}, } );
-    my $previous_cmd_value =
-      $SPACE . $DOUBLE_QUOTE . q{$?} . $DOUBLE_QUOTE . $CLOSE_PARENTHESIS;
+    my $previous_cmd_value = $SPACE . $DOUBLE_QUOTE . q{$?} . $DOUBLE_QUOTE . $CLOSE_PARENTHESIS;
 
     create_error_trap_function(
         {
@@ -352,8 +349,8 @@ sub create_script_temp_dir {
     say {$filehandle} q{readonly TEMP_DIRECTORY} . $EQUALS . $temp_directory_quoted;
 
     # Update perl scalar to bash variable
-    my $temp_directory_bash = quote_bash_variable(
-        { string_with_variable_to_quote => $DOLLAR_SIGN . q{TEMP_DIRECTORY}, } );
+    my $temp_directory_bash =
+      quote_bash_variable( { string_with_variable_to_quote => $DOLLAR_SIGN . q{TEMP_DIRECTORY}, } );
 
     gnu_mkdir(
         {
@@ -642,8 +639,7 @@ sub setup_script {
 
     ## Script file
     open $filehandle, q{>}, $file_path
-      or
-      $log->logdie( q{Cannot write to '} . $file_path . q{' :} . $OS_ERROR . $NEWLINE );
+      or $log->logdie( q{Cannot write to '} . $file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
     # Build bash shebang line
     build_shebang(
@@ -665,19 +661,18 @@ sub setup_script {
 
         slurm_build_sbatch_header(
             {
-                core_number       => $core_number,
-                email             => $active_parameter_href->{email},
-                email_types_ref   => $active_parameter_href->{email_types},
-                filehandle        => $filehandle,
-                gpu_number        => $gpu_number,
-                job_name          => $job_name,
-                memory_allocation => $memory_allocation,
-                process_time      => $process_time . q{:00:00},
-                project_id        => $active_parameter_href->{project_id},
-                slurm_quality_of_service =>
-                  $active_parameter_href->{slurm_quality_of_service},
-                stderrfile_path => $stderrfile_path,
-                stdoutfile_path => $stdoutfile_path,
+                core_number              => $core_number,
+                email                    => $active_parameter_href->{email},
+                email_types_ref          => $active_parameter_href->{email_types},
+                filehandle               => $filehandle,
+                gpu_number               => $gpu_number,
+                job_name                 => $job_name,
+                memory_allocation        => $memory_allocation,
+                process_time             => $process_time . q{:00:00},
+                project_id               => $active_parameter_href->{project_id},
+                slurm_quality_of_service => $active_parameter_href->{slurm_quality_of_service},
+                stderrfile_path          => $stderrfile_path,
+                stdoutfile_path          => $stdoutfile_path,
             }
         );
     }
