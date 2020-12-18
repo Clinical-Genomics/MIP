@@ -102,6 +102,7 @@ sub set_recipe_deepvariant {
             strict_type => 1,
         },
         sample_info_href => {
+            default     => {},
             defined     => 1,
             required    => 1,
             store       => \$sample_info_href,

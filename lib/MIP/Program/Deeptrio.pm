@@ -102,7 +102,6 @@ sub deeptrio {
             strict_type => 1,
         },
         output_gvcf_parent2 => {
-            defined     => 1,
             store       => \$output_gvcf_parent2,
             strict_type => 1,
         },
@@ -119,7 +118,6 @@ sub deeptrio {
             strict_type => 1,
         },
         output_vcf_parent2 => {
-            defined     => 1,
             store       => \$output_vcf_parent2,
             strict_type => 1,
         },
@@ -136,7 +134,6 @@ sub deeptrio {
             strict_type => 1,
         },
         reads_parent2 => {
-            defined     => 1,
             store       => \$reads_parent2,
             strict_type => 1,
         },
@@ -159,7 +156,6 @@ sub deeptrio {
             strict_type => 1,
         },
         sample_name_parent2 => {
-            defined     => 1,
             store       => \$sample_name_parent2,
             strict_type => 1,
         },
