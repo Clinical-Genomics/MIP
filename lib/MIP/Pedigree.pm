@@ -49,7 +49,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $DUO_MEMBERS_COUNT => 2;
+Readonly my $DUO_MEMBERS_COUNT  => 2;
 Readonly my $TRIO_MEMBERS_COUNT => 3;
 
 sub check_founder_id {
@@ -527,7 +527,7 @@ sub has_duo {
 
     use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
 
-    ## At least two samples
+    ## Has two samples
     return 0
       if ( scalar @{ $active_parameter_href->{sample_ids} } != $DUO_MEMBERS_COUNT );
 
@@ -542,7 +542,7 @@ sub has_duo {
         );
 
         ## Find a child
-        next SAMPLE_ID if ( not ( $sample_attributes{father} or $sample_attributes{mother} ) );
+        next SAMPLE_ID if ( not( $sample_attributes{father} or $sample_attributes{mother} ) );
 
         return 1 if ( $sample_attributes{phenotype} eq q{affected} );
     }
@@ -588,7 +588,7 @@ sub has_trio {
       if ( scalar @{ $active_parameter_href->{sample_ids} } < $TRIO_MEMBERS_COUNT );
 
   SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {        
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         my $mother = get_pedigree_sample_id_attributes(
             {
@@ -734,8 +734,7 @@ sub is_sample_proband_in_trio {
     return 0 if ( $phenotype eq q{unaffected} );
 
     ## Get family hash
-    my %family_member_id =
-      get_family_member_id( { sample_info_href => $sample_info_href } );
+    my %family_member_id = get_family_member_id( { sample_info_href => $sample_info_href } );
 
     ## Check if the sample is an affected child
     return 0 if ( none { $_ eq $sample_id } @{ $family_member_id{children} } );
@@ -1192,10 +1191,9 @@ sub set_pedigree_capture_kit_info {
         ## Return a capture kit depending on user info
         my $exome_target_bed_file = get_capture_kit(
             {
-                capture_kit => $capture_kit,
-                supported_capture_kit_href =>
-                  $parameter_href->{supported_capture_kit}{default},
-                is_set_by_user => $is_user_supplied_href->{exome_target_bed},
+                capture_kit                => $capture_kit,
+                supported_capture_kit_href => $parameter_href->{supported_capture_kit}{default},
+                is_set_by_user             => $is_user_supplied_href->{exome_target_bed},
             }
         );
 
