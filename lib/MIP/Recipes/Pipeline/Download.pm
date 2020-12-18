@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -81,11 +80,9 @@ sub pipeline_download {
     use MIP::Recipes::Download::1000g_omni qw{ download_1000g_omni };
     use MIP::Recipes::Download::1000g_sites qw{ download_1000g_sites };
     use MIP::Recipes::Download::1000g_snps qw{ download_1000g_snps };
-    use MIP::Recipes::Download::Cadd_offline_annotations
-      qw{ download_cadd_offline_annotations };
+    use MIP::Recipes::Download::Cadd_offline_annotations qw{ download_cadd_offline_annotations };
     use MIP::Recipes::Download::Cadd_to_vcf_header qw{ download_cadd_to_vcf_header };
-    use MIP::Recipes::Download::Cadd_whole_genome_snvs
-      qw{ download_cadd_whole_genome_snvs };
+    use MIP::Recipes::Download::Cadd_whole_genome_snvs qw{ download_cadd_whole_genome_snvs };
     use MIP::Recipes::Download::Chromograph_cytoband qw{ download_chromograph_cytoband };
     use MIP::Recipes::Download::Clinvar qw{ download_clinvar };
     use MIP::Recipes::Download::Ctat_resource_lib qw{ download_ctat_resource_lib };
@@ -93,8 +90,7 @@ sub pipeline_download {
     use MIP::Recipes::Download::Dbsnp qw{ download_dbsnp };
     use MIP::Recipes::Download::Delly_exclude qw{ download_delly_exclude };
     use MIP::Recipes::Download::Expansionhunter qw{ download_expansionhunter };
-    use MIP::Recipes::Download::Gatk_mitochondrial_ref
-      qw{ download_gatk_mitochondrial_ref };
+    use MIP::Recipes::Download::Gatk_mitochondrial_ref qw{ download_gatk_mitochondrial_ref };
     use MIP::Recipes::Download::Genbank_haplogroup qw{ download_genbank_haplogroup };
     use MIP::Recipes::Download::Gencode_annotation qw{ download_gencode_annotation };
     use MIP::Recipes::Download::Genomic_superdups qw{ download_genomic_superdups };
@@ -105,8 +101,7 @@ sub pipeline_download {
     use MIP::Recipes::Download::Hapmap qw{ download_hapmap };
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
     use MIP::Recipes::Download::Manta_call_regions qw{ download_manta_call_regions };
-    use MIP::Recipes::Download::Mills_and_1000g_indels
-      qw{ download_mills_and_1000g_indels };
+    use MIP::Recipes::Download::Mills_and_1000g_indels qw{ download_mills_and_1000g_indels };
     use MIP::Recipes::Download::Pfam qw{ download_pfam };
     use MIP::Recipes::Download::Rank_model qw{ download_rank_model };
     use MIP::Recipes::Download::Reduced_penetrance qw{ download_reduced_penetrance };
@@ -167,9 +162,7 @@ sub pipeline_download {
     my %job_id;
 
   REFERENCE:
-    while ( my ( $reference_id, $versions_ref ) =
-        each %{ $active_parameter_href->{reference} } )
-    {
+    while ( my ( $reference_id, $versions_ref ) = each %{ $active_parameter_href->{reference} } ) {
 
         next REFERENCE if ( not exists $download_recipe{$reference_id} );
 
@@ -177,8 +170,7 @@ sub pipeline_download {
         foreach my $reference_version ( @{$versions_ref} ) {
 
           GENOME_VERSION:
-            foreach my $genome_version (
-                @{ $active_parameter_href->{reference_genome_versions} } )
+            foreach my $genome_version ( @{ $active_parameter_href->{reference_genome_versions} } )
             {
 
                 my $reference_href =
@@ -208,10 +200,7 @@ sub pipeline_download {
 
                 $log->info( q{Cannot find reference file:} . $outfile_path );
                 $log->info(
-                        q{Will try to download: }
-                      . $reference_id
-                      . q{ version: }
-                      . $reference_version,
+                    q{Will try to download: } . $reference_id . q{ version: } . $reference_version,
                 );
 
                 $download_recipe{$reference_id}->(

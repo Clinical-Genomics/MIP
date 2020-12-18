@@ -7,7 +7,6 @@ use File::Basename qw{ basename dirname fileparse };
 use File::Spec::Functions qw{ catdir catfile splitpath };
 use Params::Check qw{ check allow last_error };
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -107,8 +106,7 @@ sub set_io_files {
   FILE_PATH:
     foreach my $file_path ( @{$file_paths_ref} ) {
 
-        my ( $file_name_prefix, $dirs, $suffix ) =
-          fileparse( $file_path, qr/([.][^.]*)*/sxm );
+        my ( $file_name_prefix, $dirs, $suffix ) = fileparse( $file_path, qr/([.][^.]*)*/sxm );
 
         push @{ $io_recipe_href->{$stream}{file_names} },         basename($file_path);
         push @{ $io_recipe_href->{$stream}{file_name_prefixes} }, $file_name_prefix;
@@ -162,8 +160,7 @@ sub set_io_files {
 
         ## Switch to temp dir for path
         my @file_paths_temp =
-          map { catfile( $temp_directory, $_ ) }
-          @{ $io_recipe_href->{$stream}{file_names} };
+          map { catfile( $temp_directory, $_ ) } @{ $io_recipe_href->{$stream}{file_names} };
 
         set_io_files(
             {
@@ -378,8 +375,7 @@ sub _set_io_files_hash {
     while ( my ( $array_key, $hash_key ) = each %file_map ) {
 
       SUFFIX:
-        while ( my ( $file_index, $suffix ) =
-            each @{ $io_recipe_href->{$stream}{file_suffixes} } )
+        while ( my ( $file_index, $suffix ) = each @{ $io_recipe_href->{$stream}{file_suffixes} } )
         {
 
             my $file = $io_recipe_href->{$stream}{$array_key}[$file_index];

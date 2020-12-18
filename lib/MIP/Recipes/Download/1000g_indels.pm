@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -121,8 +120,7 @@ sub download_1000g_indels {
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
 
     ### PREPROCESSING:
 
@@ -130,9 +128,8 @@ sub download_1000g_indels {
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
 
     ## Unpack parameters
-    my $reference_dir = $active_parameter_href->{reference_dir};
-    my @reference_genome_versions =
-      @{ $active_parameter_href->{reference_genome_versions} };
+    my $reference_dir             = $active_parameter_href->{reference_dir};
+    my @reference_genome_versions = @{ $active_parameter_href->{reference_genome_versions} };
 
     my %recipe_resource = get_recipe_resources(
         {
@@ -151,19 +148,19 @@ sub download_1000g_indels {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href      => $active_parameter_href,
-            core_number                => $recipe_resource{core_number},
-            directory_id               => q{mip_download},
-            filehandle                 => $filehandle,
-            job_id_href                => $job_id_href,
-            memory_allocation          => $recipe_resource{memory},
-            outdata_dir                => $reference_dir,
-            outscript_dir              => $reference_dir,
-            process_time               => $recipe_resource{time},
-            recipe_data_directory_path => $active_parameter_href->{reference_dir},
-            recipe_directory           => $recipe_name . $UNDERSCORE . $reference_version,
-            recipe_name                => $recipe_name,
-            temp_directory             => $temp_directory,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $recipe_resource{core_number},
+            directory_id                    => q{mip_download},
+            filehandle                      => $filehandle,
+            job_id_href                     => $job_id_href,
+            memory_allocation               => $recipe_resource{memory},
+            outdata_dir                     => $reference_dir,
+            outscript_dir                   => $reference_dir,
+            process_time                    => $recipe_resource{time},
+            recipe_data_directory_path      => $active_parameter_href->{reference_dir},
+            recipe_directory                => $recipe_name . $UNDERSCORE . $reference_version,
+            recipe_name                     => $recipe_name,
+            temp_directory                  => $temp_directory,
             source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );

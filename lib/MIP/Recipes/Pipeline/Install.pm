@@ -9,7 +9,6 @@ use File::Spec::Functions qw{ catfile };
 use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -81,8 +80,7 @@ sub pipeline_install {
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    $log->info( q{Installing MIP into environment: }
-          . $active_parameter_href->{environment_name} );
+    $log->info( q{Installing MIP into environment: } . $active_parameter_href->{environment_name} );
 
     set_container_constants( { active_parameter_href => $active_parameter_href, } );
 

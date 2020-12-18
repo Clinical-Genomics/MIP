@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -195,9 +194,8 @@ sub build_star_fusion_prerequisites {
     say {$filehandle} q{## Building Star-Fusion dir files};
     ## Get parameters
     my $star_fusion_directory_tmp =
-      catdir( $active_parameter_href->{star_fusion_reference_genome}
-          . $UNDERSCORE
-          . $random_integer );
+      catdir(
+        $active_parameter_href->{star_fusion_reference_genome} . $UNDERSCORE . $random_integer );
 
     # Create temp dir
     gnu_mkdir(
@@ -229,8 +227,7 @@ sub build_star_fusion_prerequisites {
   PREREQ:
     foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
 
-        my $intended_file_path =
-          $active_parameter_href->{star_fusion_reference_genome} . $suffix;
+        my $intended_file_path = $active_parameter_href->{star_fusion_reference_genome} . $suffix;
 
         ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
         check_exist_and_move_file(

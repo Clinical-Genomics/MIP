@@ -8,7 +8,6 @@ use File::Spec::Functions qw{ catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -310,8 +309,7 @@ sub get_parameter_from_definition_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @definition_file_paths =
-      get_parameter_definition_file_paths( { level => $level, } );
+    my @definition_file_paths = get_parameter_definition_file_paths( { level => $level, } );
 
     ## Not required parameter definition keys to check
     my $not_required_definition_file_path =
@@ -330,10 +328,9 @@ sub get_parameter_from_definition_files {
             %parameter,
             check_definition_file(
                 {
-                    define_parameters_path => $definition_file,
-                    not_required_definition_file_path =>
-                      $not_required_definition_file_path,
-                    required_definition_file_path => $required_definition_file_path,
+                    define_parameters_path            => $definition_file,
+                    not_required_definition_file_path => $not_required_definition_file_path,
+                    required_definition_file_path     => $required_definition_file_path,
                 }
             ),
         );

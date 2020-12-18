@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -81,8 +80,8 @@ sub child_process {
         },
     );
 
-    my %process_return = $process_api{$process_type}{method}
-      ->( { %{ $process_api{$process_type}{arg_href} } } );
+    my %process_return =
+      $process_api{$process_type}{method}->( { %{ $process_api{$process_type}{arg_href} } } );
 
     return %process_return;
 }

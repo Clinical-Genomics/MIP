@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -19,8 +18,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ update_dynamic_config_parameters update_with_dynamic_config_parameters };
+    our @EXPORT_OK = qw{ update_dynamic_config_parameters update_with_dynamic_config_parameters };
 }
 
 sub update_dynamic_config_parameters {
@@ -57,8 +55,7 @@ sub update_dynamic_config_parameters {
         each %{$dynamic_parameter_href} )
     {
 
-        ${$active_parameter_ref} =~
-          s/$dynamic_parameter_name!/$dynamic_parameter_value/xsmgi;
+        ${$active_parameter_ref} =~ s/$dynamic_parameter_name!/$dynamic_parameter_value/xsmgi;
     }
     return;
 }

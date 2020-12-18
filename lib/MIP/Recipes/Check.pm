@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -43,12 +42,12 @@ sub check_recipe_exists_in_hash {
 
     my $tmpl = {
         parameter_name => { defined => 1, required => 1, store => \$parameter_name, },
-        query_ref => {
+        query_ref      => {
             defined  => 1,
             required => 1,
             store    => \$query_ref,
         },
-        truth_href     => {
+        truth_href => {
             default     => {},
             defined     => 1,
             required    => 1,
@@ -71,8 +70,7 @@ sub check_recipe_exists_in_hash {
 
             next RECIPE_NAME if ( exists $truth_href->{$recipe_name} );
 
-            $log->fatal(
-                $parameter_name . qq{ key $SINGLE_QUOTE} . $recipe_name . $error_msg );
+            $log->fatal( $parameter_name . qq{ key $SINGLE_QUOTE} . $recipe_name . $error_msg );
             exit 1;
         }
     }
@@ -83,10 +81,7 @@ sub check_recipe_exists_in_hash {
 
             next RECIPE_NAME if ( exists $truth_href->{$recipe_name} );
 
-            $log->fatal( $parameter_name
-                  . qq{ element $SINGLE_QUOTE}
-                  . $recipe_name
-                  . $error_msg );
+            $log->fatal( $parameter_name . qq{ element $SINGLE_QUOTE} . $recipe_name . $error_msg );
             exit 1;
         }
     }
@@ -94,8 +89,7 @@ sub check_recipe_exists_in_hash {
 
         return if ( exists $truth_href->{$parameter_name} );
 
-        $log->fatal(
-            $parameter_name . qq{ element $SINGLE_QUOTE} . $parameter_name . $error_msg );
+        $log->fatal( $parameter_name . qq{ element $SINGLE_QUOTE} . $parameter_name . $error_msg );
         exit 1;
     }
     return;

@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -49,14 +48,12 @@ sub unix_standard_streams {
     my $stdoutfile_path_append;
 
     my $tmpl = {
-        filehandle      => { store => \$filehandle, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdinfile_path  => { store => \$stdinfile_path,  strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-        stdoutfile_path_append =>
-          { store => \$stdoutfile_path_append, strict_type => 1, },
+        filehandle             => { store => \$filehandle, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdinfile_path         => { store => \$stdinfile_path,         strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
+        stdoutfile_path_append => { store => \$stdoutfile_path_append, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};

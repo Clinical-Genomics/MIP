@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -22,8 +21,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ run_analyse_pipeline run_download_pipeline run_install_pipeline };
+    our @EXPORT_OK = qw{ run_analyse_pipeline run_download_pipeline run_install_pipeline };
 }
 
 sub run_analyse_pipeline {
@@ -121,13 +119,11 @@ sub run_analyse_pipeline {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Recipes
-    use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna
-      qw{ pipeline_analyse_dragen_rd_dna };
+    use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna qw{ pipeline_analyse_dragen_rd_dna };
     use MIP::Recipes::Pipeline::Analyse_rd_dna qw{ pipeline_analyse_rd_dna };
     use MIP::Recipes::Pipeline::Analyse_rd_dna_panel qw{ pipeline_analyse_rd_dna_panel };
     use MIP::Recipes::Pipeline::Analyse_rd_rna qw{ pipeline_analyse_rd_rna };
-    use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun
-      qw{ pipeline_analyse_rd_dna_vcf_rerun };
+    use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun qw{ pipeline_analyse_rd_dna_vcf_rerun };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -225,10 +221,7 @@ sub run_install_pipeline {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    $log->info(
-        q{Installing pipelines: } . join $SPACE,
-        @{ $active_parameter_href->{pipelines} }
-    );
+    $log->info( q{Installing pipelines: } . join $SPACE, @{ $active_parameter_href->{pipelines} } );
     pipeline_install(
         {
             active_parameter_href => $active_parameter_href,

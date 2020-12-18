@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -151,7 +150,7 @@ sub parse_io_outfiles {
         );
         my $outfile_tag    = $rec_atr{file_tag}       //= $EMPTY_STR;
         my $outfile_suffix = $rec_atr{outfile_suffix} //= $EMPTY_STR;
-        my $directory = catdir( $outdata_dir, $id, $recipe_name );
+        my $directory      = catdir( $outdata_dir, $id, $recipe_name );
 
         ## Default paths with iterators
         if ( @{$iterators_ref} and $file_name_prefix ) {
@@ -167,10 +166,8 @@ sub parse_io_outfiles {
                 }
             }
             @file_paths =
-              map {
-                catfile( $directory,
-                    $file_name_prefix . $outfile_tag . $_ . $outfile_suffix )
-              } @iterators;
+              map { catfile( $directory, $file_name_prefix . $outfile_tag . $_ . $outfile_suffix ) }
+              @iterators;
         }
         ## Default paths without iterators
         else {

@@ -1,6 +1,5 @@
 #!/usr/bin/env perl
 
-use strict;
 use warnings;
 use Modern::Perl qw{ 2018 };
 use warnings qw( FATAL utf8 );

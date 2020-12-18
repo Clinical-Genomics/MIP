@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -78,7 +77,7 @@ sub wget {
         },
         filehandle   => { store => \$filehandle, },
         outfile_path => { store => \$outfile_path, strict_type => 1, },
-        quiet => {
+        quiet        => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$quiet,
@@ -95,11 +94,10 @@ sub wget {
             store       => \$retry_connrefused,
             strict_type => 1,
         },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        timeout => {
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        timeout                => {
             allow       => [ undef, qr{ \A\d+\z }sxm ],
             store       => \$timeout,
             strict_type => 1,

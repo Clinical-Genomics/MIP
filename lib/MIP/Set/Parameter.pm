@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -98,7 +97,7 @@ sub set_programs_for_installation {
         and ( scalar @{ $active_parameter_href->{select_programs} } > 0 ) )
     {
         $log->fatal(
-q{"--skip_programs" and "--select_programs" are mutually exclusive command line options}
+            q{"--skip_programs" and "--select_programs" are mutually exclusive command line options}
         );
         exit 1;
     }
@@ -115,8 +114,7 @@ q{"--skip_programs" and "--select_programs" are mutually exclusive command line 
     }
 
     ## Remove programs that are to be skipped
-    delete @{ $active_parameter_href->{container} }
-      { @{ $active_parameter_href->{skip_programs} } };
+    delete @{ $active_parameter_href->{container} }{ @{ $active_parameter_href->{skip_programs} } };
 
     ## Special case for mip_scripts
     @{ $active_parameter_href->{select_programs} } = array_minus(

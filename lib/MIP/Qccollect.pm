@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -66,7 +65,7 @@ sub check_qc_metric {
     my $reference_metric_href;
 
     my $tmpl = {
-        metric => { defined => 1, required => 1, store => \$metric, strict_type => 1, },
+        metric       => { defined => 1, required => 1, store => \$metric, strict_type => 1, },
         qc_data_href => {
             default     => {},
             defined     => 1,
@@ -370,9 +369,7 @@ sub plink_relation_check {
 
     ## Set FAIL status
     my $status =
-        q{Status:}
-      . $recipe_name . q{:}
-      . $qc_data_href->{sample}{$sample_id}{$recipe_name};
+      q{Status:} . $recipe_name . q{:} . $qc_data_href->{sample}{$sample_id}{$recipe_name};
 
     ## Add to QC data at case level
     add_qc_data_evaluation_info(
@@ -647,8 +644,7 @@ sub get_case_pairwise_comparison {
     foreach my $relationship (@relationship_values) {
 
         ## Splices array into each sample_ids line
-        my @pairwise_comparisons = splice @relationship_values, 0,
-          scalar @{$sample_orders_ref};
+        my @pairwise_comparisons = splice @relationship_values, 0, scalar @{$sample_orders_ref};
 
         ## All columns in .mibs file
       COLUMN:
@@ -869,10 +865,10 @@ sub parse_sample_qc_metric {
 
             check_qc_metric(
                 {
-                    metric          => $metric,
-                    qc_data_href    => $qc_data_href,
-                    qc_metric_value => $qc_data_recipe_href->{$metric},
-                    recipe          => $recipe_name,
+                    metric                => $metric,
+                    qc_data_href          => $qc_data_href,
+                    qc_metric_value       => $qc_data_recipe_href->{$metric},
+                    recipe                => $recipe_name,
                     reference_metric_href =>
                       $evaluate_metric_href->{$sample_id}{$recipe_name}{$metric},
                 }
@@ -892,11 +888,10 @@ sub parse_sample_qc_metric {
 
             check_qc_metric(
                 {
-                    metric       => $metric,
-                    qc_data_href => $qc_data_href,
-                    qc_metric_value =>
-                      $qc_data_recipe_href->{header}{$data_header}{$metric},
-                    recipe => $recipe_name,
+                    metric                => $metric,
+                    qc_data_href          => $qc_data_href,
+                    qc_metric_value       => $qc_data_recipe_href->{header}{$data_header}{$metric},
+                    recipe                => $recipe_name,
                     reference_metric_href =>
                       $evaluate_metric_href->{$sample_id}{$recipe_name}{$metric},
                 }

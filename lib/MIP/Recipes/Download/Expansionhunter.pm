@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -121,8 +120,7 @@ sub download_expansionhunter {
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
 
     ### PREPROCESSING:
 
@@ -159,9 +157,9 @@ sub download_expansionhunter {
             outscript_dir         => $reference_dir,
             process_time          => $recipe_resource{time},
             ,
-            recipe_data_directory_path => $active_parameter_href->{reference_dir},
-            recipe_directory           => $recipe_name . $UNDERSCORE . $reference_version,
-            recipe_name                => $recipe_name,
+            recipe_data_directory_path      => $active_parameter_href->{reference_dir},
+            recipe_directory                => $recipe_name . $UNDERSCORE . $reference_version,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );

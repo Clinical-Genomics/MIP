@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -71,8 +70,7 @@ sub check_vep_api_cache_versions {
     ## Check that a version number was picked up
     if ( not $vep_version ) {
         $log->warn(
-q{Could not retrieve VEP version. Skipping checking that VEP api and cache matches.}
-        );
+            q{Could not retrieve VEP version. Skipping checking that VEP api and cache matches.});
         return;
     }
 
@@ -281,8 +279,7 @@ sub _get_vep_cache_species_dir_path {
     foreach my $species_cache (@vep_species_cache) {
 
         ## Get species specific cache dir
-        $vep_cache_species_dir_path =
-          abs_path( catdir( $vep_directory_cache, $species_cache ) );
+        $vep_cache_species_dir_path = abs_path( catdir( $vep_directory_cache, $species_cache ) );
         last if ( -e $vep_cache_species_dir_path );
     }
     return $vep_cache_species_dir_path;
@@ -366,10 +363,8 @@ sub _check_vep_custom_annotation_options {
               . q{ has a not allowed option value '}
               . $option . q{ => }
               . $custom_ann_option_href->{$option} );
-        $log->fatal(
-            q{Allowed options are: } . join $SPACE,
-            @{ $check_vep_annotations{$option}{allow} }
-        );
+        $log->fatal( q{Allowed options are: } . join $SPACE,
+            @{ $check_vep_annotations{$option}{allow} } );
         exit 1;
     }
     return 1;

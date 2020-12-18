@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -124,8 +123,7 @@ sub set_recipe_gatk_variantrecalibration {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Analysis::Gatk_cnnscorevariants
-      qw{ analysis_gatk_cnnscorevariants };
+    use MIP::Recipes::Analysis::Gatk_cnnscorevariants qw{ analysis_gatk_cnnscorevariants };
 
     ## Use already set gatk_variantrecalibration recipe
     return if ( @{$sample_ids_ref} != 1 );
@@ -133,8 +131,7 @@ sub set_recipe_gatk_variantrecalibration {
     return if ( not $use_cnnscorevariants );
 
     $log->warn(
-q{Switched from VariantRecalibration to CNNScoreVariants for single sample analysis}
-    );
+        q{Switched from VariantRecalibration to CNNScoreVariants for single sample analysis});
 
     ## Use new CNN recipe for single samples
     $analysis_recipe_href->{gatk_variantrecalibration} = \&analysis_gatk_cnnscorevariants;

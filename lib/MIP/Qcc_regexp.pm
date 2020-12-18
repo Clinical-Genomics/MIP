@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -111,11 +110,11 @@ sub regexp_to_yaml {
 
     # Return Uniquely mapped reads %
     $regexp{star_log}{percentage_uniquely_mapped_reads} =
-q?perl -nae 'if(m/Uniquely\smapped\sreads\s%\s\|\t(\d+\.\d+) /xms) {print $1; last;}' ?;
+      q?perl -nae 'if(m/Uniquely\smapped\sreads\s%\s\|\t(\d+\.\d+) /xms) {print $1; last;}' ?;
 
     ## Return percentage of reads with adapters
     $regexp{trim_galore_stats}{percentage_reads_with_adapter} =
-q?perl -nae 'if( m/Reads\swith\sadapters[^(]+\((\d+\.\d+) /xms ){ print $1; last;}' ?;
+      q?perl -nae 'if( m/Reads\swith\sadapters[^(]+\((\d+\.\d+) /xms ){ print $1; last;}' ?;
 
     ## Return percentage of reads after trimming
     $regexp{trim_galore_stats}{percentage_reads_after_trimming} =
@@ -218,8 +217,7 @@ q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@s
       q?perl -nae 'if($_=~/Fraction Duplicates\: (\S+)/) {print $1;}' ?;
 
     # Get BAIT_SET line from header
-    $regexp{collecthsmetrics}{header} =
-      q?perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' ?;
+    $regexp{collecthsmetrics}{header} = q?perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' ?;
 
     # Return line and only look at line 8 in file, where the data action is
     $regexp{collecthsmetrics}{data} =
@@ -238,8 +236,7 @@ q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@s
       q?perl -nae' if ($_ =~/^SECOND_OF_PAIR/ ) {print $_;last;}' ?;
 
     # Return PAIR line
-    $regexp{collectmultiplemetrics}{pair} =
-      q?perl -nae' if ($_ =~/^PAIR/ ) {print $_;last;}'  ?;
+    $regexp{collectmultiplemetrics}{pair} = q?perl -nae' if ($_ =~/^PAIR/ ) {print $_;last;}'  ?;
 
     # Return MEDIAN_INSERT_SIZE line from header
     $regexp{collectmultiplemetricsinsertsize}{header} =
@@ -250,8 +247,7 @@ q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@s
       q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?;
 
     # Get PF_BASES line from header
-    $regexp{collectrnaseqmetrics}{header} =
-      q?perl -nae' if ($_ =~/^PF_BASES/ ) {print $_;last;}' ?;
+    $regexp{collectrnaseqmetrics}{header} = q?perl -nae' if ($_ =~/^PF_BASES/ ) {print $_;last;}' ?;
 
     # Return line and only look at line 8 in file, where the data action is
     $regexp{collectrnaseqmetrics}{data} =
@@ -263,7 +259,7 @@ q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@s
 
     # Return CompOverlap and all and none line
     $regexp{variantevalall}{comp_overlap_data_all} =
-q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print $_;last;}' ?;
+      q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print $_;last;}' ?;
 
     # Return CompOverlap and known line
     $regexp{variantevalall}{comp_overlap_data_known} =
@@ -307,35 +303,35 @@ q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print
 
     # Return MultiallelicSummary and CompFeatureInput line from header
     $regexp{variantevalall}{multiallelic_summary_data_header} =
-q?perl -nae' if ($_ =~/^MultiallelicSummary\s+CompFeatureInput/ ) {print $_;last;}' ?;
+      q?perl -nae' if ($_ =~/^MultiallelicSummary\s+CompFeatureInput/ ) {print $_;last;}' ?;
 
     # Return MultiallelicSummary and all line
     $regexp{variantevalall}{multiallelic_summary_data_all} =
-q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
+      q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
 
     # Return MultiallelicSummary and known line
     $regexp{variantevalall}{multiallelic_summary_data_known} =
-q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
+      q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
 
     # Return MultiallelicSummary and novel line
     $regexp{variantevalall}{multiallelic_summary_data_novel} =
-q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
+      q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
     # Return TiTvVariantEvaluator and CompFeatureInput line from header
     $regexp{variantevalall}{titv_variant_evaluator_data_header} =
-q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+CompFeatureInput/ ) {print $_;last;}' ?;
+      q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+CompFeatureInput/ ) {print $_;last;}' ?;
 
     # Return TiTvVariantEvaluator and all line
     $regexp{variantevalall}{titv_variant_evaluator_data_all} =
-q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
+      q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/all\s/) ) {print $_;last;}' ?;
 
     # Return TiTvVariantEvaluator and known line
     $regexp{variantevalall}{titv_variant_evaluator_data_known} =
-q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
+      q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
 
     # Return TiTvVariantEvaluator and novel line
     $regexp{variantevalall}{titv_variant_evaluator_data_novel} =
-q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
+      q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
     # Return ValidationReport and CompFeatureInput line from header
     $regexp{variantevalall}{validation_report_header} =
@@ -347,11 +343,11 @@ q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/all\s/) && ($_ =~/none\s/
 
     # Return ValidationReport and known line
     $regexp{variantevalall}{validation_report_data_known} =
-q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
+      q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
 
     # Return ValidationReport and novel line
     $regexp{variantevalall}{validation_report_data_novel} =
-q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
+      q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
     # Return VariantSummary and CompFeatureInput line from header
     $regexp{variantevalall}{variant_summary_header} =
@@ -363,11 +359,11 @@ q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\s/) ) {print $_;las
 
     # Return VariantSummary and known line
     $regexp{variantevalall}{variant_summary_data_known} =
-q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
+      q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?;
 
     # Return VariantSummary and novel line
     $regexp{variantevalall}{variant_summary_data_novel} =
-q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
+      q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?;
 
     $regexp{variantevalexome} = $regexp{variantevalall};
 

@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -82,8 +81,7 @@ sub get_vcf_header_line_by_id {
     my @check_header_cmds;
 
     ## Stream vcf using bcftools
-    push @check_header_cmds,
-      $bcftools_binary_path . $SPACE . q{view} . $SPACE . $vcf_file_path;
+    push @check_header_cmds, $bcftools_binary_path . $SPACE . q{view} . $SPACE . $vcf_file_path;
     push @check_header_cmds, $PIPE;
 
     ## Assemble perl regexp for detecting keys in vcf

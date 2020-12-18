@@ -3,7 +3,6 @@ package MIP::Cli::Mip::Analyse::Dragen_rd_dna;
 use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -403,7 +402,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{sv_genmod_annotate_regions} => (
-            cmd_flag => q{sv_genmod_ann_reg},
+            cmd_flag      => q{sv_genmod_ann_reg},
             documentation =>
               q{Use predefined gene annotation supplied with genmod for defining genes},
             is  => q{rw},
@@ -467,10 +466,10 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{prepareforvariantannotationblock} => (
-            cmd_flag => q{prep_for_var_ann_bl},
-            cmd_tags => [q{Analysis recipe switch}],
+            cmd_flag      => q{prep_for_var_ann_bl},
+            cmd_tags      => [q{Analysis recipe switch}],
             documentation =>
-q{Prepare for variant annotation block by copying and splitting files per contig},
+              q{Prepare for variant annotation block by copying and splitting files per contig},
             is  => q{rw},
             isa => enum( [ 0, 1, 2 ] ),
         )
@@ -478,17 +477,16 @@ q{Prepare for variant annotation block by copying and splitting files per contig
 
     option(
         q{rhocall_ar} => (
-            cmd_tags => [q{Analysis recipe switch}],
-            documentation =>
-              q{Rhocall performs annotation of variants in autozygosity regions},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Rhocall performs annotation of variants in autozygosity regions},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
     option(
         q{rhocall_frequency_file} => (
-            cmd_tags => [q{Default: grch37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
+            cmd_tags      => [q{Default: grch37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
             documentation => q{Frequency file for bcftools roh calculation},
             is            => q{rw},
             isa           => Str,
@@ -743,7 +741,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{genmod_annotate_regions} => (
-            cmd_flag => q{genmod_ann_reg},
+            cmd_flag      => q{genmod_ann_reg},
             documentation =>
               q{Use predefined gene annotation supplied with genmod for defining genes},
             is  => q{rw},

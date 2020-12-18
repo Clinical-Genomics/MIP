@@ -1,6 +1,5 @@
 package MIP::Program::Gnu::Software::Gnu_less;
 
-use strict;
 use warnings;
 use warnings qw( FATAL utf8 );
 use utf8;    #Allow unicode characters in this script
@@ -10,7 +9,7 @@ use Carp;
 use autodie;
 use Params::Check qw[check allow last_error];
 
-use FindBin qw($Bin);                 #Find directory of script
+use FindBin qw($Bin);    #Find directory of script
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(catdir);
 

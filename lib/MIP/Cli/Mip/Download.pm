@@ -3,7 +3,6 @@ package MIP::Cli::Mip::Download;
 use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -113,11 +112,10 @@ sub _build_usage {
 
     option(
         q{dry_run_all} => (
-            cmd_aliases => [qw{ dra }],
-            documentation =>
-              q{Sets all recipes to dry run mode i.e. no sbatch submission},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ dra }],
+            documentation => q{Sets all recipes to dry run mode i.e. no sbatch submission},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 

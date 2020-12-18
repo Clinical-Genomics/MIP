@@ -10,7 +10,6 @@ use List::Util qw{ none };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Path::Tiny qw{ path };
-use strict;
 use utf8;
 use warnings qw{ FATAL utf8 };
 use warnings;
@@ -75,8 +74,7 @@ sub install_mip_scripts {
 
     my %mip_sub_script = (
         utility_scripts => [qw{ calculate_af.pl max_af.pl }],
-        t =>
-          [qw{ mip_install.test mip_analyse_rd_dna.test mip_core.t mip_analysis.test }],
+        t         => [qw{ mip_install.test mip_analyse_rd_dna.test mip_core.t mip_analysis.test }],
         templates => [
             qw{ 643594-miptest_pedigree.yaml
               gene_panels.bed
@@ -123,7 +121,7 @@ sub install_mip_scripts {
         my @cp_cmds = gnu_cp(
             {
                 force        => 1,
-                infile_path  => catdir( $mip_dir_path, $directory ),
+                infile_path  => catdir( $mip_dir_path,      $directory ),
                 outfile_path => catdir( $conda_prefix_path, q{bin} ),
                 recursive    => 1,
             }
@@ -147,7 +145,7 @@ sub install_mip_scripts {
   SCRIPT:
     foreach my $script (@mip_scripts) {
 
-        my $src_path = catfile( $mip_dir_path,      $script );
+        my $src_path = catfile( $mip_dir_path, $script );
         my $dst_path = catfile( $conda_prefix_path, q{bin}, $script );
         path($src_path)->copy($dst_path);
         path($dst_path)->chmod(q{a+x});

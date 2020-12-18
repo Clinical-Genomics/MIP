@@ -8,7 +8,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -216,10 +215,7 @@ sub get_io_files {
               if (
                 not Dive(
                     $file_info_href,
-                    (
-                        q{io},            $upstream_chain_id, $id,
-                        $upstream_recipe, $upstream_direction
-                    )
+                    ( q{io}, $upstream_chain_id, $id, $upstream_recipe, $upstream_direction )
                 )
               );
 
@@ -253,10 +249,7 @@ sub get_io_files {
             if (
                 Dive(
                     $file_info_href,
-                    (
-                        q{io},            $upstream_chain_id, $id,
-                        $upstream_recipe, $upstream_direction
-                    )
+                    ( q{io}, $upstream_chain_id, $id, $upstream_recipe, $upstream_direction )
                 )
               )
             {
@@ -500,8 +493,8 @@ sub _collect_outfile {
             store       => \$outfiles_ref,
             strict_type => 1,
         },
-        value => { defined => 1, required => 1, store => \$value, },
-        key   => { defined => 1, store => \$key, required => 1, strict_type => 1, },
+        value => { defined => 1, required => 1,     store    => \$value, },
+        key   => { defined => 1, store    => \$key, required => 1, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};

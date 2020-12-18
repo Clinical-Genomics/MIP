@@ -5,7 +5,6 @@ use Carp;
 use File::Basename qw{ dirname };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -50,7 +49,7 @@ sub _build_usage {
 
     option(
         q{analysisrunstatus} => (
-            cmd_tags => [q{Analysis recipe switch}],
+            cmd_tags      => [q{Analysis recipe switch}],
             documentation =>
 q{Check analysis output and sets the analysis run status flag to finished in sample_info_file},
             is  => q{rw},
@@ -105,11 +104,10 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{dry_run_all} => (
-            cmd_aliases => [qw{ dra }],
-            documentation =>
-              q{Sets all recipes to dry run mode i.e. no sbatch submission},
-            is  => q{rw},
-            isa => Bool,
+            cmd_aliases   => [qw{ dra }],
+            documentation => q{Sets all recipes to dry run mode i.e. no sbatch submission},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -278,11 +276,10 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
 
     option(
         q{sacct} => (
-            cmd_tags => [q{Analysis recipe switch}],
-            documentation =>
-              q{Generating sbatch script for SLURM info on each submitted job},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Generating sbatch script for SLURM info on each submitted job},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 

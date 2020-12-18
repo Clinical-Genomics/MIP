@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use Test::More;
 use utf8;
 use warnings;
@@ -59,9 +58,8 @@ sub test_write_to_file {
             store       => \$base_commands_ref,
             strict_type => 1,
         },
-        module_function_cref =>
-          { defined => 1, required => 1, store => \$module_function_cref, },
-        separator => {
+        module_function_cref => { defined => 1, required => 1, store => \$module_function_cref, },
+        separator            => {
             default     => $SPACE,
             store       => \$separator,
             strict_type => 1,
