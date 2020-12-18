@@ -26,6 +26,7 @@ BEGIN {
     our @EXPORT_OK = qw{
       set_rankvariants_ar
       set_recipe_bwa_mem
+      set_recipe_deepvariant
       set_recipe_gatk_variantrecalibration
       set_recipe_on_analysis_type
       set_recipe_star_aln
@@ -75,6 +76,53 @@ sub set_recipe_bwa_mem {
     if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_PRIOR_ALTS ) {
 
         $analysis_recipe_href->{bwa_mem} = \&analysis_run_bwa_mem;
+    }
+    return;
+}
+
+sub set_recipe_deepvariant {
+
+## Function : Set deeptrio or deepvariant recipe depending on the presence of parent-child duo or trio
+## Returns  :
+## Arguments: $analysis_recipe_href           => Analysis recipe hash {REF}
+##          : $sample_info_href               => Sample info hash {HASH}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Deepvariant qw{ analysis_deepvariant };
+    use MIP::Recipes::Analysis::Deeptrio qw{ analysis_deeptrio };
+
+    if ( $sample_info_href->{has_duo} or $sample_info_href->{has_trio}) {
+
+        $analysis_recipe_href->{deepvariant} = undef;
+        $analysis_recipe_href->{deeptrio} = \&analysis_deeptrio;
+    }
+    else {
+
+        $analysis_recipe_href->{deepvariant} = \&analysis_deepvariant;
+        $analysis_recipe_href->{deeptrio} = undef;
     }
     return;
 }

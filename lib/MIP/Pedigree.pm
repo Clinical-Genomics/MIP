@@ -529,7 +529,7 @@ sub has_duo {
 
     ## At least two samples
     return 0
-      if ( scalar @{ $active_parameter_href->{sample_ids} } < $DUO_MEMBERS_COUNT );
+      if ( scalar @{ $active_parameter_href->{sample_ids} } != $DUO_MEMBERS_COUNT );
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {

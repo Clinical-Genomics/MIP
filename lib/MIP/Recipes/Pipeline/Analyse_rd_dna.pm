@@ -442,7 +442,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_references };
     use MIP::Set::Analysis
-      qw{ set_recipe_bwa_mem set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
+      qw{ set_recipe_bwa_mem set_recipe_deepvariant set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
@@ -565,8 +565,8 @@ sub pipeline_analyse_rd_dna {
         ? \&analysis_chromograph_upd
         : undef,                                               # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
-        deepvariant                 => $sample_info_href->{has_duo_or_trio} ? undef : \&analysis_deepvariant,
-        deeptrio                    => $sample_info_href->{has_duo_or_trio} ? \&analysis_deeptrio : undef,
+        deepvariant                 => undef,
+        deeptrio                    => undef,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
@@ -648,6 +648,14 @@ sub pipeline_analyse_rd_dna {
             analysis_recipe_href => \%analysis_recipe,
             human_genome_reference_version =>
               $file_info_href->{human_genome_reference_version},
+        }
+    );
+
+    ## Set deepvariant or deeptrio recipe depending on the presence of parent-child duo or a trio
+    set_recipe_deepvariant(
+        {
+            analysis_recipe_href => \%analysis_recipe,
+            sample_info_href     => $sample_info_href,
         }
     );
 
