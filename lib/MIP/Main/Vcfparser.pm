@@ -115,9 +115,9 @@ sub mip_vcfparser {
             store       => \$select_feature_matching_column,
             strict_type => 1,
         },
-        select_outfile_path => { store => \$select_outfile_path, strict_type => 1, },
-        vcf_in_fh          => { defined => 1, required => 1, store => \$vcf_in_fh, },
-        write_software_tag => {
+        select_outfile_path => { store   => \$select_outfile_path, strict_type => 1, },
+        vcf_in_fh           => { defined => 1, required => 1, store => \$vcf_in_fh, },
+        write_software_tag  => {
             allow       => [ 0, 1 ],
             default     => 1,
             store       => \$write_software_tag,
@@ -137,19 +137,16 @@ sub mip_vcfparser {
 
     if ($pli_values_file_path) {
 
-        $log->info( q{Loading pli value file: } . $pli_values_file_path );
         load_pli_file(
             {
                 infile_path    => $pli_values_file_path,
-                log            => $log,
                 pli_score_href => \%pli_score,
             }
         );
-        $log->info(q{Loading pli value file: Done});
 
         ## Add pli header line to VCF meta data HASH
         $meta_data{INFO}{most_severe_pli} =
-q{##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe pli score.">};
+          q{##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe pli score.">};
     }
 
     my %select_data = define_select_data_headers();
@@ -183,22 +180,21 @@ q{##INFO=<ID=most_severe_pli,Number=1,Type=Float,Description="Most severe pli sc
 
     read_infile_vcf(
         {
-            consequence_severity_href            => \%consequence_severity,
-            meta_data_href                       => \%meta_data,
-            parse_vep                            => $parse_vep,
-            per_gene                             => $per_gene,
-            pli_score_href                       => \%pli_score,
-            range_data_href                      => \%range_data,
-            range_feature_annotation_columns_ref => $range_feature_annotation_columns_ref,
-            select_data_href                     => \%select_data,
-            select_feature_annotation_columns_ref =>
-              $select_feature_annotation_columns_ref,
-            select_feature_file => $select_feature_file,
-            select_outfile_path => $select_outfile_path,
-            tree_href           => \%tree,
-            vcfparser_version   => $MIP::Main::Vcfparser::VERSION,
-            vcf_in_fh           => $vcf_in_fh,
-            write_software_tag  => $write_software_tag,
+            consequence_severity_href             => \%consequence_severity,
+            meta_data_href                        => \%meta_data,
+            parse_vep                             => $parse_vep,
+            per_gene                              => $per_gene,
+            pli_score_href                        => \%pli_score,
+            range_data_href                       => \%range_data,
+            range_feature_annotation_columns_ref  => $range_feature_annotation_columns_ref,
+            select_data_href                      => \%select_data,
+            select_feature_annotation_columns_ref => $select_feature_annotation_columns_ref,
+            select_feature_file                   => $select_feature_file,
+            select_outfile_path                   => $select_outfile_path,
+            tree_href                             => \%tree,
+            vcfparser_version                     => $MIP::Main::Vcfparser::VERSION,
+            vcf_in_fh                             => $vcf_in_fh,
+            write_software_tag                    => $write_software_tag,
         }
     );
 
@@ -414,20 +410,18 @@ sub read_infile_vcf {
 
             add_feature_file_meta_data_to_vcf(
                 {
-                    data_href => $range_data_href,
-                    feature_annotation_columns_ref =>
-                      $range_feature_annotation_columns_ref,
-                    file_key       => q{Range},
-                    meta_data_href => $meta_data_href,
+                    data_href                      => $range_data_href,
+                    feature_annotation_columns_ref => $range_feature_annotation_columns_ref,
+                    file_key                       => q{Range},
+                    meta_data_href                 => $meta_data_href,
                 }
             );
             add_feature_file_meta_data_to_vcf(
                 {
-                    data_href => $select_data_href,
-                    feature_annotation_columns_ref =>
-                      $select_feature_annotation_columns_ref,
-                    file_key       => q{Select},
-                    meta_data_href => $meta_data_href,
+                    data_href                      => $select_data_href,
+                    feature_annotation_columns_ref => $select_feature_annotation_columns_ref,
+                    file_key                       => q{Select},
+                    meta_data_href                 => $meta_data_href,
                 }
             );
 
@@ -686,10 +680,8 @@ sub _get_select_filehandle {
 
     my $log = retrieve_log( { log_name => $LOG_NAME, } );
 
-    open my $select_fh, q{>},
-      $select_outfile_path
-      or $log->logdie( q{Cannot open } . $select_outfile_path . $COLON . $OS_ERROR,
-        $NEWLINE );
+    open my $select_fh, q{>}, $select_outfile_path
+      or $log->logdie( q{Cannot open } . $select_outfile_path . $COLON . $OS_ERROR, $NEWLINE );
 
     return $select_fh;
 }

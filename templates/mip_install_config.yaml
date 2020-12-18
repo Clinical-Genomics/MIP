@@ -228,7 +228,7 @@ container:
   varg:
     executable:
       varg:
-    uri: docker.io/clinicalgenomics/varg:1.2.0
+    uri: docker.io/clinicalgenomics/varg:1.6.11
   vcfanno:
     executable:
       vcfanno:

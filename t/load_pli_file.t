@@ -50,17 +50,15 @@ diag(   q{Test load_pli_file from Pli.pm}
 ## Constants
 Readonly my $ADK_PLI => 0.91;
 
-my $log = test_log( {} );
+test_log( { no_screen => 1, } );
 
 ## Given a pli file
-my $pli_values_file_path =
-  catfile( $Bin, qw{ data references gnomad_pli_per_gene_-_r2.1.1-.txt } );
+my $pli_values_file_path = catfile( $Bin, qw{ data references gnomad_pli_per_gene_-_r2.1.1-.txt } );
 my %pli_score;
 
 my $is_ok = load_pli_file(
     {
         infile_path    => $pli_values_file_path,
-        log            => $log,
         pli_score_href => \%pli_score,
     }
 );

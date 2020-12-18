@@ -133,8 +133,7 @@ sub analysis_bwa_mem {
     use MIP::Parse::File qw{parse_io_outfiles};
     use MIP::Processmanagement::Processes qw{submit_recipe};
     use MIP::Program::Bwa qw{bwa_mem};
-    use MIP::Program::Samtools
-      qw{ samtools_index samtools_stats samtools_sort samtools_view};
+    use MIP::Program::Samtools qw{ samtools_index samtools_stats samtools_sort samtools_view};
     use MIP::Sample_info qw{
       get_rg_header_line
       set_recipe_metafile_in_sample_info
@@ -245,25 +244,23 @@ sub analysis_bwa_mem {
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         my ( $recipe_file_path, $recipe_info_path ) = setup_script(
             {
-                active_parameter_href           => $active_parameter_href,
-                core_number                     => $recipe_resource{core_number},
-                directory_id                    => $sample_id,
-                filehandle                      => $filehandle,
-                job_id_href                     => $job_id_href,
-                memory_allocation               => $recipe_resource{memory},
-                recipe_directory                => $recipe_name,
-                recipe_name                     => $recipe_name,
-                process_time                    => $recipe_resource{time},
-                temp_directory                  => $temp_directory,
+                active_parameter_href => $active_parameter_href,
+                core_number           => $recipe_resource{core_number},
+                directory_id          => $sample_id,
+                filehandle            => $filehandle,
+                job_id_href           => $job_id_href,
+                memory_allocation     => $recipe_resource{memory},
+                recipe_directory      => $recipe_name,
+                recipe_name           => $recipe_name,
+                process_time          => $recipe_resource{time},
+                temp_directory        => $temp_directory,
             }
         );
 
         ### SHELL:
 
         ### BWA MEM
-        say {$filehandle} q{## Aligning reads with }
-          . $recipe_name
-          . q{ and sorting via Samtools};
+        say {$filehandle} q{## Aligning reads with } . $recipe_name . q{ and sorting via Samtools};
 
         ### Get parameters
 
@@ -290,8 +287,7 @@ sub analysis_bwa_mem {
             }
         );
         ## Add missing "@RG"
-        $rg_header_line =
-          $DOUBLE_QUOTE . q{@RG} . q{\t} . $rg_header_line . $DOUBLE_QUOTE;
+        $rg_header_line = $DOUBLE_QUOTE . q{@RG} . q{\t} . $rg_header_line . $DOUBLE_QUOTE;
 
         # Prior to ALTs in reference genome
         bwa_mem(
@@ -302,9 +298,9 @@ sub analysis_bwa_mem {
                 interleaved_fastq_file  => $is_interleaved_fastq,
                 mark_split_as_secondary => 1,
                 read_group_header       => $rg_header_line,
-                soft_clip_sup_align => $active_parameter_href->{bwa_soft_clip_sup_align},
-                second_infile_path  => $second_fastq_file_path,
-                thread_number       => $recipe_resource{core_number},
+                soft_clip_sup_align     => $active_parameter_href->{bwa_soft_clip_sup_align},
+                second_infile_path      => $second_fastq_file_path,
+                thread_number           => $recipe_resource{core_number},
             }
         );
 
@@ -338,9 +334,8 @@ sub analysis_bwa_mem {
                 max_memory_per_thread => 2 . q{G},
                 outfile_path          => $outfile_path,
                 output_format         => $output_format,
-                temp_file_path_prefix =>
-                  catfile( $temp_directory, q{samtools_sort_temp} ),
-                thread_number => $recipe_resource{core_number},
+                temp_file_path_prefix => catfile( $temp_directory, q{samtools_sort_temp} ),
+                thread_number         => $recipe_resource{core_number},
             }
         );
         say {$filehandle} $NEWLINE;
@@ -443,14 +438,13 @@ sub analysis_bwa_mem {
 
             submit_recipe(
                 {
-                    base_command      => $profile_base_command,
-                    case_id           => $case_id,
-                    dependency_method => q{sample_to_sample_parallel},
-                    job_id_chain      => $job_id_chain,
-                    job_id_href       => $job_id_href,
-                    job_reservation_name =>
-                      $active_parameter_href->{job_reservation_name},
-                    log => $log,
+                    base_command         => $profile_base_command,
+                    case_id              => $case_id,
+                    dependency_method    => q{sample_to_sample_parallel},
+                    job_id_chain         => $job_id_chain,
+                    job_id_href          => $job_id_href,
+                    job_reservation_name => $active_parameter_href->{job_reservation_name},
+                    log                  => $log,
                     max_parallel_processes_count_href =>
                       $file_info_href->{max_parallel_processes_count},
                     recipe_file_path     => $recipe_file_path,
@@ -568,8 +562,7 @@ sub analysis_bwa_mem2 {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_mem2_mem };
-    use MIP::Program::Samtools
-      qw{ samtools_index samtools_stats samtools_sort samtools_view };
+    use MIP::Program::Samtools qw{ samtools_index samtools_stats samtools_sort samtools_view };
     use MIP::Sample_info qw{
       get_rg_header_line
       set_recipe_metafile_in_sample_info
@@ -680,25 +673,23 @@ sub analysis_bwa_mem2 {
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         my ( $recipe_file_path, $recipe_info_path ) = setup_script(
             {
-                active_parameter_href           => $active_parameter_href,
-                core_number                     => $recipe_resource{core_number},
-                directory_id                    => $sample_id,
-                filehandle                      => $filehandle,
-                job_id_href                     => $job_id_href,
-                memory_allocation               => $recipe_resource{memory},
-                recipe_directory                => $recipe_name,
-                recipe_name                     => $recipe_name,
-                process_time                    => $recipe_resource{time},
-                temp_directory                  => $temp_directory,
+                active_parameter_href => $active_parameter_href,
+                core_number           => $recipe_resource{core_number},
+                directory_id          => $sample_id,
+                filehandle            => $filehandle,
+                job_id_href           => $job_id_href,
+                memory_allocation     => $recipe_resource{memory},
+                recipe_directory      => $recipe_name,
+                recipe_name           => $recipe_name,
+                process_time          => $recipe_resource{time},
+                temp_directory        => $temp_directory,
             }
         );
 
         ### SHELL:
 
         ### BWA MEM
-        say {$filehandle} q{## Aligning reads with }
-          . $recipe_name
-          . q{ and sorting via Samtools};
+        say {$filehandle} q{## Aligning reads with } . $recipe_name . q{ and sorting via Samtools};
 
         ### Get parameters
 
@@ -725,8 +716,7 @@ sub analysis_bwa_mem2 {
             }
         );
         ## Add missing "@RG"
-        $rg_header_line =
-          $DOUBLE_QUOTE . q{@RG} . q{\t} . $rg_header_line . $DOUBLE_QUOTE;
+        $rg_header_line = $DOUBLE_QUOTE . q{@RG} . q{\t} . $rg_header_line . $DOUBLE_QUOTE;
         my $samtools_view_outfile_path =
           $outfile_path_prefix . $UNDERSCORE . q{mem} . $outfile_suffix;
 
@@ -739,9 +729,9 @@ sub analysis_bwa_mem2 {
                 interleaved_fastq_file  => $is_interleaved_fastq,
                 mark_split_as_secondary => 1,
                 read_group_header       => $rg_header_line,
-                soft_clip_sup_align => $active_parameter_href->{bwa_soft_clip_sup_align},
-                second_infile_path  => $second_fastq_file_path,
-                thread_number       => $recipe_resource{core_number},
+                soft_clip_sup_align     => $active_parameter_href->{bwa_soft_clip_sup_align},
+                second_infile_path      => $second_fastq_file_path,
+                thread_number           => $recipe_resource{core_number},
             }
         );
 
@@ -775,9 +765,8 @@ sub analysis_bwa_mem2 {
                 max_memory_per_thread => 2 . q{G},
                 outfile_path          => $outfile_path,
                 output_format         => $output_format,
-                temp_file_path_prefix =>
-                  catfile( $temp_directory, q{samtools_sort_temp} ),
-                thread_number => $recipe_resource{core_number},
+                temp_file_path_prefix => catfile( $temp_directory, q{samtools_sort_temp} ),
+                thread_number         => $recipe_resource{core_number},
             }
         );
         say {$filehandle} $NEWLINE;
@@ -880,14 +869,13 @@ sub analysis_bwa_mem2 {
 
             submit_recipe(
                 {
-                    base_command      => $profile_base_command,
-                    case_id           => $case_id,
-                    dependency_method => q{sample_to_sample_parallel},
-                    job_id_chain      => $job_id_chain,
-                    job_id_href       => $job_id_href,
-                    job_reservation_name =>
-                      $active_parameter_href->{job_reservation_name},
-                    log => $log,
+                    base_command         => $profile_base_command,
+                    case_id              => $case_id,
+                    dependency_method    => q{sample_to_sample_parallel},
+                    job_id_chain         => $job_id_chain,
+                    job_id_href          => $job_id_href,
+                    job_reservation_name => $active_parameter_href->{job_reservation_name},
+                    log                  => $log,
                     max_parallel_processes_count_href =>
                       $file_info_href->{max_parallel_processes_count},
                     recipe_file_path     => $recipe_file_path,
@@ -999,14 +987,14 @@ sub analysis_run_bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Environment::Executable qw{ get_executable_base_command };
     use MIP::File_info qw{get_sample_file_attribute};
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_mem run_bwamem };
-    use MIP::Program::Samtools
-      qw{ samtools_index samtools_stats samtools_sort samtools_view };
+    use MIP::Program::Samtools qw{ samtools_index samtools_stats samtools_sort samtools_view };
     use MIP::Sample_info qw{
       get_rg_header_line
       set_recipe_metafile_in_sample_info
@@ -1117,25 +1105,23 @@ sub analysis_run_bwa_mem {
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         my ( $recipe_file_path, $recipe_info_path ) = setup_script(
             {
-                active_parameter_href           => $active_parameter_href,
-                core_number                     => $recipe_resource{core_number},
-                directory_id                    => $sample_id,
-                filehandle                      => $filehandle,
-                job_id_href                     => $job_id_href,
-                memory_allocation               => $recipe_resource{memory},
-                recipe_directory                => $recipe_name,
-                recipe_name                     => $recipe_name,
-                process_time                    => $recipe_resource{time},
-                temp_directory                  => $temp_directory,
+                active_parameter_href => $active_parameter_href,
+                core_number           => $recipe_resource{core_number},
+                directory_id          => $sample_id,
+                filehandle            => $filehandle,
+                job_id_href           => $job_id_href,
+                memory_allocation     => $recipe_resource{memory},
+                recipe_directory      => $recipe_name,
+                recipe_name           => $recipe_name,
+                process_time          => $recipe_resource{time},
+                temp_directory        => $temp_directory,
             }
         );
 
         ### SHELL:
 
         ### BWA MEM
-        say {$filehandle} q{## Aligning reads with }
-          . $recipe_name
-          . q{ and sorting via Samtools};
+        say {$filehandle} q{## Aligning reads with } . $recipe_name . q{ and sorting via Samtools};
 
         ### Get parameters
 
@@ -1162,8 +1148,7 @@ sub analysis_run_bwa_mem {
             }
         );
         ## Add missing "@RG"
-        $rg_header_line =
-          $DOUBLE_QUOTE . q{@RG} . q{\t} . $rg_header_line . $DOUBLE_QUOTE;
+        $rg_header_line = $DOUBLE_QUOTE . q{@RG} . q{\t} . $rg_header_line . $DOUBLE_QUOTE;
 
         # If post to ALTs in reference genome
         run_bwamem(
@@ -1179,8 +1164,9 @@ sub analysis_run_bwa_mem {
             }
         );
         print {$filehandle} $PIPE . $SPACE;
-        print {$filehandle} q{bwakit sh} . $SPACE;
-        say   {$filehandle} $NEWLINE;
+        print {$filehandle} get_executable_base_command( { base_command => q{bwakit}, } ) . q{ sh}
+          . $SPACE;
+        say {$filehandle} $NEWLINE;
 
         ## Set samtools sort input; Sort directly from run-bwakit
         my $samtools_sort_infile = $outfile_path_prefix . $DOT . q{aln} . $outfile_suffix;
@@ -1196,10 +1182,9 @@ sub analysis_run_bwa_mem {
                 max_memory_per_thread => 2 . q{G},
                 outfile_path          => $outfile_path,
                 output_format         => $output_format,
-                temp_file_path_prefix =>
-                  catfile( $temp_directory, q{samtools_sort_temp} ),
-                thread_number => $recipe_resource{core_number},
-                write_index   => 1,
+                temp_file_path_prefix => catfile( $temp_directory, q{samtools_sort_temp} ),
+                thread_number         => $recipe_resource{core_number},
+                write_index           => 1,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -1302,14 +1287,13 @@ sub analysis_run_bwa_mem {
 
             submit_recipe(
                 {
-                    base_command      => $profile_base_command,
-                    case_id           => $case_id,
-                    dependency_method => q{sample_to_sample_parallel},
-                    job_id_chain      => $job_id_chain,
-                    job_id_href       => $job_id_href,
-                    job_reservation_name =>
-                      $active_parameter_href->{job_reservation_name},
-                    log => $log,
+                    base_command         => $profile_base_command,
+                    case_id              => $case_id,
+                    dependency_method    => q{sample_to_sample_parallel},
+                    job_id_chain         => $job_id_chain,
+                    job_id_href          => $job_id_href,
+                    job_reservation_name => $active_parameter_href->{job_reservation_name},
+                    log                  => $log,
                     max_parallel_processes_count_href =>
                       $file_info_href->{max_parallel_processes_count},
                     recipe_file_path     => $recipe_file_path,
