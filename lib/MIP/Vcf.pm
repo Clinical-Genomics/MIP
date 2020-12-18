@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -58,11 +57,7 @@ sub get_sample_ids_from_vcf {
     ## Export MIP_BIND to bind reference path to htslib sif in proxy bin
     my @commands = gnu_export(
         {
-                bash_variable => q{MIP_BIND}
-              . $EQUALS
-              . $vcf_file_path
-              . $COLON
-              . $vcf_file_path,
+            bash_variable => q{MIP_BIND} . $EQUALS . $vcf_file_path . $COLON . $vcf_file_path,
         }
     );
     push @commands, $SEMICOLON;

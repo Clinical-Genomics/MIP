@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -71,8 +70,7 @@ sub check_infiles {
     if ( not @{$infiles_ref} ) {
 
         $log->fatal(
-qq{Could not find any fastq files in supplied infiles directory: $infile_directory}
-        );
+            qq{Could not find any fastq files in supplied infiles directory: $infile_directory});
         exit 1;
     }
 
@@ -196,11 +194,8 @@ sub check_sample_ids {
         ## Family_id cannot be the same as sample_id
         if ( $case_id eq $sample_id ) {
 
-            $log->fatal( q{Case_id: '}
-                  . $case_id
-                  . q{' equals sample_id: '}
-                  . $sample_id
-                  . $SINGLE_QUOTE );
+            $log->fatal(
+                q{Case_id: '} . $case_id . q{' equals sample_id: '} . $sample_id . $SINGLE_QUOTE );
             $log->fatal(q{Please make sure that the case_id and sample_id(s) are unique});
             exit 1;
         }
@@ -215,7 +210,7 @@ sub check_sample_ids {
 
             $log->fatal( q{Sample_id: '} . $sample_id . q{' contains '_'} );
             $log->fatal(
-q{Please rename sample_id according to MIP's filename convention, removing the '_'.}
+                q{Please rename sample_id according to MIP's filename convention, removing the '_'.}
             );
             exit 1;
         }

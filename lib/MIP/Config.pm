@@ -5,7 +5,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -64,8 +63,7 @@ sub check_cmd_config_vs_definition_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @allowed_unique_keys =
-      ( q{vcfparser_outfile_count}, $active_parameter_href->{case_id} );
+    my @allowed_unique_keys = ( q{vcfparser_outfile_count}, $active_parameter_href->{case_id} );
     my @unique;
 
   ACTIVE_PARAMETER:
@@ -263,9 +261,8 @@ sub parse_dynamic_config_parameters {
         ## Updates the dynamic config parameters using supplied $case_id
         update_dynamic_config_parameters(
             {
-                active_parameter_ref => \$active_parameter_href->{$dynamic_param_name},
-                dynamic_parameter_href =>
-                  { case_id => $active_parameter_href->{case_id}, },
+                active_parameter_ref   => \$active_parameter_href->{$dynamic_param_name},
+                dynamic_parameter_href => { case_id => $active_parameter_href->{case_id}, },
             }
         );
     }
@@ -339,8 +336,7 @@ sub set_config_to_active_parameters {
 
         ### No input from cmd
         ## Add to active_parameter
-        $active_parameter_href->{$parmeter_name} =
-          $config_parameter_href->{$parmeter_name};
+        $active_parameter_href->{$parmeter_name} = $config_parameter_href->{$parmeter_name};
     }
     return;
 }
@@ -467,8 +463,7 @@ sub write_mip_config {
             path      => $active_parameter_href->{config_file_analysis},
         }
     );
-    $log->info(
-        q{Wrote config file to: } . $active_parameter_href->{config_file_analysis} );
+    $log->info( q{Wrote config file to: } . $active_parameter_href->{config_file_analysis} );
 
     ## Add to sample_info for use downstream
     set_in_sample_info(

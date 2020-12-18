@@ -7,7 +7,6 @@ use File::Basename qw{fileparse};
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,8 +16,7 @@ use autodie qw{:all};
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ $ASTERISK $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
 
@@ -246,9 +244,9 @@ sub analysis_split_fastq_file {
 
         gnu_split(
             {
-                filehandle  => $filehandle,
-                infile_path => q{-},
-                lines       => ( $sequence_read_batch * $FASTQC_SEQUENCE_LINE_BLOCK ),
+                filehandle       => $filehandle,
+                infile_path      => q{-},
+                lines            => ( $sequence_read_batch * $FASTQC_SEQUENCE_LINE_BLOCK ),
                 numeric_suffixes => 1,
                 prefix           => $temp_infile_path_prefixes[$infile_index]
                   . $UNDERSCORE
@@ -281,10 +279,7 @@ sub analysis_split_fastq_file {
         pigz(
             {
                 filehandle  => $filehandle,
-                infile_path => $splitted_flowcell_name_prefix
-                  . q{*-SP*}
-                  . $DOT
-                  . $splitted_suffix,
+                infile_path => $splitted_flowcell_name_prefix . q{*-SP*} . $DOT . $splitted_suffix,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -292,8 +287,8 @@ sub analysis_split_fastq_file {
         ## Copies files from temporary folder to source
         gnu_cp(
             {
-                filehandle  => $filehandle,
-                infile_path => $splitted_flowcell_name_prefix . q{*-SP*} . $infile_suffix,
+                filehandle   => $filehandle,
+                infile_path  => $splitted_flowcell_name_prefix . q{*-SP*} . $infile_suffix,
                 outfile_path => $indir_path_prefix,
             }
         );
@@ -301,24 +296,21 @@ sub analysis_split_fastq_file {
 
         gnu_mkdir(
             {
-                filehandle => $filehandle,
-                indirectory_path =>
-                  catfile( $indir_path_prefix, q{original_fastq_files}, ),
-                parents => 1,
+                filehandle       => $filehandle,
+                indirectory_path => catfile( $indir_path_prefix, q{original_fastq_files}, ),
+                parents          => 1,
             }
         );
         say {$filehandle} $NEWLINE;
 
         ## Move original file to not be included in subsequent analysis
-        say {$filehandle}
-          q{## Move original file to not be included in subsequent analysis};
+        say {$filehandle} q{## Move original file to not be included in subsequent analysis};
         gnu_mv(
             {
                 filehandle   => $filehandle,
                 infile_path  => $infile_path,
                 outfile_path => catfile(
-                    $indir_path_prefix, q{original_fastq_files},
-                    $infile_names[$infile_index]
+                    $indir_path_prefix, q{original_fastq_files}, $infile_names[$infile_index]
                 ),
             }
         );
@@ -328,14 +320,13 @@ sub analysis_split_fastq_file {
 
             submit_recipe(
                 {
-                    base_command      => $profile_base_command,
-                    case_id           => $case_id,
-                    dependency_method => q{sample_to_island},
-                    job_id_chain      => $job_id_chain,
-                    job_id_href       => $job_id_href,
-                    job_reservation_name =>
-                      $active_parameter_href->{job_reservation_name},
-                    log => $log,
+                    base_command         => $profile_base_command,
+                    case_id              => $case_id,
+                    dependency_method    => q{sample_to_island},
+                    job_id_chain         => $job_id_chain,
+                    job_id_href          => $job_id_href,
+                    job_reservation_name => $active_parameter_href->{job_reservation_name},
+                    log                  => $log,
                     max_parallel_processes_count_href =>
                       $file_info_href->{max_parallel_processes_count},
                     recipe_file_path   => $recipe_file_path,

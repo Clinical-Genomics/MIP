@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use Time::Piece;
 use utf8;
 use warnings;
@@ -249,18 +248,13 @@ sub get_read_group {
           {read_direction_file}{ $infile_prefix . q{_1} } };
 
     my $platform_unit =
-        $fastq_file{flowcell}
-      . $DOT
-      . $fastq_file{lane}
-      . $DOT
-      . $fastq_file{sample_barcode};
+      $fastq_file{flowcell} . $DOT . $fastq_file{lane} . $DOT . $fastq_file{sample_barcode};
 
     ## RG hash
     my %rg = (
         id   => $infile_prefix,
         lane => $fastq_file{lane},
-        lb   => $sample_id
-        ,    ## Add molecular library (Dummy value since the actual LB isn't available)
+        lb => $sample_id, ## Add molecular library (Dummy value since the actual LB isn't available)
         pl => $platform,
         pu => $platform_unit,
         sm => $sample_id,
@@ -444,17 +438,12 @@ sub get_sample_info_sample_recipe_attributes {
     ## Get and return attribute value
     if ( defined $attribute && $attribute ) {
 
-        return $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}
-          {$infile}{$attribute};
+        return $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile}{$attribute};
     }
-    if (
-        ref $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile} eq
-        q{HASH} )
-    {
+    if ( ref $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile} eq q{HASH} ) {
 
 ## Get recipe attribute for infile hash
-        return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile}
-        };
+        return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile} };
     }
 
     ## No infile level
@@ -626,8 +615,7 @@ sub set_gene_panel {
     my $sample_info_href;
 
     my $tmpl = {
-        aggregate_gene_panel_file =>
-          { store => \$aggregate_gene_panel_file, strict_type => 1, },
+        aggregate_gene_panel_file => { store => \$aggregate_gene_panel_file, strict_type => 1, },
         aggregate_gene_panels_key => {
             defined     => 1,
             required    => 1,
@@ -674,8 +662,7 @@ sub set_gene_panel {
     );
 
     my $ret = $return{stdouts_ref}[0]
-      or $log->logdie(
-        qq{Unable to parse gene panel information from $aggregate_gene_panel_file});
+      or $log->logdie(qq{Unable to parse gene panel information from $aggregate_gene_panel_file});
 
   LINE:
 
@@ -812,8 +799,7 @@ sub set_infile_info {
                 sample_id       => $sample_id,
             }
         );
-        my $sequence_run_type =
-          $attribute{is_interleaved} ? q{interleaved} : q{single-end};
+        my $sequence_run_type = $attribute{is_interleaved} ? q{interleaved} : q{single-end};
         set_sample_file_attribute(
             {
                 attribute       => q{sequence_run_type},
@@ -1212,8 +1198,8 @@ sub set_recipe_outfile_in_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}
-                  {$parameter_key} = $parameter_value;
+                $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$parameter_key} =
+                  $parameter_value;
             }
         }
     }
@@ -1404,8 +1390,8 @@ sub set_recipe_metafile_in_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{recipe}{$recipe_name}{$metafile_tag}{$parameter_key}
-                  = $parameter_value;
+                $sample_info_href->{recipe}{$recipe_name}{$metafile_tag}{$parameter_key} =
+                  $parameter_value;
             }
         }
     }

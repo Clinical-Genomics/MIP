@@ -9,7 +9,6 @@ use File::Path qw{ make_path };
 use List::Util qw{ none };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error};
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -676,8 +675,7 @@ sub is_sample_proband_in_trio {
     return 0 if ( $phenotype eq q{unaffected} );
 
     ## Get family hash
-    my %family_member_id =
-      get_family_member_id( { sample_info_href => $sample_info_href } );
+    my %family_member_id = get_family_member_id( { sample_info_href => $sample_info_href } );
 
     ## Check if the sample is an affected child
     return 0 if ( none { $_ eq $sample_id } @{ $family_member_id{children} } );
@@ -1134,10 +1132,9 @@ sub set_pedigree_capture_kit_info {
         ## Return a capture kit depending on user info
         my $exome_target_bed_file = get_capture_kit(
             {
-                capture_kit => $capture_kit,
-                supported_capture_kit_href =>
-                  $parameter_href->{supported_capture_kit}{default},
-                is_set_by_user => $is_user_supplied_href->{exome_target_bed},
+                capture_kit                => $capture_kit,
+                supported_capture_kit_href => $parameter_href->{supported_capture_kit}{default},
+                is_set_by_user             => $is_user_supplied_href->{exome_target_bed},
             }
         );
 

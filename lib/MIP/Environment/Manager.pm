@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -68,7 +67,7 @@ sub get_env_method_cmds {
 
     my %method_cmd = (
         conda => {
-            load   => [ ( conda_activate(   { env_name => $env_name, } ), ) ],
+            load   => [ ( conda_activate( { env_name => $env_name, } ), ) ],
             unload => [ ( conda_deactivate( {} ), ) ],
         },
     );

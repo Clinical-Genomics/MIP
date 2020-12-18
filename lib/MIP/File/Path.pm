@@ -9,7 +9,6 @@ use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -137,8 +136,7 @@ sub check_filesystem_objects_existance {
         ## Directory was found
         return 1 if ( -d $object_name );
 
-        $error_msg =
-          q{Could not find intended } . $parameter_name . q{ directory: } . $object_name;
+        $error_msg = q{Could not find intended } . $parameter_name . q{ directory: } . $object_name;
         return ( 0, $error_msg );
     }
     ## Then object type must be file
@@ -147,8 +145,7 @@ sub check_filesystem_objects_existance {
     ## File was found
     return 1 if ( -f $object_name );
 
-    $error_msg =
-      q{Could not find intended } . $parameter_name . q{ file: } . $object_name;
+    $error_msg = q{Could not find intended } . $parameter_name . q{ file: } . $object_name;
     return 0, $error_msg;
 }
 

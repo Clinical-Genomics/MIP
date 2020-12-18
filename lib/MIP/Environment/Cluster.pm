@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use List::Util qw{ min };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };

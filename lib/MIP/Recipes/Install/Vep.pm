@@ -11,7 +11,6 @@ use File::Spec::Functions qw{ catdir catfile devnull };
 use List::MoreUtils qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings qw{ FATAL utf8 };
 use warnings;
@@ -88,8 +87,7 @@ sub install_vep {
 
     if ( not $cache_dir_path and not $reference_dir_path ) {
         $log->fatal(
-q{Please supply a reference directory or a cache directory when installing VEP}
-        );
+            q{Please supply a reference directory or a cache directory when installing VEP});
         $log->fatal(
 q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl-tools-release-<version>/cache}
         );
@@ -102,10 +100,10 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
     ## Setup cache_dir_path
     $cache_dir_path = _setup_cache_dir(
         {
-            cache_dir_path        => $cache_dir_path,
-            container_path        => $container_path,
-            reference_dir_path    => $reference_dir_path,
-            verbose               => $verbose,
+            cache_dir_path     => $cache_dir_path,
+            container_path     => $container_path,
+            reference_dir_path => $reference_dir_path,
+            verbose            => $verbose,
         }
     );
 
@@ -128,10 +126,10 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
     my @container_cmds = [
         run_container(
             {
-                bind_paths_ref        => [$cache_dir_path],
-                container_path        => $container_path,
-                container_manager     => $CONTAINER_MANAGER,
-                container_cmds_ref    => \@vep_install_cmds,
+                bind_paths_ref     => [$cache_dir_path],
+                container_path     => $container_path,
+                container_manager  => $CONTAINER_MANAGER,
+                container_cmds_ref => \@vep_install_cmds,
             }
         )
     ];
@@ -163,8 +161,8 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
               [
                 run_container(
                     {
-                        bind_paths_ref        => [$cache_dir_path],
-                        container_path        => $container_path,
+                        bind_paths_ref     => [$cache_dir_path],
+                        container_path     => $container_path,
                         container_manager  => $active_parameter_href->{container_manager},
                         container_cmds_ref => \@vep_install_cmds,
                     }
@@ -243,9 +241,8 @@ sub _install_maxentscan_plugin {
         {
             outfile_path => catfile( dirname( devnull() ), q{stdout} ),
             quiet        => 1,
-            url =>
-              q{http://hollywood.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
-            verbose => 0,
+            url          => q{http://hollywood.mit.edu/burgelab/maxent/download/fordownload.tar.gz},
+            verbose      => 0,
         }
     );
     push @cmds, $PIPE;
@@ -287,8 +284,8 @@ sub _install_loftool_plugin {
     my @cmds = wget(
         {
             outfile_path => catfile( $plugin_dir_path, q{LoFtool_scores.txt} ),
-            url =>
-q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt},
+            url          =>
+              q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt},
         }
     );
 
@@ -320,8 +317,8 @@ sub _install_exacpli_plugin {
     my @cmds = wget(
         {
             outfile_path => catfile( $plugin_dir_path, q{ExACpLI_values.txt} ),
-            url =>
-q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/ExACpLI_values.txt},
+            url          =>
+              q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/ExACpLI_values.txt},
         }
     );
 
@@ -384,9 +381,9 @@ sub _setup_cache_dir {
 
         my @vep_launch_cmds = run_container(
             {
-                container_cmds_ref    => [q{vep}],
-                container_path        => $container_path,
-                container_manager     => $CONTAINER_MANAGER,
+                container_cmds_ref => [q{vep}],
+                container_path     => $container_path,
+                container_manager  => $CONTAINER_MANAGER,
             }
         );
 
@@ -403,8 +400,7 @@ sub _setup_cache_dir {
             $vep_version = q{unknown};
         }
         $cache_dir_path =
-          catdir( $reference_dir_path, q{ensembl-tools-release-} . $vep_version,
-            q{cache} );
+          catdir( $reference_dir_path, q{ensembl-tools-release-} . $vep_version, q{cache} );
 
         $log->warn( q{Setting VEP cache dir to: } . $cache_dir_path );
     }

@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -156,8 +155,8 @@ sub set_analysis_files_to_store {
 
     use MIP::Sample_info qw{ set_file_path_to_store };
 
-    my %analysis_store_file = define_analysis_files_to_store(
-        { active_parameter_href => $active_parameter_href, } );
+    my %analysis_store_file =
+      define_analysis_files_to_store( { active_parameter_href => $active_parameter_href, } );
 
   FILE:
     foreach my $file ( keys %analysis_store_file ) {

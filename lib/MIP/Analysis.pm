@@ -9,7 +9,6 @@ use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -127,10 +126,10 @@ sub check_analysis_type_to_pipeline {
             strict_type => 1,
         },
         pipeline => {
-            allow    => [qw{ dragen_rd_dna rd_dna rd_dna_panel rd_dna_vcf_rerun rd_rna }],
-            defined  => 1,
-            required => 1,
-            store    => \$pipeline,
+            allow       => [qw{ dragen_rd_dna rd_dna rd_dna_panel rd_dna_vcf_rerun rd_rna }],
+            defined     => 1,
+            required    => 1,
+            store       => \$pipeline,
             strict_type => 1,
         },
     };
@@ -153,11 +152,9 @@ sub check_analysis_type_to_pipeline {
     if ( $analysis_pipeline_map{$analysis_type} ne $pipeline ) {
 
         $log->fatal(
-qq{Analysis type: $analysis_type is not compatible with MIP pipeline: $pipeline}
-        );
+            qq{Analysis type: $analysis_type is not compatible with MIP pipeline: $pipeline});
         $log->fatal(
-qq{Start MIP pipeline: $analysis_pipeline_map{$analysis_type} for this analysis type}
-        );
+            qq{Start MIP pipeline: $analysis_pipeline_map{$analysis_type} for this analysis type});
         $log->fatal(q{Aborting run});
         exit 1;
     }
@@ -554,8 +551,7 @@ sub parse_prioritize_variant_callers {
                 {
                     active_parameter_href => $active_parameter_href,
                     parameter_href        => $parameter_href,
-                    priority_name_str =>
-                      $active_parameter_href->{$prioritize_parameter_name},
+                    priority_name_str     => $active_parameter_href->{$prioritize_parameter_name},
                     variant_caller_recipes_ref => \@variant_caller_recipes,
                 }
             );
@@ -599,8 +595,7 @@ sub set_ase_chain_recipes {
         qw{ gatk_baserecalibration gatk_haplotypecaller gatk_splitncigarreads gatk_variantfiltration }
     );
 
-    my @recipes =
-      $active_parameter_href->{dna_vcf_file} ? @RNA_VC_RECIPES : @DNA_VC_RECIPES;
+    my @recipes = $active_parameter_href->{dna_vcf_file} ? @RNA_VC_RECIPES : @DNA_VC_RECIPES;
 
     set_recipe_mode(
         {

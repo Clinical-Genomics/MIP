@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -121,8 +120,7 @@ sub create_star_fusion_sample_file {
             $paired_end_tracker++;
 
             ## Add read two file index array
-            push @{ $sample_line{$infile_prefix} },
-              $infile_paths_ref->[$paired_end_tracker];
+            push @{ $sample_line{$infile_prefix} }, $infile_paths_ref->[$paired_end_tracker];
         }
 
         ## Increment paired end tracker

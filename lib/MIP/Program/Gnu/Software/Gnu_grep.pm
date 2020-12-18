@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -68,7 +67,7 @@ sub gnu_grep {
         },
         filehandle       => { store => \$filehandle, },
         filter_file_path => { store => \$filter_file_path, strict_type => 1, },
-        infile_path => {
+        infile_path      => {
             store       => \$infile_path,
             strict_type => 1,
         },
@@ -78,11 +77,10 @@ sub gnu_grep {
             store       => \$invert_match,
             strict_type => 1,
         },
-        pattern         => { store => \$pattern,         strict_type => 1, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => {
+        pattern                => { store => \$pattern,                strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },

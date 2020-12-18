@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -76,8 +75,7 @@ sub check_gatk_sample_map_paths {
         ## Make sure that we get what we expect
         if ( defined $unexpected_data ) {
 
-            $log->logcarp(
-                q{Unexpected trailing garbage at end of line '} . $line . q{':},
+            $log->logcarp( q{Unexpected trailing garbage at end of line '} . $line . q{':},
                 $NEWLINE . $TAB . $unexpected_data . $NEWLINE );
         }
 
