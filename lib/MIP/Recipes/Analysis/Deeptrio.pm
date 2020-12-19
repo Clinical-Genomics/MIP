@@ -121,9 +121,10 @@ sub analysis_deeptrio {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my %case_members_id = scalar @{ $active_parameter_href->{sample_ids} } == 2
-    ? get_case_members_attributes_in_duos( { sample_info_href => $sample_info_href } )
-    : get_family_member_id( { sample_info_href => $sample_info_href } );
+    my %case_members_id =
+      scalar @{ $active_parameter_href->{sample_ids} } == 2
+      ? get_case_members_attributes_in_duos( { sample_info_href => $sample_info_href } )
+      : get_family_member_id( { sample_info_href => $sample_info_href } );
 
     ## Unpack parameters
     my $job_id_chain = get_recipe_attributes(
@@ -134,9 +135,11 @@ sub analysis_deeptrio {
         }
     );
 
-    my $model_type  = _consensus_analysis_type({
-        parameter_href => $parameter_href,
-    });
+    my $model_type = _consensus_analysis_type(
+        {
+            parameter_href => $parameter_href,
+        }
+    );
 
     my $recipe_mode     = $active_parameter_href->{$recipe_name};
     my %recipe_resource = get_recipe_resources(
@@ -161,9 +164,11 @@ sub analysis_deeptrio {
     my $sample_name_parent1;
     my $sample_name_parent2;
 
-    my @parents = _get_parents({
-        case_members_id_href => \%case_members_id,
-    });
+    my @parents = _get_parents(
+        {
+            case_members_id_href => \%case_members_id,
+        }
+    );
     my $child_id = $case_members_id{children}[0];
 
   SAMPLE_ID:
@@ -193,22 +198,24 @@ sub analysis_deeptrio {
                 }
             )
         );
-        if (not $sample_name_parent1 and $sample_id ne $child_id){
-            $reads_parent1 = $sample_bam_io{out}{file_path_prefix} . $sample_bam_io{out}{file_suffix};
+        if ( not $sample_name_parent1 and $sample_id ne $child_id ) {
+            $reads_parent1 =
+              $sample_bam_io{out}{file_path_prefix} . $sample_bam_io{out}{file_suffix};
             $output_gvcf_parent1 = $sample_vcf_io{out}{file_path};
-            $output_vcf_parent1 = $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
+            $output_vcf_parent1  = $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
             $sample_name_parent1 = $sample_id;
         }
-        elsif ( $sample_id ne $child_id) {
-            $reads_parent2 = $sample_bam_io{out}{file_path_prefix} . $sample_bam_io{out}{file_suffix};
+        elsif ( $sample_id ne $child_id ) {
+            $reads_parent2 =
+              $sample_bam_io{out}{file_path_prefix} . $sample_bam_io{out}{file_suffix};
             $output_gvcf_parent2 = $sample_vcf_io{out}{file_path};
-            $output_vcf_parent2 = $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
+            $output_vcf_parent2  = $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
             $sample_name_parent2 = $sample_id;
         }
         else {
             $reads_child = $sample_bam_io{out}{file_path_prefix} . $sample_bam_io{out}{file_suffix};
             $output_gvcf_child = $sample_vcf_io{out}{file_path};
-            $output_vcf_child = $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
+            $output_vcf_child  = $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
             $sample_name_child = $sample_id;
         }
     }
@@ -239,22 +246,22 @@ sub analysis_deeptrio {
 
     deeptrio(
         {
-            filehandle           => $filehandle,
-            model_type           => $model_type,
-            num_shards           => $recipe_resource{core_number},
-            output_gvcf_child    => $output_gvcf_child,
-            output_gvcf_parent1  => $output_gvcf_parent1,
-            output_gvcf_parent2  => $output_gvcf_parent2,
-            output_vcf_child     => $output_vcf_child,
-            output_vcf_parent1   => $output_vcf_parent1,
-            output_vcf_parent2   => $output_vcf_parent2,
-            referencefile_path   => $active_parameter_href->{human_genome_reference},
-            reads_child          => $reads_child,
-            reads_parent1        => $reads_parent1,
-            reads_parent2        => $reads_parent2,
-            sample_name_child    => $sample_name_child,
-            sample_name_parent1  => $sample_name_parent1,
-            sample_name_parent2  => $sample_name_parent2,
+            filehandle          => $filehandle,
+            model_type          => $model_type,
+            num_shards          => $recipe_resource{core_number},
+            output_gvcf_child   => $output_gvcf_child,
+            output_gvcf_parent1 => $output_gvcf_parent1,
+            output_gvcf_parent2 => $output_gvcf_parent2,
+            output_vcf_child    => $output_vcf_child,
+            output_vcf_parent1  => $output_vcf_parent1,
+            output_vcf_parent2  => $output_vcf_parent2,
+            referencefile_path  => $active_parameter_href->{human_genome_reference},
+            reads_child         => $reads_child,
+            reads_parent1       => $reads_parent1,
+            reads_parent2       => $reads_parent2,
+            sample_name_child   => $sample_name_child,
+            sample_name_parent1 => $sample_name_parent1,
+            sample_name_parent2 => $sample_name_parent2,
         }
     );
 
@@ -274,17 +281,17 @@ sub analysis_deeptrio {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
-                recipe_file_path     => $recipe_file_path,
-                sample_ids_ref       => \@{ $active_parameter_href->{sample_ids} },
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile => $active_parameter_href->{submission_profile},
             }
         );
@@ -294,7 +301,7 @@ sub analysis_deeptrio {
 
 sub _consensus_analysis_type {
 
-## Function : Determine model type from consensus analysis type 
+## Function : Determine model type from consensus analysis type
 ## Returns  :
 ## Arguments: $parameter_href => Parameter hash {REF}
 
@@ -319,15 +326,14 @@ sub _consensus_analysis_type {
       ( MIXED => q{WGS}, PANEL => q{WES}, WGS => q{WGS}, WES => q{WES} );
 
     my $consensus_analysis_type =
-      $consensus_analysis_type_map{ uc $parameter_href->{cache}{consensus_analysis_type}
-      };
+      $consensus_analysis_type_map{ uc $parameter_href->{cache}{consensus_analysis_type} };
 
     return $consensus_analysis_type;
 }
 
 sub _get_parents {
 
-## Function : Determine model type from consensus analysis type 
+## Function : Determine model type from consensus analysis type
 ## Returns  :
 ## Arguments: $case_members_id => Case member id hash {REF}
 
@@ -338,24 +344,24 @@ sub _get_parents {
 
     my $tmpl = {
         case_members_id_href => {
-            default          => {},
-            defined          => 1,
-            required         => 1,
-            store            => \$case_members_id_href,
-            strict_type      => 1,
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$case_members_id_href,
+            strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
     my @parents;
 
-    foreach my $parent (qw{ father mother}) {
+    foreach my $parent (qw{ father mother }) {
 
         if ( exists $case_members_id_href->{$parent} ) {
-           push @parents, $case_members_id_href->{$parent};
+            push @parents, $case_members_id_href->{$parent};
         }
-
-    return @parents;
     }
+    return @parents;
 }
+
 1;
