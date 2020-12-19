@@ -28,7 +28,6 @@ BEGIN {
       check_allowed_temp_directory
       check_filesystem_objects_existance
       check_filesystem_objects_and_index_existance
-      check_gzipped
       get_absolute_path
       get_file_names
       get_file_line_by_line
@@ -240,35 +239,6 @@ sub check_filesystem_objects_and_index_existance {
         }
     }
     return 1;
-}
-
-sub check_gzipped {
-
-## Function : Check if a file is gzipped.
-## Returns  : "0 (=uncompressed)| 1 (=compressed)"
-## Arguments: $file_name => File name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name;
-
-    my $tmpl = {
-        file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## File gzipped
-    return 1 if ( $file_name =~ / [.]gz$ /xms );
-
-    ## File not gzipped
-    return 0;
 }
 
 sub get_absolute_path {

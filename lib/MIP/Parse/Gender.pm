@@ -527,19 +527,13 @@ sub _get_file_read_commands {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Path qw{ check_gzipped };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Program::Gzip qw{ gzip };
+    use MIP::Validate::Data qw{ %CONSTRAINT };
 
     my @read_cmds;
 
-    my $is_gzipped = check_gzipped(
-        {
-            file_name => $file_path,
-        }
-    );
-    if ($is_gzipped) {
-
+    if ( $CONSTRAINT{is_gzipped}->($file_path) ) {
         @read_cmds = gzip(
             {
                 decompress       => 1,

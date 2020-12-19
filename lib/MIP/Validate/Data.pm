@@ -26,6 +26,7 @@ our %CONSTRAINT = (
     file_exists       => sub { return 1 if ( -e $_[0] ); },
     dir_exists        => sub { return 1 if ( -d $_[0] ); },
     is_digit          => sub { $_[0] !~ / \A \d+ \z /sxm },
+    is_gzipped        => sub { return 1 if ( $_[0] =~ / [.]gz$ /xms ); return 0; },
     plain_file_exists => sub { return 1 if ( -f $_[0] ); },
 );
 

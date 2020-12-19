@@ -495,18 +495,14 @@ sub parse_file_compression_features {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Path qw{ check_gzipped };
+    use MIP::Validate::Data qw{ %CONSTRAINT };
 
     my %attribute = (
         is_file_compressed => 0,
         read_file_command  => q{cat},
     );
 
-    ## Check if a file is gzipped.
-    my $is_gzipped = check_gzipped( { file_name => $file_name, } );
-
-    ## Gzipped
-    if ($is_gzipped) {
+    if ( $CONSTRAINT{is_gzipped}->($file_name) ) {
 
         $attribute{is_file_compressed} = 1;
         $attribute{read_file_command}  = q{gzip -d -c};
@@ -1040,8 +1036,8 @@ sub set_human_genome_reference_features {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Constants qw{ set_genome_build_constants };
-    use MIP::File::Path qw{ check_gzipped };
     use MIP::Parameter qw{ set_parameter_build_file_status };
+    use MIP::Validate::Data qw{ %CONSTRAINT };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -1090,8 +1086,7 @@ sub set_human_genome_reference_features {
     $file_info_href->{human_genome_reference_name_prefix} =
       fileparse( $human_genome_reference, qr/[.]fasta | [.]fasta[.]gz/xsm );
 
-    $file_info_href->{human_genome_compressed} =
-      check_gzipped( { file_name => $human_genome_reference, } );
+    $file_info_href->{human_genome_compressed} = $CONSTRAINT{is_gzipped}->($human_genome_reference);
 
     if ( $file_info_href->{human_genome_compressed} ) {
 
