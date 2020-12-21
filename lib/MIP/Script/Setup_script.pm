@@ -22,6 +22,7 @@ use Readonly;
 ## MIPs lib/
 use MIP::Constants
   qw{ $CLOSE_PARENTHESIS $DOLLAR_SIGN $DOT $DOUBLE_QUOTE $EMPTY_STR $EQUALS $LOG_NAME $NEWLINE $OPEN_PARENTHESIS $SINGLE_QUOTE $SPACE $UNDERSCORE };
+use MIP::Validate::Data qw{ %constraint };
 
 BEGIN {
 
@@ -174,15 +175,13 @@ sub check_script_file_path_exist {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Validate::Data qw{ %CONSTRAINT };
-
     ## Nr of scripts with identical file names i.e. version number
     my $file_name_version = 0;
 
     my $file_path = $file_path_prefix . $file_name_version . $file_path_suffix;
 
   FILE_PATHS:
-    while ( $CONSTRAINT{file_exists}->($file_path) ) {
+    while ( $constraint{file_exists}->($file_path) ) {
 
         $file_name_version++;
 
@@ -481,7 +480,7 @@ sub setup_script {
             strict_type => 1,
         },
         core_number => {
-            allow       => qr{ \A\d+\z }xsm,
+            allow       => sub { $constraint{is_digit}->( $_[0] ) },
             default     => 1,
             store       => \$core_number,
             strict_type => 1,
@@ -500,7 +499,7 @@ sub setup_script {
         },
         filehandle => { store => \$filehandle, },
         gpu_number => {
-            allow       => [ undef, qr{ \A\d+\z }xsm ],
+            allow       => [ undef, sub { $constraint{is_digit}->( $_[0] ) }, ],
             store       => \$gpu_number,
             strict_type => 1,
         },
@@ -512,7 +511,7 @@ sub setup_script {
             strict_type => 1,
         },
         memory_allocation => {
-            allow       => [ undef, qr{ \A\d+\z }sxm ],
+            allow       => [ undef, sub { $constraint{is_digit}->( $_[0] ) }, ],
             store       => \$memory_allocation,
             strict_type => 1,
         },
@@ -527,7 +526,7 @@ sub setup_script {
             strict_type => 1,
         },
         process_time => {
-            allow       => qr{ \A\d+\z }xsm,
+            allow       => sub { $constraint{is_digit}->( $_[0] ) },
             default     => 1,
             store       => \$process_time,
             strict_type => 1,
@@ -577,7 +576,7 @@ sub setup_script {
             strict_type => 1,
         },
         ulimit_n => {
-            allow       => [ undef, qr/ \A \d+ \z /xms ],
+            allow       => [ undef, sub { $constraint{is_digit}->( $_[0] ) }, ],
             store       => \$ulimit_n,
             strict_type => 1,
         },

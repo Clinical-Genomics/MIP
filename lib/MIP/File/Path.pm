@@ -125,7 +125,7 @@ sub check_filesystem_objects_existance {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Validate::Data qw{ %CONSTRAINT };
+    use MIP::Validate::Data qw{ %constraint };
 
     my %exists_constraint_map = (
         directory => q{dir_exists},
@@ -133,7 +133,7 @@ sub check_filesystem_objects_existance {
     );
 
     my $constraint = $exists_constraint_map{$object_type};
-    return 1 if ( $CONSTRAINT{$constraint}->($object_name) );
+    return 1 if ( $constraint{$constraint}->($object_name) );
 
     my $error_msg = qq{Could not find intended $parameter_name $object_type: $object_name};
     return ( 0, $error_msg );

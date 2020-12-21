@@ -19,15 +19,16 @@ BEGIN {
 
     # Set the version for version checking
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ %CONSTRAINT };
+    our @EXPORT_OK = qw{ %constraint };
 }
 
-our %CONSTRAINT = (
-    file_exists       => sub { return 1 if ( -e $_[0] ); },
-    dir_exists        => sub { return 1 if ( -d $_[0] ); },
-    is_digit          => sub { $_[0] !~ / \A \d+ \z /sxm },
-    is_gzipped        => sub { return 1 if ( $_[0] =~ / [.]gz$ /xms ); return 0; },
-    plain_file_exists => sub { return 1 if ( -f $_[0] ); },
+our %constraint = (
+    file_exists       => sub { return 1 if ( -e $_[0] );                  return; },
+    dir_exists        => sub { return 1 if ( -d $_[0] );                  return; },
+    is_defined        => sub { return 1 if ( defined $_[0] );             return; },
+    is_digit          => sub { return 1 if ( $_[0] =~ / \A \d+ \z /sxm ); return; },
+    is_gzipped        => sub { return 1 if ( $_[0] =~ / [.]gz$ /xms );    return 0; },
+    plain_file_exists => sub { return 1 if ( -f $_[0] );                  return; },
 );
 
 1;

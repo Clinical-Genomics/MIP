@@ -19,7 +19,7 @@ use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $EMPTY_STR $SPACE };
+use MIP::Constants qw{ $COMMA $SPACE };
 
 BEGIN {
 
@@ -27,14 +27,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Validate::Data} => [qw{ %CONSTRAINT }], );
+    my %perl_module = ( q{MIP::Validate::Data} => [qw{ %constraint }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Validate::Data qw{ %CONSTRAINT };
+use MIP::Validate::Data qw{ %constraint };
 
-diag(   q{Test %CONSTRAINT from Data.pm}
+diag(   q{Test %constraint from Data.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -42,44 +42,67 @@ diag(   q{Test %CONSTRAINT from Data.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a not gzipped file
-my $filename = catfile(q{text.txt});
+## Given a dir that does not exist
+my $dir_does_not_exist = q{dir_does_not_exist};
 
 ## Then return false
-is( $CONSTRAINT{is_gzipped}->($filename), 0, q{Is gzipped - plain file} );
+is( $constraint{dir_exists}->($dir_does_not_exist),
+    undef, q{Dir exists - directory does not exist} );
 
-## Given a gzipped file
-my $gzipped_filename = catfile(q{test.gz});
+## Given a dir that exist
 
 ## Then return true
-is( $CONSTRAINT{is_gzipped}->($gzipped_filename), 1, q{Is gzipped - gzipped file} );
+is( $constraint{dir_exists}->($Bin), 1, q{Dir exists - directory exists} );
 
 ## Given a file that does not exist
 my $file_does_not_exist = q{file_does_not_exist};
 
 ## Then return false
-is( $CONSTRAINT{file_exists}->($file_does_not_exist), undef, q{File exists - file does not exist} );
+is( $constraint{file_exists}->($file_does_not_exist), undef, q{File exists - file does not exist} );
 
 ## Given a file which exist
 my $file_exist = catfile( $Bin, qw{ constraint.t } );
 
 ## Then return true
-is( $CONSTRAINT{file_exists}->($file_exist), 1, q{File exists - file exist} );
+is( $constraint{file_exists}->($file_exist), 1, q{File exists - file exist} );
+
+## Given a not gzipped file
+my $filename = catfile(q{text.txt});
+
+## Then return false
+is( $constraint{is_gzipped}->($filename), 0, q{Is gzipped - plain file} );
+
+## Given a gzipped file
+my $gzipped_filename = catfile(q{test.gz});
+
+## Then return true
+is( $constraint{is_gzipped}->($gzipped_filename), 1, q{Is gzipped - gzipped file} );
 
 ## Given a dir that exist
 
 ## Then return false
-is( $CONSTRAINT{plain_file_exists}->($Bin), $EMPTY_STR, q{Plain file exists - not a file} );
+is( $constraint{plain_file_exists}->($Bin), undef, q{Plain file exists - not a file} );
 
 ## Given a file that does not exist
 
 ## Then return false
-is( $CONSTRAINT{file_exists}->($file_does_not_exist),
+is( $constraint{plain_file_exists}->($file_does_not_exist),
     undef, q{Plain file exists - file does not exist} );
 
 ## Given a file which exist
 
 ## Then return true
-is( $CONSTRAINT{file_exists}->($Bin), 1, q{Plain file exists - file exist} );
+is( $constraint{plain_file_exists}->($file_exist), 1, q{Plain file exists - file exist} );
+
+## Given a non-digit
+my $non_digit = q{a_str};
+
+## Then return false
+is( $constraint{is_digit}->($non_digit), undef, q{Is digit - not a digit} );
+
+## Given a digit
+
+## Then return true
+is( $constraint{is_digit}->(2), 1, q{Is digit - is a digit} );
 
 done_testing();

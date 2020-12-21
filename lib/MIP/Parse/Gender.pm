@@ -529,11 +529,11 @@ sub _get_file_read_commands {
 
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Program::Gzip qw{ gzip };
-    use MIP::Validate::Data qw{ %CONSTRAINT };
+    use MIP::Validate::Data qw{ %constraint };
 
     my @read_cmds;
 
-    if ( $CONSTRAINT{is_gzipped}->($file_path) ) {
+    if ( $constraint{is_gzipped}->($file_path) ) {
         @read_cmds = gzip(
             {
                 decompress       => 1,
