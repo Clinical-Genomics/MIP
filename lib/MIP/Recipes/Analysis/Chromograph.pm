@@ -173,7 +173,7 @@ sub analysis_chromograph_cov {
     ## Get all contigs excluding the mitochondria
     my @contigs = delete_contig_elements(
         {
-            contigs_ref        => $file_info_href->{primary_contigs},
+            contigs_ref        => $file_info_href->{contigs},
             remove_contigs_ref => [qw{ MT }],
         }
     );
@@ -425,7 +425,7 @@ sub analysis_chromograph_rhoviz {
 
     my @outfile_name_prefixes = _build_outfile_name_prefixes(
         {
-            contigs_ref        => $file_info_href->{primary_contigs},
+            contigs_ref        => $file_info_href->{contigs},
             infile_name_prefix => $infile_name_prefix,
             infile_path_href   => \%infile_path,
         }
@@ -712,7 +712,7 @@ sub analysis_chromograph_upd {
     my @outfile_name_prefixes;
     my @contigs = delete_contig_elements(
         {
-            contigs_ref        => $file_info_href->{primary_contigs},
+            contigs_ref        => $file_info_href->{contigs},
             remove_contigs_ref => [q{MT}],
         }
     );

@@ -74,14 +74,13 @@ my %file_info;
 
 set_primary_contigs(
     {
-        file_info_href          => \%file_info,
-        primary_contigs_ref     => \@grch38_contigs,
-        primary_contig_set_name => $contig_set,
+        file_info_href      => \%file_info,
+        primary_contigs_ref => \@grch38_contigs,
+        contig_set_name     => $contig_set,
     }
 );
 
 ## Then priamry contigs sets should be set for 38
-is_deeply( \@{ $file_info{$contig_set} },
-    \@grch38_contigs, q{Set grch38 reference contigs} );
+is_deeply( \@{ $file_info{$contig_set} }, \@grch38_contigs, q{Set grch38 reference contigs} );
 
 done_testing();
