@@ -28,7 +28,6 @@ BEGIN {
       check_allowed_temp_directory
       check_filesystem_objects_existance
       check_filesystem_objects_and_index_existance
-      check_gzipped
       get_absolute_path
       get_file_names
       get_file_line_by_line
@@ -126,27 +125,18 @@ sub check_filesystem_objects_existance {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## For potential error messages
-    my $error_msg;
+    use MIP::Validate::Data qw{ %constraint };
 
-    ## Check existance of directory
-    if ( $object_type eq q{directory} ) {
+    my %exists_constraint_map = (
+        directory => q{dir_exists},
+        file      => q{plain_file_exists},
+    );
 
-        ## Check existence of supplied directory
-        ## Directory was found
-        return 1 if ( -d $object_name );
+    my $constraint = $exists_constraint_map{$object_type};
+    return 1 if ( $constraint{$constraint}->($object_name) );
 
-        $error_msg = q{Could not find intended } . $parameter_name . q{ directory: } . $object_name;
-        return ( 0, $error_msg );
-    }
-    ## Then object type must be file
-
-    ## Check existence of supplied file
-    ## File was found
-    return 1 if ( -f $object_name );
-
-    $error_msg = q{Could not find intended } . $parameter_name . q{ file: } . $object_name;
-    return 0, $error_msg;
+    my $error_msg = qq{Could not find intended $parameter_name $object_type: $object_name};
+    return ( 0, $error_msg );
 }
 
 sub check_filesystem_objects_and_index_existance {
@@ -249,35 +239,6 @@ sub check_filesystem_objects_and_index_existance {
         }
     }
     return 1;
-}
-
-sub check_gzipped {
-
-## Function : Check if a file is gzipped.
-## Returns  : "0 (=uncompressed)| 1 (=compressed)"
-## Arguments: $file_name => File name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name;
-
-    my $tmpl = {
-        file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## File gzipped
-    return 1 if ( $file_name =~ / [.]gz$ /xms );
-
-    ## File not gzipped
-    return 0;
 }
 
 sub get_absolute_path {
