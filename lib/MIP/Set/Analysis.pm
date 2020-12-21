@@ -84,8 +84,8 @@ sub set_recipe_deepvariant {
 
 ## Function : Set deeptrio or deepvariant recipe depending on the presence of parent-child duo or trio
 ## Returns  :
-## Arguments: $analysis_recipe_href           => Analysis recipe hash {REF}
-##          : $sample_info_href               => Sample info hash {HASH}
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $sample_info_hre      => Sample info hash {HASH}
 
     my ($arg_href) = @_;
 
@@ -115,15 +115,11 @@ sub set_recipe_deepvariant {
     use MIP::Recipes::Analysis::Deepvariant qw{ analysis_deepvariant };
     use MIP::Recipes::Analysis::Deeptrio qw{ analysis_deeptrio };
 
-    if ( $sample_info_href->{has_duo} or $sample_info_href->{has_trio}) {
-
-        $analysis_recipe_href->{deepvariant} = undef;
-        $analysis_recipe_href->{deeptrio} = \&analysis_deeptrio;
-    }
-    else {
-
-        $analysis_recipe_href->{deepvariant} = \&analysis_deepvariant;
-        $analysis_recipe_href->{deeptrio} = undef;
+    foreach my $constellation_state (qw{ has_duo has_trio }) {
+        if ( $sample_info_href->{$constellation_state} ) {
+            $analysis_recipe_href->{deepvariant} = undef;
+            $analysis_recipe_href->{deeptrio}    = \&analysis_deeptrio;
+        }
     }
     return;
 }
@@ -173,8 +169,7 @@ sub set_recipe_gatk_variantrecalibration {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Analysis::Gatk_cnnscorevariants
-      qw{ analysis_gatk_cnnscorevariants };
+    use MIP::Recipes::Analysis::Gatk_cnnscorevariants qw{ analysis_gatk_cnnscorevariants };
 
     ## Use already set gatk_variantrecalibration recipe
     return if ( @{$sample_ids_ref} != 1 );
@@ -182,8 +177,7 @@ sub set_recipe_gatk_variantrecalibration {
     return if ( not $use_cnnscorevariants );
 
     $log->warn(
-q{Switched from VariantRecalibration to CNNScoreVariants for single sample analysis}
-    );
+        q{Switched from VariantRecalibration to CNNScoreVariants for single sample analysis});
 
     ## Use new CNN recipe for single samples
     $analysis_recipe_href->{gatk_variantrecalibration} = \&analysis_gatk_cnnscorevariants;

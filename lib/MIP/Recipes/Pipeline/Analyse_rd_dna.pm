@@ -117,8 +117,7 @@ sub parse_rd_dna {
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
     use MIP::Parameter qw{ get_cache };
     use MIP::Parse::Gender qw{ parse_fastq_for_gender };
-    use MIP::Reference
-      qw{ get_select_file_contigs parse_exome_target_bed parse_nist_parameters };
+    use MIP::Reference qw{ get_select_file_contigs parse_exome_target_bed parse_nist_parameters };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Vep qw{
       check_vep_api_cache_versions
@@ -127,11 +126,9 @@ sub parse_rd_dna {
     use MIP::Vcfanno qw{ parse_toml_config_parameters };
 
     ## Constants
-    Readonly my @MIP_VEP_PLUGINS => qw{ sv_vep_plugin vep_plugin };
-    Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES =>
-      qw{ cnvnator_ar delly_reformat tiddit };
-    Readonly my @ONLY_WGS_RECIPIES =>
-      qw{ cnvnator_ar delly_call delly_reformat expansionhunter
+    Readonly my @MIP_VEP_PLUGINS                 => qw{ sv_vep_plugin vep_plugin };
+    Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES => qw{ cnvnator_ar delly_reformat tiddit };
+    Readonly my @ONLY_WGS_RECIPIES => qw{ cnvnator_ar delly_call delly_reformat expansionhunter
       samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
@@ -155,11 +152,9 @@ sub parse_rd_dna {
     ## Update exome_target_bed files with human_genome_reference_source and human_genome_reference_version
     parse_exome_target_bed(
         {
-            exome_target_bed_file_href => $active_parameter_href->{exome_target_bed},
-            human_genome_reference_source =>
-              $file_info_href->{human_genome_reference_source},
-            human_genome_reference_version =>
-              $file_info_href->{human_genome_reference_version},
+            exome_target_bed_file_href     => $active_parameter_href->{exome_target_bed},
+            human_genome_reference_source  => $file_info_href->{human_genome_reference_source},
+            human_genome_reference_version => $file_info_href->{human_genome_reference_version},
         }
     );
 
@@ -455,21 +450,18 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Deepvariant qw { analysis_deepvariant };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
-    use MIP::Recipes::Analysis::Endvariantannotationblock
-      qw{ analysis_endvariantannotationblock };
+    use MIP::Recipes::Analysis::Endvariantannotationblock qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
-    use MIP::Recipes::Analysis::Gatk_baserecalibration
-      qw{ analysis_gatk_baserecalibration };
+    use MIP::Recipes::Analysis::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration };
     use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
       qw{ analysis_gatk_combinevariantcallsets };
     use MIP::Recipes::Analysis::Gatk_gathervcfs qw{ analysis_gatk_gathervcfs };
     use MIP::Recipes::Analysis::Gatk_genotypegvcfs qw{ analysis_gatk_genotypegvcfs };
     use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
     use MIP::Recipes::Analysis::Gatk_variantevalall qw{ analysis_gatk_variantevalall };
-    use MIP::Recipes::Analysis::Gatk_variantevalexome
-      qw{ analysis_gatk_variantevalexome };
+    use MIP::Recipes::Analysis::Gatk_variantevalexome qw{ analysis_gatk_variantevalexome };
     use MIP::Recipes::Analysis::Glnexus qw{ analysis_glnexus };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
@@ -488,21 +480,18 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_prepareforvariantannotationblock };
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
-    use MIP::Recipes::Analysis::Rhocall
-      qw{ analysis_rhocall_annotate analysis_rhocall_viz };
+    use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate analysis_rhocall_viz };
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge };
-    use MIP::Recipes::Analysis::Samtools_subsample_mt
-      qw{ analysis_samtools_subsample_mt };
+    use MIP::Recipes::Analysis::Samtools_subsample_mt qw{ analysis_samtools_subsample_mt };
     use MIP::Recipes::Analysis::Smncopynumbercaller qw{ analysis_smncopynumbercaller };
     use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
     use MIP::Recipes::Analysis::Star_caller qw{ analysis_star_caller };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
-    use MIP::Recipes::Analysis::Sv_combinevariantcallsets
-      qw{ analysis_sv_combinevariantcallsets };
+    use MIP::Recipes::Analysis::Sv_combinevariantcallsets qw{ analysis_sv_combinevariantcallsets };
     use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
     use MIP::Recipes::Analysis::Telomerecat qw{ analysis_telomerecat };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
@@ -563,10 +552,10 @@ sub pipeline_analyse_rd_dna {
         chromograph_rhoviz => \&analysis_chromograph_rhoviz,
         chromograph_upd    => \$sample_info_href->{has_trio}
         ? \&analysis_chromograph_upd
-        : undef,                                               # Depends on pedigree
+        : undef,                                                        # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
-        deepvariant                 => undef,
         deeptrio                    => undef,
+        deepvariant                 => \&analysis_deepvariant,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
@@ -580,48 +569,46 @@ sub pipeline_analyse_rd_dna {
         gatk_haplotypecaller        => \&analysis_gatk_haplotypecaller,
         gatk_variantevalall         => \&analysis_gatk_variantevalall,
         gatk_variantevalexome       => \&analysis_gatk_variantevalexome,
-        gatk_variantrecalibration =>
-          undef,    # Depends on analysis type and/or number of samples
-        glnexus_merge                => \&analysis_glnexus,
-        gzip_fastq                   => \&analysis_gzip_fastq,
-        manta                        => \&analysis_manta,
-        markduplicates               => \&analysis_markduplicates,
-        multiqc_ar                   => \&analysis_multiqc,
-        peddy_ar                     => \&analysis_peddy,
-        picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
-        picardtools_collectmultiplemetrics =>
-          \&analysis_picardtools_collectmultiplemetrics,
-        plink                            => \&analysis_plink,
-        prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
-        qccollect_ar                     => \&analysis_mip_qccollect,
-        rankvariant    => undef,                         # Depends on sample features
-        rhocall_ar     => \&analysis_rhocall_annotate,
-        rhocall_viz    => \&analysis_rhocall_viz,
-        rtg_vcfeval    => \&analysis_rtg_vcfeval,
-        sacct          => \&analysis_sacct,
-        sambamba_depth => \&analysis_sambamba_depth,
-        samtools_merge => \&analysis_samtools_merge,
+        gatk_variantrecalibration   => undef,    # Depends on analysis type and/or number of samples
+        glnexus_merge                      => \&analysis_glnexus,
+        gzip_fastq                         => \&analysis_gzip_fastq,
+        manta                              => \&analysis_manta,
+        markduplicates                     => \&analysis_markduplicates,
+        multiqc_ar                         => \&analysis_multiqc,
+        peddy_ar                           => \&analysis_peddy,
+        picardtools_collecthsmetrics       => \&analysis_picardtools_collecthsmetrics,
+        picardtools_collectmultiplemetrics => \&analysis_picardtools_collectmultiplemetrics,
+        plink                              => \&analysis_plink,
+        prepareforvariantannotationblock   => \&analysis_prepareforvariantannotationblock,
+        qccollect_ar                       => \&analysis_mip_qccollect,
+        rankvariant               => undef,                             # Depends on sample features
+        rhocall_ar                => \&analysis_rhocall_annotate,
+        rhocall_viz               => \&analysis_rhocall_viz,
+        rtg_vcfeval               => \&analysis_rtg_vcfeval,
+        sacct                     => \&analysis_sacct,
+        sambamba_depth            => \&analysis_sambamba_depth,
+        samtools_merge            => \&analysis_samtools_merge,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
         smncopynumbercaller       => \&analysis_smncopynumbercaller,
         split_fastq_file          => \&analysis_split_fastq_file,
         star_caller               => \&analysis_star_caller,
         sv_annotate               => \&analysis_sv_annotate,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
-        sv_rankvariant            => undef,                   # Depends on sample features
+        sv_rankvariant            => undef,                             # Depends on sample features
         sv_reformat               => \&analysis_reformat_sv,
-        sv_varianteffectpredictor => undef,                   # Depends on analysis type
-        sv_vcfparser              => undef,                   # Depends on analysis type
+        sv_varianteffectpredictor => undef,                             # Depends on analysis type
+        sv_vcfparser              => undef,                             # Depends on analysis type
         telomerecat_ar            => \&analysis_telomerecat,
         tiddit                    => \&analysis_tiddit,
-        tiddit_coverage        => \&analysis_tiddit_coverage,
-        upd_ar                 => $sample_info_href->{has_trio} ? \&analysis_upd : undef,
-        varg_ar                => \&analysis_varg,
-        varianteffectpredictor => \&analysis_vep_wgs,
-        variant_annotation     => \&analysis_variant_annotation,
-        version_collect_ar     => \&analysis_mip_vercollect,
-        vcfparser_ar           => \&analysis_mip_vcfparser,
-        vcf2cytosure_ar        => \&analysis_vcf2cytosure,
-        vt_ar                  => \&analysis_vt,
+        tiddit_coverage           => \&analysis_tiddit_coverage,
+        upd_ar                    => $sample_info_href->{has_trio} ? \&analysis_upd : undef,
+        varg_ar                   => \&analysis_varg,
+        varianteffectpredictor    => \&analysis_vep_wgs,
+        variant_annotation        => \&analysis_variant_annotation,
+        version_collect_ar        => \&analysis_mip_vercollect,
+        vcfparser_ar              => \&analysis_mip_vcfparser,
+        vcf2cytosure_ar           => \&analysis_vcf2cytosure,
+        vt_ar                     => \&analysis_vt,
     );
 
     ## Special case for rankvariants recipe
@@ -645,9 +632,8 @@ sub pipeline_analyse_rd_dna {
     ## Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)
     set_recipe_bwa_mem(
         {
-            analysis_recipe_href => \%analysis_recipe,
-            human_genome_reference_version =>
-              $file_info_href->{human_genome_reference_version},
+            analysis_recipe_href           => \%analysis_recipe,
+            human_genome_reference_version => $file_info_href->{human_genome_reference_version},
         }
     );
 

@@ -28,14 +28,14 @@ sub analysis_deeptrio {
 
 ## Function : Returns vcfs and gvcfs from bam files using DeepVariant's deeptrio caller
 ## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id                 => Family id
-##          : $file_info_href          => File_info hash {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $parameter_href          => Parameter hash {REF}
-##          : $profile_base_command    => Submission profile base command
-##          : $recipe_name             => Recipe name
-##          : $sample_info_href        => Info on samples and case hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $case_id               => Family id
+##          : $file_info_href        => File_info hash {REF}
+##          : $job_id_href           => Job id hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+##          : $profile_base_command  => Submission profile base command
+##          : $recipe_name           => Recipe name
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -149,74 +149,46 @@ sub analysis_deeptrio {
         }
     );
 
-    ## Get the io infiles per chain and id
     my $infile_name_prefix;
-    my $output_gvcf_child;
-    my $output_gvcf_parent1;
-    my $output_gvcf_parent2;
-    my $output_vcf_child;
-    my $output_vcf_parent1;
-    my $output_vcf_parent2;
-    my $reads_child;
-    my $reads_parent1;
-    my $reads_parent2;
-    my $sample_name_child;
-    my $sample_name_parent1;
-    my $sample_name_parent2;
 
-    my @parents = _get_parents(
-        {
-            case_members_id_href => \%case_members_id,
-        }
-    );
+    my @parents  = grep { defined } @{ \%case_members_id }{qw{ father mother }};
     my $child_id = $case_members_id{children}[0];
 
+    my %iofile_parameter;
   SAMPLE_ID:
     foreach my $sample_id ( @parents, $child_id ) {
-        my %sample_bam_io = get_io_files(
-            {
-                id             => $sample_id,
-                file_info_href => $file_info_href,
-                parameter_href => $parameter_href,
-                recipe_name    => q{markduplicates},
-                stream         => q{out},
-            }
-        );
-        $infile_name_prefix = $sample_bam_io{in}{file_name_prefix};
-
-        my %sample_vcf_io = (
-            %sample_bam_io,
-            parse_io_outfiles(
+        if ($sample_id) {
+            my %sample_bam_io = get_io_files(
                 {
-                    chain_id               => $job_id_chain,
-                    id                     => $sample_id,
-                    file_info_href         => $file_info_href,
-                    file_name_prefixes_ref => [$infile_name_prefix],
-                    outdata_dir            => $active_parameter_href->{outdata_dir},
-                    parameter_href         => $parameter_href,
-                    recipe_name            => $recipe_name,
+                    id             => $sample_id,
+                    file_info_href => $file_info_href,
+                    parameter_href => $parameter_href,
+                    recipe_name    => q{markduplicates},
+                    stream         => q{out},
                 }
-            )
-        );
-        if ( not $sample_name_parent1 and $sample_id ne $child_id ) {
-            $reads_parent1 =
+            );
+            $infile_name_prefix = $sample_bam_io{in}{file_name_prefix};
+
+            my %sample_vcf_io = (
+                %sample_bam_io,
+                parse_io_outfiles(
+                    {
+                        chain_id               => $job_id_chain,
+                        id                     => $sample_id,
+                        file_info_href         => $file_info_href,
+                        file_name_prefixes_ref => [$infile_name_prefix],
+                        outdata_dir            => $active_parameter_href->{outdata_dir},
+                        parameter_href         => $parameter_href,
+                        recipe_name            => $recipe_name,
+                    }
+                )
+            );
+            $iofile_parameter{$sample_id}{reads} =
               $sample_bam_io{out}{file_path_prefix} . $sample_bam_io{out}{file_suffix};
-            $output_gvcf_parent1 = $sample_vcf_io{out}{file_path};
-            $output_vcf_parent1  = $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
-            $sample_name_parent1 = $sample_id;
-        }
-        elsif ( $sample_id ne $child_id ) {
-            $reads_parent2 =
-              $sample_bam_io{out}{file_path_prefix} . $sample_bam_io{out}{file_suffix};
-            $output_gvcf_parent2 = $sample_vcf_io{out}{file_path};
-            $output_vcf_parent2  = $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
-            $sample_name_parent2 = $sample_id;
-        }
-        else {
-            $reads_child = $sample_bam_io{out}{file_path_prefix} . $sample_bam_io{out}{file_suffix};
-            $output_gvcf_child = $sample_vcf_io{out}{file_path};
-            $output_vcf_child  = $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
-            $sample_name_child = $sample_id;
+            $iofile_parameter{$sample_id}{output_gvcf} = $sample_vcf_io{out}{file_path};
+            $iofile_parameter{$sample_id}{output_vcf} =
+              $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
+            $iofile_parameter{$sample_id}{sample_name} = $sample_id;
         }
     }
 
@@ -249,19 +221,19 @@ sub analysis_deeptrio {
             filehandle          => $filehandle,
             model_type          => $model_type,
             num_shards          => $recipe_resource{core_number},
-            output_gvcf_child   => $output_gvcf_child,
-            output_gvcf_parent1 => $output_gvcf_parent1,
-            output_gvcf_parent2 => $output_gvcf_parent2,
-            output_vcf_child    => $output_vcf_child,
-            output_vcf_parent1  => $output_vcf_parent1,
-            output_vcf_parent2  => $output_vcf_parent2,
+            output_gvcf_child   => $iofile_parameter{$child_id}{output_gvcf},
+            output_gvcf_parent1 => $iofile_parameter{ $parents[0] }{output_gvcf},
+            output_gvcf_parent2 => $iofile_parameter{ $parents[1] }{output_gvcf},
+            output_vcf_child    => $iofile_parameter{$child_id}{output_vcf},
+            output_vcf_parent1  => $iofile_parameter{ $parents[0] }{output_vcf},
+            output_vcf_parent2  => $iofile_parameter{ $parents[1] }{output_vcf},
             referencefile_path  => $active_parameter_href->{human_genome_reference},
-            reads_child         => $reads_child,
-            reads_parent1       => $reads_parent1,
-            reads_parent2       => $reads_parent2,
-            sample_name_child   => $sample_name_child,
-            sample_name_parent1 => $sample_name_parent1,
-            sample_name_parent2 => $sample_name_parent2,
+            reads_child         => $iofile_parameter{$child_id}{reads},
+            reads_parent1       => $iofile_parameter{ $parents[0] }{reads},
+            reads_parent2       => $iofile_parameter{ $parents[1] }{reads},
+            sample_name_child   => $iofile_parameter{$child_id}{sample_name},
+            sample_name_parent1 => $iofile_parameter{ $parents[0] }{sample_name},
+            sample_name_parent2 => $iofile_parameter{ $parents[1] }{sample_name},
         }
     );
 
@@ -322,46 +294,17 @@ sub _consensus_analysis_type {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my %consensus_analysis_type_map =
+    use MIP::Parameter qw{ get_cache };
+
+    my %deepvar_consensus_analysis_type_map =
       ( MIXED => q{WGS}, PANEL => q{WES}, WGS => q{WGS}, WES => q{WES} );
-
-    my $consensus_analysis_type =
-      $consensus_analysis_type_map{ uc $parameter_href->{cache}{consensus_analysis_type} };
-
-    return $consensus_analysis_type;
-}
-
-sub _get_parents {
-
-## Function : Determine model type from consensus analysis type
-## Returns  :
-## Arguments: $case_members_id => Case member id hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $case_members_id_href;
-
-    my $tmpl = {
-        case_members_id_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$case_members_id_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-    my @parents;
-
-    foreach my $parent (qw{ father mother }) {
-
-        if ( exists $case_members_id_href->{$parent} ) {
-            push @parents, $case_members_id_href->{$parent};
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
         }
-    }
-    return @parents;
+    );
+    return $deepvar_consensus_analysis_type_map{ uc $consensus_analysis_type };
 }
 
 1;

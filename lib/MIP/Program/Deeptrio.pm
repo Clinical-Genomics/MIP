@@ -23,7 +23,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ deeptrio };
 }
@@ -34,10 +33,21 @@ sub deeptrio {
 ## Returns  : @commands
 ## Arguments: $bedfile                => Bed file containing the list of regions we want to process
 ##          : $filehandle             => Filehandle to write to
-##          : $iofile_parameters_href => Path to input and output files, and sample ids
 ##          : $model_type             => Type of model to use for variant calling. Allowed values WES, WGS, or PACBIO
 ##          : $num_shards             => Number of files the input is split into for the make examples step
+##          : $output_gvcf_child      => Path to output gvcf file for the child in a duo or trio
+##          : $output_gvcf_parent1    => Path to output gvcf for a parent in a duo or a trio
+##          : $output_gvcf_parent2    => Path to output gvcf for a parent in trio
+##          : $output_vcf_child       => Path to output vcf file for the child in a duo or trio
+##          : $output_vcf_parent1     => Path to output vcf for a parent in a duo or trio
+##          : $output_vcf_parent2     => Path to output vcf for a parent in trio
+##          : $reads_child            => Path to input bam for the child in a duo or trio
+##          : $reads_parent1          => Path to input bam for a parent in a duo or trio
+##          : $reads_parent2          => Path to input bam for a parent in trio
 ##          : $referencefile_path     => Path to genome reference
+##          : $sample_name_child      => Sample name for the child in a duo or trio
+##          : $sample_name_parent1    => Sample name for a parent in a duo or trio
+##          : $sample_name_parent2    => Sample name for a parent in trio
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
@@ -86,6 +96,7 @@ sub deeptrio {
         },
         num_shards => {
             allow       => qr/ \A \d+ \z /xms,
+            required    => 1,
             store       => \$num_shards,
             strict_type => 1,
         },
@@ -191,23 +202,23 @@ sub deeptrio {
     push @commands, q{--reads_child} . $SPACE . $reads_child;
     push @commands, q{--output_gvcf_child} . $SPACE . $output_gvcf_child;
     push @commands, q{--output_vcf_child} . $SPACE . $output_vcf_child;
-    
+
     ## Parent1
     push @commands, q{--sample_name_parent1} . $SPACE . $sample_name_parent1;
     push @commands, q{--reads_parent1} . $SPACE . $reads_parent1;
     push @commands, q{--output_gvcf_parent1} . $SPACE . $output_gvcf_parent1;
     push @commands, q{--output_vcf_parent1} . $SPACE . $output_vcf_parent1;
-    
-    if ($sample_name_parent2){
+
+    if ($sample_name_parent2) {
         push @commands, q{--sample_name_parent2} . $SPACE . $sample_name_parent2;
     }
-    if ($reads_parent2){
+    if ($reads_parent2) {
         push @commands, q{--reads_parent2} . $SPACE . $reads_parent2;
     }
-    if ($output_gvcf_parent2){
+    if ($output_gvcf_parent2) {
         push @commands, q{--output_gvcf_parent2} . $SPACE . $output_gvcf_parent2;
     }
-    if ($output_vcf_parent2){
+    if ($output_vcf_parent2) {
         push @commands, q{--output_vcf_parent2} . $SPACE . $output_vcf_parent2;
     }
     if ($bedfile) {
