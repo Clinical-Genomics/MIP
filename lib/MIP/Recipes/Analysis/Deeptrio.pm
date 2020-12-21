@@ -245,7 +245,7 @@ sub analysis_deeptrio {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile           => $output_gvcf_child,
+                infile           => $iofile_parameter{$child_id}{output_gvcf},
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
