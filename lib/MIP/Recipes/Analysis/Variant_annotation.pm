@@ -294,8 +294,6 @@ sub analysis_variant_annotation {
     );
     say {$filehandle} $NEWLINE;
 
-    say {$filehandle} q{## Add loqusdb headers to output};
-
     _add_loqusdb_headers(
         {
             filehandle          => $filehandle,
@@ -536,8 +534,6 @@ sub analysis_variant_annotation_panel {
     );
     say {$filehandle} $NEWLINE;
 
-    say {$filehandle} q{## Add loqusdb headers to output};
-
     _add_loqusdb_headers(
         {
             filehandle          => $filehandle,
@@ -664,6 +660,11 @@ sub _add_loqusdb_headers {
 
         last ANNOTATION if ($loqusdb_reference_file);
     }
+
+    ## Nothing to process - skip
+    return if ( not $loqusdb_reference_file );
+
+    say {$filehandle} q{## Add loqusdb headers to output};
 
     bcftools_view(
         {
