@@ -300,9 +300,9 @@ sub analysis_variant_annotation {
         {
             filehandle          => $filehandle,
             infile_path         => $concat_outfile_path,
-            vcfanno_config_name => $active_parameter_href->{vcfanno_config},
             outfile_path_prefix => $outfile_path_prefix,
             outfile_suffix      => $DOT . q{vcf.gz},
+            vcfanno_config_name => $active_parameter_href->{vcfanno_config},
         }
     );
 
@@ -542,9 +542,9 @@ sub analysis_variant_annotation_panel {
         {
             filehandle          => $filehandle,
             infile_path         => $outfile_path,
-            vcfanno_config_name => $active_parameter_href->{vcfanno_config},
             outfile_path_prefix => $outfile_path_prefix,
             outfile_suffix      => $DOT . q{vcf.gz},
+            vcfanno_config_name => $active_parameter_href->{vcfanno_config},
         }
     );
 
@@ -642,10 +642,10 @@ sub _add_loqusdb_headers {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Gnu::Coreutils qw{ gnu_mv};
-    use MIP::Io::Read qw{read_from_file};
+    use MIP::Io::Read qw{ read_from_file };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv};
 
     my $loqusdb_reference_file;
 
