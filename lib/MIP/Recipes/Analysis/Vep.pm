@@ -162,7 +162,6 @@ sub analysis_vep_wgs {
     ## Constants
     Readonly my $VEP_FORK_NUMBER => 4;
 
-    ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
@@ -268,7 +267,6 @@ sub analysis_vep_wgs {
     ## Get the vep synonyms file path for if required (grch38)
     my $vep_synonyms_file_path = create_vep_synonyms_file(
         {
-            log          => $log,
             outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
             version      => $genome_reference_version,
         }
@@ -334,10 +332,8 @@ sub analysis_vep_wgs {
             }
         }
 
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-        my $stdoutfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stdout.txt};
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $stdoutfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stdout.txt};
         variant_effect_predictor(
             {
                 assembly               => $assembly_version,
@@ -353,12 +349,12 @@ sub analysis_vep_wgs {
                 outfile_path           => $outfile_path{$contig},
                 plugins_dir_path       => $active_parameter_href->{vep_plugins_dir_path},
                 plugins_ref            => \@plugins,
-                reference_path     => $active_parameter_href->{human_genome_reference},
-                regions_ref        => [$contig],
-                stderrfile_path    => $stderrfile_path,
-                stdoutfile_path    => $stdoutfile_path,
-                synonyms_file_path => $vep_synonyms_file_path,
-                vep_features_ref   => \@vep_features_ref,
+                reference_path         => $active_parameter_href->{human_genome_reference},
+                regions_ref            => [$contig],
+                stderrfile_path        => $stderrfile_path,
+                stdoutfile_path        => $stdoutfile_path,
+                synonyms_file_path     => $vep_synonyms_file_path,
+                vep_features_ref       => \@vep_features_ref,
             }
         );
         say {$xargsfilehandle} $NEWLINE;
@@ -391,13 +387,13 @@ sub analysis_vep_wgs {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -516,8 +512,7 @@ sub analysis_vep_sv_wes {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Sample_info
-      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
 
     ### PREPROCESSING:
 
@@ -640,7 +635,6 @@ sub analysis_vep_sv_wes {
     ## Get the vep synonyms file path for if required (grch38)
     my $vep_synonyms_file_path = create_vep_synonyms_file(
         {
-            log          => $log,
             outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
             version      => $genome_reference_version,
         }
@@ -676,8 +670,7 @@ sub analysis_vep_sv_wes {
         push @vep_features_ref, $vep_feature;
     }
 
-    my $vep_infile_path =
-      $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $infile_suffix;
+    my $vep_infile_path = $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $infile_suffix;
     my $stderrfile_path = $recipe_file_path . $DOT . q{stderr.txt};
     my $stdoutfile_path = $recipe_file_path . $DOT . q{stdout.txt};
     variant_effect_predictor(
@@ -716,13 +709,13 @@ sub analysis_vep_sv_wes {
         );
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -840,8 +833,7 @@ sub analysis_vep_sv_wgs {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Sample_info
-      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -970,7 +962,6 @@ sub analysis_vep_sv_wgs {
     ## Get the vep synonyms file path for if required (grch38)
     my $vep_synonyms_file_path = create_vep_synonyms_file(
         {
-            log          => $log,
             outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
             version      => $genome_reference_version,
         }
@@ -985,8 +976,7 @@ sub analysis_vep_sv_wgs {
     ## Get genome source and version to be compatible with VEP
     $assembly_version = _get_assembly_name( { assembly_version => $assembly_version, } );
 
-    my $vep_infile_path =
-      $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $infile_suffix;
+    my $vep_infile_path = $infile_path_prefix . $UNDERSCORE . q{fixedsvlength} . $infile_suffix;
 
     # VEP custom annotations
     my @custom_annotations = _get_custom_annotation_cmds(
@@ -1112,13 +1102,13 @@ sub analysis_vep_sv_wgs {
         );
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -1317,7 +1307,6 @@ sub analysis_vep {
     ## Get the vep synonyms file path for if required (grch38)
     my $vep_synonyms_file_path = create_vep_synonyms_file(
         {
-            log          => $log,
             outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
             version      => $genome_reference_version,
         }
@@ -1436,13 +1425,13 @@ sub analysis_vep {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -1486,8 +1475,7 @@ sub _get_custom_annotation_cmds {
     foreach my $annotation_href ( values %{$vep_custom_annotation_href} ) {
 
         ## Remove all undef elements and then join
-        my $cmd = join $COMMA,
-          grep { defined } @{$annotation_href}{@order_custom_options};
+        my $cmd = join $COMMA, grep { defined } @{$annotation_href}{@order_custom_options};
         push @custom_annotations, $cmd;
     }
     return @custom_annotations;
@@ -1639,7 +1627,7 @@ q?foreach my $bit (split /\;/, $data[7]) { my ($key, $value) = split /\=/, $bit;
     # Add $end position
     $perl_fix_sv_nolengths .= q?if(defined($info{END})) { $end = $info{END}; } ?;
 
- # If SV, strip SV type entry and check if no length, then do not print variant else print
+    # If SV, strip SV type entry and check if no length, then do not print variant else print
     $perl_fix_sv_nolengths .=
 q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $end && $alt=~ /del/i) {} else {print $_} } ?;
 
