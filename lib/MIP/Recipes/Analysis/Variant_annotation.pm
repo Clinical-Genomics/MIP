@@ -180,7 +180,6 @@ sub analysis_variant_annotation {
     my @outfile_paths       = @{ $io{out}{file_paths} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my %outfile_path        = %{ $io{out}{file_path_href} };
-    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -282,7 +281,7 @@ sub analysis_variant_annotation {
 
     say {$filehandle} q{## Concatenate outfiles};
 
-    my $concat_outfile_path = $outfile_path_prefix . $outfile_suffix;
+    my $concat_outfile_path = $outfile_path_prefix . $DOT . q{vcf.gz};
     bcftools_concat(
         {
             filehandle       => $filehandle,
@@ -301,7 +300,7 @@ sub analysis_variant_annotation {
             infile_path         => $concat_outfile_path,
             vcfanno_config_name => $active_parameter_href->{vcfanno_config},
             outfile_path_prefix => $outfile_path_prefix,
-            outfile_suffix      => $outfile_suffix,
+            outfile_suffix      => $DOT . q{vcf.gz},
         }
     );
 
@@ -427,7 +426,7 @@ sub _add_loqusdb_headers {
             infile_path => $loqusdb_reference_file,
         }
     );
-    say {$filehandle} $PIPE . $SPACE;
+    print {$filehandle} $PIPE . $SPACE;
 
     my $loqusdb_header_path = $outfile_path_prefix . $DOT . q{loqusdb_header};
     perl_nae_oneliners(
@@ -437,6 +436,7 @@ sub _add_loqusdb_headers {
             stdoutfile_path => $loqusdb_header_path,
         }
     );
+    say {$filehandle} $NEWLINE;
 
     my $annotate_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{annotated.vcf.gz};
     bcftools_annotate(
