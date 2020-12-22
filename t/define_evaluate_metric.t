@@ -71,8 +71,7 @@ my %sample_info = test_mip_hashes(
 );
 
 ## Given a file with evaluation metrics
-my $eval_metric_file =
-  catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.1-.yaml} );
+my $eval_metric_file = catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.3-.yaml} );
 
 ## Then set the relevant evaluation metrics for the analysis
 my %evaluate_metric = define_evaluate_metric(
@@ -85,7 +84,7 @@ my %evaluate_metric = define_evaluate_metric(
 my %expected = (
     ADM1059A1 => {
         collecthsmetrics => {
-            MEAN_TARGET_COVERAGE => {
+            MEDIAN_TARGET_COVERAGE => {
                 lt => 150,
             },
         },
@@ -100,7 +99,7 @@ my %expected = (
     },
     ADM1059A2 => {
         collecthsmetrics => {
-            MEAN_TARGET_COVERAGE => {
+            MEDIAN_TARGET_COVERAGE => {
                 lt => 150,
             },
         },
@@ -120,7 +119,7 @@ my %expected = (
     },
     ADM1059A3 => {
         collecthsmetrics => {
-            MEAN_TARGET_COVERAGE => {
+            MEDIAN_TARGET_COVERAGE => {
                 lt => 150,
             },
         },

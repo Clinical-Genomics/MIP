@@ -98,8 +98,7 @@ sub run {
         # BWA human genome reference file endings
         bwa_build_reference => [qw{ .bwt .ann .amb .pac .sa }],
 
-        bwa_mem2_build_reference =>
-          [qw{ .0123 .ann .amb .bwt.2bit.64 .bwt.8bit.32 .pac }],
+        bwa_mem2_build_reference => [qw{ .0123 .ann .amb .bwt.2bit.64 .bwt.8bit.32 .pac }],
 
         exome_target_bed => [qw{ .interval_list .pad100.interval_list }],
 
@@ -142,7 +141,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
 
     option(
         q{exome_target_bed} => (
-            cmd_tags => [q{file.bed=Sample_id; Default: latest_supported_capturekit.bed}],
+            cmd_tags      => [q{file.bed=Sample_id; Default: latest_supported_capturekit.bed}],
             documentation => q{Exome target bed file per sample id},
             is            => q{rw},
             isa           => HashRef,
@@ -152,7 +151,7 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     option(
         q{expected_coverage} => (
             cmd_tags      => [q{sample_id=expected_coverage}],
-            documentation => q{Expected mean target coverage for analysis},
+            documentation => q{Expected median target coverage for analysis},
             is            => q{rw},
             isa           => HashRef,
         )
@@ -350,8 +349,8 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
 
     option(
         q{samtools_merge} => (
-            cmd_flag => q{samtools_merge},
-            cmd_tags => [q{Analysis recipe switch}],
+            cmd_flag      => q{samtools_merge},
+            cmd_tags      => [q{Analysis recipe switch}],
             documentation =>
               q{Merge (BAM file(s) ) or rename single samples for downstream processing},
             is  => q{rw},
@@ -381,11 +380,10 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
 
     option(
         q{gatk_baserecalibration} => (
-            cmd_tags => [q{Analysis recipe switch}],
-            documentation =>
-              q{Recalibration of bases using GATK BaseReCalibrator/PrintReads},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Recalibration of bases using GATK BaseReCalibrator/PrintReads},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -586,8 +584,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             cmd_tags      => [q{Default: NONE; Set to "0" to disable}],
             documentation => q{PCR indel model to use},
             is            => q{rw},
-            isa =>
-              ArrayRef [ enum( [ 0, qw{ AGGRESSIVE CONSERVATIVE HOSTILE NONE } ] ), ],
+            isa => ArrayRef [ enum( [ 0, qw{ AGGRESSIVE CONSERVATIVE HOSTILE NONE } ] ), ],
         )
     );
 
@@ -612,11 +609,10 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_genotypegvcfs_ref_gvcf} => (
-            cmd_flag => q{gatk_genotype_ref_gvcf},
-            documentation =>
-              q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
-            is  => q{rw},
-            isa => Str,
+            cmd_flag      => q{gatk_genotype_ref_gvcf},
+            documentation => q{GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -650,7 +646,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_variantrecalibration} => (
-            cmd_tags => [q{Analysis recipe switch}],
+            cmd_tags      => [q{Analysis recipe switch}],
             documentation =>
               q{Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration},
             is  => q{rw},
@@ -679,7 +675,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_cnnscorevariants} => (
-            cmd_flag => q{gatk_cnnscorevariants},
+            cmd_flag      => q{gatk_cnnscorevariants},
             documentation =>
               q{Perform gatk cnnscorevariants instead of gatk variantscore recalibration},
             is  => q{rw},
@@ -707,12 +703,11 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_variantrecalibration_indel_tsfilter_level} => (
-            cmd_flag => q{gatk_varrecal_indel_ts_fl},
-            cmd_tags => [q{Defaults: 99.9}],
-            documentation =>
-              q{Truth sensitivity level for indels at which to start filtering},
-            is  => q{rw},
-            isa => Num,
+            cmd_flag      => q{gatk_varrecal_indel_ts_fl},
+            cmd_tags      => [q{Defaults: 99.9}],
+            documentation => q{Truth sensitivity level for indels at which to start filtering},
+            is            => q{rw},
+            isa           => Num,
         )
     );
 
@@ -731,10 +726,9 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             cmd_tags => [
 q{file.vcf=settings; Default: grch37_dbsnp_-138-.vcf="dbsnp,known=true,training=false,truth=false,prior=2.0", grch37_mills_and_1000g_indels_-gold_standard-.vcf="mills,VCF,known=true,training=true,truth=true,prior=12.0"}
             ],
-            documentation =>
-              q{Resource to use with GATK VariantRecalibrator in INDEL|BOTH},
-            is  => q{rw},
-            isa => HashRef,
+            documentation => q{Resource to use with GATK VariantRecalibrator in INDEL|BOTH},
+            is            => q{rw},
+            isa           => HashRef,
         )
     );
 
@@ -744,10 +738,9 @@ q{file.vcf=settings; Default: grch37_dbsnp_-138-.vcf="dbsnp,known=true,training=
             cmd_tags => [
 q{file.vcf=settings; Default: grch37_dbsnp_-138-.vcf="dbsnp,known=true,training=false,truth=false,prior=2.0", grch37_hapmap_-3.3-.vcf="hapmap,VCF,known=false,training=true,truth=true,prior=15.0", grch37_1000g_omni_-2.5-.vcf="omni,VCF,known=false,training=true,truth=false,prior=12.0", grch37_1000g_snps_high_confidence_-phase1-.vcf="1000G,known=false,training=true,truth=false,prior=10.0"}
             ],
-            documentation =>
-              q{Resource to use with GATK VariantRecalibrator in SNV|BOTH mode},
-            is  => q{rw},
-            isa => HashRef,
+            documentation => q{Resource to use with GATK VariantRecalibrator in SNV|BOTH mode},
+            is            => q{rw},
+            isa           => HashRef,
         )
     );
 
@@ -762,12 +755,11 @@ q{file.vcf=settings; Default: grch37_dbsnp_-138-.vcf="dbsnp,known=true,training=
 
     option(
         q{gatk_variantrecalibration_snv_tsfilter_level} => (
-            cmd_flag => q{gatk_varrecal_snv_ts_fl},
-            cmd_tags => [q{Defaults: 99.9}],
-            documentation =>
-              q{Truth sensitivity level for snvs at which to start filtering},
-            is  => q{rw},
-            isa => Num,
+            cmd_flag      => q{gatk_varrecal_snv_ts_fl},
+            cmd_tags      => [q{Defaults: 99.9}],
+            documentation => q{Truth sensitivity level for snvs at which to start filtering},
+            is            => q{rw},
+            isa           => Num,
         )
     );
 
@@ -790,8 +782,8 @@ q{file.vcf=settings; Default: grch37_dbsnp_-138-.vcf="dbsnp,known=true,training=
 
     option(
         q{gatk_num_reference_samples_if_no_call} => (
-            cmd_flag => q{gatk_num_ref_sam_if_ncall},
-            cmd_tags => [q{Defaults: 7854}],
+            cmd_flag      => q{gatk_num_ref_sam_if_ncall},
+            cmd_tags      => [q{Defaults: 7854}],
             documentation =>
 q{Number of hom-ref genotypes to infer at sites not present in a panel. Connected to option 'gatk_calculate_genotype_call_set'},
             is  => q{rw},
@@ -848,21 +840,19 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
 
     option(
         q{gatk_variantevalall} => (
-            cmd_tags => [q{Analysis recipe switch}],
-            documentation =>
-              q{Variant evaluation using GATK varianteval for all variants},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Variant evaluation using GATK varianteval for all variants},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
     option(
         q{gatk_variantevalexome} => (
-            cmd_tags => [q{Analysis recipe switch}],
-            documentation =>
-              q{Variant evaluation using GATK varianteval for exonic variants},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Variant evaluation using GATK varianteval for exonic variants},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -877,7 +867,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
 
     option(
         q{gatk_varianteval_gold} => (
-            cmd_tags => [q{Default: grch37_mills_and_1000g_indels_-gold_standard-.vcf}],
+            cmd_tags      => [q{Default: grch37_mills_and_1000g_indels_-gold_standard-.vcf}],
             documentation => q{Gold indel file used in GATK varianteval},
             is            => q{rw},
             isa           => Str,
@@ -886,10 +876,10 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
 
     option(
         q{prepareforvariantannotationblock} => (
-            cmd_flag => q{prep_for_var_ann_bl},
-            cmd_tags => [q{Analysis recipe switch}],
+            cmd_flag      => q{prep_for_var_ann_bl},
+            cmd_tags      => [q{Analysis recipe switch}],
             documentation =>
-q{Prepare for variant annotation block by copying and splitting files per contig},
+              q{Prepare for variant annotation block by copying and splitting files per contig},
             is  => q{rw},
             isa => enum( [ 0, 1, 2 ] ),
         )
@@ -1125,7 +1115,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{genmod_annotate_regions} => (
-            cmd_flag => q{genmod_ann_reg},
+            cmd_flag      => q{genmod_ann_reg},
             documentation =>
               q{Use predefined gene annotation supplied with genmod for defining genes},
             is  => q{rw},
@@ -1243,7 +1233,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{qccollect_eval_metric_file} => (
-            cmd_tags      => [q{Default: qc_eval_metric_-v1.1-.yaml}],
+            cmd_tags      => [q{Default: qc_eval_metric_-v1.3-.yaml}],
             documentation => q{File containing Qccollect evaluation metrics},
             is            => q{rw},
             isa           => Str,
@@ -1252,7 +1242,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{qccollect_regexp_file} => (
-            cmd_tags => [q{Default: qc_regexp_-v1.25-.yaml}],
+            cmd_tags      => [q{Default: qc_regexp_-v1.25-.yaml}],
             documentation =>
 q{Regular expression file containing the regular expression to be used for each program},
             is  => q{rw},
@@ -1262,8 +1252,7 @@ q{Regular expression file containing the regular expression to be used for each 
 
     option(
         q{qccollect_sampleinfo_file} => (
-            cmd_tags =>
-              [q{Default: {outdata_dir}/{case_id}/{case_id}_qc_sample_info.yaml}],
+            cmd_tags      => [q{Default: {outdata_dir}/{case_id}/{case_id}_qc_sample_info.yaml}],
             documentation =>
               q{Sample info file containing info on what to parse from this analysis run},
             is  => q{rw},
@@ -1281,11 +1270,10 @@ q{Regular expression file containing the regular expression to be used for each 
 
     option(
         q{multiqc_ar} => (
-            cmd_tags => [q{Analysis recipe switch}],
-            documentation =>
-              q{Create aggregate bioinformatics analysis report across many samples},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Create aggregate bioinformatics analysis report across many samples},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
