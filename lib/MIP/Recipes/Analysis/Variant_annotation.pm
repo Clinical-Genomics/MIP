@@ -659,9 +659,9 @@ sub _add_loqusdb_headers {
   ANNOTATION:
     foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
 
-        if ( $annotation_href->{file} =~ /loqusdb_\w+_\w+-/xsm ) {
-            $loqusdb_reference_file = $annotation_href->{file};
-        }
+        $loqusdb_reference_file =
+          $annotation_href->{file} =~ /loqusdb_\w+_\w+-/xsm ? $annotation_href->{file} : undef;
+
         last ANNOTATION if ($loqusdb_reference_file);
     }
 
