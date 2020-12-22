@@ -3,10 +3,23 @@
 title = "Vcfanno configuration file"
 
 [functions]
-file = "TEST_REFERENCES!/vcfanno_functions_-v1.0-.lua"
+file="TEST_REFERENCES!/vcfanno_functions_-v1.0-.lua"
+
+[[annotation]]
+file="TEST_REFERENCES!/grch37_loqusdb_snv_indel_-2020-03-24-.vcf.gz"
+fields = ["Obs", "Hom"]
+ops=["self", "self"]
+names=["Obs", "Hom"]
 
 [[annotation]]
 file="TEST_REFERENCES!/grch37_gnomad.genomes_-r2.0.1-.vcf.gz"
 fields = ["AF", "AF_POPMAX"]
 ops=["self", "self"]
 names=["GNOMADAF", "GNOMADAF_POPMAX"]
+
+[[annotation]]
+file="TEST_REFERENCES!/grch37_gnomad.genomes_-r2.0.1-.vcf.gz"
+fields = ["AF", "AF_POPMAX"]
+ops=["self", "self"]
+names=["GNOMADAF", "GNOMADAF_POPMAX"]
+
