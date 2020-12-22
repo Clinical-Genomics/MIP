@@ -294,6 +294,8 @@ sub analysis_variant_annotation {
     );
     say {$filehandle} $NEWLINE;
 
+    say {$filehandle} q{## Add loqusdb headers to output};
+
     _add_loqusdb_headers(
         {
             filehandle          => $filehandle,
@@ -534,6 +536,8 @@ sub analysis_variant_annotation_panel {
     );
     say {$filehandle} $NEWLINE;
 
+    say {$filehandle} q{## Add loqusdb headers to output};
+
     _add_loqusdb_headers(
         {
             filehandle          => $filehandle,
@@ -676,6 +680,7 @@ sub _add_loqusdb_headers {
             filehandle      => $filehandle,
             oneliner_name   => q{get_vcf_loqusdb_headers},
             stdoutfile_path => $loqusdb_header_path,
+            use_container   => 1,
         }
     );
     say {$filehandle} $NEWLINE;
