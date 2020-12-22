@@ -4,7 +4,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [9.1.2]
 - Increase markduplicates java memory allocation for chromosme 2.
-- Turn off chromograph_viz fior wes analysis
+- Turn off chromograph_viz for wes analysis
+- Chromograph exits gracefully on empty infile
+
+**Tools**
+chromograph 1.0.0 -> 1.0.1
 
 ## [9.1.1]
 - Fix MIP's gender estaimation for wgs samples with gender set to unknown.
