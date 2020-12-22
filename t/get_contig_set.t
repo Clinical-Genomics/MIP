@@ -87,7 +87,7 @@ my @contigs = get_contig_set(
 ## Then return contig set
 is_deeply(
     \@contigs,
-    $expected_contigs{$GENOME_VERSION}{$set},
+    $expected_contigs{$GENOME_VERSION}{$array_set},
     q{Got primary contig array set for genome version and set}
 );
 
