@@ -1,0 +1,38 @@
+##fileformat=VCFv4.3
+##FILTER=<ID=PASS,Description="All filters passed">
+##INFO=<ID=Obs,Number=1,Type=Integer,Description="The number of observations for the variant">
+##INFO=<ID=Hom,Number=1,Type=Integer,Description="The number of observed homozygotes">
+##INFO=<ID=Hem,Number=1,Type=Integer,Description="The number of observed hemizygotes">
+##contig=<ID=1,length=249240620>
+##contig=<ID=2,length=243189191>
+##contig=<ID=3,length=197961645>
+##contig=<ID=4,length=191044293>
+##contig=<ID=5,length=180905168>
+##contig=<ID=6,length=171053709>
+##contig=<ID=7,length=159128666>
+##contig=<ID=8,length=146303967>
+##contig=<ID=9,length=141153153>
+##contig=<ID=10,length=135524774>
+##contig=<ID=11,length=134946515>
+##contig=<ID=12,length=133841873>
+##contig=<ID=13,length=115109853>
+##contig=<ID=14,length=107289492>
+##contig=<ID=15,length=102521387>
+##contig=<ID=16,length=90294733>
+##contig=<ID=17,length=81195191>
+##contig=<ID=18,length=78017152>
+##contig=<ID=19,length=59118988>
+##contig=<ID=20,length=62965514>
+##contig=<ID=21,length=48119891>
+##contig=<ID=22,length=51244530>
+##contig=<ID=X,length=155260500>
+##contig=<ID=Y,length=59034001>
+##contig=<ID=MT,length=16567>
+##NrCases=3236
+##Software=<ID=loqusdb,Version=2.5,Date="2020-08-21 09:02",CommandLineOptions="">
+##bcftools_viewVersion=1.10.2+htslib-1.10.2
+##bcftools_viewCommand=view --output-type v /home/proj/stage/rare-disease/references/references_9.0/grch37_loqusdb_snv_indel_-2020-08-21-.vcf.gz; Date=Mon Aug 24 19:03:16 2020
+##INFO=<ID=OLD_MULTIALLELIC,Number=1,Type=String,Description="Original chr:pos:ref:alt encoding">
+##INFO=<ID=OLD_VARIANT,Number=.,Type=String,Description="Original chr:pos:ref:alt encoding">
+#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO
+1       10003   .       ACC        A       .       .       Obs=100

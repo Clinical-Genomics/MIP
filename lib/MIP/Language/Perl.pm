@@ -78,8 +78,7 @@ sub check_modules_existance {
             require $module;
         }
         catch {
-            say {*STDERR}
-              qq{FATAL: $module not installed - Please install to run $program_name};
+            say {*STDERR} qq{FATAL: $module not installed - Please install to run $program_name};
             croak(q{FATAL: Aborting!});
         };
     }
@@ -337,6 +336,7 @@ sub perl_nae_oneliners {
         get_rrna_transcripts                 => \&_get_rrna_transcripts,
         get_select_contigs_by_col            => \&_get_select_contigs_by_col,
         get_vcf_header_id_line               => \&_get_vcf_header_id_line,
+        get_vcf_loqusdb_headers              => \&_get_vcf_loqusdb_headers,
         get_vcf_sample_ids                   => \&_get_vcf_sample_ids,
         reformat_sacct_headers               => \&_reformat_sacct_headers,
         remove_decomposed_asterisk_records   => \&_remove_decomposed_asterisk_records,
@@ -698,12 +698,11 @@ sub _reformat_sacct_headers {
     my $reformat_sacct_headers = q?'my @headers=(? . $sacct_header . q?); ?;
 
     # Write header line
-    $reformat_sacct_headers .=
-      q?if($. == 1) { print q{#} . join(qq{\t}, @headers), qq{\n} } ?;
+    $reformat_sacct_headers .= q?if($. == 1) { print q{#} . join(qq{\t}, @headers), qq{\n} } ?;
 
-  # Write individual job line - skip line containing (.batch or .bat+) in the first column
+    # Write individual job line - skip line containing (.batch or .bat+) in the first column
     $reformat_sacct_headers .=
-q?if ($. >= 3 && $F[0] !~ /( .batch | .bat+ )\b/xms) { print join(qq{\t}, @F), qq{\n} }' ?;
+      q?if ($. >= 3 && $F[0] !~ /( .batch | .bat+ )\b/xms) { print join(qq{\t}, @F), qq{\n} }' ?;
 
     return $reformat_sacct_headers;
 }
@@ -720,8 +719,7 @@ sub _get_rrna_transcripts {
     my $rrna_transcripts = q?'if (/^#/) {print $_} ?;
 
     # For rRNA, rRNA_pseudogenes or Mt_rRNA
-    $rrna_transcripts .=
-      q?elsif ($_ =~ / gene_type \s \"(rRNA|rRNA_pseudogene|Mt_rRNA)\" /nxms)?;
+    $rrna_transcripts .= q?elsif ($_ =~ / gene_type \s \"(rRNA|rRNA_pseudogene|Mt_rRNA)\" /nxms)?;
 
     # Print
     $rrna_transcripts .= q?{print $_}'?;
@@ -760,6 +758,29 @@ sub _get_select_contigs_by_col {
     $get_select_contigs .= q?last;' ?;
 
     return $get_select_contigs;
+}
+
+sub _get_vcf_loqusdb_headers {
+
+## Function : Return vcf header line for "Nrcases" and "software line"
+## Returns  : $vcf_loqusdb_headers
+## Arguments: $id => Header info id
+
+    my ($arg_href) = @_;
+
+    ## If NrCases in line
+    my $vcf_loqusdb_headers = q?'if($_=~ /\A [#]{2}NrCases/xsm ?;
+
+    ## or
+    $vcf_loqusdb_headers .= q?|| ?;
+
+    ## software in line
+    $vcf_loqusdb_headers .= q?$_=~ /\A [#]{2}Software=<ID=loqusdb/xsm) {?;
+
+    ## Print line
+    $vcf_loqusdb_headers .= q?print $_}'?;
+
+    return $vcf_loqusdb_headers;
 }
 
 sub _get_vcf_header_id_line {

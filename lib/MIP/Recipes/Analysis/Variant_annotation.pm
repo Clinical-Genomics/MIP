@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $DOT $LOG_NAME $NEWLINE $PIPE $SPACE };
+use MIP::Constants qw{ $DASH $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -221,8 +221,7 @@ sub analysis_variant_annotation {
     foreach my $contig (@contigs_size_ordered) {
 
         ## Get parameters
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
         vcfanno(
             {
@@ -266,8 +265,7 @@ sub analysis_variant_annotation {
   CONTIG:
     foreach my $contig (@contigs_size_ordered) {
         ## Get parameters
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
         bcftools_index(
             {
@@ -284,21 +282,32 @@ sub analysis_variant_annotation {
 
     say {$filehandle} q{## Concatenate outfiles};
 
+    my $concat_outfile_path = $outfile_path_prefix . $outfile_suffix;
     bcftools_concat(
         {
             filehandle       => $filehandle,
             infile_paths_ref => \@outfile_paths,
             output_type      => q{z},
-            outfile_path     => $outfile_path_prefix . $DOT . q{vcf.gz},
+            outfile_path     => $concat_outfile_path,
             rm_dups          => 0,
             threads          => $recipe_resource{core_number} - 1,
         }
     );
     say {$filehandle} $NEWLINE;
 
+    _add_loqusdb_headers(
+        {
+            filehandle          => $filehandle,
+            infile_path         => $concat_outfile_path,
+            vcfanno_config_name => $active_parameter_href->{vcfanno_config},
+            outfile_path_prefix => $outfile_path_prefix,
+            outfile_suffix      => $outfile_suffix,
+        }
+    );
+
     bcftools_index(
         {
-            infile_path => $outfile_path_prefix . $DOT . q{vcf.gz},
+            infile_path => $concat_outfile_path,
             filehandle  => $filehandle,
             output_type => q{tbi},
         }
@@ -313,7 +322,7 @@ sub analysis_variant_annotation {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                path             => $outfile_path_prefix . $DOT . q{vcf.gz},
+                path             => $concat_outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
@@ -321,13 +330,13 @@ sub analysis_variant_annotation {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -337,6 +346,119 @@ sub analysis_variant_annotation {
         );
     }
     return 1;
+}
+
+sub _add_loqusdb_headers {
+
+## Function : Add relevant loqusDB headers for downstream processing
+## Returns  :
+## Arguments: $filehandle          => Filehandle to write to
+##          : $infile_path         => Infile path to read from
+##          : $outfile_path_prefix => Outfile path
+##          : $outfile_suffix      => Outfile suffix
+##          : $vcfanno_config_name => Name of vcfanno config
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $outfile_path_prefix;
+    my $outfile_suffix;
+    my $vcfanno_config_name;
+
+    my $tmpl = {
+        filehandle  => { store => \$filehandle, },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path_prefix,
+            strict_type => 1,
+        },
+        outfile_suffix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_suffix,
+            strict_type => 1,
+        },
+        vcfanno_config_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfanno_config_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv};
+    use MIP::Io::Read qw{read_from_file};
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
+
+    my $loqusdb_reference_file;
+
+    my %vcfanno_config = read_from_file(
+        {
+            format => q{toml},
+            path   => $vcfanno_config_name,
+        }
+    );
+
+  ANNOTATION:
+    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+
+        if ( $annotation_href->{file} =~ /loqusdb_\w+_\w+-/xsm ) {
+            $loqusdb_reference_file = $annotation_href->{file};
+        }
+        last ANNOTATION if ($loqusdb_reference_file);
+    }
+
+    bcftools_view(
+        {
+            filehandle  => $filehandle,
+            header_only => 1,
+            infile_path => $loqusdb_reference_file,
+        }
+    );
+    say {$filehandle} $PIPE . $SPACE;
+
+    my $loqusdb_header_path = $outfile_path_prefix . $DOT . q{loqusdb_header};
+    perl_nae_oneliners(
+        {
+            filehandle      => $filehandle,
+            oneliner_name   => q{get_vcf_loqusdb_headers},
+            stdoutfile_path => $loqusdb_header_path,
+        }
+    );
+
+    my $annotate_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{annotated.vcf.gz};
+    bcftools_annotate(
+        {
+            filehandle      => $filehandle,
+            headerfile_path => $loqusdb_header_path,
+            infile_path     => $infile_path,
+            outfile_path    => $annotate_outfile_path,
+            output_type     => q{z},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    gnu_mv(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $annotate_outfile_path,
+            outfile_path => $outfile_path_prefix . $outfile_suffix,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+    return;
 }
 
 sub analysis_variant_annotation_panel {
@@ -552,13 +674,13 @@ sub analysis_variant_annotation_panel {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
