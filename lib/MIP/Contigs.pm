@@ -387,8 +387,6 @@ sub get_contig_set {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Validate::Data qw{ %constraint };
-
     return if ( not exists $PRIMARY_CONTIG{$version} );
 
     if ($contig_set) {
