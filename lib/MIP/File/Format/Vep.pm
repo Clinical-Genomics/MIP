@@ -65,8 +65,8 @@ sub create_vep_synonyms_file {
 
     my %contig_synonyms_map = get_contig_set(
         {
-            set     => q{synonyms_map},
-            version => $version,
+            contig_set => q{synonyms_map},
+            version    => $version,
         }
     );
 
@@ -74,8 +74,8 @@ sub create_vep_synonyms_file {
 
     my @contigs = get_contig_set(
         {
-            set     => q{contigs},
-            version => $version,
+            contig_set => q{contigs},
+            version    => $version,
         }
     );
 

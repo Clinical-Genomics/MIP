@@ -74,13 +74,13 @@ is_deeply(
 );
 
 ## Given a version and a set with a array ref
-my $set = q{contigs};
+my $array_set = q{contigs};
 
 ## When getting contigs using genome version and a set
 my @contigs = get_contig_set(
     {
-        set     => $set,
-        version => $GENOME_VERSION,
+        contig_set => $array_set,
+        version    => $GENOME_VERSION,
     }
 );
 
@@ -97,8 +97,8 @@ my $hash_set = q{synonyms_map};
 ## When getting contigs using genome version and a set
 my %contigs_synonyms_map = get_contig_set(
     {
-        set     => $hash_set,
-        version => $GENOME_VERSION,
+        contig_set => $hash_set,
+        version    => $GENOME_VERSION,
     }
 );
 

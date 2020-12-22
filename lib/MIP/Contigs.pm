@@ -360,21 +360,21 @@ sub generate_contig_interval_file {
 sub get_contig_set {
 
 ## Function : Get contig set per genome build version
-## Returns  : @{$PRIMARY_CONTIG{$version}{$set}} | %{$PRIMARY_CONTIG{$version}}
-## Arguments: $set     => Name of contig set to get
-##          : $version => Version of the human genome reference
+## Returns  : @{$PRIMARY_CONTIG{$version}{$contig_set}} | %{$PRIMARY_CONTIG{$version}{$contig_set}} | %{$PRIMARY_CONTIG{$version}}
+## Arguments: $contig_set => Name of contig set to get
+##          : $version    => Version of the human genome reference
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $set;
+    my $contig_set;
     my $version;
 
     my $tmpl = {
-        set => {
+        contig_set => {
             allow       => [qw{ contigs contigs_size_ordered synonyms_map }],
             defined     => 1,
-            store       => \$set,
+            store       => \$contig_set,
             strict_type => 1,
         },
         version => {
@@ -391,13 +391,13 @@ sub get_contig_set {
 
     return if ( not exists $PRIMARY_CONTIG{$version} );
 
-    if ($set) {
+    if ($contig_set) {
 
-        return @{ $PRIMARY_CONTIG{$version}{$set} }
-          if ( ref $PRIMARY_CONTIG{$version}{$set} eq q{ARRAY} );
+        return @{ $PRIMARY_CONTIG{$version}{$contig_set} }
+          if ( ref $PRIMARY_CONTIG{$version}{$contig_set} eq q{ARRAY} );
 
-        return %{ $PRIMARY_CONTIG{$version}{$set} }
-          if ( ref $PRIMARY_CONTIG{$version}{$set} eq q{HASH} );
+        return %{ $PRIMARY_CONTIG{$version}{$contig_set} }
+          if ( ref $PRIMARY_CONTIG{$version}{$contig_set} eq q{HASH} );
 
     }
     return %{ $PRIMARY_CONTIG{$version} };
