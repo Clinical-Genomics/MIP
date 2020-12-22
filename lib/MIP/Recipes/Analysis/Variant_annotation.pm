@@ -347,120 +347,6 @@ sub analysis_variant_annotation {
     return 1;
 }
 
-sub _add_loqusdb_headers {
-
-## Function : Add relevant loqusDB headers for downstream processing
-## Returns  :
-## Arguments: $filehandle          => Filehandle to write to
-##          : $infile_path         => Infile path to read from
-##          : $outfile_path_prefix => Outfile path
-##          : $outfile_suffix      => Outfile suffix
-##          : $vcfanno_config_name => Name of vcfanno config
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $filehandle;
-    my $infile_path;
-    my $outfile_path_prefix;
-    my $outfile_suffix;
-    my $vcfanno_config_name;
-
-    my $tmpl = {
-        filehandle  => { store => \$filehandle, },
-        infile_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_path,
-            strict_type => 1,
-        },
-        outfile_path_prefix => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfile_path_prefix,
-            strict_type => 1,
-        },
-        outfile_suffix => {
-            defined     => 1,
-            required    => 1,
-            store       => \$outfile_suffix,
-            strict_type => 1,
-        },
-        vcfanno_config_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$vcfanno_config_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Program::Gnu::Coreutils qw{ gnu_mv};
-    use MIP::Io::Read qw{read_from_file};
-    use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
-
-    my $loqusdb_reference_file;
-
-    my %vcfanno_config = read_from_file(
-        {
-            format => q{toml},
-            path   => $vcfanno_config_name,
-        }
-    );
-
-  ANNOTATION:
-    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
-
-        if ( $annotation_href->{file} =~ /loqusdb_\w+_\w+-/xsm ) {
-            $loqusdb_reference_file = $annotation_href->{file};
-        }
-        last ANNOTATION if ($loqusdb_reference_file);
-    }
-
-    bcftools_view(
-        {
-            filehandle  => $filehandle,
-            header_only => 1,
-            infile_path => $loqusdb_reference_file,
-        }
-    );
-    print {$filehandle} $PIPE . $SPACE;
-
-    my $loqusdb_header_path = $outfile_path_prefix . $DOT . q{loqusdb_header};
-    perl_nae_oneliners(
-        {
-            filehandle      => $filehandle,
-            oneliner_name   => q{get_vcf_loqusdb_headers},
-            stdoutfile_path => $loqusdb_header_path,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    my $annotate_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{annotated.vcf.gz};
-    bcftools_annotate(
-        {
-            filehandle      => $filehandle,
-            headerfile_path => $loqusdb_header_path,
-            infile_path     => $infile_path,
-            outfile_path    => $annotate_outfile_path,
-            output_type     => q{z},
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    gnu_mv(
-        {
-            filehandle   => $filehandle,
-            infile_path  => $annotate_outfile_path,
-            outfile_path => $outfile_path_prefix . $outfile_suffix,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-    return;
-}
-
 sub analysis_variant_annotation_panel {
 
 ## Function : Annotate vcf with allelle frequencies
@@ -602,7 +488,8 @@ sub analysis_variant_annotation_panel {
             }
         )
     );
-    my $outfile_path = $io{out}{file_path};
+    my $outfile_path        = $io{out}{file_path};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -647,6 +534,16 @@ sub analysis_variant_annotation_panel {
     );
     say {$filehandle} $NEWLINE;
 
+    _add_loqusdb_headers(
+        {
+            filehandle          => $filehandle,
+            infile_path         => $outfile_path,
+            vcfanno_config_name => $active_parameter_href->{vcfanno_config},
+            outfile_path_prefix => $outfile_path_prefix,
+            outfile_suffix      => $DOT . q{vcf.gz},
+        }
+    );
+
     say {$filehandle} q{## Index outfiles};
 
     bcftools_index(
@@ -690,6 +587,120 @@ sub analysis_variant_annotation_panel {
         );
     }
     return 1;
+}
+
+sub _add_loqusdb_headers {
+
+## Function : Add relevant loqusDB headers for downstream processing
+## Returns  :
+## Arguments: $filehandle          => Filehandle to write to
+##          : $infile_path         => Infile path to read from
+##          : $outfile_path_prefix => Outfile path
+##          : $outfile_suffix      => Outfile suffix
+##          : $vcfanno_config_name => Name of vcfanno config
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $outfile_path_prefix;
+    my $outfile_suffix;
+    my $vcfanno_config_name;
+
+    my $tmpl = {
+        filehandle  => { store => \$filehandle, },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path_prefix,
+            strict_type => 1,
+        },
+        outfile_suffix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_suffix,
+            strict_type => 1,
+        },
+        vcfanno_config_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfanno_config_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv};
+    use MIP::Io::Read qw{read_from_file};
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
+
+    my $loqusdb_reference_file;
+
+    my %vcfanno_config = read_from_file(
+        {
+            format => q{toml},
+            path   => $vcfanno_config_name,
+        }
+    );
+
+  ANNOTATION:
+    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+
+        if ( $annotation_href->{file} =~ /loqusdb_\w+_\w+-/xsm ) {
+            $loqusdb_reference_file = $annotation_href->{file};
+        }
+        last ANNOTATION if ($loqusdb_reference_file);
+    }
+
+    bcftools_view(
+        {
+            filehandle  => $filehandle,
+            header_only => 1,
+            infile_path => $loqusdb_reference_file,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    my $loqusdb_header_path = $outfile_path_prefix . $DOT . q{loqusdb_header};
+    perl_nae_oneliners(
+        {
+            filehandle      => $filehandle,
+            oneliner_name   => q{get_vcf_loqusdb_headers},
+            stdoutfile_path => $loqusdb_header_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    my $annotate_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{annotated.vcf.gz};
+    bcftools_annotate(
+        {
+            filehandle      => $filehandle,
+            headerfile_path => $loqusdb_header_path,
+            infile_path     => $infile_path,
+            outfile_path    => $annotate_outfile_path,
+            output_type     => q{z},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    gnu_mv(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $annotate_outfile_path,
+            outfile_path => $outfile_path_prefix . $outfile_suffix,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+    return;
 }
 
 1;
