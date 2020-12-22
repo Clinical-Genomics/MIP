@@ -40,12 +40,12 @@ BEGIN {
       parse_sample_fastq_file_attributes
       parse_select_file_contigs
       set_alt_loci_contigs
-      set_primary_contigs
       set_dict_contigs
       set_file_tag
+      set_human_genome_reference_features
       set_infiles
       set_is_sample_files_compressed
-      set_human_genome_reference_features
+      set_primary_contigs
       set_sample_file_attribute
       set_sample_max_parallel_processes_count
       set_select_file_contigs

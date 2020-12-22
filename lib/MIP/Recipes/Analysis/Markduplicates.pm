@@ -1140,16 +1140,16 @@ sub _get_markdup_resources {
 ## Returns  : $recipe_memory, $contig_memory_href, $parallel_processes
 ## Arguments: $active_contigs_ref  => Active contigs {REF}
 ##          : $node_memory         => Available memory
-##          : $recipe_core_number  => Allocated core number
 ##          : $primary_contigs_ref => Primary contigs {REF}
+##          : $recipe_core_number  => Allocated core number
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_contigs_ref;
-    my $recipe_core_number;
     my $node_memory;
     my $primary_contigs_ref;
+    my $recipe_core_number;
 
     my $tmpl = {
         active_contigs_ref => {
@@ -1157,12 +1157,6 @@ sub _get_markdup_resources {
             defined     => 1,
             required    => 1,
             store       => \$active_contigs_ref,
-            strict_type => 1,
-        },
-        recipe_core_number => {
-            defined     => 1,
-            required    => 1,
-            store       => \$recipe_core_number,
             strict_type => 1,
         },
         node_memory => {
@@ -1178,6 +1172,12 @@ sub _get_markdup_resources {
             store       => \$primary_contigs_ref,
             strict_type => 1,
         },
+        recipe_core_number => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_core_number,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1190,7 +1190,7 @@ sub _get_markdup_resources {
 
     ## Java memory per contig
     my %contig_mem_alloc = map { $_ => $CONTIG_MEM } @{$primary_contigs_ref};
-    $contig_mem_alloc{2} = $CONTIG_2_MEM;
+    $contig_mem_alloc{ $primary_contigs_ref->[1] } = $CONTIG_2_MEM;
 
     ## Slice hash on active contigs
     %contig_mem_alloc = %contig_mem_alloc{ @{$active_contigs_ref} };
