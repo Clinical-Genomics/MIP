@@ -17,9 +17,3 @@ fields = ["AF", "AF_POPMAX"]
 ops=["self", "self"]
 names=["GNOMADAF", "GNOMADAF_POPMAX"]
 
-[[annotation]]
-file="TEST_REFERENCES!/grch37_gnomad.genomes_-r2.0.1-.vcf.gz"
-fields = ["AF", "AF_POPMAX"]
-ops=["self", "self"]
-names=["GNOMADAF", "GNOMADAF_POPMAX"]
-
