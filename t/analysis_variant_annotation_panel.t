@@ -30,8 +30,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Variant_annotation} =>
-          [qw{ analysis_variant_annotation_panel }],
+        q{MIP::Recipes::Analysis::Variant_annotation} => [qw{ analysis_variant_annotation_panel }],
         q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
     );
 
@@ -64,8 +63,8 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{vcfanno_config} = catfile( $Bin,
-    qw{ data references grch37_frequency_vcfanno_annotation_config_-v1.0-.toml } );
+$active_parameter{vcfanno_config} =
+  catfile( $Bin, qw{ data references grch37_vcfanno_config_template-v1.0-.toml } );
 
 my %file_info = test_mip_hashes(
     {
@@ -84,11 +83,11 @@ my %parameter = test_mip_hashes(
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $case_id,
-        parameter_href    => \%parameter,
-        recipe_name       => $recipe_name,
-        step              => q{vcf},
+        file_info_href => \%file_info,
+        id             => $case_id,
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{vcf},
     }
 );
 
@@ -96,14 +95,14 @@ my %sample_info;
 
 my $is_ok = analysis_variant_annotation_panel(
     {
-        active_parameter_href   => \%active_parameter,
-        case_id                 => $case_id,
-        file_info_href          => \%file_info,
-        job_id_href             => \%job_id,
-        parameter_href          => \%parameter,
-        profile_base_command    => $slurm_mock_cmd,
-        recipe_name             => $recipe_name,
-        sample_info_href        => \%sample_info,
+        active_parameter_href => \%active_parameter,
+        case_id               => $case_id,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_info_href      => \%sample_info,
     }
 );
 

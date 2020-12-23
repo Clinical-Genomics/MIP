@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $SPACE };
+use MIP::Constants qw{ $COLON $DOUBLE_QUOTE $SPACE };
 
 BEGIN {
     require Exporter;
@@ -147,9 +147,20 @@ sub write_toml_config {
     }
 
   ANNOTATION:
-    foreach my $annotation_href ( @{ $toml{annotation} } ) {
+    while ( my ( $index, $annotation_href ) = each @{ $toml{annotation} } ) {
 
+        if ( not $index )
+        {    # TOML package seem to add extra quotes except for first annotation entry
+
+            if ( $annotation_href->{file} =~ /TEST_REFERENCES!/xms ) {
+
+                $annotation_href->{file} =~ s/TEST_REFERENCES!/"$test_reference_path/xms;
+                $annotation_href->{file} .= $DOUBLE_QUOTE;
+            }
+            next ANNOTATION;
+        }
         $annotation_href->{file} =~ s/TEST_REFERENCES!/$test_reference_path/xms;
+
     }
 
     write_to_file(
@@ -159,7 +170,6 @@ sub write_toml_config {
             path      => $toml_config_path,
         }
     );
-
     return;
 }
 
