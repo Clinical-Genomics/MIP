@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $NEWLINE %PRIMARY_CONTIG $SPACE $TAB };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE %PRIMARY_CONTIG $SPACE $TAB };
 
 BEGIN {
     require Exporter;
@@ -31,25 +31,18 @@ sub create_vep_synonyms_file {
 
 ## Function : Create the synonyms file for VEP option '--synonyms'
 ## Returns  : undef or $outfile_path
-## Arguments: $log          => Log object
-##          : $outfile_path => Outfile path to write to
+## Arguments: $outfile_path => Outfile path to write to
 ##          : $version      => Human genome version {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $log;
     my $outfile_path;
     my $version;
 
     ## Default(s)
 
     my $tmpl = {
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
         outfile_path => {
             defined     => 1,
             required    => 1,
@@ -66,33 +59,46 @@ sub create_vep_synonyms_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Make local copy
-    my %primary_contig = Readonly::Clone %PRIMARY_CONTIG;
+    use MIP::Contigs qw{ get_contig_set };
 
-    ## No defined synonyms map
-    return if ( not exists $primary_contig{$version}{synonyms_map} );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my %contig_synonyms_map = get_contig_set(
+        {
+            contig_set => q{synonyms_map},
+            version    => $version,
+        }
+    );
+
+    return if ( not %contig_synonyms_map );
+
+    my @contigs = get_contig_set(
+        {
+            contig_set => q{contigs},
+            version    => $version,
+        }
+    );
 
     $log->info( q{Creating VEP synonyms file: } . $outfile_path, $NEWLINE );
 
     ## Create dir if it does not exists
     make_path( dirname($outfile_path) );
 
-    open my $filehandle_SYS, q{>}, $outfile_path
+    open my $filehandle, q{>}, $outfile_path
       or $log->logdie(qq{Cannot open $outfile_path: $ERRNO });
 
   CONTIG:
-    foreach my $primary_contig ( @{ $primary_contig{$version}{contigs} } ) {
+    foreach my $primary_contig (@contigs) {
 
-        ## Unpack
-        my $synonymous_contig = $primary_contig{$version}{synonyms_map}{$primary_contig};
+        my $synonymous_contig = $contig_synonyms_map{$primary_contig};
 
         ## No defined synonym
         next CONTIG if ( not $synonymous_contig );
 
-        say {$filehandle_SYS} $primary_contig . $TAB . $synonymous_contig;
+        say {$filehandle} $primary_contig . $TAB . $synonymous_contig;
     }
     $log->info( q{Wrote: } . $outfile_path, $NEWLINE );
-    close $filehandle_SYS;
+    close $filehandle;
     return $outfile_path;
 }
 

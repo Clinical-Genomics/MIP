@@ -31,6 +31,7 @@ BEGIN {
       delete_non_wes_contig
       delete_male_contig
       generate_contig_interval_file
+      get_contig_set
       set_contigs
       sort_contigs_to_contig_set
       update_contigs_for_run
@@ -83,8 +84,7 @@ sub check_select_file_contigs {
 
         $log->fatal( q{Option 'vcfparser_select_file' contig(s): } . join $SPACE,
             @unique_select_contigs );
-        $log->fatal(
-            q{Is not a subset of the human genome reference contigs: } . join $SPACE,
+        $log->fatal( q{Is not a subset of the human genome reference contigs: } . join $SPACE,
             @{$contigs_ref} );
         exit 1;
     }
@@ -357,6 +357,50 @@ sub generate_contig_interval_file {
     return %bed_file_path;
 }
 
+sub get_contig_set {
+
+## Function : Get contig set per genome build version
+## Returns  : @{$PRIMARY_CONTIG{$version}{$contig_set}} | %{$PRIMARY_CONTIG{$version}{$contig_set}} | %{$PRIMARY_CONTIG{$version}}
+## Arguments: $contig_set => Name of contig set to get
+##          : $version    => Version of the human genome reference
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $contig_set;
+    my $version;
+
+    my $tmpl = {
+        contig_set => {
+            allow       => [qw{ contigs contigs_size_ordered synonyms_map }],
+            defined     => 1,
+            store       => \$contig_set,
+            strict_type => 1,
+        },
+        version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$version,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not exists $PRIMARY_CONTIG{$version} );
+
+    if ($contig_set) {
+
+        return @{ $PRIMARY_CONTIG{$version}{$contig_set} }
+          if ( ref $PRIMARY_CONTIG{$version}{$contig_set} eq q{ARRAY} );
+
+        return %{ $PRIMARY_CONTIG{$version}{$contig_set} }
+          if ( ref $PRIMARY_CONTIG{$version}{$contig_set} eq q{HASH} );
+
+    }
+    return %{ $PRIMARY_CONTIG{$version} };
+}
+
 sub set_contigs {
 
 ## Function : Set contig prefix and contig names depending on reference used.
@@ -414,8 +458,8 @@ sub set_contigs {
 
         set_primary_contigs(
             {
-                file_info_href      => $file_info_href,
-                primary_contigs_ref => \@{ $primary_contig_clone{$version}{$contig_set} },
+                file_info_href          => $file_info_href,
+                primary_contigs_ref     => \@{ $primary_contig_clone{$version}{$contig_set} },
                 primary_contig_set_name => $contig_set,
             }
         );
@@ -683,8 +727,7 @@ sub _split_interval_file_contigs {
 
     if ( defined $contig ) {
 
-        $outfile_path =
-          defined $file_ending ? $outfile_path . $file_ending : $outfile_path;
+        $outfile_path = defined $file_ending ? $outfile_path . $file_ending : $outfile_path;
 
         perl_nae_oneliners(
             {
