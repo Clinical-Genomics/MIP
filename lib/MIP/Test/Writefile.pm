@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use Test::More;
 use utf8;
 use warnings;
@@ -17,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $SPACE };
+use MIP::Constants qw{ $COLON $DOUBLE_QUOTE $SPACE };
 
 BEGIN {
     require Exporter;
@@ -59,9 +58,8 @@ sub test_write_to_file {
             store       => \$base_commands_ref,
             strict_type => 1,
         },
-        module_function_cref =>
-          { defined => 1, required => 1, store => \$module_function_cref, },
-        separator => {
+        module_function_cref => { defined => 1, required => 1, store => \$module_function_cref, },
+        separator            => {
             default     => $SPACE,
             store       => \$separator,
             strict_type => 1,
@@ -149,9 +147,20 @@ sub write_toml_config {
     }
 
   ANNOTATION:
-    foreach my $annotation_href ( @{ $toml{annotation} } ) {
+    while ( my ( $index, $annotation_href ) = each @{ $toml{annotation} } ) {
 
+        if ( not $index )
+        {    # TOML package seem to add extra quotes except for first annotation entry
+
+            if ( $annotation_href->{file} =~ /TEST_REFERENCES!/xms ) {
+
+                $annotation_href->{file} =~ s/TEST_REFERENCES!/"$test_reference_path/xms;
+                $annotation_href->{file} .= $DOUBLE_QUOTE;
+            }
+            next ANNOTATION;
+        }
         $annotation_href->{file} =~ s/TEST_REFERENCES!/$test_reference_path/xms;
+
     }
 
     write_to_file(
@@ -161,7 +170,6 @@ sub write_toml_config {
             path      => $toml_config_path,
         }
     );
-
     return;
 }
 

@@ -8,7 +8,6 @@ use File::Spec::Functions qw{ catfile };
 use List::Util qw { any sum };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -47,8 +46,7 @@ sub casava_header_features {
     my ($arg_href) = @_;
 
     my %casava_header_feature = (
-        q{1.4} =>
-          [qw{ instrument_id run_number flowcell lane tile x_pos y_pos direction }],
+        q{1.4} => [qw{ instrument_id run_number flowcell lane tile x_pos y_pos direction }],
         q{1.8} => [
             qw{ instrument_id run_number flowcell lane tile x_pos y_pos direction filtered control_bit index }
         ],
@@ -94,8 +92,7 @@ sub check_interleaved {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Select relevant regexps to use
-    my @regexps =
-      qw{ get_fastq_header_v1.8_interleaved get_fastq_header_v1.4_interleaved };
+    my @regexps = qw{ get_fastq_header_v1.8_interleaved get_fastq_header_v1.4_interleaved };
 
     ## Store return from regexp
     my $fastq_read_direction;
@@ -221,8 +218,7 @@ sub define_mip_fastq_file_features {
     my $mip_file_format = join $UNDERSCORE,
       ( $sample_id, $date, $flowcell, $index, q{lane} . $lane );
 
-    my $mip_file_format_with_direction = join $UNDERSCORE,
-      ( $mip_file_format, $direction );
+    my $mip_file_format_with_direction = join $UNDERSCORE, ( $mip_file_format, $direction );
 
     my $original_file_name_prefix = substr $original_file_name, 0,
       index $original_file_name, q{.fastq};
@@ -347,9 +343,7 @@ sub parse_fastq_file_header_attributes {
     if ( not $fastq_info_header_string ) {
 
         $log->fatal( q{Error parsing file header: } . $file_path );
-        $log->fatal(
-            q{Could not detect required sample sequencing run info from fastq file header}
-        );
+        $log->fatal(q{Could not detect required sample sequencing run info from fastq file header});
         $log->fatal(q{Please proved MIP file in MIP file convention format to proceed});
         exit 1;
     }
@@ -622,15 +616,13 @@ sub parse_fastq_infiles_format {
     }
     if (@missing_feature) {
         $log->warn(qq{Could not detect MIP file name convention for file: $file_name });
-        $log->warn( q{Missing file name feature: } . join $COMMA . $SPACE,
-            @missing_feature );
+        $log->warn( q{Missing file name feature: } . join $COMMA . $SPACE, @missing_feature );
 
         ## Check that file name at least contains sample id
         return if ( $file_name =~ /$sample_id/sxm );
 
         $log->fatal(
-qq{Please check that the file name: $file_name contains the sample_id: $sample_id}
-        );
+            qq{Please check that the file name: $file_name contains the sample_id: $sample_id});
         exit 1;
     }
     ## Check that the sample_id provided and sample_id in infile name match

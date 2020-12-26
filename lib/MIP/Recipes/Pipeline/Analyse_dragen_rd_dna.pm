@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,8 +22,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_dragen_rd_dna pipeline_analyse_dragen_rd_dna };
@@ -126,7 +123,7 @@ sub parse_dragen_rd_dna {
 
     ## Set analysis constants
     set_container_constants( { active_parameter_href => $active_parameter_href, } );
-    
+
     parse_containers(
         {
             active_parameter_href => $active_parameter_href,
@@ -369,8 +366,7 @@ sub pipeline_analyse_dragen_rd_dna {
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Dragen_dna
       qw{ analysis_dragen_dna_align_vc analysis_dragen_dna_joint_calling };
-    use MIP::Recipes::Analysis::Endvariantannotationblock
-      qw{ analysis_endvariantannotationblock };
+    use MIP::Recipes::Analysis::Endvariantannotationblock qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Mip_vcfparser
       qw{ analysis_mip_vcfparser analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
@@ -386,11 +382,9 @@ sub pipeline_analyse_dragen_rd_dna {
     use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation };
     use MIP::Recipes::Analysis::Vcf_rerun_reformat
       qw{ analysis_vcf_rerun_reformat_sv analysis_vcf_rerun_reformat };
-    use MIP::Recipes::Analysis::Vep
-      qw{ analysis_vep_wgs analysis_vep_sv_wes analysis_vep_sv_wgs };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs analysis_vep_sv_wes analysis_vep_sv_wgs };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
+    use MIP::Recipes::Build::Human_genome_prerequisites qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Dragen_rd_dna qw{build_dragen_rd_dna_meta_files};
 
     ### Pipeline specific checks
@@ -439,21 +433,21 @@ sub pipeline_analyse_dragen_rd_dna {
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
         frequency_filter                 => \&analysis_frequency_filter,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
-        rankvariant    => undef,                         # Depends on sample features
-        rhocall_ar     => \&analysis_rhocall_annotate,
-        sacct          => \&analysis_sacct,
-        sv_annotate    => \&analysis_sv_annotate,
-        sv_rankvariant => undef,                         # Depends on sample features
-        sv_reformat    => \&analysis_reformat_sv,
-        sv_vcf_rerun_reformat => \&analysis_vcf_rerun_reformat_sv,
-        sv_varianteffectpredictor => undef,                # Depends on analysis type,
-        sv_vcfparser              => undef,                # Depends on analysis type
+        rankvariant               => undef,                             # Depends on sample features
+        rhocall_ar                => \&analysis_rhocall_annotate,
+        sacct                     => \&analysis_sacct,
+        sv_annotate               => \&analysis_sv_annotate,
+        sv_rankvariant            => undef,                             # Depends on sample features
+        sv_reformat               => \&analysis_reformat_sv,
+        sv_vcf_rerun_reformat     => \&analysis_vcf_rerun_reformat_sv,
+        sv_varianteffectpredictor => undef,                             # Depends on analysis type,
+        sv_vcfparser              => undef,                             # Depends on analysis type
         varianteffectpredictor    => \&analysis_vep_wgs,
-        variant_annotation => \&analysis_variant_annotation,
-        vcfparser_ar       => \&analysis_mip_vcfparser,
-        vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
-        version_collect_ar => \&analysis_mip_vercollect,
-        vt_ar              => \&analysis_vt,
+        variant_annotation        => \&analysis_variant_annotation,
+        vcfparser_ar              => \&analysis_mip_vcfparser,
+        vcf_rerun_reformat        => \&analysis_vcf_rerun_reformat,
+        version_collect_ar        => \&analysis_mip_vercollect,
+        vt_ar                     => \&analysis_vt,
     );
 
     ## Special case for rankvariants recipe

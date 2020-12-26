@@ -1,7 +1,6 @@
 package MIP::Program::Tar;
 
 use 5.026;
-use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;

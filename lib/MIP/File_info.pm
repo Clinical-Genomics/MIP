@@ -8,7 +8,6 @@ use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -149,8 +148,7 @@ sub add_sample_no_direction_infile_prefixes {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Add no_direction_infile_prefixes
-    push @{ $file_info_href->{$sample_id}{no_direction_infile_prefixes} },
-      $mip_file_format;
+    push @{ $file_info_href->{$sample_id}{no_direction_infile_prefixes} }, $mip_file_format;
 
     return;
 }
@@ -228,12 +226,11 @@ sub check_parameter_metafiles {
                 ## Checks files to be built by combining filename stub with fileendings
                 parse_meta_file_suffixes(
                     {
-                        active_parameter_href => $active_parameter_href,
-                        file_name             => $path,
-                        meta_file_suffixes_ref =>
-                          \@{ $file_info_href->{$parameter_name} },
-                        parameter_href => $parameter_href,
-                        parameter_name => $parameter_name,
+                        active_parameter_href  => $active_parameter_href,
+                        file_name              => $path,
+                        meta_file_suffixes_ref => \@{ $file_info_href->{$parameter_name} },
+                        parameter_href         => $parameter_href,
+                        parameter_name         => $parameter_name,
                     }
                 );
 
@@ -314,8 +311,7 @@ sub get_consensus_sequence_run_type {
         );
 
       INFILE_PREFIX:
-        foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } )
-        {
+        foreach my $infile_prefix ( @{ $file_info_sample{no_direction_infile_prefixes} } ) {
 
             my $sequence_run_type = get_sample_file_attribute(
                 {
@@ -499,18 +495,14 @@ sub parse_file_compression_features {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Path qw{ check_gzipped };
+    use MIP::Validate::Data qw{ %constraint };
 
     my %attribute = (
         is_file_compressed => 0,
         read_file_command  => q{cat},
     );
 
-    ## Check if a file is gzipped.
-    my $is_gzipped = check_gzipped( { file_name => $file_name, } );
-
-    ## Gzipped
-    if ($is_gzipped) {
+    if ( $constraint{is_gzipped}->($file_name) ) {
 
         $attribute{is_file_compressed} = 1;
         $attribute{read_file_command}  = q{gzip -d -c};
@@ -1044,8 +1036,8 @@ sub set_human_genome_reference_features {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Constants qw{ set_genome_build_constants };
-    use MIP::File::Path qw{ check_gzipped };
     use MIP::Parameter qw{ set_parameter_build_file_status };
+    use MIP::Validate::Data qw{ %constraint };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -1083,7 +1075,7 @@ sub set_human_genome_reference_features {
     if ( not $file_info_href->{human_genome_reference_version} ) {
 
         $log->fatal(
-            q{MIP cannot detect what version of human_genome_reference you have supplied.}
+                q{MIP cannot detect what version of human_genome_reference you have supplied.}
               . $SPACE
               . q{Please supply the reference on this format: [sourceversion]_[species] e.g. 'grch37_homo_sapiens' or 'hg19_homo_sapiens'}
               . $NEWLINE );
@@ -1094,8 +1086,7 @@ sub set_human_genome_reference_features {
     $file_info_href->{human_genome_reference_name_prefix} =
       fileparse( $human_genome_reference, qr/[.]fasta | [.]fasta[.]gz/xsm );
 
-    $file_info_href->{human_genome_compressed} =
-      check_gzipped( { file_name => $human_genome_reference, } );
+    $file_info_href->{human_genome_compressed} = $constraint{is_gzipped}->($human_genome_reference);
 
     if ( $file_info_href->{human_genome_compressed} ) {
 
@@ -1358,8 +1349,7 @@ sub set_sample_max_parallel_processes_count {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    $file_info_href->{max_parallel_processes_count}{$sample_id} =
-      $max_parallel_processes_count;
+    $file_info_href->{max_parallel_processes_count}{$sample_id} = $max_parallel_processes_count;
     return;
 }
 

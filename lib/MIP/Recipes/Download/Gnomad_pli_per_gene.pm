@@ -8,7 +8,6 @@ use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -123,8 +122,7 @@ sub download_gnomad_pli_per_gene {
     use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
 
     ## Constants
     Readonly my $HGNC_SYMBOL_COL_NR => 1;
@@ -155,18 +153,18 @@ sub download_gnomad_pli_per_gene {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href      => $active_parameter_href,
-            core_number                => $recipe_resource{core_number},
-            directory_id               => q{mip_download},
-            filehandle                 => $filehandle,
-            job_id_href                => $job_id_href,
-            memory_allocation          => $recipe_resource{memory},
-            outdata_dir                => $reference_dir,
-            outscript_dir              => $reference_dir,
-            process_time               => $recipe_resource{time},
-            recipe_data_directory_path => $active_parameter_href->{reference_dir},
-            recipe_directory           => $recipe_name . $UNDERSCORE . $reference_version,
-            recipe_name                => $recipe_name,
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $recipe_resource{core_number},
+            directory_id                    => q{mip_download},
+            filehandle                      => $filehandle,
+            job_id_href                     => $job_id_href,
+            memory_allocation               => $recipe_resource{memory},
+            outdata_dir                     => $reference_dir,
+            outscript_dir                   => $reference_dir,
+            process_time                    => $recipe_resource{time},
+            recipe_data_directory_path      => $active_parameter_href->{reference_dir},
+            recipe_directory                => $recipe_name . $UNDERSCORE . $reference_version,
+            recipe_name                     => $recipe_name,
             source_environment_commands_ref => $recipe_resource{load_env_ref},
         }
     );

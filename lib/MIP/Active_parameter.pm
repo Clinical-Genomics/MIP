@@ -9,7 +9,6 @@ use File::Spec::Functions qw{ catfile splitpath };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -20,8 +19,7 @@ use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ $COLON $COMMA $DOT $LOG_NAME $PIPE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{ $COLON $COMMA $DOT $LOG_NAME $PIPE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -166,8 +164,7 @@ sub add_recipe_bind_paths {
 
     return if ( not $active_parameter_href->{recipe_bind_path}{$recipe_name} );
 
-    push @{$export_bind_paths_ref},
-      @{ $active_parameter_href->{recipe_bind_path}{$recipe_name} };
+    push @{$export_bind_paths_ref}, @{ $active_parameter_href->{recipe_bind_path}{$recipe_name} };
 
     @{$export_bind_paths_ref} = reduce_dir_paths(
         {
@@ -570,8 +567,7 @@ sub check_sample_id_in_hash_parameter {
                     parameter_name        => $parameter_name,
                 }
             );
-            my $parameter_name_sample_ids = join $COMMA . $SPACE,
-              ( keys %parameter_name_hash );
+            my $parameter_name_sample_ids = join $COMMA . $SPACE, ( keys %parameter_name_hash );
 
             $log->fatal( q{Could not find value for }
                   . $sample_id
@@ -874,10 +870,8 @@ sub get_not_allowed_temp_dirs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my @is_not_allowed_temp_dirs = (
-        $active_parameter_href->{cluster_constant_path},
-        $active_parameter_href->{outdata_dir},
-        $active_parameter_href->{outscript_dir},
-        $active_parameter_href->{reference_dir},
+        $active_parameter_href->{cluster_constant_path}, $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{outscript_dir},         $active_parameter_href->{reference_dir},
     );
     return @is_not_allowed_temp_dirs;
 }
@@ -1115,35 +1109,30 @@ sub parse_recipe_resources {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Environment::Cluster
-      qw{ check_max_core_number check_recipe_memory_allocation };
+    use MIP::Environment::Cluster qw{ check_max_core_number check_recipe_memory_allocation };
 
     ## Check that the recipe core number do not exceed the maximum per node
     foreach my $recipe_name ( keys %{ $active_parameter_href->{recipe_core_number} } ) {
 
         ## Limit number of cores requested to the maximum number of cores available per node
-        $active_parameter_href->{recipe_core_number}{$recipe_name} =
-          check_max_core_number(
+        $active_parameter_href->{recipe_core_number}{$recipe_name} = check_max_core_number(
             {
-                max_cores_per_node => $active_parameter_href->{max_cores_per_node},
-                core_number_requested =>
-                  $active_parameter_href->{recipe_core_number}{$recipe_name},
+                max_cores_per_node    => $active_parameter_href->{max_cores_per_node},
+                core_number_requested => $active_parameter_href->{recipe_core_number}{$recipe_name},
             }
-          );
+        );
     }
 
     ## Check that the recipe memory do not exceed the maximum per node
     ## Limit recipe_memory to node max memory if required
     foreach my $recipe_name ( keys %{ $active_parameter_href->{recipe_memory} } ) {
 
-        $active_parameter_href->{recipe_memory}{$recipe_name} =
-          check_recipe_memory_allocation(
+        $active_parameter_href->{recipe_memory}{$recipe_name} = check_recipe_memory_allocation(
             {
-                node_ram_memory => $active_parameter_href->{node_ram_memory},
-                recipe_memory_allocation =>
-                  $active_parameter_href->{recipe_memory}{$recipe_name},
+                node_ram_memory          => $active_parameter_href->{node_ram_memory},
+                recipe_memory_allocation => $active_parameter_href->{recipe_memory}{$recipe_name},
             }
-          );
+        );
     }
 
     return 1;
@@ -1297,8 +1286,7 @@ sub set_default_human_genome {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Now we now what human genome reference to build from
-    $active_parameter_href->{$parameter_name} =
-      $active_parameter_href->{human_genome_reference};
+    $active_parameter_href->{$parameter_name} = $active_parameter_href->{human_genome_reference};
 
     return;
 }
@@ -1342,8 +1330,7 @@ sub set_default_infile_dirs {
             $active_parameter_href->{cluster_constant_path},
             $active_parameter_href->{case_id},
             $active_parameter_href->{analysis_type}{$sample_id},
-            $sample_id,
-            q{fastq}
+            $sample_id, q{fastq}
         );
 
         $active_parameter_href->{infile_dirs}{$path} = $sample_id;
@@ -1565,8 +1552,7 @@ sub set_default_transcript_annotation {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Now we now what transcript annotation reference to build from
-    $active_parameter_href->{$parameter_name} =
-      $active_parameter_href->{transcript_annotation};
+    $active_parameter_href->{$parameter_name} = $active_parameter_href->{transcript_annotation};
 
     return;
 }
@@ -1681,8 +1667,7 @@ sub set_exome_target_bed {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Add sample_ids as string to exome_target_bed_file
-    $active_parameter_href->{exome_target_bed}{$exome_target_bed_file} =
-      $sample_id_string;
+    $active_parameter_href->{exome_target_bed}{$exome_target_bed_file} = $sample_id_string;
 
     return;
 }
@@ -1765,9 +1750,8 @@ sub set_load_env_environment {
         ## Retrieve logger object
         my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-        $log->warn( q{Could not use }
-              . $env_name
-              . q{ as there are multiple environments to update} );
+        $log->warn(
+            q{Could not use } . $env_name . q{ as there are multiple environments to update} );
         return;
     }
 
@@ -2202,9 +2186,7 @@ sub set_recipe_resource {
     while ( my ( $set_hash_key, $target_hash_key ) = each %set_hash_key_map ) {
 
       RECIPE:
-        while ( my ( $recipe, $core_number ) =
-            each %{ $active_parameter_href->{$set_hash_key} } )
-        {
+        while ( my ( $recipe, $core_number ) = each %{ $active_parameter_href->{$set_hash_key} } ) {
 
             $active_parameter_href->{$target_hash_key}{$recipe} = $core_number;
         }
@@ -2252,12 +2234,11 @@ sub set_vcfparser_outfile_counter {
             each %{ $vcfparser_select_file{$recipe} } )
         {
 
-            $active_parameter_href->{$parameter_name_counter} =
-              _set_vcfparser_file_counter(
+            $active_parameter_href->{$parameter_name_counter} = _set_vcfparser_file_counter(
                 {
                     parameter_name => $active_parameter_href->{$parameter_name},
                 }
-              );
+            );
         }
     }
     return;
@@ -2507,8 +2488,7 @@ sub update_to_absolute_path {
         if ( ref $active_parameter_href->{$parameter_name} eq q{ARRAY} ) {
 
           VALUE:
-            foreach my $parameter_value ( @{ $active_parameter_href->{$parameter_name} } )
-            {
+            foreach my $parameter_value ( @{ $active_parameter_href->{$parameter_name} } ) {
 
                 $parameter_value = get_absolute_path(
                     {
@@ -2536,8 +2516,7 @@ sub update_to_absolute_path {
                     }
                 );
 
-                $parameter_name_href->{$updated_key} =
-                  delete $parameter_name_href->{$key};
+                $parameter_name_href->{$updated_key} = delete $parameter_name_href->{$key};
             }
             next DYNAMIC_PARAMETER;
         }
@@ -2677,8 +2656,7 @@ sub _check_infile_directory {
 
     return if ( defined $infile_directory );
 
-    $log->fatal(
-        q{Could not detect any supplied '--infile_dirs' for sample: } . $sample_id );
+    $log->fatal( q{Could not detect any supplied '--infile_dirs' for sample: } . $sample_id );
     exit 1;
 }
 
@@ -2694,8 +2672,7 @@ sub _set_vcfparser_file_counter {
     my $parameter_name;
 
     my $tmpl =
-      { parameter_name => { required => 1, store => \$parameter_name, strict_type => 1, },
-      };
+      { parameter_name => { required => 1, store => \$parameter_name, strict_type => 1, }, };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 

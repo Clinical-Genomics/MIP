@@ -1,6 +1,5 @@
 #!/usr/bin/env perl
 
-use strict;
 use warnings;
 use Modern::Perl qw{ 2018 };
 use warnings qw( FATAL utf8 );
@@ -47,10 +46,9 @@ elsif ( ( defined($ARGV) ) && ( $ARGV[0] !~ /^-/ ) )
 
 GetOptions(
     'cak|af_key_suffixes:s' => \@af_key_suffixes,
-    'h|help' => sub { print STDOUT $USAGE, "\n"; exit; },    #Display help text
-    'v|version' =>
-      sub { print STDOUT "\ncalculate_af.pl " . $calculate_af_version, "\n\n"; exit; }
-    ,                                                        #Display version number
+    'h|help'    => sub { print STDOUT $USAGE, "\n"; exit; },    #Display help text
+    'v|version' => sub { print STDOUT "\ncalculate_af.pl " . $calculate_af_version, "\n\n"; exit; }
+    ,                                                           #Display version number
 );
 
 #####
@@ -85,8 +83,7 @@ sub read_infile {
     my $af_key_suffixes_ref;
 
     my $tmpl = {
-        af_key_suffixes_ref =>
-          { default => [], strict_type => 1, store => \$af_key_suffixes_ref },
+        af_key_suffixes_ref  => { default => [], strict_type => 1, store => \$af_key_suffixes_ref },
         calculate_af_version => {
             required    => 1,
             defined     => 1,
@@ -126,16 +123,15 @@ sub read_infile {
                         if ( any { $_ eq $af_key_suffix } @$af_key_suffixes_ref )
                         {                               #If element is part of array
 
-                            $af_header{$af_prefix}{$af_key_suffix} =
-                              $key;                     #For writing header
-                            $af_key{$af_prefix}{$af_key_suffix} = undef;
+                            $af_header{$af_prefix}{$af_key_suffix}       = $key; #For writing header
+                            $af_key{$af_prefix}{$af_key_suffix}          = undef;
                             $af_key{ $af_prefix . "_" . $af_key_suffix } = undef;
                         }
                     }
                     else {
 
-                        $af_header{$af_prefix}{$af_key_suffix} = $key; #For writing header
-                        $af_key{$af_prefix}{$af_key_suffix}    = undef;
+                        $af_header{$af_prefix}{$af_key_suffix}       = $key;     #For writing header
+                        $af_key{$af_prefix}{$af_key_suffix}          = undef;
                         $af_key{ $af_prefix . "_" . $af_key_suffix } = undef;
                     }
                 }
@@ -151,9 +147,7 @@ sub read_infile {
 
                     if ( !exists( $af_header{AN}{$af_key_suffix} ) ) {
 
-                        say STDERR "Could not find af_key_suffix: "
-                          . $af_key_suffix
-                          . " in header";
+                        say STDERR "Could not find af_key_suffix: " . $af_key_suffix . " in header";
                         exit 1;
                     }
 
@@ -167,8 +161,7 @@ sub read_infile {
             }
             else {
 
-                foreach my $key ( keys %{ $af_header{AN} } )
-                {    #Either "AN" or "AC" keys will do
+                foreach my $key ( keys %{ $af_header{AN} } ) {    #Either "AN" or "AC" keys will do
 
                     ## Write vcf Header
                     say '##INFO=<ID=AF_'
@@ -346,8 +339,7 @@ sub calculate_af {
 
             $af_key_href->{AF}{$af_key_suffix} =
               $af_key_href->{AC}{$af_key_suffix} / $af_key_href->{AN}{$af_key_suffix};
-            push( @$afs_ref,
-                "AF_" . $af_key_suffix . "=" . $af_key_href->{AF}{$af_key_suffix} );
+            push( @$afs_ref, "AF_" . $af_key_suffix . "=" . $af_key_href->{AF}{$af_key_suffix} );
         }
     }
 }

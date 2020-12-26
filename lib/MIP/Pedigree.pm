@@ -9,7 +9,6 @@ use File::Path qw{ make_path };
 use List::Util qw{ none };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error};
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };

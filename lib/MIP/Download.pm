@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -160,8 +159,7 @@ sub get_download_reference_attributes {
 
     use Data::Diver qw{ Dive };
 
-    my $reference_file_attribute_href =
-      Dive( $reference_href, ( $id, $genome_version, $version ) );
+    my $reference_file_attribute_href = Dive( $reference_href, ( $id, $genome_version, $version ) );
 
     return if ( not $reference_file_attribute_href );
 

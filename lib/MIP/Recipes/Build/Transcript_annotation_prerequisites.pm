@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
@@ -155,10 +154,9 @@ sub build_transcript_annotation_prerequisites {
     );
 
     ## Generate a random integer.
-    my $random_integer       = int rand $MAX_RANDOM_NUMBER;
-    my $annotation_file_path = $active_parameter_href->{transcript_annotation};
-    my $annotation_file_path_random =
-      $annotation_file_path . $UNDERSCORE . $random_integer;
+    my $random_integer              = int rand $MAX_RANDOM_NUMBER;
+    my $annotation_file_path        = $active_parameter_href->{transcript_annotation};
+    my $annotation_file_path_random = $annotation_file_path . $UNDERSCORE . $random_integer;
 
     ## No supplied filehandle i.e. create new sbatch script
     if ( not defined $filehandle ) {
@@ -416,8 +414,7 @@ sub _build_rrna_interval_list {
     picardtools_createsequencedictionary(
         {
             filehandle => $filehandle,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_jar   => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx2g},
             outfile_path         => $temp_dict_file_path,
@@ -432,8 +429,7 @@ sub _build_rrna_interval_list {
         {
             filehandle  => $filehandle,
             infile_path => $temp_rrna_bed_file_path,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_jar    => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx2g},
             outfile_path         => $temp_file_path,

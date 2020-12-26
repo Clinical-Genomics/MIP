@@ -9,7 +9,6 @@ use File::Spec::Functions qw  { catdir };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };

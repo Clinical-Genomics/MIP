@@ -17,7 +17,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -48,7 +47,7 @@ diag(   q{Test create_vep_synonyms_file from Vep.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log          = test_log( { no_screen => 1, } );
+test_log( { no_screen => 1, } );
 my $test_dir     = File::Temp->newdir();
 my $outfile_path = catfile( $test_dir, q{synonyms.tsv} );
 
@@ -57,7 +56,6 @@ my $bad_version = q{not_valid_version};
 
 my $is_ok = create_vep_synonyms_file(
     {
-        log          => $log,
         outfile_path => $outfile_path,
         version      => $bad_version,
     }
@@ -71,7 +69,6 @@ my $valid_version = q{38};
 
 my $ret_outfile_path = create_vep_synonyms_file(
     {
-        log          => $log,
         outfile_path => $outfile_path,
         version      => $valid_version,
     }
@@ -80,4 +77,5 @@ my $ret_outfile_path = create_vep_synonyms_file(
 ## Then return outfile_path for synonyms file
 is( $outfile_path, $ret_outfile_path, q{Return outfile_path if defined synonyms map} );
 ok( -e $outfile_path, q{Created synonyms file} );
+
 done_testing();

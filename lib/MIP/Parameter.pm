@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -18,8 +17,7 @@ use List::MoreUtils qw { any uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ $COMMA $COLON $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $COLON $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -531,8 +529,8 @@ sub parse_parameter_recipe_names {
             check_recipe_exists_in_hash(
                 {
                     parameter_name => $parameter_name,
-                    query_ref  => \@{ $parameter_href->{$parameter}{$parameter_name} },
-                    truth_href => $parameter_href,
+                    query_ref      => \@{ $parameter_href->{$parameter}{$parameter_name} },
+                    truth_href     => $parameter_href,
                 }
             );
         }
@@ -583,7 +581,7 @@ sub parse_reference_path {
 
         update_reference_parameters(
             {
-                active_parameter_href => $active_parameter_href,
+                active_parameter_href  => $active_parameter_href,
                 associated_recipes_ref =>
                   \@{ $parameter_href->{$parameter_name}{associated_recipe} },
                 parameter_name => $parameter_name,
@@ -1102,7 +1100,7 @@ sub set_default {
         ## Checks and sets user input or default values to active_parameters
         set_default_to_active_parameter(
             {
-                active_parameter_href => $active_parameter_href,
+                active_parameter_href  => $active_parameter_href,
                 associated_recipes_ref =>
                   \@{ $parameter_href->{$parameter_name}{associated_recipe} },
                 parameter_href => $parameter_href,
@@ -1201,10 +1199,8 @@ sub set_default_to_active_parameter {
           if ( not $active_parameter_href->{$associated_recipe} );
 
         ## Mandatory parameter not supplied
-        $log->fatal( q{Supply '-}
-              . $parameter_name
-              . q{' if you want to run }
-              . $associated_recipe );
+        $log->fatal(
+            q{Supply '-} . $parameter_name . q{' if you want to run } . $associated_recipe );
         exit 1;
     }
     return;
@@ -1594,9 +1590,8 @@ sub _set_default_capture_kit {
     ## Return a default capture kit as user supplied no info
     my $capture_kit = get_capture_kit(
         {
-            capture_kit => q{latest},
-            supported_capture_kit_href =>
-              $parameter_href->{supported_capture_kit}{default},
+            capture_kit                => q{latest},
+            supported_capture_kit_href => $parameter_href->{supported_capture_kit}{default},
         }
     );
 

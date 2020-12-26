@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use POSIX qw{ floor };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -130,8 +129,7 @@ sub get_parallel_processes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $parallel_processes =
-      floor( $recipe_memory_allocation / $process_memory_allocation );
+    my $parallel_processes = floor( $recipe_memory_allocation / $process_memory_allocation );
 
     ## Check that the number of processes doesn't exceed the number of available cores
     if ( $parallel_processes > $core_number ) {

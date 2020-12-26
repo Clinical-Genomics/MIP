@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -16,8 +15,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ $COLON $COMMA $EMPTY_STR $NEWLINE $SEMICOLON $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{ $COLON $COMMA $EMPTY_STR $NEWLINE $SEMICOLON $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -78,9 +76,8 @@ sub parse_feature_file_data {
             store       => \$feature_file_type,
             strict_type => 1,
         },
-        feature_matching_column =>
-          { store => \$feature_matching_column, strict_type => 1, },
-        padding => {
+        feature_matching_column => { store => \$feature_matching_column, strict_type => 1, },
+        padding                 => {
             defined     => 1,
             required    => 1,
             store       => \$padding,
@@ -261,9 +258,8 @@ sub read_feature_file {
             store       => \$feature_file_type,
             strict_type => 1,
         },
-        feature_matching_column =>
-          { store => \$feature_matching_column, strict_type => 1, },
-        log => {
+        feature_matching_column => { store => \$feature_matching_column, strict_type => 1, },
+        log                     => {
             defined  => 1,
             required => 1,
             store    => \$log,
@@ -286,16 +282,14 @@ sub read_feature_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Vcfparser qw{ build_interval_tree };
-    use MIP::File::Format::Feature_file
-      qw{ parse_feature_file_data parse_feature_file_header };
+    use MIP::File::Format::Feature_file qw{ parse_feature_file_data parse_feature_file_header };
 
     return if ( not $feature_file_path );
 
     my $filehandle = IO::Handle->new();
 
     open $filehandle, q{<}, $feature_file_path
-      or
-      $log->logdie( q{Cannot open } . $feature_file_path . $COLON . $OS_ERROR, $NEWLINE );
+      or $log->logdie( q{Cannot open } . $feature_file_path . $COLON . $OS_ERROR, $NEWLINE );
 
   LINE:
     while (<$filehandle>) {
@@ -579,8 +573,8 @@ sub tree_annotations {
               if ( not $feature_header_col_index eq $annotation_index );
 
             ## Set annotation to vcf record
-            $record_href->{ q{INFO_addition_} . $feature_file_type }{$feature_header} =
-              join $COMMA, @{$annotations_ref};
+            $record_href->{ q{INFO_addition_} . $feature_file_type }{$feature_header} = join $COMMA,
+              @{$annotations_ref};
         }
     }
     return %noid_region;

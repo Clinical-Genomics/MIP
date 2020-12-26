@@ -5,7 +5,6 @@ use Carp;
 use Cwd;
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };

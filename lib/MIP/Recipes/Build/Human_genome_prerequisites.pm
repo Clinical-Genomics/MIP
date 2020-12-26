@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -152,8 +151,7 @@ sub build_human_genome_prerequisites {
     use MIP::Program::Samtools qw{ samtools_faidx };
     use MIP::Program::Picardtools qw{ picardtools_createsequencedictionary };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Recipes::Build::Capture_file_prerequisites
-      qw{ build_capture_file_prerequisites };
+    use MIP::Recipes::Build::Capture_file_prerequisites qw{ build_capture_file_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -254,22 +252,19 @@ sub build_human_genome_prerequisites {
                       . q{ before executing }
                       . $recipe_name );
 
-                my $filename_prefix = catfile( $reference_dir,
-                    $file_info_href->{human_genome_reference_name_prefix} );
+                my $filename_prefix =
+                  catfile( $reference_dir, $file_info_href->{human_genome_reference_name_prefix} );
 
                 say {$filehandle} q{#CreateSequenceDictionary from reference};
 
                 picardtools_createsequencedictionary(
                     {
                         filehandle => $filehandle,
-                        java_jar   => catfile(
-                            $active_parameter_href->{picardtools_path},
-                            q{picard.jar}
-                        ),
-                        java_use_large_pages =>
-                          $active_parameter_href->{java_use_large_pages},
-                        memory_allocation => q{Xmx2g},
-                        outfile_path      => $filename_prefix
+                        java_jar   =>
+                          catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                        java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                        memory_allocation    => q{Xmx2g},
+                        outfile_path         => $filename_prefix
                           . $UNDERSCORE
                           . $random_integer
                           . $file_ending,
@@ -324,9 +319,8 @@ sub build_human_genome_prerequisites {
                 );
                 say {$filehandle} $NEWLINE;
 
-                my $intended_file_path = $human_genome_reference . $file_ending;
-                my $temporary_file_path =
-                  $human_genome_reference_temp_file . $file_ending;
+                my $intended_file_path  = $human_genome_reference . $file_ending;
+                my $temporary_file_path = $human_genome_reference_temp_file . $file_ending;
 
                 ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
                 check_exist_and_move_file(

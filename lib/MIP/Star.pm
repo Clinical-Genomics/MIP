@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -88,8 +87,8 @@ sub check_interleaved_files_for_star {
             ## STAR does not support interleaved fastq files
             if ($is_interleaved) {
                 $log->fatal(q{MIP rd_rna does not support interleaved fastq files});
-                $log->fatal( q{Please deinterleave: }
-                      . catfile( $attribute{mip_infiles_dir}, $file_name ) );
+                $log->fatal(
+                    q{Please deinterleave: } . catfile( $attribute{mip_infiles_dir}, $file_name ) );
                 exit 1;
             }
         }

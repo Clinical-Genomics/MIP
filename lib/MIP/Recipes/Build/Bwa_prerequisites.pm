@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -146,8 +145,7 @@ sub build_bwa_prerequisites {
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_index };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
+    use MIP::Recipes::Build::Human_genome_prerequisites qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -187,11 +185,11 @@ sub build_bwa_prerequisites {
 
     build_human_genome_prerequisites(
         {
-            active_parameter_href => $active_parameter_href,
-            filehandle            => $filehandle,
-            file_info_href        => $file_info_href,
-            job_id_href           => $job_id_href,
-            log                   => $log,
+            active_parameter_href        => $active_parameter_href,
+            filehandle                   => $filehandle,
+            file_info_href               => $file_info_href,
+            job_id_href                  => $job_id_href,
+            log                          => $log,
             parameter_build_suffixes_ref =>
               \@{ $file_info_href->{human_genome_reference_file_endings} },
             parameter_href   => $parameter_href,
@@ -381,8 +379,7 @@ sub build_bwa_mem2_prerequisites {
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_mem2_index };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
+    use MIP::Recipes::Build::Human_genome_prerequisites qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -424,11 +421,11 @@ sub build_bwa_mem2_prerequisites {
 
     build_human_genome_prerequisites(
         {
-            active_parameter_href => $active_parameter_href,
-            filehandle            => $filehandle,
-            file_info_href        => $file_info_href,
-            job_id_href           => $job_id_href,
-            log                   => $log,
+            active_parameter_href        => $active_parameter_href,
+            filehandle                   => $filehandle,
+            file_info_href               => $file_info_href,
+            job_id_href                  => $job_id_href,
+            log                          => $log,
             parameter_build_suffixes_ref =>
               \@{ $file_info_href->{human_genome_reference_file_endings} },
             parameter_href   => $parameter_href,

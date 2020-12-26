@@ -277,6 +277,7 @@ sub test_mip_hashes {
                   io_vcf
                   job_id
                   pedigree
+                  primary_contig
                   recipe_parameter
                   qc_sample_info }
             ],
@@ -315,8 +316,9 @@ sub test_mip_hashes {
         io_bam           => catfile( $Bin, qw{ data test_data io_bam.yaml } ),
         io_vcf           => catfile( $Bin, qw{ data test_data io_vcf.yaml } ),
         job_id           => catfile( $Bin, qw{ data test_data job_id.yaml } ),
-        recipe_parameter => catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
         pedigree         => catfile( $Bin, qw{ data test_data pedigree_wes.yaml } ),
+        primary_contig   => catfile( $Bin, qw{ data test_data primary_contig.yaml } ),
+        recipe_parameter => catfile( $Bin, qw{ data test_data recipe_parameter.yaml } ),
         qc_sample_info => catfile( $Bin, qw{ data test_data 643594-miptest_qc_sample_info.yaml } ),
     );
 

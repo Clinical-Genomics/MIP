@@ -8,7 +8,6 @@ use File::Spec::Functions qw{ catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -136,16 +135,11 @@ sub get_number_of_male_reads {
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
 
     ## Temporary bash file for commands
-    my $bash_temp_file = catfile( $Bin,
-        q{estimate_gender_from_reads} . $UNDERSCORE . $random_integer . q{.sh} );
+    my $bash_temp_file =
+      catfile( $Bin, q{estimate_gender_from_reads} . $UNDERSCORE . $random_integer . q{.sh} );
 
     open my $filehandle, q{>}, $bash_temp_file
-      or croak q{Cannot write to}
-      . $SPACE
-      . $bash_temp_file
-      . $COLON
-      . $SPACE
-      . $OS_ERROR;
+      or croak q{Cannot write to} . $SPACE . $bash_temp_file . $COLON . $SPACE . $OS_ERROR;
 
     ## Write to file
     say {$filehandle} join $SPACE, @{$commands_ref};
@@ -205,14 +199,11 @@ sub get_sampling_fastq_files {
     my $paired_end_tracker = 0;
 
   INFILE_PREFIX:
-    foreach
-      my $infile_prefix ( @{ $file_info_sample_href->{no_direction_infile_prefixes} } )
-    {
+    foreach my $infile_prefix ( @{ $file_info_sample_href->{no_direction_infile_prefixes} } ) {
 
         push @fastq_files, $infile_paths_ref->[$paired_end_tracker];
 
-        my $sequence_run_type =
-          $file_info_sample_href->{$infile_prefix}{sequence_run_type};
+        my $sequence_run_type = $file_info_sample_href->{$infile_prefix}{sequence_run_type};
 
         # If second read direction is present
         if ( $sequence_run_type eq q{paired-end} ) {
@@ -360,10 +351,7 @@ sub parse_fastq_for_gender {
           gnu_grep(
             {
                 count   => 1,
-                pattern => $DOUBLE_QUOTE . q{chrY}
-                  . $BACKWARD_SLASH
-                  . $PIPE . q{Y}
-                  . $DOUBLE_QUOTE,
+                pattern => $DOUBLE_QUOTE . q{chrY} . $BACKWARD_SLASH . $PIPE . q{Y} . $DOUBLE_QUOTE,
             }
           );
 
@@ -539,19 +527,13 @@ sub _get_file_read_commands {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Path qw{ check_gzipped };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Program::Gzip qw{ gzip };
+    use MIP::Validate::Data qw{ %constraint };
 
     my @read_cmds;
 
-    my $is_gzipped = check_gzipped(
-        {
-            file_name => $file_path,
-        }
-    );
-    if ($is_gzipped) {
-
+    if ( $constraint{is_gzipped}->($file_path) ) {
         @read_cmds = gzip(
             {
                 decompress       => 1,
