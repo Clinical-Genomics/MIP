@@ -469,7 +469,7 @@ bwa_soft_clip_sup_align:
     - bwa_mem
     - bwa_mem2
   data_type: SCALAR
-  default: 0
+  default: 1
   type: recipe_argument
 samtools_merge:
   analysis_mode: sample
