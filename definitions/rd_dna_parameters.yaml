@@ -464,6 +464,12 @@ bwa_mem_hla:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+bwa_mem_run_bwakit:
+  associated_recipe:
+    - bwa_mem
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 bwa_soft_clip_sup_align:
   associated_recipe:
     - bwa_mem

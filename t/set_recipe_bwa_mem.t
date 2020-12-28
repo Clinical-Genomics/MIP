@@ -22,7 +22,6 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -30,17 +29,15 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Bwa_mem} =>
-          [qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem }],
-        q{MIP::Set::Analysis}  => [qw{ set_recipe_bwa_mem }],
-);
+        q{MIP::Recipes::Analysis::Bwa_mem} => [qw{ analysis_bwa_mem analysis_run_bwa_mem }],
+        q{MIP::Set::Analysis}              => [qw{ set_recipe_bwa_mem }],
+    );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Set::Analysis qw{ set_recipe_bwa_mem };
-use MIP::Recipes::Analysis::Bwa_mem
-  qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
+use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem analysis_run_bwa_mem };
 
 diag(   q{Test set_recipe_bwa_mem from Analysis.pm}
       . $COMMA
@@ -61,12 +58,10 @@ set_recipe_bwa_mem(
     {
         analysis_recipe_href           => \%analysis_recipe,
         human_genome_reference_version => $GENOME_BUILD_VERSION_19,
+        run_bwakit                     => 1,
     }
 );
-my %expected_analysis_recipe = (
-    bwa_mem  => \&analysis_bwa_mem,
-    bwa_mem2 => \&analysis_bwa_mem2,
-);
+my %expected_analysis_recipe = ( bwa_mem => \&analysis_bwa_mem, );
 
 ## Then set bwa mem recipe
 is_deeply( \%analysis_recipe, \%expected_analysis_recipe,
@@ -77,10 +72,10 @@ set_recipe_bwa_mem(
     {
         analysis_recipe_href           => \%analysis_recipe,
         human_genome_reference_version => $GENOME_BUILD_VERSION_37,
+        run_bwakit                     => 1,
     }
 );
-$expected_analysis_recipe{bwa_mem}  = \&analysis_bwa_mem;
-$expected_analysis_recipe{bwa_mem2} = \&analysis_bwa_mem2;
+$expected_analysis_recipe{bwa_mem} = \&analysis_bwa_mem;
 
 ## Then set bwa mem recipe
 is_deeply( \%analysis_recipe, \%expected_analysis_recipe,
@@ -91,13 +86,26 @@ set_recipe_bwa_mem(
     {
         analysis_recipe_href           => \%analysis_recipe,
         human_genome_reference_version => $GENOME_BUILD_VERSION_38,
+        run_bwakit                     => 1,
     }
 );
-$expected_analysis_recipe{bwa_mem}  = \&analysis_run_bwa_mem;
-$expected_analysis_recipe{bwa_mem2} = \&analysis_bwa_mem2;
+$expected_analysis_recipe{bwa_mem} = \&analysis_run_bwa_mem;
 
 ## Then set run-bwa mem recipe
 is_deeply( \%analysis_recipe, \%expected_analysis_recipe,
     q{Set run-bwa mem recipe for grch} . $GENOME_BUILD_VERSION_38 );
 
+## Given genome build version 38 and bwakit turned off
+set_recipe_bwa_mem(
+    {
+        analysis_recipe_href           => \%analysis_recipe,
+        human_genome_reference_version => $GENOME_BUILD_VERSION_38,
+        run_bwakit                     => 0,
+    }
+);
+$expected_analysis_recipe{bwa_mem} = \&analysis_bwa_mem;
+
+## Then set run-bwa mem recipe
+is_deeply( \%analysis_recipe, \%expected_analysis_recipe,
+    q{Set bwa mem recipe for grch} . $GENOME_BUILD_VERSION_38 );
 done_testing();
