@@ -135,8 +135,7 @@ sub analysis_plink {
     use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_sort bcftools_norm bcftools_view };
     use MIP::Program::Plink
       qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
-    use MIP::Sample_info
-      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -159,11 +158,10 @@ sub analysis_plink {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path        = $io{in}{file_path};
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $human_genome_reference_version =
-      $file_info_href->{human_genome_reference_version};
-    my $human_genome_reference_source = $file_info_href->{human_genome_reference_source};
-    my $job_id_chain                  = get_recipe_attributes(
+    my $consensus_analysis_type        = $parameter_href->{cache}{consensus_analysis_type};
+    my $human_genome_reference_version = $file_info_href->{human_genome_reference_version};
+    my $human_genome_reference_source  = $file_info_href->{human_genome_reference_source};
+    my $job_id_chain                   = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -214,9 +212,7 @@ sub analysis_plink {
 
     ## No eligible test to run
     if ( not @plink_outfiles ) {
-        $log->warn(
-            q{No eligible Plink test to run for pedigree and sample(s) - skipping 'plink'}
-        );
+        $log->warn(q{No eligible Plink test to run for pedigree and sample(s) - skipping 'plink'});
         return;
     }
 
@@ -325,13 +321,12 @@ sub analysis_plink {
     );
     print {$filehandle} $PIPE . $SPACE;
 
-    my $uniq_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq.vcf};
+    my $uniq_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq.vcf};
     bcftools_norm(
         {
-            filehandle   => $filehandle,
-            infile_path  => $DASH,
-            outfile_path => $uniq_outfile_path,
+            filehandle        => $filehandle,
+            infile_path       => $DASH,
+            outfile_path      => $uniq_outfile_path,
             remove_duplicates => 1,
         }
     );
@@ -349,18 +344,15 @@ sub analysis_plink {
             indep_step_size     => $INDEP_STEP_SIZE,
             indep_vif_threshold => $INDEP_VIF_THRESHOLD,
             indep_window_size   => $INDEP_WINDOW_SIZE,
-            set_missing_var_ids => q?@:#[?
-              . $human_genome_reference_version
-              . q?]\$1,\$2?,
-            vcffile_path   => $uniq_outfile_path,
-            vcf_half_call  => q{haploid},
-            vcf_require_gt => 1,
+            set_missing_var_ids => q?@:#[? . $human_genome_reference_version . q?]\$1,\$2?,
+            vcffile_path        => $uniq_outfile_path,
+            vcf_half_call       => q{haploid},
+            vcf_require_gt      => 1,
         }
     );
     say {$filehandle} $NEWLINE;
 
-    say {$filehandle}
-      q{## Update Plink fam. Create ped and map file and frequency report};
+    say {$filehandle} q{## Update Plink fam. Create ped and map file and frequency report};
     ## Get parameters
     my $allow_no_sex;
 
@@ -474,14 +466,12 @@ sub analysis_plink {
           $binary_fileset_prefix . $DOT . $plink_outanalysis_prefix{plink_sexcheck};
         plink_sex_check(
             {
-                binary_fileset_prefix => $binary_fileset_prefix
-                  . $UNDERSCORE
-                  . q{unsplit},
-                extract_file       => $extract_file,
-                filehandle         => $filehandle,
-                outfile_prefix     => $sex_check_outfile_prefix,
-                read_freqfile_path => $read_freqfile_path,
-                sex_check_min_f    => $sex_check_min_f,
+                binary_fileset_prefix => $binary_fileset_prefix . $UNDERSCORE . q{unsplit},
+                extract_file          => $extract_file,
+                filehandle            => $filehandle,
+                outfile_prefix        => $sex_check_outfile_prefix,
+                read_freqfile_path    => $read_freqfile_path,
+                sex_check_min_f       => $sex_check_min_f,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -506,13 +496,13 @@ sub analysis_plink {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{case_to_island},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{case_to_island},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -578,9 +568,9 @@ sub _setup_plink_for_analysis_type {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use List::MoreUtils qw{ uniq };
+    use MIP::Active_parameter qw{ get_exome_target_bed_file };
     use MIP::Program::Bedtools qw{ bedtools_intersect };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::Get::File qw{ get_exome_target_bed_file };
 
     ## Single sample case or all samples are wgs
     return if ( @{$sample_ids_ref} == 1 or $consensus_analysis_type eq q{wgs} );

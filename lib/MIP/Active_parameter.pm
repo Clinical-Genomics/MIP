@@ -19,7 +19,8 @@ use List::MoreUtils qw { any };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $COMMA $DOT $LOG_NAME $PIPE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants
+  qw{ $COLON $COMMA $DOT $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
@@ -36,6 +37,7 @@ BEGIN {
       check_sample_id_in_hash_parameter_path
       get_active_parameter_attribute
       get_binary_path
+      get_exome_target_bed_file
       get_matching_values_key
       get_not_allowed_temp_dirs
       get_package_env_attributes
@@ -777,6 +779,73 @@ sub get_binary_path {
     return if ( not defined $active_parameter_href->{binary_path}{$binary} );
 
     return $active_parameter_href->{binary_path}{$binary};
+}
+
+sub get_exome_target_bed_file {
+
+## Function : Get exome_target_bed file for specific sample_id and add file_ending if supplied
+## Returns  : $exome_target_bed_file
+## Arguments: $exome_target_bed_href => Exome target bed files lnked to sample ids
+##          : $file_ending           => File ending to add to file
+##          : $sample_id             => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $exome_target_bed_href;
+    my $file_ending;
+    my $sample_id;
+
+    my $tmpl = {
+        exome_target_bed_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$exome_target_bed_href,
+            strict_type => 1,
+        },
+        file_ending => { store => \$file_ending, strict_type => 1, },
+        sample_id   => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## To track sample_ids with capture kits
+    my %seen;
+
+  BED_FILE:
+    while ( my ( $exome_target_bed_file, $sample_id_string ) = each %{$exome_target_bed_href} ) {
+
+        my @capture_kit_samples = split $COMMA, $sample_id_string;
+
+        @seen{@capture_kit_samples}++;
+
+        ## If capture_kit sample_id is associated with exome_target_bed file
+        if ( exists $seen{$sample_id} ) {
+
+            ## Reset each iterator for next call
+            scalar keys %{$exome_target_bed_href};
+
+            return $exome_target_bed_file if ( not defined $file_ending );
+
+            return $exome_target_bed_file . $file_ending;
+        }
+    }
+
+    $log->fatal(
+        q{Could not detect }
+          . $sample_id
+          . q{ in '-exome_target_bed' associated files in sub routine get_exome_target_bed_file},
+        $NEWLINE
+    );
+    exit 1;
 }
 
 sub get_matching_values_key {
