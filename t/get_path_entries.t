@@ -29,16 +29,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::File} => [qw{ get_path_entries }],
+        q{MIP::Sample_info} => [qw{ get_path_entries }],
 
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::File qw{ get_path_entries };
+use MIP::Sample_info qw{ get_path_entries };
 
-diag(   q{Test get_path_entries from File.pm}
+diag(   q{Test get_path_entries from Sample_info.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -49,7 +49,7 @@ diag(   q{Test get_path_entries from File.pm}
 ## Constants
 Readonly my $CORRECT_PATHS => 3;
 
-my @paths;
+## Given paths, outfiles and outdirectories
 my %sample_info = (
     first_level_key => {
         path         => catfile(qw{a test file}),
@@ -64,19 +64,26 @@ my %sample_info = (
     program => { second_level_key_2 => { path => catfile(qw{a test file_3}) }, },
 );
 
-## Collects all programs file path(s) created by MIP located in %sample_info
+my @paths;
+
+## When collecting all programs file path(s) created by MIP located in %sample_info
 get_path_entries(
     {
         sample_info_href => \%sample_info,
         paths_ref        => \@paths,
     }
 );
+
+## Then all paths should be collected
 is( scalar @paths, $CORRECT_PATHS, q{Found correct number of paths} );
 
+## Then first path should be found
 isnt( $paths[0], undef, q{Found first path} );
 
+## Then second path should be found
 isnt( $paths[1], undef, q{Found second path} );
 
+## Then no duplicated paths should be added
 is( $paths[$CORRECT_PATHS], undef, q{No duplicated paths} );
 
 done_testing();
