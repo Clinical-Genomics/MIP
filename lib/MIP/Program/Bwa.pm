@@ -27,7 +27,7 @@ BEGIN {
     our @EXPORT_OK = qw{ bwa_index bwa_mem bwa_mem2_mem bwa_mem2_index run_bwamem };
 
 }
-Readonly my $BASES_TO_PROCESS    => q{100000000};
+Readonly my $BASES_TO_PROCESS    => 100_000_000;
 Readonly my $BWA_BASE_COMMAND    => q{bwa};
 Readonly my $BWA2_BASE_COMMAND   => q{bwa-mem2};
 Readonly my $RUNBWA_BASE_COMMAND => q{run-bwamem};

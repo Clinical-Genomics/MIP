@@ -44,7 +44,7 @@ diag(   q{Test bwa_mem from Bwa.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $BASES_TO_PROCESS => q{100000000};
+Readonly my $BASES_TO_PROCESS => 100_000_000;
 
 ## Base arguments
 my @function_base_commands = qw{ bwa mem };
