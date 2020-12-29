@@ -34,7 +34,7 @@ BEGIN {
 
 sub get_exome_target_bed_file {
 
-## Function : Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
+## Function : Get exome_target_bed file for specific sample_id and add file_ending from file_info hash if supplied
 ## Returns  : $exome_target_bed_file
 ## Arguments: $exome_target_bed_href => Exome target bed files lnked to sample ids
 ##          : $file_ending           => File ending to add to file
@@ -68,7 +68,6 @@ sub get_exome_target_bed_file {
 
     ### PREPROCESSING:
 
-    ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## To track sample_ids with capture kits
@@ -82,12 +81,7 @@ sub get_exome_target_bed_file {
 
         my @capture_kit_samples = split $COMMA, $sample_id_string;
 
-        ## Count number of times sample_id has been seen
-      SAMPLE:
-        foreach my $samples (@capture_kit_samples) {
-
-            $seen{$samples}++;
-        }
+        @seen{@capture_kit_samples}++;
 
         ## If capture_kit sample_id is associated with exome_target_bed file
         if ( any { $_ eq $sample_id } @capture_kit_samples ) {
