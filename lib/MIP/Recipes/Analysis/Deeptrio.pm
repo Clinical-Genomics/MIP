@@ -112,6 +112,7 @@ sub analysis_deeptrio {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Deeptrio qw{ deeptrio };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Sample_info
       qw{ get_case_members_attributes_in_duos get_family_member_id set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -155,6 +156,8 @@ sub analysis_deeptrio {
     my $child_id = $case_members_id{children}[0];
 
     my %iofile_parameter;
+    my @outfile_directories;
+
   SAMPLE_ID:
     foreach my $sample_id ( @parents, $child_id ) {
         if ($sample_id) {
@@ -189,6 +192,7 @@ sub analysis_deeptrio {
             $iofile_parameter{$sample_id}{output_vcf} =
               $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
             $iofile_parameter{$sample_id}{sample_name} = $sample_id;
+            push @outfile_directories, $sample_vcf_io{out}{dir_path};
         }
     }
 
@@ -214,8 +218,19 @@ sub analysis_deeptrio {
 
     ### SHELL:
 
-    say {$filehandle} q{## } . $recipe_name;
+    say {$filehandle} q{## Create output directories};
+    foreach my $out_directory (@outfile_directories) {
+        gnu_mkdir(
+            {
+                filehandle       => $filehandle,
+                indirectory_path => $out_directory,
+                parents          => 1,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
 
+    say {$filehandle} q{## } . $recipe_name;
     deeptrio(
         {
             filehandle          => $filehandle,
