@@ -16,16 +16,12 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_log };
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
 
 BEGIN {
 
@@ -34,16 +30,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::File}      => [qw{ get_exome_target_bed_file }],
-        q{MIP::Test::Fixtures} => [qw{ test_log }],
+        q{MIP::Active_parameter} => [qw{ get_exome_target_bed_file }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::File qw{ get_exome_target_bed_file };
+use MIP::Active_parameter qw{ get_exome_target_bed_file };
 
-diag(   q{Test get_exome_target_bed_file from File.pm}
+diag(   q{Test get_exome_target_bed_file from Active_parameter.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -52,7 +48,7 @@ diag(   q{Test get_exome_target_bed_file from File.pm}
       . $EXECUTABLE_NAME );
 
 ## Create log
-my $log = test_log( {} );
+test_log( {} );
 
 ## Base arguments
 my $sample_1         = q{sample_1};
@@ -72,21 +68,23 @@ my $exome_target_bed_file = get_exome_target_bed_file(
 );
 
 ## Then return exome target bed file for sample
-is( q{exome_target_file.bed}, $exome_target_bed_file,
-    q{Get exom target bed file for sample_1} );
+is( $exome_target_bed_file, q{exome_target_file.bed}, q{Get exom target bed file for sample_1} );
 
 ## Given a sample id and a file ending
 $exome_target_bed_file = get_exome_target_bed_file(
     {
         exome_target_bed_href => \%exome_target_bed,
-        sample_id             => $sample_1,
         file_ending           => q{.interval_list},
+        sample_id             => $sample_1,
     }
 );
 
 ## Then return exome target file with interval list file ending
-is( q{exome_target_file.bed.interval_list},
-    $exome_target_bed_file, q{Get exom target bed.interval_list file for sample_1} );
+is(
+    $exome_target_bed_file,
+    q{exome_target_file.bed.interval_list},
+    q{Get exom target bed.interval_list file for sample_1}
+);
 
 ## Given another sample id
 $exome_target_bed_file = get_exome_target_bed_file(
@@ -97,10 +95,9 @@ $exome_target_bed_file = get_exome_target_bed_file(
 );
 
 ## Then return exome target bed file for sample id
-is( q{exome_target_file_2.bed}, $exome_target_bed_file,
-    q{Get exom target bed file for sample_3} );
+is( $exome_target_bed_file, q{exome_target_file_2.bed}, q{Get exom target bed file for sample_3} );
 
-## Given a not exisitng sample id
+## Given a not existing sample id
 trap {
     get_exome_target_bed_file(
         {

@@ -26,8 +26,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ analysis_gatk_haplotypecaller analysis_gatk_haplotypecaller_panel };
+    our @EXPORT_OK = qw{ analysis_gatk_haplotypecaller analysis_gatk_haplotypecaller_panel };
 
 }
 
@@ -145,8 +144,7 @@ sub analysis_gatk_haplotypecaller {
     use MIP::Cluster qw{ get_parallel_processes };
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter
-      qw{ get_gatk_intervals get_recipe_attributes get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_gatk_intervals get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_haplotypecaller };
@@ -242,8 +240,7 @@ sub analysis_gatk_haplotypecaller {
     ### SHELL:
 
     # For ".fam" file
-    my $outcase_file_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $case_id );
+    my $outcase_file_directory = catdir( $active_parameter_href->{outdata_dir}, $case_id );
 
     ## Create .fam file to be used in variant calling analyses
     my $fam_file_path = catfile( $outcase_file_directory, $case_id . $DOT . q{fam} );
@@ -311,22 +308,19 @@ sub analysis_gatk_haplotypecaller {
     foreach my $contig ( @{ $file_info_href->{contigs_size_ordered} } ) {
 
         ## GATK Haplotypecaller
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         gatk_haplotypecaller(
             {
-                annotations_ref =>
-                  \@{ $active_parameter_href->{gatk_haplotypecaller_annotation} },
-                dbsnp_path =>
-                  $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
+                annotations_ref => \@{ $active_parameter_href->{gatk_haplotypecaller_annotation} },
+                dbsnp_path      => $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
                 dont_use_soft_clipped_bases =>
                   $active_parameter_href->{gatk_haplotypecaller_no_soft_clipped_bases},
                 emit_ref_confidence =>
                   $active_parameter_href->{gatk_haplotypecaller_emit_ref_confidence},
-                filehandle           => $xargsfilehandle,
-                infile_path          => $infile_path{$contig},
-                intervals_ref        => $gatk_intervals{$contig},
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                filehandle             => $xargsfilehandle,
+                infile_path            => $infile_path{$contig},
+                intervals_ref          => $gatk_intervals{$contig},
+                java_use_large_pages   => $active_parameter_href->{java_use_large_pages},
                 linked_de_bruijn_graph =>
                   $active_parameter_href->{gatk_haplotypecaller_linked_de_bruijn_graph},
                 memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
@@ -334,12 +328,11 @@ sub analysis_gatk_haplotypecaller {
                 pcr_indel_model    => $pcr_indel_model,
                 pedigree           => $fam_file_path,
                 referencefile_path => $referencefile_path,
-                standard_min_confidence_threshold_for_calling =>
-                  $STANDARD_MIN_CONFIDENCE_THRSD,
-                stderrfile_path => $stderrfile_path,
-                temp_directory  => $temp_directory,
-                verbosity       => $active_parameter_href->{gatk_logging_level},
-                xargs_mode      => 1,
+                standard_min_confidence_threshold_for_calling => $STANDARD_MIN_CONFIDENCE_THRSD,
+                stderrfile_path                               => $stderrfile_path,
+                temp_directory                                => $temp_directory,
+                verbosity  => $active_parameter_href->{gatk_logging_level},
+                xargs_mode => 1,
             }
         );
         say {$xargsfilehandle} $NEWLINE;
@@ -399,13 +392,13 @@ sub analysis_gatk_haplotypecaller {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -508,8 +501,9 @@ sub analysis_gatk_haplotypecaller_panel {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ get_exome_target_bed_file };
     use MIP::Cluster qw{ update_memory_allocation };
-    use MIP::Get::File qw{ get_exome_target_bed_file get_io_files };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Pedigree qw{ create_fam_file };
@@ -609,8 +603,7 @@ sub analysis_gatk_haplotypecaller_panel {
     ### SHELL:
 
     # For ".fam" file
-    my $outcase_file_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $case_id );
+    my $outcase_file_directory = catdir( $active_parameter_href->{outdata_dir}, $case_id );
 
     ## Create .fam file to be used in variant calling analyses
     my $fam_file_path = catfile( $outcase_file_directory, $case_id . $DOT . q{fam} );
@@ -631,17 +624,15 @@ sub analysis_gatk_haplotypecaller_panel {
             sample_id             => $sample_id,
         }
     );
-    my $padded_interval_list_ending = $file_info_href->{exome_target_bed}[1];
-    my $padded_exome_target_bed_file =
-      $exome_target_bed_file . $padded_interval_list_ending;
+    my $padded_interval_list_ending  = $file_info_href->{exome_target_bed}[1];
+    my $padded_exome_target_bed_file = $exome_target_bed_file . $padded_interval_list_ending;
 
     ## GATK HaplotypeCaller
     say {$filehandle} q{## GATK HaplotypeCaller};
     gatk_haplotypecaller(
         {
-            annotations_ref =>
-              \@{ $active_parameter_href->{gatk_haplotypecaller_annotation} },
-            dbsnp_path => $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
+            annotations_ref => \@{ $active_parameter_href->{gatk_haplotypecaller_annotation} },
+            dbsnp_path      => $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
             dont_use_soft_clipped_bases =>
               $active_parameter_href->{gatk_haplotypecaller_no_soft_clipped_bases},
             emit_ref_confidence =>
@@ -652,12 +643,10 @@ sub analysis_gatk_haplotypecaller_panel {
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path         => $outfile_path,
-            pcr_indel_model =>
-              $active_parameter_href->{gatk_haplotypecaller_pcr_indel_model},
-            pedigree           => $fam_file_path,
-            referencefile_path => $referencefile_path,
-            standard_min_confidence_threshold_for_calling =>
-              $STANDARD_MIN_CONFIDENCE_THRSD,
+            pcr_indel_model      => $active_parameter_href->{gatk_haplotypecaller_pcr_indel_model},
+            pedigree             => $fam_file_path,
+            referencefile_path   => $referencefile_path,
+            standard_min_confidence_threshold_for_calling => $STANDARD_MIN_CONFIDENCE_THRSD,
             temp_directory => $active_parameter_href->{temp_directory},
             verbosity      => $active_parameter_href->{gatk_logging_level},
         }
@@ -681,13 +670,13 @@ sub analysis_gatk_haplotypecaller_panel {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
