@@ -177,35 +177,30 @@ sub get_gatk_intervals {
     use MIP::Active_parameter qw{ get_exome_target_bed_file };
     use MIP::Contigs qw{ generate_contig_interval_file };
 
-    ## Store gatk interval
-    my %gatk_intervals;
+    ## Store gatk interval as contigs
+    my %gatk_intervals = map { $_ => [$_] } @{$contigs_ref};
 
-    if ( $analysis_type eq q{wes} ) {
+    return %gatk_intervals if ( not $analysis_type eq q{wes} );
 
-        my $exome_target_bed_file = get_exome_target_bed_file(
-            {
-                exome_target_bed_href => $exome_target_bed_href,
-                file_ending           => $file_ending,
-                sample_id             => $sample_id,
-            }
-        );
+    my $exome_target_bed_file = get_exome_target_bed_file(
+        {
+            exome_target_bed_href => $exome_target_bed_href,
+            file_ending           => $file_ending,
+            sample_id             => $sample_id,
+        }
+    );
 
-        ## Generate contig specific interval_list and return hash with paths
-        %gatk_intervals = generate_contig_interval_file(
-            {
-                contigs_ref           => $contigs_ref,
-                exome_target_bed_file => $exome_target_bed_file,
-                filehandle            => $filehandle,
-                max_process_number    => $max_cores_per_node,
-                outdirectory          => $outdirectory,
-                reference_dir         => $reference_dir,
-            }
-        );
-    }
-    else {
-        ## Key-value pairs are identical for WGS/WTS
-        %gatk_intervals = map { $_ => [$_] } @{$contigs_ref};
-    }
+    ## Generate contig specific interval_list and return gatk interval as contig number with paths
+    %gatk_intervals = generate_contig_interval_file(
+        {
+            contigs_ref           => $contigs_ref,
+            exome_target_bed_file => $exome_target_bed_file,
+            filehandle            => $filehandle,
+            max_process_number    => $max_cores_per_node,
+            outdirectory          => $outdirectory,
+            reference_dir         => $reference_dir,
+        }
+    );
     return %gatk_intervals;
 }
 
