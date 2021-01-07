@@ -129,7 +129,8 @@ sub analysis_picardtools_collecthsmetrics {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_exome_target_bed_file get_io_files };
+    use MIP::Active_parameter qw{ get_exome_target_bed_file };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -235,15 +236,13 @@ sub analysis_picardtools_collecthsmetrics {
               [ $exome_target_bed_file . $padded_interval_list_ending ],
             filehandle  => $filehandle,
             infile_path => $infile_path,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            outfile_path         => $outfile_path_prefix,
-            referencefile_path   => $active_parameter_href->{human_genome_reference},
-            target_interval_file_paths_ref =>
-              [ $exome_target_bed_file . $interval_list_ending ],
-            temp_directory => $temp_directory,
+            java_jar    => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages           => $active_parameter_href->{java_use_large_pages},
+            memory_allocation              => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            outfile_path                   => $outfile_path_prefix,
+            referencefile_path             => $active_parameter_href->{human_genome_reference},
+            target_interval_file_paths_ref => [ $exome_target_bed_file . $interval_list_ending ],
+            temp_directory                 => $temp_directory,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -267,13 +266,13 @@ sub analysis_picardtools_collecthsmetrics {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_island},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_island},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

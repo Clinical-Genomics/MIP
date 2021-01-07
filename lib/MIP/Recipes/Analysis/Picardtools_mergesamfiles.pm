@@ -148,19 +148,18 @@ sub analysis_picardtools_mergesamfiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
+    use MIP::File_info qw{ set_merged_infile_prefix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Picardtools
-      qw{ picardtools_gatherbamfiles picardtools_mergesamfiles };
+    use MIP::Program::Picardtools qw{ picardtools_gatherbamfiles picardtools_mergesamfiles };
     use MIP::Program::Sambamba qw{ split_and_index_aligment_file };
     use MIP::Program::Samtools qw{ samtools_index };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_merged_infile_prefix };
 
     ### PREPROCESSING:
 
@@ -294,8 +293,7 @@ sub analysis_picardtools_mergesamfiles {
     );
 
     ## Set helper value for finding merged_infiles downstream
-    my $merged_infile_prefix =
-      $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
+    my $merged_infile_prefix = $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
     set_merged_infile_prefix(
         {
             file_info_href       => $file_info_href,
@@ -318,12 +316,11 @@ sub analysis_picardtools_mergesamfiles {
                 filehandle          => $filehandle,
                 file_path           => $recipe_file_path,
                 infile_path         => $infile_path,
-                outfile_path_prefix => $outdir_path
-                  . $infile_name_prefixes[$infile_index],
-                output_format      => substr( $infile_suffix, 1 ),
-                recipe_info_path   => $recipe_info_path,
-                xargsfilehandle    => $xargsfilehandle,
-                xargs_file_counter => $xargs_file_counter,
+                outfile_path_prefix => $outdir_path . $infile_name_prefixes[$infile_index],
+                output_format       => substr( $infile_suffix, 1 ),
+                recipe_info_path    => $recipe_info_path,
+                xargsfilehandle     => $xargsfilehandle,
+                xargs_file_counter  => $xargs_file_counter,
             }
         );
     }
@@ -352,27 +349,23 @@ sub analysis_picardtools_mergesamfiles {
             ## Get parameters
             # Assemble infile paths by adding directory and file suffixes
             my @merge_infile_paths =
-              map { $outdir_path . $_ . $DOT . $contig . $infile_suffix }
-              @infile_name_prefixes;
-            my $stderrfile_path =
-              $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+              map { $outdir_path . $_ . $DOT . $contig . $infile_suffix } @infile_name_prefixes;
+            my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
             picardtools_mergesamfiles(
                 {
                     create_index     => q{true},
                     filehandle       => $xargsfilehandle,
                     infile_paths_ref => \@merge_infile_paths,
-                    java_jar         => catfile(
-                        $active_parameter_href->{picardtools_path}, q{picard.jar}
-                    ),
-                    java_use_large_pages =>
-                      $active_parameter_href->{java_use_large_pages},
-                    memory_allocation  => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                    outfile_path       => $outfile_path{$contig},
-                    referencefile_path => $referencefile_path,
-                    stderrfile_path    => $stderrfile_path,
-                    temp_directory     => $temp_directory,
-                    threading          => q{true},
+                    java_jar         =>
+                      catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                    java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                    memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                    outfile_path         => $outfile_path{$contig},
+                    referencefile_path   => $referencefile_path,
+                    stderrfile_path      => $stderrfile_path,
+                    temp_directory       => $temp_directory,
+                    threading            => q{true},
                 }
             );
             say {$xargsfilehandle} $NEWLINE;
@@ -383,7 +376,7 @@ sub analysis_picardtools_mergesamfiles {
 
         ## Rename samples
         say {$filehandle}
-q{## Renaming sample instead of merge to streamline handling of filenames downstream};
+          q{## Renaming sample instead of merge to streamline handling of filenames downstream};
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -443,8 +436,7 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
             create_index     => q{true},
             filehandle       => $filehandle,
             infile_paths_ref => \@gather_infile_paths,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path         => $outfile_path_prefix . $outfile_suffix,
@@ -472,13 +464,13 @@ q{## Renaming sample instead of merge to streamline handling of filenames downst
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

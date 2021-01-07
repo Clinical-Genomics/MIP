@@ -126,7 +126,8 @@ sub analysis_rtg_vcfeval {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_exome_target_bed_file get_io_files };
+    use MIP::Active_parameter qw{ get_exome_target_bed_file };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -134,8 +135,7 @@ sub analysis_rtg_vcfeval {
     use MIP::Program::Rtg qw{ rtg_vcfeval };
     use MIP::Program::Bcftools qw{ bcftools_rename_vcf_samples };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Sample_info
-      qw{ get_pedigree_sample_id_attributes set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Return if not a nist_id sample
@@ -241,9 +241,7 @@ sub analysis_rtg_vcfeval {
 
         ## Skip this nist version if no supported nist_id
         next NIST_VERSION
-          if (
-            not
-            exists $active_parameter_href->{nist_call_set_vcf}{$nist_version}{$nist_id} );
+          if ( not exists $active_parameter_href->{nist_call_set_vcf}{$nist_version}{$nist_id} );
 
         say {$filehandle} q{### Processing NIST ID: }
           . $nist_id
@@ -307,8 +305,7 @@ sub analysis_rtg_vcfeval {
         );
 
         say {$filehandle} q{## Remove potential old Rtg vcfeval outdir};
-        my $nist_version_rtg_outdirectory_path =
-          catfile( $rtg_outdirectory_path, $nist_version );
+        my $nist_version_rtg_outdirectory_path = catfile( $rtg_outdirectory_path, $nist_version );
         gnu_rm(
             {
                 filehandle  => $filehandle,
@@ -326,18 +323,15 @@ sub analysis_rtg_vcfeval {
             {
                 baselinefile_path    => $nist_file_path_prefix . $DOT . q{vcf.gz},
                 bed_regionsfile_path => $nist_bed_file_path,
-                callfile_path        => catfile(
-                    $rtg_outdirectory_path, $outfile_name_prefix . $DOT . q{vcf.gz}
-                ),
-                eval_region_file_path => $nist_bed_file_path,
-                filehandle            => $filehandle,
-                memory                => $rtg_memory,
-                outputdirectory_path  => $nist_version_rtg_outdirectory_path,
-                sample_id             => $sample_id,
-                sdf_template_file_path =>
-                  $active_parameter_href->{rtg_vcfeval_reference_genome}
-                  . $file_info_href->{rtg_vcfeval_reference_genome}[0]
-                ,    # Only one directory for sdf
+                callfile_path        =>
+                  catfile( $rtg_outdirectory_path, $outfile_name_prefix . $DOT . q{vcf.gz} ),
+                eval_region_file_path  => $nist_bed_file_path,
+                filehandle             => $filehandle,
+                memory                 => $rtg_memory,
+                outputdirectory_path   => $nist_version_rtg_outdirectory_path,
+                sample_id              => $sample_id,
+                sdf_template_file_path => $active_parameter_href->{rtg_vcfeval_reference_genome}
+                  . $file_info_href->{rtg_vcfeval_reference_genome}[0], # Only one directory for sdf
                 thread_number => $core_number,
             }
         );
@@ -361,13 +355,13 @@ sub analysis_rtg_vcfeval {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{case_to_island},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{case_to_island},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

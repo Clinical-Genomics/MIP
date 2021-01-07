@@ -110,7 +110,7 @@ sub get_gatk_intervals {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_exome_target_bed_file };
+    use MIP::Active_parameter qw{ get_exome_target_bed_file };
     use MIP::Contigs qw{ generate_contig_interval_file };
 
     ## Store gatk interval

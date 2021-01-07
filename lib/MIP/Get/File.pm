@@ -17,7 +17,7 @@ use Readonly;
 use List::MoreUtils qw{ any };
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $NEWLINE $PIPE $SPACE };
+use MIP::Constants qw{ $COMMA $DOT $LOG_NAME $PIPE $SPACE };
 
 BEGIN {
     require Exporter;
@@ -25,90 +25,10 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      get_exome_target_bed_file
       get_io_files
       get_merged_infile_prefix
       get_path_entries
     };
-}
-
-sub get_exome_target_bed_file {
-
-## Function : Get exome_target_bed file for specfic sample_id and add file_ending from file_info hash if supplied
-## Returns  : $exome_target_bed_file
-## Arguments: $exome_target_bed_href => Exome target bed files lnked to sample ids
-##          : $file_ending           => File ending to add to file
-##          : $sample_id             => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $exome_target_bed_href;
-    my $file_ending;
-    my $sample_id;
-
-    my $tmpl = {
-        exome_target_bed_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$exome_target_bed_href,
-        },
-        file_ending => { store => \$file_ending },
-        sample_id   => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sample_id
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ### PREPROCESSING:
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    ## To track sample_ids with capture kits
-    my %seen;
-
-    ## Make local hash copy to keep in scope
-    my %exome_target_bed = %{$exome_target_bed_href};
-
-  BED_FILE:
-    while ( my ( $exome_target_bed_file, $sample_id_string ) = each %exome_target_bed ) {
-
-        my @capture_kit_samples = split $COMMA, $sample_id_string;
-
-        ## Count number of times sample_id has been seen
-      SAMPLE:
-        foreach my $samples (@capture_kit_samples) {
-
-            $seen{$samples}++;
-        }
-
-        ## If capture_kit sample_id is associated with exome_target_bed file
-        if ( any { $_ eq $sample_id } @capture_kit_samples ) {
-
-            if ( defined $file_ending ) {
-
-                $exome_target_bed_file .= $file_ending;
-            }
-            return $exome_target_bed_file;
-        }
-    }
-    ## Found exome target bed file for sample
-    return if ( $seen{$sample_id} );
-
-    $log->fatal(
-        q{Could not detect }
-          . $sample_id
-          . q{ in '-exome_target_bed' associated files in sub routine get_exome_target_bed_file},
-        $NEWLINE
-    );
-    exit 1;
 }
 
 sub get_io_files {
