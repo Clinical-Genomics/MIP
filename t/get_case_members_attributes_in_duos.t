@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -58,13 +57,13 @@ my %family_member_id =
 
 ## Then return family members id
 my %expected = (
+    affected => [qw{ ADM1059A1 }],
     children => [qw{ ADM1059A1 }],
     father   => q{ADM1059A2},
     mother   => q{0},
-    affected => [qw{ ADM1059A1 }],
     unknown  => [qw{ ADM1059A2 }],
 );
 
-is_deeply( \%family_member_id, \%expected, q{Get family hash} );
+is_deeply( \%family_member_id, \%expected, q{Got family hash} );
 
 done_testing();

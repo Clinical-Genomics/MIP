@@ -84,7 +84,7 @@ sub set_recipe_deepvariant {
 ## Function : Set deeptrio or deepvariant recipe depending on the presence of parent-child duo or trio
 ## Returns  :
 ## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
-##          : $sample_info_hre      => Sample info hash {HASH}
+##          : $sample_info_href     => Sample info hash {HASH}
 
     my ($arg_href) = @_;
 
@@ -114,11 +114,14 @@ sub set_recipe_deepvariant {
     use MIP::Recipes::Analysis::Deepvariant qw{ analysis_deepvariant };
     use MIP::Recipes::Analysis::Deeptrio qw{ analysis_deeptrio };
 
+  CONSTELLATION_STATE:
     foreach my $constellation_state (qw{ has_duo has_trio }) {
-        if ( $sample_info_href->{$constellation_state} ) {
-            $analysis_recipe_href->{deepvariant} = undef;
-            $analysis_recipe_href->{deeptrio}    = \&analysis_deeptrio;
-        }
+
+        next CONSTELLATION_STATE if ( not $sample_info_href->{$constellation_state} );
+
+        $analysis_recipe_href->{deepvariant} = undef;
+        $analysis_recipe_href->{deeptrio}    = \&analysis_deeptrio;
+        return;
     }
     return;
 }

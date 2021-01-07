@@ -75,10 +75,10 @@ sub get_case_members_attributes_in_duos {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     my %case_members_attributes = (
+        affected => [],
+        children => [],
         father   => 0,
         mother   => 0,
-        children => [],
-        affected => [],
         unknown  => [],
     );
 

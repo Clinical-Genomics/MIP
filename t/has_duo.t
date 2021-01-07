@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -50,42 +49,50 @@ diag(   q{Test has_duo from Pedigre.pm}
 my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, } );
 my %sample_info      = test_mip_hashes( { mip_hash_name => q{qc_sample_info}, } );
 
-## Given a trio
+## Given a trio where a sample id has phenotype affected
 
+## When checking if case constellation is duo and has samples with phenotype "affected"
 my $has_duo = has_duo(
     {
         active_parameter_href => \%active_parameter,
         sample_info_href      => \%sample_info,
     }
 );
-## Then return 0
-is( $has_duo, 0, q{Detect trio} );
 
-## Given a duo
+## Then return 0
+is( $has_duo, 0, q{Detected non duo constellation for trio} );
+
+## Given a duo where a sample id has phenotype affected
 @{ $active_parameter{sample_ids} } = (qw{ADM1059A1 ADM1059A2});
 
+## When checking if case constellation is duo and has samples with phenotype "affected"
 $has_duo = has_duo(
     {
         active_parameter_href => \%active_parameter,
         sample_info_href      => \%sample_info,
     }
 );
-## Then return 1
-ok( $has_duo, q{Detect duo} );
 
-## Given two samples but no affected phenotype
+## Then return 1
+ok( $has_duo, q{Detected duo constellation} );
+
 $sample_info{sample}{ADM1059A1}{phenotype} = q{unaffected};
+
+## When checking if case constellation is duo and has samples with phenotype "affected"
 $has_duo = has_duo(
     {
         active_parameter_href => \%active_parameter,
         sample_info_href      => \%sample_info,
     }
 );
+
 ## Then return 0
-is( $has_duo, 0, q{Detect not affected} );
+is( $has_duo, 0, q{Detected no samples with phenotype affected} );
 
 ## Given a single sample case
 @{ $active_parameter{sample_ids} } = (q{ADM1059A1});
+
+## When checking if case constellation is duo and has samples with phenotype "affected"
 $has_duo = has_duo(
     {
         active_parameter_href => \%active_parameter,
@@ -93,6 +100,6 @@ $has_duo = has_duo(
     }
 );
 ## Then return 0
-is( $has_duo, 0, q{Detect not trio} );
+is( $has_duo, 0, q{Detected non duo constellation for single sample} );
 
 done_testing();
