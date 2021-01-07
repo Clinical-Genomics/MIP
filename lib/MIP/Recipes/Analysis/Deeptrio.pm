@@ -152,48 +152,47 @@ sub analysis_deeptrio {
 
     my $infile_name_prefix;
 
-    my @parents  = grep { defined } @{ \%case_members_id }{qw{ father mother }};
-    my $child_id = $case_members_id{children}[0];
+    my @parents          = grep { defined } @{ \%case_members_id }{qw{ father mother }};
+    my @parents_filtered = grep { $_ ne '0' } @parents;
+    my $child_id         = $case_members_id{children}[0];
 
     my %iofile_parameter;
     my @outfile_directories;
 
   SAMPLE_ID:
-    foreach my $sample_id ( @parents, $child_id ) {
-        if ($sample_id) {
-            my %sample_bam_io = get_io_files(
-                {
-                    id             => $sample_id,
-                    file_info_href => $file_info_href,
-                    parameter_href => $parameter_href,
-                    recipe_name    => q{markduplicates},
-                    stream         => q{out},
-                }
-            );
-            $infile_name_prefix = $sample_bam_io{in}{file_name_prefix};
+    foreach my $sample_id ( @parents_filtered, $child_id ) {
+        my %sample_bam_io = get_io_files(
+            {
+                id             => $sample_id,
+                file_info_href => $file_info_href,
+                parameter_href => $parameter_href,
+                recipe_name    => q{markduplicates},
+                stream         => q{out},
+            }
+        );
+        $infile_name_prefix = $sample_bam_io{in}{file_name_prefix};
 
-            my %sample_vcf_io = (
-                %sample_bam_io,
-                parse_io_outfiles(
-                    {
-                        chain_id               => $job_id_chain,
-                        id                     => $sample_id,
-                        file_info_href         => $file_info_href,
-                        file_name_prefixes_ref => [$infile_name_prefix],
-                        outdata_dir            => $active_parameter_href->{outdata_dir},
-                        parameter_href         => $parameter_href,
-                        recipe_name            => $recipe_name,
-                    }
-                )
-            );
-            $iofile_parameter{$sample_id}{reads} =
-              $sample_bam_io{out}{file_path_prefix} . $sample_bam_io{out}{file_suffix};
-            $iofile_parameter{$sample_id}{output_gvcf} = $sample_vcf_io{out}{file_path};
-            $iofile_parameter{$sample_id}{output_vcf} =
-              $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
-            $iofile_parameter{$sample_id}{sample_name} = $sample_id;
-            push @outfile_directories, $sample_vcf_io{out}{dir_path};
-        }
+        my %sample_vcf_io = (
+            %sample_bam_io,
+            parse_io_outfiles(
+                {
+                    chain_id               => $job_id_chain,
+                    id                     => $sample_id,
+                    file_info_href         => $file_info_href,
+                    file_name_prefixes_ref => [$infile_name_prefix],
+                    outdata_dir            => $active_parameter_href->{outdata_dir},
+                    parameter_href         => $parameter_href,
+                    recipe_name            => $recipe_name,
+                }
+            )
+        );
+        $iofile_parameter{$sample_id}{reads} =
+          $sample_bam_io{out}{file_path_prefix} . $sample_bam_io{out}{file_suffix};
+        $iofile_parameter{$sample_id}{output_gvcf} = $sample_vcf_io{out}{file_path};
+        $iofile_parameter{$sample_id}{output_vcf} =
+          $sample_vcf_io{out}{file_path_prefix} . q{.vcf.gz};
+        $iofile_parameter{$sample_id}{sample_name} = $sample_id;
+        push @outfile_directories, $sample_vcf_io{out}{dir_path};
     }
 
     ## Filehandles
