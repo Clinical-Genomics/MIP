@@ -283,7 +283,7 @@ recipe_time:
     delly_call: 20
     delly_reformat: 7
     endvariantannotationblock: 2
-    expansionhunter: 2
+    expansionhunter: 3
     fastqc_ar: 10
     variant_annotation: 3
     frequency_filter: 2
