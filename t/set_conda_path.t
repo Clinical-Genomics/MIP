@@ -68,11 +68,14 @@ set_conda_path(
 ## Then the conda path supplied should be set
 is( $active_parameter{conda_path}, $conda_path, q{Set supplied conda path} );
 
-## Then the conda_prefix_path should be set
-my $expected_conda_prefix_path = catdir( $conda_path, q{envs}, $environment_name );
+## Then the conda_environment_path should be set
+my $expected_conda_environment_path = catdir( $conda_path, q{envs}, $environment_name );
 
-is( $active_parameter{conda_prefix_path},
-    $expected_conda_prefix_path, q{Set supplied conda_prefix_path} );
+is(
+    $active_parameter{conda_environment_path},
+    $expected_conda_environment_path,
+    q{Set supplied conda_environment_path}
+);
 
 ## Given no set conda_path
 delete $active_parameter{conda_path};

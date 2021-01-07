@@ -50,12 +50,12 @@ diag(   q{Test check_mip_executable from Install.pm}
 test_log( {} );
 
 ## Given no existing mip binary
-my $conda_prefix_path = q{does_not_exists};
+my $conda_environment_path = q{does_not_exists};
 
 ## When checking for executable
 my $is_not_found = check_mip_executable(
     {
-        conda_prefix_path => $conda_prefix_path,
+        conda_environment_path => $conda_environment_path,
     }
 );
 
@@ -63,13 +63,13 @@ my $is_not_found = check_mip_executable(
 ok( $is_not_found, q{Found no existing executable} );
 
 ## Given an existing mip binary
-$conda_prefix_path = catfile( $Bin, qw{ data modules miniconda envs mip_ci } );
+$conda_environment_path = catfile( $Bin, qw{ data modules miniconda envs mip_ci } );
 
 ## When checking for executable
 trap {
     check_mip_executable(
         {
-            conda_prefix_path => $conda_prefix_path,
+            conda_environment_path => $conda_environment_path,
         }
     )
 };

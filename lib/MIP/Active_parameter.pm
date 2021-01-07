@@ -1303,7 +1303,7 @@ sub remove_sample_id_from_gender {
 
 sub set_conda_path {
 
-## Function : Set path to root conda dir and the conda_prefix_path based on the root path
+## Function : Set path to root conda dir and the conda_environment_path based on the root path
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $environment_name      => MIP conda environment name
@@ -1339,7 +1339,7 @@ sub set_conda_path {
       // get_conda_path( {} );
 
     ## Set path to conda env
-    $active_parameter_href->{conda_prefix_path} =
+    $active_parameter_href->{conda_environment_path} =
       catdir( $active_parameter_href->{conda_path}, q{envs}, $environment_name );
 
     return;
