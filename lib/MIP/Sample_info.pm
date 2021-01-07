@@ -1688,7 +1688,7 @@ sub _check_and_add_to_array {
 
 ## Function  : Check if Key name is "path" and adds to @paths_ref if true.
 ## Returns   :
-## Arguments : $keyName   => Hash key
+## Arguments : $key       => Hash key
 ##           : $paths_ref => Holds the collected paths {REF}
 ##           : $value     => Hash value
 
