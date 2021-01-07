@@ -54,7 +54,7 @@ my %active_parameter;
 my $conda_path = q{a_conda_path};
 $active_parameter{conda_path} = $conda_path;
 
-## Given a set environment_name in active parameters
+## Given a conda environment_name
 my $environment_name = q{an_env_name};
 
 ## When the conda path is already set active_parameter
