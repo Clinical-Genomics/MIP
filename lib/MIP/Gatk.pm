@@ -153,7 +153,7 @@ sub get_gatk_intervals {
         },
         filehandle         => { store => \$filehandle, },
         max_cores_per_node => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr/ \A \d+ \z /sxm,
             default     => 1,
             store       => \$max_cores_per_node,
             strict_type => 1,
