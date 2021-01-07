@@ -142,8 +142,9 @@ sub analysis_gatk_baserecalibration {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes };
+    use MIP::File_info qw{ get_merged_infile_prefix };
     use MIP::Gatk qw{ get_gatk_intervals };
-    use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -921,8 +922,9 @@ sub analysis_gatk_baserecalibration_rna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes };
+    use MIP::File_info qw{ get_merged_infile_prefix };
     use MIP::Gatk qw{ get_gatk_intervals };
-    use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
