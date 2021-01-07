@@ -17,8 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ %ANALYSIS $ASTERISK $DOT $LOG_NAME $NEWLINE $SPACE $SEMICOLON $UNDERSCORE };
+use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $LOG_NAME $NEWLINE $SPACE $SEMICOLON $UNDERSCORE };
 
 BEGIN {
 
@@ -34,8 +33,7 @@ BEGIN {
 ## Constants
 Readonly my $JAVA_MEMORY_ALLOCATION      => 6;
 Readonly my $JAVA_MEMORY_RECIPE_ADDITION => 1;
-Readonly my $JAVA_GUEST_OS_MEMORY        => $ANALYSIS{JAVA_GUEST_OS_MEMORY} +
-  $JAVA_MEMORY_RECIPE_ADDITION;
+Readonly my $JAVA_GUEST_OS_MEMORY => $ANALYSIS{JAVA_GUEST_OS_MEMORY} + $JAVA_MEMORY_RECIPE_ADDITION;
 
 sub analysis_markduplicates {
 
@@ -144,13 +142,13 @@ sub analysis_markduplicates {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
-    use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
+    use MIP::File_info qw{ get_merged_infile_prefix };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Picardtools
-      qw{ picardtools_markduplicates picardtools_gatherbamfiles };
+    use MIP::Program::Picardtools qw{ picardtools_markduplicates picardtools_gatherbamfiles };
     use MIP::Program::Samtools qw{ samtools_flagstat samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
@@ -294,19 +292,17 @@ sub analysis_markduplicates {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
 
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-        my $metrics_file = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $metrics_file    = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
         picardtools_markduplicates(
             {
                 create_index     => q{true},
                 filehandle       => $xargsfilehandle,
                 infile_paths_ref => [ $infile_path{$contig} ],
-                java_jar =>
-                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                metrics_file         => $metrics_file,
+                java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_use_large_pages       => $active_parameter_href->{java_use_large_pages},
+                memory_allocation          => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                metrics_file               => $metrics_file,
                 optical_duplicate_distance =>
                   $active_parameter_href->{markduplicates_picardtools_opt_dup_dist},
                 outfile_path       => $outfile_path{$contig},
@@ -322,11 +318,7 @@ sub analysis_markduplicates {
             {
                 filehandle      => $xargsfilehandle,
                 infile_path     => $outfile_path{$contig},
-                stdoutfile_path => $outfile_path_prefix
-                  . $DOT
-                  . $contig
-                  . $UNDERSCORE
-                  . q{metric},
+                stdoutfile_path => $outfile_path_prefix . $DOT . $contig . $UNDERSCORE . q{metric},
                 stderrfile_path_append => $stderrfile_path,
             }
         );
@@ -336,7 +328,7 @@ sub analysis_markduplicates {
     ## Concatenate all metric files
     gnu_cat(
         {
-            filehandle => $filehandle,
+            filehandle       => $filehandle,
             infile_paths_ref =>
               [ $outfile_path_prefix . $DOT . $ASTERISK . $UNDERSCORE . q{metric} ],
             stdoutfile_path => $outfile_path_prefix . $UNDERSCORE . q{metric_all},
@@ -363,8 +355,7 @@ sub analysis_markduplicates {
             create_index     => q{true},
             filehandle       => $filehandle,
             infile_paths_ref => \@gather_infile_paths,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx4g},
             outfile_path         => $outfile_path_prefix . $outfile_suffix,
@@ -382,23 +373,23 @@ sub analysis_markduplicates {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile      => $outfile_name_prefix,
-                path        => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
-                recipe_name => q{markduplicates},
-                sample_id   => $sample_id,
+                infile           => $outfile_name_prefix,
+                path             => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
+                recipe_name      => q{markduplicates},
+                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -613,11 +604,10 @@ sub analysis_markduplicates_panel {
             create_index     => q{true},
             filehandle       => $filehandle,
             infile_paths_ref => [$infile_path],
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            metrics_file         => $metrics_file,
+            java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages       => $active_parameter_href->{java_use_large_pages},
+            memory_allocation          => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            metrics_file               => $metrics_file,
             optical_duplicate_distance =>
               $active_parameter_href->{markduplicates_picardtools_opt_dup_dist},
             outfile_path       => $outfile_path,
@@ -654,23 +644,23 @@ sub analysis_markduplicates_panel {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile      => $outfile_name_prefix,
-                path        => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
-                recipe_name => q{markduplicates},
-                sample_id   => $sample_id,
+                infile           => $outfile_name_prefix,
+                path             => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
+                recipe_name      => q{markduplicates},
+                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -789,13 +779,13 @@ sub analysis_markduplicates_rna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
-    use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
+    use MIP::File_info qw{ get_merged_infile_prefix };
+    use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Picardtools
-      qw{ picardtools_markduplicates picardtools_gatherbamfiles };
+    use MIP::Program::Picardtools qw{ picardtools_markduplicates picardtools_gatherbamfiles };
     use MIP::Program::Samtools qw{ samtools_flagstat samtools_index samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{
@@ -941,19 +931,17 @@ sub analysis_markduplicates_rna {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
 
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-        my $metrics_file = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $metrics_file    = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
         picardtools_markduplicates(
             {
                 create_index     => q{true},
                 filehandle       => $xargsfilehandle,
                 infile_paths_ref => [ $infile_path{$contig} ],
-                java_jar =>
-                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                metrics_file         => $metrics_file,
+                java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_use_large_pages       => $active_parameter_href->{java_use_large_pages},
+                memory_allocation          => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                metrics_file               => $metrics_file,
                 optical_duplicate_distance =>
                   $active_parameter_href->{markduplicates_picardtools_opt_dup_dist},
                 outfile_path       => $outfile_path{$contig},
@@ -969,11 +957,7 @@ sub analysis_markduplicates_rna {
             {
                 filehandle      => $xargsfilehandle,
                 infile_path     => $outfile_path{$contig},
-                stdoutfile_path => $outfile_path_prefix
-                  . $DOT
-                  . $contig
-                  . $UNDERSCORE
-                  . q{metric},
+                stdoutfile_path => $outfile_path_prefix . $DOT . $contig . $UNDERSCORE . q{metric},
                 stderrfile_path_append => $stderrfile_path,
             }
         );
@@ -983,7 +967,7 @@ sub analysis_markduplicates_rna {
     ## Concatenate all metric files
     gnu_cat(
         {
-            filehandle => $filehandle,
+            filehandle       => $filehandle,
             infile_paths_ref =>
               [ $outfile_path_prefix . $DOT . $ASTERISK . $UNDERSCORE . q{metric} ],
             stdoutfile_path => $outfile_path_prefix . $UNDERSCORE . q{metric_all},
@@ -1011,8 +995,7 @@ sub analysis_markduplicates_rna {
             create_index     => q{true},
             filehandle       => $filehandle,
             infile_paths_ref => \@gather_infile_paths,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx4g},
             outfile_path         => $outfile_path_prefix . $outfile_suffix,
@@ -1057,10 +1040,10 @@ sub analysis_markduplicates_rna {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile      => $outfile_name_prefix,
-                path        => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
-                recipe_name => q{markduplicates},
-                sample_id   => $sample_id,
+                infile           => $outfile_name_prefix,
+                path             => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
+                recipe_name      => q{markduplicates},
+                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -1088,13 +1071,13 @@ sub analysis_markduplicates_rna {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -1163,8 +1146,7 @@ sub _calculate_fraction_duplicates_for_all_metric_files {
     $regexp .= q?} ?;
 
     # Print metrics to stdout
-    $regexp .=
-      q?print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n".?;
+    $regexp .= q?print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n".?;
 
     # Print Fraction duplicates to stdout
     $regexp .= q?"Fraction Duplicates: ".$feature{dup}/$feature{map}, "\n"; ?;
@@ -1175,12 +1157,7 @@ sub _calculate_fraction_duplicates_for_all_metric_files {
     ## Sum metric over concatenated file
     print {$filehandle} $regexp . $SPACE;
     print {$filehandle} $outfile_path_prefix . $UNDERSCORE . q{metric_all} . $SPACE;
-    say   {$filehandle} q{>}
-      . $SPACE
-      . $outfile_path_prefix
-      . $UNDERSCORE
-      . q{metric}
-      . $SPACE,
+    say   {$filehandle} q{>} . $SPACE . $outfile_path_prefix . $UNDERSCORE . q{metric} . $SPACE,
       $NEWLINE;
     return;
 }

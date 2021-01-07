@@ -25,7 +25,6 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       get_io_files
-      get_merged_infile_prefix
     };
 }
 
@@ -211,40 +210,6 @@ sub get_io_files {
         }
     );
     return %{ $file_info_href->{io}{$CHAIN_MAIN}{$id}{$recipe_name} };
-}
-
-sub get_merged_infile_prefix {
-
-## Function : Get the merged infile prefix for sample id
-## Returns  : $merged_infile_prefix
-## Arguments: $file_info_href => File info hash {REF}
-##          : $sample_id      => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_info_href;
-    my $sample_id;
-
-    my $tmpl = {
-        file_info_href => {
-            required    => 1,
-            defined     => 1,
-            default     => {},
-            strict_type => 1,
-            store       => \$file_info_href
-        },
-        sample_id => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$sample_id
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return $file_info_href->{$sample_id}{merged_infile};
 }
 
 sub _inherit_upstream_io_files {
