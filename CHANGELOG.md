@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Turn off chromograph_viz for wes analysis
 - Chromograph exits gracefully on empty infile
 - Use median coverage instead of expected coverage when evaluating whether expected coverage has been reached or not [#1719](https://github.com/Clinical-Genomics/MIP/issues/1719)
+- Fixes infile error in rtg_vcfeval recipe
 
 **Tools**  
 chromograph 1.0.0 -> 1.0.1
