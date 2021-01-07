@@ -20,47 +20,9 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      set_conda_path
       set_container_bind_paths
       set_programs_for_installation
     };
-}
-
-sub set_conda_path {
-
-## Function : Set path to conda
-## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-
-    my $tmpl = {
-        active_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Environment::Path qw{ get_conda_path };
-
-    ## Get path to conda
-    $active_parameter_href->{conda_path} = $active_parameter_href->{conda_path}
-      // get_conda_path( {} );
-
-    ## Set path to conda env
-    my $environment_name = $active_parameter_href->{environment_name};
-    $active_parameter_href->{conda_prefix_path} =
-      catdir( $active_parameter_href->{conda_path}, q{envs}, $environment_name );
-
-    return;
 }
 
 sub set_programs_for_installation {
