@@ -993,7 +993,7 @@ sub get_package_env_attributes {
 sub get_package_env_cmds {
 
 ## Function : Get package environment commands
-## Returns  : @source_environment_cmds
+## Returns  : @env_method_cmds
 ## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
 ##          : $package_name          => Package name
 
