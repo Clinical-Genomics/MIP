@@ -141,7 +141,7 @@ sub build_salmon_quant_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_package_source_env_cmds get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };

@@ -41,6 +41,7 @@ BEGIN {
       get_matching_values_key
       get_not_allowed_temp_dirs
       get_package_env_attributes
+      get_package_env_cmds
       get_user_supplied_pedigree_parameter
       parse_infiles
       parse_recipe_resources
@@ -988,6 +989,70 @@ sub get_package_env_attributes {
         return $env_name, $env_method;
     }
     return;
+}
+
+sub get_package_env_cmds {
+
+## Function : Get package environment commands
+## Returns  : @env_method_cmds
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $package_name          => Package name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $package_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        package_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$package_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ get_package_env_attributes };
+    use MIP::Environment::Manager qw{ get_env_method_cmds };
+
+    my ( $env_name, $env_method ) = get_package_env_attributes(
+        {
+            load_env_href => $active_parameter_href->{load_env},
+            package_name  => $package_name,
+        }
+    );
+
+    ## Could not find recipe within env
+    if ( not $env_name ) {
+
+        ## Fall back to MIPs MAIN env
+        ( $env_name, $env_method ) = get_package_env_attributes(
+            {
+                load_env_href => $active_parameter_href->{load_env},
+                package_name  => q{mip},
+            }
+        );
+    }
+
+    ## Get env load command
+    my @env_method_cmds = get_env_method_cmds(
+        {
+            action     => q{load},
+            env_name   => $env_name,
+            env_method => $env_method,
+        }
+    );
+    return @env_method_cmds;
 }
 
 sub get_user_supplied_pedigree_parameter {
