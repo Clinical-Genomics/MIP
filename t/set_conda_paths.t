@@ -28,7 +28,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Active_parameter} => [qw{ set_conda_path }],
+        q{MIP::Active_parameter} => [qw{ set_conda_paths }],
         q{MIP::Test::Fixtures}   => [qw{ test_log }],
 
     );
@@ -37,9 +37,9 @@ BEGIN {
 }
 
 use MIP::Environment::Path qw{ get_conda_path };
-use MIP::Active_parameter qw{ set_conda_path };
+use MIP::Active_parameter qw{ set_conda_paths };
 
-diag(   q{Test set_conda_path from Active_parameter.pm}
+diag(   q{Test set_conda_paths from Active_parameter.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,7 +58,7 @@ $active_parameter{conda_path} = $conda_path;
 my $environment_name = q{an_env_name};
 
 ## When the conda path is already set active_parameter
-set_conda_path(
+set_conda_paths(
     {
         active_parameter_href => \%active_parameter,
         environment_name      => $environment_name,
@@ -81,7 +81,7 @@ is(
 delete $active_parameter{conda_path};
 
 ## When the conda path is not already set active_parameter
-set_conda_path(
+set_conda_paths(
     {
         active_parameter_href => \%active_parameter,
         environment_name      => $environment_name,

@@ -12,7 +12,7 @@ use warnings qw{ FATAL utf8 };
 use warnings;
 
 ## MIPs lib/
-use MIP::Active_parameter qw{ set_conda_path update_to_absolute_path };
+use MIP::Active_parameter qw{ set_conda_paths update_to_absolute_path };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants qw{ $COLON $MIP_VERSION $SPACE };
 use MIP::Environment::Container qw{ parse_containers };
@@ -123,7 +123,7 @@ sub mip_install {
     );
 
     ## Set path to conda and conda env path
-    set_conda_path(
+    set_conda_paths(
         {
             active_parameter_href => $active_parameter_href,
             environment_name      => $active_parameter_href->{environment_name},

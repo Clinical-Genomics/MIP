@@ -46,7 +46,7 @@ BEGIN {
       parse_recipe_resources
       parse_vep_plugin
       remove_sample_id_from_gender
-      set_conda_path
+      set_conda_paths
       set_default_analysis_type
       set_default_human_genome
       set_default_infile_dirs
@@ -1301,7 +1301,7 @@ sub remove_sample_id_from_gender {
     return;
 }
 
-sub set_conda_path {
+sub set_conda_paths {
 
 ## Function : Set path to root conda dir and the conda_environment_path based on the root path
 ## Returns  :
