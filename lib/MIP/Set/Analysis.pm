@@ -114,6 +114,9 @@ sub set_recipe_deepvariant {
     use MIP::Recipes::Analysis::Deepvariant qw{ analysis_deepvariant };
     use MIP::Recipes::Analysis::Deeptrio qw{ analysis_deeptrio };
 
+    $analysis_recipe_href->{deepvariant} = \&analysis_deepvariant;
+    $analysis_recipe_href->{deeptrio}    = undef;
+
   CONSTELLATION_STATE:
     foreach my $constellation_state (qw{ has_duo has_trio }) {
 

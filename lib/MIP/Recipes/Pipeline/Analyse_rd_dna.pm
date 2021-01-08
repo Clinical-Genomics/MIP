@@ -555,7 +555,7 @@ sub pipeline_analyse_rd_dna {
         : undef,                                                        # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
         deeptrio                    => undef,
-        deepvariant                 => \&analysis_deepvariant,
+        deepvariant                 => undef,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
