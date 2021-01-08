@@ -58,8 +58,8 @@ sub install_mip_scripts {
 
     Readonly my $MOVE_DIRS_UP => 5;
 
-    my $conda_prefix_path = $active_parameter_href->{conda_prefix_path};
-    my @select_programs   = @{ $active_parameter_href->{select_programs} };
+    my $conda_environment_path = $active_parameter_href->{conda_environment_path};
+    my @select_programs        = @{ $active_parameter_href->{select_programs} };
 
     return if ( none { $_ eq q{mip_scripts} } @select_programs );
 
@@ -104,7 +104,7 @@ sub install_mip_scripts {
     # mip is proxy for all mip scripts
     check_mip_executable(
         {
-            conda_prefix_path => $conda_prefix_path,
+            conda_environment_path => $conda_environment_path,
         }
     );
 
@@ -112,7 +112,7 @@ sub install_mip_scripts {
   DIRECTORY:
     foreach my $directory ( keys %mip_sub_script ) {
 
-        path( catdir( $conda_prefix_path, q{bin}, $directory ) )->mkpath();
+        path( catdir( $conda_environment_path, q{bin}, $directory ) )->mkpath();
     }
 
   DIRECTORY:
@@ -121,8 +121,8 @@ sub install_mip_scripts {
         my @cp_cmds = gnu_cp(
             {
                 force        => 1,
-                infile_path  => catdir( $mip_dir_path,      $directory ),
-                outfile_path => catdir( $conda_prefix_path, q{bin} ),
+                infile_path  => catdir( $mip_dir_path,           $directory ),
+                outfile_path => catdir( $conda_environment_path, q{bin} ),
                 recursive    => 1,
             }
         );
@@ -146,7 +146,7 @@ sub install_mip_scripts {
     foreach my $script (@mip_scripts) {
 
         my $src_path = catfile( $mip_dir_path, $script );
-        my $dst_path = catfile( $conda_prefix_path, q{bin}, $script );
+        my $dst_path = catfile( $conda_environment_path, q{bin}, $script );
         path($src_path)->copy($dst_path);
         path($dst_path)->chmod(q{a+x});
     }
@@ -158,7 +158,7 @@ sub install_mip_scripts {
         foreach my $script ( @{ $mip_sub_script{$directory} } ) {
 
             my $src_path = catfile( $mip_dir_path, $directory, $script );
-            my $dst_path = catfile( $conda_prefix_path, q{bin}, $directory, $script );
+            my $dst_path = catfile( $conda_environment_path, q{bin}, $directory, $script );
 
             path($src_path)->copy($dst_path);
             path($dst_path)->chmod(q{a+x});

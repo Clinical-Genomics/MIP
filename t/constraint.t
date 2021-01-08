@@ -66,6 +66,20 @@ my $file_exist = catfile( $Bin, qw{ constraint.t } );
 ## Then return true
 is( $constraint{file_exists}->($file_exist), 1, q{File exists - file exist} );
 
+## Given a not executable file
+my $file_is_not_executable = catfile( $Bin, qw{ constraint.t } );
+
+## Then return false
+is( $constraint{file_is_executable}->($file_is_not_executable),
+    undef, q{File is executable - file is not executable} );
+
+## Given an executable file
+my $file_is_executable = catfile( $Bin, qw{ data modules miniconda envs mip_ci bin mip} );
+
+## Then return true
+is( $constraint{file_is_executable}->($file_is_executable),
+    1, q{File is executable - file is executable} );
+
 ## Given a not gzipped file
 my $filename = catfile(q{text.txt});
 

@@ -33,8 +33,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Install::Mip_scripts} => [qw{ install_mip_scripts }],
-        q{MIP::Test::Fixtures} =>
-          [qw{ test_constants test_log test_mip_hashes }],
+        q{MIP::Test::Fixtures}                => [qw{ test_constants test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -54,11 +53,10 @@ test_log( { no_screen => 1, } );
 test_constants( {} );
 
 ## Given install parameters
-my %active_parameter =
-  test_mip_hashes( { mip_hash_name => q{install_active_parameter}, } );
-my $conda_prefix_path = catdir( $Bin, qw{data modules miniconda envs install_test} );
+my %active_parameter       = test_mip_hashes( { mip_hash_name => q{install_active_parameter}, } );
+my $conda_environment_path = catdir( $Bin, qw{data modules miniconda envs install_test} );
 
-$active_parameter{conda_prefix_path} = $conda_prefix_path;
+$active_parameter{conda_environment_path} = $conda_environment_path;
 
 my $is_ok = install_mip_scripts(
     {
@@ -90,6 +88,6 @@ trap {
 is( $trap->leaveby, q{die}, q{Error in case of install failure} );
 like( $trap->die, qr/Error \s+ message /xms, q{Print error} );
 
-path($conda_prefix_path)->remove_tree;
+path($conda_environment_path)->remove_tree;
 
 done_testing();

@@ -29,31 +29,36 @@ sub check_mip_executable {
 
 ## Function : Check if mip installation exists and is executable
 ## Returns  :
-##          : $conda_prefix_path => Conda prefix path
+##          : $conda_environment_path => Conda environment name path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $conda_prefix_path;
+    my $conda_environment_path;
 
     my $tmpl = {
-        conda_prefix_path => {
+        conda_environment_path => {
             defined     => 1,
             required    => 1,
-            store       => \$conda_prefix_path,
+            store       => \$conda_environment_path,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Validate::Data qw{ %constraint };
+
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    return 1 if ( not -x catfile( $conda_prefix_path, qw{ bin mip } ) );
+    my $mip_executable = catfile( $conda_environment_path, qw{ bin mip } );
+
+    return 1 if ( not $constraint{file_is_executable}->($mip_executable) );
 
     $log->info(q{MIP is already installed in the specified conda environment.});
 
     $log->warn(q{This will overwrite the current installation of MIP});
+
     return;
 }
 

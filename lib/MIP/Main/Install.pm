@@ -12,7 +12,7 @@ use warnings qw{ FATAL utf8 };
 use warnings;
 
 ## MIPs lib/
-use MIP::Active_parameter qw{ update_to_absolute_path };
+use MIP::Active_parameter qw{ set_conda_paths update_to_absolute_path };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants qw{ $COLON $MIP_VERSION $SPACE };
 use MIP::Environment::Container qw{ parse_containers };
@@ -20,7 +20,6 @@ use MIP::Io::Read qw{ read_from_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{ set_default };
 use MIP::Pipeline qw{ run_install_pipeline };
-use MIP::Set::Parameter qw{ set_conda_path };
 
 BEGIN {
     use base qw{ Exporter };
@@ -112,25 +111,22 @@ sub mip_install {
         }
     );
     $log->info( q{MIP Version: } . $MIP_VERSION );
-    $log->info( q{Writing log messages to}
-          . $COLON
-          . $SPACE
-          . $active_parameter_href->{log_file} );
+    $log->info( q{Writing log messages to} . $COLON . $SPACE . $active_parameter_href->{log_file} );
 
     ## Set default from parameter hash to active_parameter for uninitilized parameters
     set_default(
         {
-            active_parameter_href => $active_parameter_href,
-            custom_default_parameters_ref =>
-              $parameter_href->{custom_default_parameters}{default},
-            parameter_href => $parameter_href,
+            active_parameter_href         => $active_parameter_href,
+            custom_default_parameters_ref => $parameter_href->{custom_default_parameters}{default},
+            parameter_href                => $parameter_href,
         }
     );
 
-    ## Set path to conda
-    set_conda_path(
+    ## Set path to conda and conda env path
+    set_conda_paths(
         {
             active_parameter_href => $active_parameter_href,
+            environment_name      => $active_parameter_href->{environment_name},
         }
     );
 
