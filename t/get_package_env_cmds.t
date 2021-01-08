@@ -16,15 +16,10 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+use MIP::Constants qw{ $COMMA $SPACE };
 
 BEGIN {
 
@@ -32,16 +27,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Get::Parameter} => [qw{ get_package_source_env_cmds }],
-);
+    my %perl_module = ( q{MIP::Active_parameter} => [qw{ get_package_env_cmds }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Parameter qw{ get_package_source_env_cmds };
+use MIP::Active_parameter qw{ get_package_env_cmds };
 
-diag(   q{Test get_package_source_env_cmds from Parameter.pm}
+diag(   q{Test get_package_env_cmds from Active_parameter.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -49,31 +42,33 @@ diag(   q{Test get_package_source_env_cmds from Parameter.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a program, when no prior to load cmd
+## Given a program
 my $program_name = q{genmod};
 
+## Given a load_env hash and a method
 my %active_parameter = (
     load_env => {
         q{mip_pyv3.6} => {
             cnvnator      => undef,
-            $program_name => undef,
             method        => q{conda},
+            $program_name => undef,
         },
     },
 );
 
-my @program_source_environment_cmds = get_package_source_env_cmds(
+## When no prior to load cmd
+my @program_environment_cmds = get_package_env_cmds(
     {
         active_parameter_href => \%active_parameter,
         package_name          => $program_name,
     }
 );
 
-## Then return only load command
+## Then return command to activate environment for package
 is_deeply(
-    \@program_source_environment_cmds,
+    \@program_environment_cmds,
     [qw{ conda activate mip_pyv3.6 }],
-    q{Got package source environment command}
+    q{Got package environment command}
 );
 
 done_testing();
