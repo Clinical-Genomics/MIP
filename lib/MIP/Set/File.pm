@@ -1,5 +1,6 @@
 package MIP::Set::File;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -22,7 +23,7 @@ BEGIN {
     require Exporter;
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ set_io_files set_merged_infile_prefix };
+    our @EXPORT_OK = qw{ set_io_files };
 }
 
 sub set_io_files {
@@ -174,50 +175,6 @@ sub set_io_files {
         );
         return;
     }
-    return;
-}
-
-sub set_merged_infile_prefix {
-
-## Function : Set the merged infile prefix for sample id
-## Returns  :
-## Arguments: $file_info_href       => File info hash {REF}
-##          : $merged_infile_prefix => Merged infile prefix
-##          : $sample_id            => Sample id
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_info_href;
-    my $merged_infile_prefix;
-    my $sample_id;
-
-    my $tmpl = {
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        merged_infile_prefix => {
-            defined     => 1,
-            required    => 1,
-            store       => \$merged_infile_prefix,
-            strict_type => 1,
-        },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    $file_info_href->{$sample_id}{merged_infile} = $merged_infile_prefix;
-
     return;
 }
 

@@ -19,15 +19,13 @@ use MooseX::Types::Structured qw{ Dict Optional };
 
 ## MIPs lib/
 use MIP::Definition qw{ get_parameter_from_definition_files };
-use MIP::Get::Parameter qw{ get_install_parameter_attribute };
 use MIP::Main::Install qw{ mip_install };
 
 extends(qw{ MIP::Cli::Mip });
 
 command_short_description(q{MIP install command});
 
-command_long_description(
-    q{Caches the images used by the Mutation Identification Pipeline (MIP)});
+command_long_description(q{Caches the images used by the Mutation Identification Pipeline (MIP)});
 
 command_usage(q{mip <install> [options]});
 
@@ -51,8 +49,7 @@ sub run {
     if ( not $active_parameter{config_file} ) {
 
         ## Use default
-        $active_parameter{config_file} =
-          catfile( $Bin, qw{ templates mip_install_config.yaml } );
+        $active_parameter{config_file} = catfile( $Bin, qw{ templates mip_install_config.yaml } );
     }
 
     ## Start generating the installation script
@@ -170,11 +167,10 @@ sub _build_usage {
 
     option(
         q{test_mode} => (
-            documentation =>
-              q{Run MIP in test mode, i.e. not launching any child processes},
-            is       => q{rw},
-            isa      => Bool,
-            required => 0,
+            documentation => q{Run MIP in test mode, i.e. not launching any child processes},
+            is            => q{rw},
+            isa           => Bool,
+            required      => 0,
         ),
     );
 
@@ -202,9 +198,8 @@ sub _build_usage {
 
     option(
         q{vep_cache_dir} => (
-            cmd_flag => q{vep_cache_dir},
-            cmd_tags =>
-              [q{Default: <reference_dir>/ensembl-tools-release-<version>/cache}],
+            cmd_flag      => q{vep_cache_dir},
+            cmd_tags      => [q{Default: <reference_dir>/ensembl-tools-release-<version>/cache}],
             documentation => q{VEP's cache directory},
             is            => q{rw},
             isa           => Str,
