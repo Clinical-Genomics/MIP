@@ -521,7 +521,7 @@ deeptrio:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: _deepvar
+  file_tag: _deeptrio
   outfile_suffix: ".g.vcf.gz"
   program_executables:
     - run_deeptrio
