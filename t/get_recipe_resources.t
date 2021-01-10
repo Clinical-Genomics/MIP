@@ -30,16 +30,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::Parameter} => [qw{ get_recipe_resources }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }],
+        q{MIP::Active_parameter} => [qw{ get_recipe_resources }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Get::Parameter qw{ get_recipe_resources };
+use MIP::Active_parameter qw{ get_recipe_resources };
 
-diag(   q{Test get_recipe_resources from Parameter.pm}
+diag(   q{Test get_recipe_resources from Active_parameter.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -47,7 +47,12 @@ diag(   q{Test get_recipe_resources from Parameter.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-test_log( {} );
+## Constants
+Readonly my $CORE_MEMORY        => 5;
+Readonly my $DEFAULT_MEMORY     => 175;
+Readonly my $RECIPE_CORE_MEMORY => 1;
+
+test_log( { no_screen => 1, } );
 
 ## Given a recipe name and active parameter hash
 my %active_parameter =
@@ -74,6 +79,7 @@ is_deeply( \%recipe_resource, \%expected, q{Got recipe resource hash} );
 ## Given a request for a specific resource
 RESOURCE:
 foreach my $resource ( keys %expected ) {
+
     my $recipe_resource = get_recipe_resources(
         {
             active_parameter_href => \%active_parameter,
@@ -98,7 +104,6 @@ my $recipe_memory = get_recipe_resources(
 );
 
 ## Then return 5 gigs times the number of cores
-Readonly my $DEFAULT_MEMORY => 175;
 is( $recipe_memory, $DEFAULT_MEMORY, q{Got default memory} );
 
 ## Given a recipe that lacks memory and core specification
@@ -113,7 +118,6 @@ $recipe_memory = get_recipe_resources(
 );
 
 ## Then return the core ram memory
-Readonly my $CORE_MEMORY => 5;
 is( $recipe_memory, $CORE_MEMORY, q{Got core memory} );
 
 ## Given a recipe that lacks core specification but has a memory specification
@@ -128,7 +132,6 @@ $recipe_memory = get_recipe_resources(
 );
 
 ## Then return the recipe ram memory
-Readonly my $CORE_MEMORY_1 => 1;
-is( $recipe_memory, $CORE_MEMORY_1, q{Got core memory} );
+is( $recipe_memory, $RECIPE_CORE_MEMORY, q{Got core memory} );
 
 done_testing();

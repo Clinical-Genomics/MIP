@@ -62,7 +62,8 @@ sub parse_recipe_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Parameter qw{ get_recipe_attributes };
 
     my %recipe_resource = get_recipe_resources(
         {
