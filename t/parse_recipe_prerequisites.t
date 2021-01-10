@@ -46,7 +46,7 @@ diag(   q{Test parse_recipe_prerequisites from Recipe.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-test_log( {} );
+test_log( { no_screen => 1, } );
 
 ## Given a recipe name and active parameter hash
 my $recipe_name = q{deepvariant};
