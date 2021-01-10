@@ -157,7 +157,7 @@ sub build_rtg_prerequisites {
         {
             active_parameter_href => $active_parameter_href,
             parameter_href        => $parameter_href,
-            recipe_name           => q{mip},
+            recipe_name           => $recipe_name,
         }
     );
 
