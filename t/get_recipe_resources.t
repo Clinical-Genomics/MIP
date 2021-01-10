@@ -72,6 +72,7 @@ my %expected = (
     gpu_number   => 1,
     load_env_ref => [qw{ conda activate test }],
     memory       => 175,
+    mode         => 2,
     time         => 10,
 );
 is_deeply( \%recipe_resource, \%expected, q{Got recipe resource hash} );

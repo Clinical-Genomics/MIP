@@ -74,6 +74,7 @@ my %expected_recipe = (
     job_id_chain => q{TEST},
     load_env_ref => [qw{ conda activate test }],
     memory       => 175,
+    mode         => 2,
     time         => 10,
 );
 

@@ -1086,7 +1086,7 @@ sub get_recipe_resources {
             strict_type => 1,
         },
         resource => {
-            allow       => [qw{ core_number gpu_number load_env_ref memory time }],
+            allow       => [qw{ core_number gpu_number load_env_ref memory mode time }],
             store       => \$resource,
             strict_type => 1,
         },
@@ -1127,6 +1127,7 @@ sub get_recipe_resources {
         gpu_number   => $active_parameter_href->{recipe_gpu_number}{$recipe_name},
         load_env_ref => \@environment_cmds,
         memory       => $memory,
+        mode         => $active_parameter_href->{$recipe_name},
         time         => $active_parameter_href->{recipe_time}{$recipe_name},
     );
 
