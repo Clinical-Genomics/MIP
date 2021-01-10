@@ -141,10 +141,10 @@ sub build_rtg_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Rtg qw{ rtg_format };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Build::Human_genome_prerequisites qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -153,11 +153,10 @@ sub build_rtg_prerequisites {
     Readonly my $PROCESSING_TIME   => 3;
 
     ## Unpack parameters
-    my $job_id_chain    = $parameter_href->{$recipe_name}{chain};
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => q{mip},
         }
     );
@@ -180,7 +179,7 @@ sub build_rtg_prerequisites {
             process_time                    => $PROCESSING_TIME,
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            source_environment_commands_ref => $recipe{load_env_ref},
         }
     );
 
@@ -243,7 +242,7 @@ sub build_rtg_prerequisites {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         submit_recipe(
             {
@@ -252,7 +251,7 @@ sub build_rtg_prerequisites {
                 case_id            => $case_id,
                 job_id_href        => $job_id_href,
                 log                => $log,
-                job_id_chain       => $job_id_chain,
+                job_id_chain       => $recipe{job_id_chain},
                 recipe_file_path   => $recipe_file_path,
                 sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile => $active_parameter_href->{submission_profile},

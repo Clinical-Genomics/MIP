@@ -129,12 +129,12 @@ sub analysis_plink {
 
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_sort bcftools_norm bcftools_view };
     use MIP::Program::Plink
       qw{ plink_calculate_inbreeding plink_check_sex_chroms plink_create_mibs plink_fix_fam_ped_map_freq plink_sex_check plink_variant_pruning };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -161,18 +161,11 @@ sub analysis_plink {
     my $consensus_analysis_type        = $parameter_href->{cache}{consensus_analysis_type};
     my $human_genome_reference_version = $file_info_href->{human_genome_reference_version};
     my $human_genome_reference_source  = $file_info_href->{human_genome_reference_source};
-    my $job_id_chain                   = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my @sample_ids      = @{ $active_parameter_href->{sample_ids} };
-    my %recipe_resource = get_recipe_resources(
+    my @sample_ids                     = @{ $active_parameter_href->{sample_ids} };
+    my %recipe                         = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -221,7 +214,7 @@ sub analysis_plink {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
@@ -246,12 +239,12 @@ sub analysis_plink {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
+            core_number           => $recipe{core_number},
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
         }
@@ -310,7 +303,7 @@ sub analysis_plink {
     );
     print {$filehandle} $PIPE . $SPACE;
 
-    my $sort_memory = $recipe_resource{memory} - 2;
+    my $sort_memory = $recipe{memory} - 2;
     bcftools_sort(
         {
             filehandle     => $filehandle,
@@ -479,7 +472,7 @@ sub analysis_plink {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         while ( my ( $outfile_tag, $outfile_path ) = each %outfile_path ) {
 
@@ -499,7 +492,7 @@ sub analysis_plink {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
                 dependency_method                 => q{case_to_island},
-                job_id_chain                      => $job_id_chain,
+                job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
                 log                               => $log,

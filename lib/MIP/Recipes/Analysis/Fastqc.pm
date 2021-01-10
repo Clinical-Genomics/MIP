@@ -130,7 +130,7 @@ sub analysis_fastqc {
     use MIP::Environment::Cluster qw{ check_max_core_number };
     use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
@@ -158,36 +158,28 @@ sub analysis_fastqc {
     my @infile_paths         = @{ $io{in}{file_paths} };
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe_resource{core_number};
+    my $core_number = $recipe{core_number};
 
     ## Outpaths
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
     my @outfile_paths =
-      map {
-        catdir( $outsample_directory, $_ . $UNDERSCORE . q{fastqc}, q{fastqc_data.txt} )
-      } @infile_name_prefixes;
+      map { catdir( $outsample_directory, $_ . $UNDERSCORE . q{fastqc}, q{fastqc_data.txt} ) }
+      @infile_name_prefixes;
 
     ## Set and get the io files per chain, id and stream
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
+                chain_id       => $recipe{job_id_chain},
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 file_paths_ref => \@outfile_paths,
@@ -246,7 +238,7 @@ sub analysis_fastqc {
     my $memory_allocation = update_memory_allocation(
         {
             parallel_processes        => $core_number,
-            process_memory_allocation => $recipe_resource{core_number},
+            process_memory_allocation => $recipe{core_number},
             node_ram_memory           => $active_parameter_href->{node_ram_memory},
         }
     );
@@ -260,7 +252,7 @@ sub analysis_fastqc {
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $memory_allocation,
-            process_time          => $recipe_resource{time},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -306,7 +298,7 @@ sub analysis_fastqc {
         say {$filehandle} q{&}, $NEWLINE;
 
         ## Collect QC metadata info for active recipe for later use
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             set_recipe_outfile_in_sample_info(
                 {
@@ -324,17 +316,17 @@ sub analysis_fastqc {
 
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                dependency_method    => q{sample_to_island},
-                case_id              => $case_id,
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                dependency_method                 => q{sample_to_island},
+                case_id                           => $case_id,
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

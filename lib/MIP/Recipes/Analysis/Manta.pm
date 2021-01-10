@@ -126,7 +126,7 @@ sub analysis_manta {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Coreutils qw{ gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -142,26 +142,19 @@ sub analysis_manta {
 
     ## Unpack parameters
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe                  = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe_resource{core_number};
+    my $core_number = $recipe{core_number};
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
         {
-            chain_id               => $job_id_chain,
+            chain_id               => $recipe{job_id_chain},
             id                     => $case_id,
             file_info_href         => $file_info_href,
             file_name_prefixes_ref => [$case_id],
@@ -187,8 +180,8 @@ sub analysis_manta {
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -198,9 +191,7 @@ sub analysis_manta {
     ## Collect infiles for all sample_ids to enable migration to temporary directory
     my @manta_infile_paths;
   SAMPLE_ID:
-    while ( my ( $sample_id_index, $sample_id ) =
-        each @{ $active_parameter_href->{sample_ids} } )
-    {
+    while ( my ( $sample_id_index, $sample_id ) = each @{ $active_parameter_href->{sample_ids} } ) {
 
         ## Get the io infiles per chain and id
         my %sample_io = get_io_files(
@@ -246,13 +237,12 @@ sub analysis_manta {
 
     manta_config(
         {
-            call_regions_file_path =>
-              $active_parameter_href->{manta_call_regions_file_path},
-            exome_analysis     => $is_exome_analysis,
-            filehandle         => $filehandle,
-            infile_paths_ref   => \@manta_infile_paths,
-            outdirectory_path  => $outdir_path,
-            referencefile_path => $referencefile_path,
+            call_regions_file_path => $active_parameter_href->{manta_call_regions_file_path},
+            exome_analysis         => $is_exome_analysis,
+            filehandle             => $filehandle,
+            infile_paths_ref       => \@manta_infile_paths,
+            outdirectory_path      => $outdir_path,
+            referencefile_path     => $referencefile_path,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -268,8 +258,7 @@ sub analysis_manta {
     );
     say {$filehandle} $NEWLINE;
 
-    my $manta_temp_outfile_path =
-      catfile( $outdir_path, qw{ results variants diploidSV.vcf.gz } );
+    my $manta_temp_outfile_path = catfile( $outdir_path, qw{ results variants diploidSV.vcf.gz } );
 
     ## Perl wrapper for writing gzip recipe to $filehandle
     gzip(
@@ -285,7 +274,7 @@ sub analysis_manta {
 
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -296,13 +285,13 @@ sub analysis_manta {
         );
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

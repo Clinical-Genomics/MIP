@@ -141,11 +141,11 @@ sub build_star_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Star qw{ star_genome_generate };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -154,14 +154,11 @@ sub build_star_prerequisites {
     Readonly my $PROCESSING_TIME   => 3;
     Readonly my $READ_LENGTH       => 150;
 
-    ## Set recipe mode
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    ## Unpack parameters
-    my $job_id_chain    = $parameter_href->{$recipe_name}{chain};
-    my %recipe_resource = get_recipe_resources(
+## Unpack parameters
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -181,11 +178,11 @@ sub build_star_prerequisites {
             directory_id                    => $case_id,
             core_number                     => $NUMBER_OF_CORES,
             job_id_href                     => $job_id_href,
-            memory_allocation               => $recipe_resource{memory},
+            memory_allocation               => $recipe{memory},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
             process_time                    => $PROCESSING_TIME,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            source_environment_commands_ref => $recipe{load_env_ref},
         }
     );
 
@@ -238,7 +235,7 @@ sub build_star_prerequisites {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         submit_recipe(
             {
@@ -247,7 +244,7 @@ sub build_star_prerequisites {
                 case_id            => $case_id,
                 job_id_href        => $job_id_href,
                 log                => $log,
-                job_id_chain       => $job_id_chain,
+                job_id_chain       => $recipe{job_id_chain},
                 recipe_file_path   => $recipe_file_path,
                 sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile => $active_parameter_href->{submission_profile},

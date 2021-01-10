@@ -129,10 +129,10 @@ sub analysis_salmon_quant {
 
     use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources};
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Salmon qw{ salmon_quant };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -154,34 +154,27 @@ sub analysis_salmon_quant {
         }
     );
     my @infile_paths = @{ $io{in}{file_paths} };
-    my $recipe_mode  = $active_parameter_href->{$recipe_name};
     my $referencefile_dir_path =
         $active_parameter_href->{salmon_quant_reference_genome}
       . $file_info_href->{salmon_quant_reference_genome}[0];
-    my %rec_atr = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $job_id_chain    = $rec_atr{chain};
-    my %recipe_resource = get_recipe_resources(
+
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
     ## Set outfile
-    my $recipe_dir =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
-    my $file_path = catfile( $recipe_dir, $rec_atr{file_tag} . $rec_atr{outfile_suffix} );
+    my $recipe_dir = catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
+    my $file_path  = catfile( $recipe_dir, $recipe{file_tag} . $recipe{outfile_suffix} );
 
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
+                chain_id       => $recipe{job_id_chain},
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 file_paths_ref => [$file_path],
@@ -204,14 +197,14 @@ sub analysis_salmon_quant {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
+            core_number           => $recipe{core_number},
             directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
+            memory_allocation     => $recipe{memory},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
-            process_time          => $recipe_resource{time},
+            process_time          => $recipe{time},
             temp_directory        => $temp_directory,
         }
     );
@@ -279,7 +272,7 @@ sub analysis_salmon_quant {
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -304,13 +297,13 @@ sub analysis_salmon_quant {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

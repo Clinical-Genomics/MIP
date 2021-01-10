@@ -56,7 +56,11 @@ my %active_parameter =
 ## Given a parameter hash
 my %parameter =
   test_mip_hashes( { mip_hash_name => q{define_parameter}, recipe_name => $recipe_name, } );
-$parameter{$recipe_name}{chain} = q{TEST};
+
+## Given a recipe with a chain, file_tag and outfile_suffix
+$parameter{$recipe_name}{chain}          = q{TEST};
+$parameter{$recipe_name}{file_tag}       = q{_deepvar};
+$parameter{$recipe_name}{outfile_suffix} = q{.g.vcf.gz};
 
 ## When parsing recipe prerequisites
 my %recipe = parse_recipe_prerequisites(
@@ -69,13 +73,15 @@ my %recipe = parse_recipe_prerequisites(
 
 ## Then return recipe prerequisites hash
 my %expected_recipe = (
-    core_number  => 35,
-    gpu_number   => 1,
-    job_id_chain => q{TEST},
-    load_env_ref => [qw{ conda activate test }],
-    memory       => 175,
-    mode         => 2,
-    time         => 10,
+    core_number    => 35,
+    file_tag       => q{_deepvar},
+    gpu_number     => 1,
+    job_id_chain   => q{TEST},
+    load_env_ref   => [qw{ conda activate test }],
+    memory         => 175,
+    mode           => 2,
+    outfile_suffix => q{.g.vcf.gz},
+    time           => 10,
 );
 
 is_deeply( \%recipe, \%expected_recipe, q{Got recipe prerequisites hash} );

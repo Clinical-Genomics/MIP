@@ -48,7 +48,6 @@ sub parse_recipe_prerequisites {
         parameter_href => {
             default     => {},
             defined     => 1,
-            required    => 1,
             store       => \$parameter_href,
             strict_type => 1,
         },
@@ -71,13 +70,24 @@ sub parse_recipe_prerequisites {
             recipe_name           => $recipe_name,
         }
     );
-    $recipe_resource{job_id_chain} = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
+
+    return %recipe_resource if ( not %{$parameter_href} );
+
+    my %attribute_map = (
+        chain          => q{job_id_chain},
+        file_tag       => q{file_tag},
+        outfile_suffix => q{outfile_suffix},
     );
+    while ( my ( $attribute, $resource ) = each %attribute_map ) {
+
+        $recipe_resource{$resource} = get_recipe_attributes(
+            {
+                parameter_href => $parameter_href,
+                recipe_name    => $recipe_name,
+                attribute      => $attribute,
+            }
+        );
+    }
 
     return %recipe_resource;
 }
