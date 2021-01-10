@@ -78,13 +78,14 @@ sub parse_recipe_prerequisites {
         file_tag       => q{file_tag},
         outfile_suffix => q{outfile_suffix},
     );
+  ATTRIBUTE:
     while ( my ( $attribute, $resource ) = each %attribute_map ) {
 
         $recipe_resource{$resource} = get_recipe_attributes(
             {
+                attribute      => $attribute,
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
-                attribute      => $attribute,
             }
         );
     }
