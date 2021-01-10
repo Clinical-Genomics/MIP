@@ -50,8 +50,9 @@ diag(   q{Test get_recipe_resources from Parameter.pm}
 test_log( {} );
 
 ## Given a recipe name and active parameter hash
-my %active_parameter = test_mip_hashes( { mip_hash_name => q{active_parameter}, recipe_name => q{deepvariant}, } );
-my $recipe_name      = q{deepvariant};
+my %active_parameter =
+  test_mip_hashes( { mip_hash_name => q{active_parameter}, recipe_name => q{deepvariant}, } );
+my $recipe_name = q{deepvariant};
 
 my %recipe_resource = get_recipe_resources(
     {
@@ -64,9 +65,9 @@ my %recipe_resource = get_recipe_resources(
 my %expected = (
     core_number  => 35,
     gpu_number   => 1,
+    load_env_ref => [qw{ conda activate test }],
     memory       => 175,
     time         => 10,
-    load_env_ref => [qw{conda activate test }],
 );
 is_deeply( \%recipe_resource, \%expected, q{Got recipe resource hash} );
 
@@ -129,4 +130,5 @@ $recipe_memory = get_recipe_resources(
 ## Then return the recipe ram memory
 Readonly my $CORE_MEMORY_1 => 1;
 is( $recipe_memory, $CORE_MEMORY_1, q{Got core memory} );
+
 done_testing();

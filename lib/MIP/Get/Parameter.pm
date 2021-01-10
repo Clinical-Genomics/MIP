@@ -50,20 +50,17 @@ sub get_recipe_attributes {
             strict_type => 1,
         },
         recipe_name => {
-            required    => 1,
             defined     => 1,
-            store       => \$recipe_name,
+            required    => 1,
             strict_type => 1,
+            store       => \$recipe_name,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Get attribute value
-    if ( defined $attribute && $attribute ) {
-
-        return $parameter_href->{$recipe_name}{$attribute};
-    }
+    return $parameter_href->{$recipe_name}{$attribute} if ( defined $attribute and $attribute );
 
     ## Get recipe attribute hash
     return %{ $parameter_href->{$recipe_name} };
