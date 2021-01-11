@@ -751,12 +751,11 @@ q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 
 
         $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant_unaffected;
         $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv_unaffected;
+        return;
     }
-    else {
 
-        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant;
-        $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv;
-    }
+    $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant;
+    $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv;
     return;
 }
 
