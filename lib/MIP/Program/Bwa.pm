@@ -194,7 +194,6 @@ sub bwa_mem {
         second_infile_path  => { store => \$second_infile_path, strict_type => 1, },
         soft_clip_sup_align => {
             allow       => [ undef, 0, 1 ],
-            default     => 1,
             store       => \$soft_clip_sup_align,
             strict_type => 1,
         },
@@ -342,7 +341,6 @@ sub bwa_mem2_mem {
         second_infile_path  => { store => \$second_infile_path, strict_type => 1, },
         soft_clip_sup_align => {
             allow       => [ undef, 0, 1 ],
-            default     => 0,
             store       => \$soft_clip_sup_align,
             strict_type => 1,
         },
