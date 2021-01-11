@@ -1117,7 +1117,7 @@ sub get_recipe_resources {
 
     check_recipe_memory_allocation(
         {
-            node_ram_memory          => $core_ram_memory,
+            node_ram_memory          => $active_parameter_href->{node_ram_memory},
             recipe_memory_allocation => $memory,
         }
     );
