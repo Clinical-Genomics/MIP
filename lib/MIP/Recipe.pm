@@ -42,20 +42,20 @@ sub parse_recipe_prerequisites {
             default     => {},
             defined     => 1,
             required    => 1,
-            store       => \$active_parameter_href,
             strict_type => 1,
+            store       => \$active_parameter_href,
         },
         parameter_href => {
             default     => {},
             defined     => 1,
-            store       => \$parameter_href,
             strict_type => 1,
+            store       => \$parameter_href,
         },
         recipe_name => {
             defined     => 1,
             required    => 1,
-            strict_type => 1,
             store       => \$recipe_name,
+            strict_type => 1,
         },
     };
 

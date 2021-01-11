@@ -1131,7 +1131,7 @@ sub get_recipe_resources {
         time         => $active_parameter_href->{recipe_time}{$recipe_name},
     );
 
-    return $recipe_resource{$resource} if ( defined $resource && $resource );
+    return $recipe_resource{$resource} if ($resource);
 
     return %recipe_resource;
 
