@@ -32,6 +32,8 @@ cyrius:
   execution: 'star_caller.py --help'
 deepvariant:
   path: 'run_deepvariant'
+deeptrio:
+  path: 'run_deeptrio'
 delly:
   execution: 'delly'
 expansionhunter:
