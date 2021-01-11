@@ -38,6 +38,7 @@ BEGIN {
       parse_prioritize_variant_callers
       set_ase_chain_recipes
       set_parameter_to_broadcast
+      set_rankvariants_ar
       update_prioritize_flag
       update_recipe_mode_for_fastq_compatibility
       update_recipe_mode_for_pedigree
@@ -690,6 +691,71 @@ sub set_parameter_to_broadcast {
             ## Add info to broadcasts
             push @{$broadcasts_ref}, $info;
         }
+    }
+    return;
+}
+
+sub set_rankvariants_ar {
+
+## Function : Update which rankvariants recipe to use
+## Returns  :
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $parameter_href       => Parameter hash {REF}
+##          : $sample_ids_ref       => Sample ids {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $parameter_href;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Rankvariant
+      qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    if ( defined $parameter_href->{cache}{unaffected}
+        && @{ $parameter_href->{cache}{unaffected} } eq @{$sample_ids_ref} )
+    {
+
+        $log->warn(
+q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'}
+        );
+
+        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant_unaffected;
+        $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv_unaffected;
+    }
+    else {
+
+        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant;
+        $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv;
     }
     return;
 }
