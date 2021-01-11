@@ -97,10 +97,10 @@ sub bcftools_annotate {
         annotations_file_path => { store => \$annotations_file_path, strict_type => 1, },
         columns_name          => { store => \$columns_name,          strict_type => 1, },
         filehandle            => { store => \$filehandle, },
-        headerfile_path       => { store => \$headerfile_path,       strict_type => 1, },
-        include               => { store => \$include,               strict_type => 1, },
-        infile_path           => { store => \$infile_path,           strict_type => 1, },
-        outfile_path          => { store => \$outfile_path,          strict_type => 1, },
+        headerfile_path       => { store => \$headerfile_path, strict_type => 1, },
+        include               => { store => \$include,         strict_type => 1, },
+        infile_path           => { store => \$infile_path,     strict_type => 1, },
+        outfile_path          => { store => \$outfile_path,    strict_type => 1, },
         output_type           => {
             allow       => [qw{ b u z v}],
             default     => q{v},
@@ -120,19 +120,16 @@ sub bcftools_annotate {
             store       => \$samples_ref,
             strict_type => 1,
         },
-        set_id          => { store => \$set_id,          strict_type => 1, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        set_id                 => { store => \$set_id,                 strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = (
-        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
-        qw{ annotate }
-    );
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ annotate } );
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -383,18 +380,17 @@ sub bcftools_call {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store   => \$samples_file_path, strict_type => 1, },
         samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-        variants_only   => {
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
+        variants_only          => {
             allow       => [ undef, 0, 1 ],
             default     => 1,
             store       => \$variants_only,
@@ -504,11 +500,10 @@ sub bcftools_concat {
             store       => \$allow_overlaps,
             strict_type => 1,
         },
-        filehandle => { store => \$filehandle, },
-        infile_paths_ref =>
-          { default => [], store => \$infile_paths_ref, strict_type => 1, },
-        outfile_path => { store => \$outfile_path, strict_type => 1, },
-        output_type  => {
+        filehandle       => { store   => \$filehandle, },
+        infile_paths_ref => { default => [], store => \$infile_paths_ref, strict_type => 1, },
+        outfile_path     => { store   => \$outfile_path, strict_type => 1, },
+        output_type      => {
             allow       => [qw{ b u z v }],
             default     => q{v},
             store       => \$output_type,
@@ -521,11 +516,10 @@ sub bcftools_concat {
             store       => \$rm_dups,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-        threads         => {
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
+        threads                => {
             allow       => [ undef, qr/ \A \d+ \z /xms ],
             default     => 0,
             store       => \$threads,
@@ -824,17 +818,16 @@ sub bcftools_index {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store   => \$samples_file_path, strict_type => 1, },
         samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -918,27 +911,25 @@ sub bcftools_merge {
     my $output_type;
 
     my $tmpl = {
-        filehandle => { store => \$filehandle, },
-        infile_paths_ref =>
-          { default => [], store => \$infile_paths_ref, strict_type => 1, },
-        outfile_path => { store => \$outfile_path, strict_type => 1, },
-        output_type  => {
+        filehandle       => { store   => \$filehandle, },
+        infile_paths_ref => { default => [], store => \$infile_paths_ref, strict_type => 1, },
+        outfile_path     => { store   => \$outfile_path, strict_type => 1, },
+        output_type      => {
             allow       => [qw{ b u z v}],
             default     => q{v},
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store   => \$samples_file_path, strict_type => 1, },
         samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1065,23 +1056,22 @@ sub bcftools_mpileup {
             store       => \$referencefile_path,
             strict_type => 1,
         },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store   => \$samples_file_path, strict_type => 1, },
         samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ),
-        qw{ mpileup } );
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ mpileup } );
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -1172,8 +1162,8 @@ sub bcftools_norm {
     my $output_type;
 
     my $tmpl = {
-        filehandle  => { store => \$filehandle, },
-        infile_path => { store => \$infile_path, strict_type => 1, },
+        filehandle   => { store => \$filehandle, },
+        infile_path  => { store => \$infile_path, strict_type => 1, },
         multiallelic => {
             allow       => [qw{ + - }],
             store       => \$multiallelic,
@@ -1218,10 +1208,9 @@ sub bcftools_norm {
             store       => \$samples_ref,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1251,7 +1240,7 @@ sub bcftools_norm {
         push @commands, q{--fasta-ref} . $SPACE . $reference_path;
     }
 
-    if ( $remove_duplicates ) {
+    if ($remove_duplicates) {
 
         push @commands, q{--rm-dup} . $SPACE . $remove_duplicates_type;
     }
@@ -1336,17 +1325,16 @@ sub bcftools_query {
             store       => \$print_header,
             strict_type => 1,
         },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store   => \$samples_file_path, strict_type => 1, },
         samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1437,27 +1425,24 @@ sub bcftools_reheader {
 
     my $tmpl = {
         filehandle        => { store   => \$filehandle, },
-        infile_path       => { store   => \$infile_path, strict_type => 1, },
+        infile_path       => { store   => \$infile_path,  strict_type => 1, },
         outfile_path      => { store   => \$outfile_path, strict_type => 1, },
         regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
         samples_file_path => { store   => \$samples_file_path, strict_type => 1, },
-        samples_ref => {
+        samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = (
-        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
-        qw{ reheader }
-    );
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ reheader } );
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -1722,8 +1707,8 @@ sub bcftools_roh {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store   => \$samples_file_path, strict_type => 1, },
         samples_ref       => {
             default     => [],
             store       => \$samples_ref,
@@ -1740,10 +1725,9 @@ sub bcftools_roh {
             store       => \$skip_indels,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1832,7 +1816,7 @@ sub bcftools_sort {
     my $tmpl = {
         filehandle  => { store => \$filehandle, },
         infile_path => { store => \$infile_path, strict_type => 1, },
-        max_mem => {
+        max_mem     => {
             allow       => qr/\A \d+ [kMG] \z/xms,
             store       => \$max_mem,
             strict_type => 1,
@@ -1843,11 +1827,10 @@ sub bcftools_sort {
             store       => \$output_type,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-        temp_directory  => {
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
+        temp_directory         => {
             defined     => 1,
             required    => 1,
             store       => \$temp_directory,
@@ -1857,7 +1840,8 @@ sub bcftools_sort {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bcftools sort };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ sort } );
 
     ## Bcftools base args
     @commands = bcftools_base(
@@ -1935,25 +1919,24 @@ sub bcftools_stats {
 
     my $tmpl = {
         filehandle   => { store => \$filehandle, },
-        infile_path  => { store => \$infile_path, strict_type => 1, },
+        infile_path  => { store => \$infile_path,  strict_type => 1, },
         outfile_path => { store => \$outfile_path, strict_type => 1, },
-        output_type => {
+        output_type  => {
             allow       => [qw{ b u z v}],
             default     => q{v},
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store   => \$samples_file_path, strict_type => 1, },
         samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -2053,13 +2036,11 @@ sub bcftools_view {
     my $output_type;
 
     my $tmpl = {
-        filehandle => { store => \$filehandle, },
-        apply_filters_ref =>
-          { default => [], store => \$apply_filters_ref, strict_type => 1, },
-        exclude_types_ref =>
-          { default => [], store => \$exclude_types_ref, strict_type => 1, },
-        exclude  => { store => \$exclude, strict_type => 1, },
-        genotype => {
+        filehandle        => { store   => \$filehandle, },
+        apply_filters_ref => { default => [], store => \$apply_filters_ref, strict_type => 1, },
+        exclude_types_ref => { default => [], store => \$exclude_types_ref, strict_type => 1, },
+        exclude           => { store   => \$exclude, strict_type => 1, },
+        genotype          => {
             store       => \$genotype,
             strict_type => 1,
         },
@@ -2096,19 +2077,18 @@ sub bcftools_view {
             store       => \$output_type,
             strict_type => 1,
         },
-        regions_file_path => { store => \$regions_file_path, strict_type => 1, },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
-        samples_file_path => { store => \$samples_file_path, strict_type => 1, },
+        regions_file_path => { store   => \$regions_file_path, strict_type => 1, },
+        regions_ref       => { default => [], store => \$regions_ref, strict_type => 1, },
+        samples_file_path => { store   => \$samples_file_path, strict_type => 1, },
         samples_ref       => {
             default     => [],
             store       => \$samples_ref,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-        threads         => {
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
+        threads                => {
             allow       => qr/ \A \d+ \z /xms,
             store       => \$threads,
             strict_type => 1,
