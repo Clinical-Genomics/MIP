@@ -142,8 +142,10 @@ sub analysis_gatk_baserecalibration {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes };
-    use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
-    use MIP::Get::Parameter qw{ get_gatk_intervals get_recipe_attributes get_recipe_resources };
+    use MIP::File_info qw{ get_merged_infile_prefix };
+    use MIP::Gatk qw{ get_gatk_intervals };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -272,7 +274,6 @@ sub analysis_gatk_baserecalibration {
             filehandle            => $filehandle,
             file_ending           => $file_info_href->{exome_target_bed}[0],
             max_cores_per_node    => $core_number,
-            log                   => $log,
             outdirectory          => $outdir_path_prefix,
             reference_dir         => $active_parameter_href->{reference_dir},
             sample_id             => $sample_id,
@@ -921,8 +922,10 @@ sub analysis_gatk_baserecalibration_rna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes };
-    use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
-    use MIP::Get::Parameter qw{ get_gatk_intervals get_recipe_attributes get_recipe_resources };
+    use MIP::File_info qw{ get_merged_infile_prefix };
+    use MIP::Gatk qw{ get_gatk_intervals };
+    use MIP::Get::File qw{ get_io_files };
+    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -1047,7 +1050,6 @@ sub analysis_gatk_baserecalibration_rna {
             filehandle            => $filehandle,
             file_ending           => $file_info_href->{exome_target_bed}[0],
             max_cores_per_node    => $core_number,
-            log                   => $log,
             outdirectory          => $outdir_path_prefix,
             reference_dir         => $active_parameter_href->{reference_dir},
             sample_id             => $sample_id,

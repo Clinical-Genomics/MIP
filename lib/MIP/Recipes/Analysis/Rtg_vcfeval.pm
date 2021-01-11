@@ -321,10 +321,9 @@ sub analysis_rtg_vcfeval {
 
         rtg_vcfeval(
             {
-                baselinefile_path    => $nist_file_path_prefix . $DOT . q{vcf.gz},
-                bed_regionsfile_path => $nist_bed_file_path,
-                callfile_path        =>
-                  catfile( $rtg_outdirectory_path, $outfile_name_prefix . $DOT . q{vcf.gz} ),
+                baselinefile_path      => $nist_file_path_prefix . $DOT . q{vcf.gz},
+                bed_regionsfile_path   => $nist_bed_file_path,
+                callfile_path          => $infile_path,
                 eval_region_file_path  => $nist_bed_file_path,
                 filehandle             => $filehandle,
                 memory                 => $rtg_memory,

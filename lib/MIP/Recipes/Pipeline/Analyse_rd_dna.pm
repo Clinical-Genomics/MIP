@@ -437,7 +437,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_references };
     use MIP::Set::Analysis
-      qw{ set_recipe_bwa_mem set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
+      qw{ set_recipe_bwa_mem set_recipe_deepvariant set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
@@ -447,6 +447,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Chromograph
       qw{ analysis_chromograph_cov analysis_chromograph_rhoviz analysis_chromograph_upd };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
+    use MIP::Recipes::Analysis::Deeptrio qw { analysis_deeptrio };
     use MIP::Recipes::Analysis::Deepvariant qw { analysis_deepvariant };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
@@ -554,7 +555,8 @@ sub pipeline_analyse_rd_dna {
         ? \&analysis_chromograph_upd
         : undef,                                                        # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
-        deepvariant                 => \&analysis_deepvariant,
+        deeptrio                    => undef,
+        deepvariant                 => undef,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
@@ -634,6 +636,14 @@ sub pipeline_analyse_rd_dna {
             analysis_recipe_href           => \%analysis_recipe,
             human_genome_reference_version => $file_info_href->{human_genome_reference_version},
             run_bwakit                     => $active_parameter_href->{bwa_mem_run_bwakit},
+        }
+    );
+
+    ## Set deepvariant or deeptrio recipe depending on the presence of parent-child duo or a trio
+    set_recipe_deepvariant(
+        {
+            analysis_recipe_href => \%analysis_recipe,
+            sample_info_href     => $sample_info_href,
         }
     );
 

@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd;
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile splitpath };
+use File::Spec::Functions qw{ catdir catfile splitpath };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -41,11 +41,13 @@ BEGIN {
       get_matching_values_key
       get_not_allowed_temp_dirs
       get_package_env_attributes
+      get_package_env_cmds
       get_user_supplied_pedigree_parameter
       parse_infiles
       parse_recipe_resources
       parse_vep_plugin
       remove_sample_id_from_gender
+      set_conda_paths
       set_default_analysis_type
       set_default_human_genome
       set_default_infile_dirs
@@ -989,6 +991,70 @@ sub get_package_env_attributes {
     return;
 }
 
+sub get_package_env_cmds {
+
+## Function : Get package environment commands
+## Returns  : @env_method_cmds
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $package_name          => Package name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $package_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        package_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$package_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ get_package_env_attributes };
+    use MIP::Environment::Manager qw{ get_env_method_cmds };
+
+    my ( $env_name, $env_method ) = get_package_env_attributes(
+        {
+            load_env_href => $active_parameter_href->{load_env},
+            package_name  => $package_name,
+        }
+    );
+
+    ## Could not find recipe within env
+    if ( not $env_name ) {
+
+        ## Fall back to MIPs MAIN env
+        ( $env_name, $env_method ) = get_package_env_attributes(
+            {
+                load_env_href => $active_parameter_href->{load_env},
+                package_name  => q{mip},
+            }
+        );
+    }
+
+    ## Get env load command
+    my @env_method_cmds = get_env_method_cmds(
+        {
+            action     => q{load},
+            env_name   => $env_name,
+            env_method => $env_method,
+        }
+    );
+    return @env_method_cmds;
+}
+
 sub get_user_supplied_pedigree_parameter {
 
 ## Function : Detect if user supplied info on parameters otherwise collected from pedigree
@@ -1297,6 +1363,50 @@ sub remove_sample_id_from_gender {
 
     @{ $active_parameter_href->{gender}{$gender} } =
       grep { not /$sample_id/xms } @{ $active_parameter_href->{gender}{$gender} };
+    return;
+}
+
+sub set_conda_paths {
+
+## Function : Set path to root conda dir and the conda_environment_path based on the root path
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $environment_name      => MIP conda environment name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $environment_name;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        environment_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$environment_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Path qw{ get_conda_path };
+
+    ## Get path to conda
+    $active_parameter_href->{conda_path} = $active_parameter_href->{conda_path}
+      // get_conda_path( {} );
+
+    ## Set path to conda env
+    $active_parameter_href->{conda_environment_path} =
+      catdir( $active_parameter_href->{conda_path}, q{envs}, $environment_name );
+
     return;
 }
 

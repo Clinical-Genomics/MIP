@@ -15,6 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw{ any };
 
 ## MIPs lib/
 use MIP::Constants qw{ $COLON $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
@@ -26,9 +27,11 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      get_case_members_attributes_in_duos
       get_family_member_id
       get_read_group
       get_rg_header_line
+      get_path_entries
       get_pedigree_sample_id_attributes
       get_sample_info_case_recipe_attributes
       get_sample_info_sample_recipe_attributes
@@ -48,6 +51,62 @@ BEGIN {
       write_sample_info_to_file
     };
 
+}
+
+sub get_case_members_attributes_in_duos {
+
+## Function : Get the sample IDs and phenotypes of the family members
+## Returns  : %case_members_attributes
+## Arguments: $sample_info_href => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %case_members_attributes = (
+        affected => [],
+        children => [],
+        father   => 0,
+        mother   => 0,
+        unknown  => [],
+    );
+
+  SAMPLE_ID:
+    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
+
+        my %sample_attributes = get_pedigree_sample_id_attributes(
+            {
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        my $phenotype = $sample_attributes{phenotype};
+        push @{ $case_members_attributes{$phenotype} }, $sample_id;
+
+        next SAMPLE_ID if ( not( $sample_attributes{father} or $sample_attributes{mother} ) );
+
+        ## Append child
+        push @{ $case_members_attributes{children} }, $sample_id;
+
+        $case_members_attributes{father} = $sample_attributes{father};
+        $case_members_attributes{mother} = $sample_attributes{mother};
+    }
+
+    return %case_members_attributes;
 }
 
 sub get_family_member_id {
@@ -127,6 +186,90 @@ sub get_family_member_id {
     }
 
     return %family_member_id;
+}
+
+sub get_path_entries {
+
+## Function  : Collects all recipes outfile path(s) created by MIP as Path->value located in %sample_info.
+## Returns   :
+## Arguments : $paths_ref        => Holds the collected paths {REF}
+##           : $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $paths_ref;
+    my $sample_info_href;
+
+    my $tmpl = {
+        paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$paths_ref,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Copy hash to enable recursive removal of keys
+    my %info = %{$sample_info_href};
+
+    ## Temporary array for collecting outdirectories within the same recipe
+    my @outdirectories;
+
+    ## Temporary array for collecting outfile within the same recipe
+    my @outfiles;
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %info ) {
+
+        if ( ref $value eq q{HASH} ) {
+
+            get_path_entries(
+                {
+                    paths_ref        => $paths_ref,
+                    sample_info_href => $value,
+                }
+            );
+        }
+        else {
+
+            ## Required for first dry-run
+            next KEY_VALUE_PAIR if ( not $value );
+
+            ## Check if key is "path" and adds value to @paths_ref if true.
+            _check_and_add_to_array(
+                {
+                    key       => $key,
+                    paths_ref => $paths_ref,
+                    value     => $value,
+                }
+            );
+
+            ## Check if key is "outdirectory" or "outfile"  and adds joined value to @paths_ref if true.
+            _collect_outfile(
+                {
+                    key                => $key,
+                    paths_ref          => $paths_ref,
+                    outdirectories_ref => \@outdirectories,
+                    outfiles_ref       => \@outfiles,
+                    value              => $value,
+                }
+            );
+
+            delete $info{$value};
+        }
+    }
+    return;
 }
 
 sub get_pedigree_sample_id_attributes {
@@ -1439,7 +1582,7 @@ sub set_parameter_in_sample_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Pedigree qw{ has_trio };
+    use MIP::Pedigree qw{ has_duo has_trio };
 
     my %set_parameter_map = (
         analysis_type => {
@@ -1451,6 +1594,16 @@ sub set_parameter_in_sample_info {
             key    => q{expected_coverage},
             set_at => $sample_info_href,
             value  => $active_parameter_href->{expected_coverage},
+        },
+        has_duo => {
+            key    => q{has_duo},
+            set_at => $sample_info_href,
+            value  => has_duo(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    sample_info_href      => $sample_info_href,
+                }
+            ),
         },
         has_trio => {
             key    => q{has_trio},
@@ -1595,6 +1748,119 @@ sub write_sample_info_to_file {
     );
     $log->info( q{Wrote: } . $sample_info_file );
 
+    return;
+}
+
+sub _check_and_add_to_array {
+
+## Function  : Check if Key name is "path" and adds to @paths_ref if true.
+## Returns   :
+## Arguments : $key       => Hash key
+##           : $paths_ref => Holds the collected paths {REF}
+##           : $value     => Hash value
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $key;
+    my $paths_ref;
+    my $value;
+
+    my $tmpl = {
+        key       => { defined => 1, required => 1, store => \$key, strict_type => 1, },
+        paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$paths_ref,
+            strict_type => 1,
+        },
+        value => { required => 1, store => \$value, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( $key ne q{path} );
+
+    ## Do not add same path twice
+    if ( not any { $_ eq $value } @{$paths_ref} ) {
+
+        push @{$paths_ref}, $value;
+    }
+    return;
+}
+
+sub _collect_outfile {
+
+## Function  : Check if Key name is "outdirectory" or "outfile" and adds to @paths_ref if true
+## Returns   :
+## Arguments : $key                => Hash key
+##           : $outdirectories_ref => Holds temporary outdirectory path(s) {Optional, REF}
+##           : $outfiles_ref       => Holds temporary outdirectory path(s) {Optional, REF}
+##           : $paths_ref          => Holds the collected paths {REF}
+##           : $value              => Hash value
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $key;
+    my $outdirectories_ref;
+    my $outfiles_ref;
+    my $paths_ref;
+    my $value;
+
+    my $tmpl = {
+        key                => { defined => 1, store => \$key, required => 1, strict_type => 1, },
+        outdirectories_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$outdirectories_ref,
+            strict_type => 1,
+        },
+        outfiles_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$outfiles_ref,
+            strict_type => 1,
+        },
+        paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$paths_ref,
+            strict_type => 1,
+        },
+        value => { defined => 1, required => 1, store => \$value, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( $key eq q{outdirectory} ) {
+
+        push @{$outdirectories_ref}, $value;
+    }
+    if ( $key eq q{outfile} ) {
+
+        push @{$outfiles_ref}, $value;
+    }
+
+    ## Both outdirectory and outfile have been collected, time to join
+    if ( @{$outdirectories_ref} && @{$outfiles_ref} ) {
+
+        my $path = catfile( $outdirectories_ref->[0], $outfiles_ref->[0] );
+
+        ## Do not add same path twice
+        if ( not any { $_ eq $path } @{$paths_ref} ) {
+
+            push @{$paths_ref}, $path;
+
+            ## Restart
+            @{$outdirectories_ref} = ();
+            @{$outfiles_ref}       = ();
+        }
+    }
     return;
 }
 

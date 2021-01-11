@@ -112,10 +112,10 @@ sub analysis_analysisrunstatus {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_path_entries };
     use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Language::Shell qw{ check_mip_process_paths };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Sample_info qw{ get_path_entries };
     use MIP::Script::Setup_script qw{ setup_script };
 
     Readonly my $FINAL_VCFS_RECIPE    => q{endvariantannotationblock};
@@ -355,19 +355,13 @@ sub _check_string_within_file {
         say {$filehandle} $TAB . q?STATUS="1"?;
 
         ## Echo FAILED
-        say {$filehandle} $TAB
-          . q?echo "String match status=FAILED for file: ?
-          . $file
-          . q?" >&2?;
+        say {$filehandle} $TAB . q?echo "String match status=FAILED for file: ? . $file . q?" >&2?;
 
         ## Infile is clean
         say {$filehandle} q?else?;
 
         ## Echo PASSED
-        say {$filehandle} $TAB
-          . q?echo "String match status=PASSED for file: ?
-          . $file
-          . q?" >&2?;
+        say {$filehandle} $TAB . q?echo "String match status=PASSED for file: ? . $file . q?" >&2?;
         say {$filehandle} q?fi?, $NEWLINE;
     }
     return;
@@ -431,11 +425,11 @@ sub _check_vcf_header_and_keys {
             next MODE if ( not defined $vcf_file_path );
 
             $vcf_file_path = remove_file_path_suffix(
-            {
-                file_path         => $vcf_file_path,
-                file_suffixes_ref => [qw{ .gz}],
-            }
-        );
+                {
+                    file_path         => $vcf_file_path,
+                    file_suffixes_ref => [qw{ .gz}],
+                }
+            );
 
             print {$filehandle} q?perl -MTest::Harness -e ' ?;
 

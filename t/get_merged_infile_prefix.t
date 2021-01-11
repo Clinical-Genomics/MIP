@@ -27,15 +27,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Get::File} => [qw{ get_merged_infile_prefix }], );
+    my %perl_module = ( q{MIP::File_info} => [qw{ get_merged_infile_prefix }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::File_info qw{ set_merged_infile_prefix };
-use MIP::Get::File qw{ get_merged_infile_prefix };
+use MIP::File_info qw{ get_merged_infile_prefix set_merged_infile_prefix };
 
-diag(   q{Test get_merged_infile_prefix from File.pm}
+diag(   q{Test get_merged_infile_prefix from File_info.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
