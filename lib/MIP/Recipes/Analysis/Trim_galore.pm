@@ -123,10 +123,10 @@ sub analysis_trim_galore {
     use MIP::Cluster qw{ update_memory_allocation };
     use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Trim_galore qw{ trim_galore };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -150,16 +150,7 @@ sub analysis_trim_galore {
     my @infile_names         = @{ $io{in}{file_names} };
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    ## Construct outfiles
+## Construct outfiles
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
 
@@ -172,12 +163,20 @@ sub analysis_trim_galore {
         }
     );
 
+    my %recipe = parse_recipe_prerequisites(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
+
     ## Set and get the io files per chain, id and stream
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
+                chain_id       => $recipe{job_id_chain},
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 file_paths_ref => \@outfile_paths,
@@ -202,13 +201,6 @@ sub analysis_trim_galore {
         }
     );
 
-    my %recipe_resource = get_recipe_resources(
-        {
-            active_parameter_href => $active_parameter_href,
-            recipe_name           => $recipe_name,
-        }
-    );
-
     my $parallel_processes = scalar @{ $file_info_sample{no_direction_infile_prefixes} };
     my ( $process_core_number, $recipe_core_number ) = _get_cores_for_trimgalore(
         {
@@ -221,7 +213,7 @@ sub analysis_trim_galore {
         {
             node_ram_memory           => $active_parameter_href->{node_ram_memory},
             parallel_processes        => $recipe_core_number,
-            process_memory_allocation => $recipe_resource{memory},
+            process_memory_allocation => $recipe{memory},
         }
     );
 
@@ -234,7 +226,7 @@ sub analysis_trim_galore {
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $memory_allocation,
-            process_time          => $recipe_resource{time},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
         }
@@ -304,7 +296,7 @@ sub analysis_trim_galore {
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Outfiles
         my $outfile_path        = $outfile_paths[0];
@@ -338,13 +330,13 @@ sub analysis_trim_galore {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -428,8 +420,7 @@ sub _construct_trim_galore_outfile_paths {
         );
 
         my $outfile_path_prefix =
-          catfile( $outsample_directory,
-            ${$infile_name_prefixes_ref}[$paired_end_tracker] );
+          catfile( $outsample_directory, ${$infile_name_prefixes_ref}[$paired_end_tracker] );
 
         ## The suffixes differs depending on whether the reads are paired or not
         if ( $sequence_run_type eq q{paired-end} ) {
@@ -440,8 +431,7 @@ sub _construct_trim_galore_outfile_paths {
             $paired_end_tracker++;
 
             $outfile_path_prefix =
-              catfile( $outsample_directory,
-                ${$infile_name_prefixes_ref}[$paired_end_tracker] );
+              catfile( $outsample_directory, ${$infile_name_prefixes_ref}[$paired_end_tracker] );
             push @outfile_paths, $outfile_path_prefix . q{_val_2.fq.gz};
 
         }
@@ -488,8 +478,7 @@ sub _get_cores_for_trimgalore {
     ## Currently (Trim galore v0.6.5) the way to calculate the core argument to trim galore:
     ## Always three cores for overhead (1 for trim galore and 2 for cutadapt)
     ## the rest are splitted between the three processe (read, write and cutadapt).
-    my $core_argument =
-      floor( ( $max_cores_per_node / $parallel_processes - $THREE ) / $THREE );
+    my $core_argument = floor( ( $max_cores_per_node / $parallel_processes - $THREE ) / $THREE );
     my $recipe_core_number = ( $core_argument * $THREE + $THREE ) * $parallel_processes;
 
     ## Only supply core argument if more than 1

@@ -122,7 +122,7 @@ sub analysis_upd {
 
     use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Pedigree qw{ is_sample_proband_in_trio };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -166,17 +166,10 @@ sub analysis_upd {
     my $infile_path_prefix = $io{in}{file_path_prefix};
     my $infile_path        = $infile_path_prefix . q{.vcf.gz};
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -193,7 +186,7 @@ sub analysis_upd {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $sample_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix =~ s/$case_id/$sample_id/xmsr,
@@ -215,12 +208,12 @@ sub analysis_upd {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
+            core_number           => $recipe{core_number},
             directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
         }
@@ -231,19 +224,16 @@ sub analysis_upd {
     say {$filehandle} q{## } . $recipe_name;
 
     ## Create chromosome name and size file
-    my $contigs_size_file_path =
-      catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
+    my $contigs_size_file_path = catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
     write_contigs_size_file(
         {
-            fai_file_path => $active_parameter_href->{human_genome_reference}
-              . $DOT . q{fai},
-            outfile_path => $contigs_size_file_path,
+            fai_file_path => $active_parameter_href->{human_genome_reference} . $DOT . q{fai},
+            outfile_path  => $contigs_size_file_path,
         }
     );
 
     ## Get family hash
-    my %family_member_id =
-      get_family_member_id( { sample_info_href => $sample_info_href } );
+    my %family_member_id = get_family_member_id( { sample_info_href => $sample_info_href } );
 
   CALL_TYPE:
     foreach my $call_type (@call_types) {
@@ -290,7 +280,7 @@ sub analysis_upd {
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -325,13 +315,13 @@ sub analysis_upd {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{case_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{case_to_sample},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

@@ -112,13 +112,13 @@ sub analysis_glnexus {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Program::Glnexus qw{ glnexus_merge };
     use MIP::Program::Htslib qw{ htslib_bgzip };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -132,26 +132,17 @@ sub analysis_glnexus {
       ( MIXED => q{WGS}, PANEL => q{WES}, WGS => q{WGS}, WES => q{WES} );
 
     my $consensus_analysis_type =
-      $consensus_analysis_type_map{ uc $parameter_href->{cache}{consensus_analysis_type}
-      };
+      $consensus_analysis_type_map{ uc $parameter_href->{cache}{consensus_analysis_type} };
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe_resource{core_number};
-    my $time        = $recipe_resource{time};
+    my $core_number = $recipe{core_number};
+    my $time        = $recipe{time};
 
     ## Get the io infiles per chain and id
     my @genotype_infile_paths;
@@ -176,7 +167,7 @@ sub analysis_glnexus {
 
     my %io = parse_io_outfiles(
         {
-            chain_id               => $job_id_chain,
+            chain_id               => $recipe{job_id_chain},
             id                     => $case_id,
             file_info_href         => $file_info_href,
             file_name_prefixes_ref => [$case_id],
@@ -187,8 +178,8 @@ sub analysis_glnexus {
     );
 
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_path        = catdir( $active_parameter_href->{temp_directory},
-        $io{out}{file_name_prefix} . q{.vcf} );
+    my $outfile_path =
+      catdir( $active_parameter_href->{temp_directory}, $io{out}{file_name_prefix} . q{.vcf} );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -198,12 +189,12 @@ sub analysis_glnexus {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
+            core_number           => $recipe{core_number},
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
         }
@@ -222,8 +213,8 @@ sub analysis_glnexus {
 
         glnexus_merge(
             {
-                config => $config_type,
-                dir    => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
+                config           => $config_type,
+                dir              => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
                 filehandle       => $filehandle,
                 infile_paths_ref => \@genotype_infile_paths,
                 stdoutfile_path  => $outfile_path,
@@ -261,7 +252,7 @@ sub analysis_glnexus {
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -273,13 +264,13 @@ sub analysis_glnexus {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                log                  => $log,
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                log                               => $log,
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

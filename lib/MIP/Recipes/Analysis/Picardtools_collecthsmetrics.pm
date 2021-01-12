@@ -131,11 +131,11 @@ sub analysis_picardtools_collecthsmetrics {
 
     use MIP::Active_parameter qw{ get_exome_target_bed_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Language::Java qw{ java_core };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_collecthsmetrics };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -160,17 +160,10 @@ sub analysis_picardtools_collecthsmetrics {
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -179,7 +172,7 @@ sub analysis_picardtools_collecthsmetrics {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => [$infile_name_prefix],
@@ -206,12 +199,12 @@ sub analysis_picardtools_collecthsmetrics {
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
+            core_number           => $recipe{core_number},
             directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -247,7 +240,7 @@ sub analysis_picardtools_collecthsmetrics {
     );
     say {$filehandle} $NEWLINE;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -262,14 +255,14 @@ sub analysis_picardtools_collecthsmetrics {
     }
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         submit_recipe(
             {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
                 dependency_method                 => q{sample_to_island},
-                job_id_chain                      => $job_id_chain,
+                job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
                 log                               => $log,

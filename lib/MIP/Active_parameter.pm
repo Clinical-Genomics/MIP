@@ -42,6 +42,7 @@ BEGIN {
       get_not_allowed_temp_dirs
       get_package_env_attributes
       get_package_env_cmds
+      get_recipe_resources
       get_user_supplied_pedigree_parameter
       parse_infiles
       parse_recipe_resources
@@ -1053,6 +1054,87 @@ sub get_package_env_cmds {
         }
     );
     return @env_method_cmds;
+}
+
+sub get_recipe_resources {
+
+## Function : Return recipe resources
+## Returns  : $recipe_resource | %recipe_resource
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $recipe_name           => Recipe name
+##          : $recipe_resource       => Recipe parameter key
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $recipe_name;
+    my $resource;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        resource => {
+            allow       => [qw{ core_number gpu_number load_env_ref memory mode time }],
+            store       => \$resource,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ get_package_env_cmds };
+    use MIP::Environment::Cluster qw{ check_recipe_memory_allocation };
+
+    ## Initilize variable
+    my @environment_cmds = get_package_env_cmds(
+        {
+            active_parameter_href => $active_parameter_href,
+            package_name          => $recipe_name,
+        }
+    );
+
+    my $core_number     = $active_parameter_href->{recipe_core_number}{$recipe_name};
+    my $process_memory  = $active_parameter_href->{recipe_memory}{$recipe_name};
+    my $core_ram_memory = $active_parameter_href->{core_ram_memory};
+
+    my $memory =
+        ( $process_memory     and $core_number )     ? $process_memory * $core_number
+      : ( not $process_memory and $core_number )     ? $core_number * $core_ram_memory
+      : ( not $process_memory and not $core_number ) ? $core_ram_memory
+      :                                                $process_memory;
+
+    check_recipe_memory_allocation(
+        {
+            node_ram_memory          => $active_parameter_href->{node_ram_memory},
+            recipe_memory_allocation => $memory,
+        }
+    );
+
+    my %recipe_resource = (
+        core_number  => $core_number,
+        gpu_number   => $active_parameter_href->{recipe_gpu_number}{$recipe_name},
+        load_env_ref => \@environment_cmds,
+        memory       => $memory,
+        mode         => $active_parameter_href->{$recipe_name},
+        time         => $active_parameter_href->{recipe_time}{$recipe_name},
+    );
+
+    return $recipe_resource{$resource} if ($resource);
+
+    return %recipe_resource;
+
 }
 
 sub get_user_supplied_pedigree_parameter {

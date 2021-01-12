@@ -116,12 +116,11 @@ sub download_human_reference {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::File::Path qw{ remove_file_path_suffix };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
     use MIP::Program::Samtools qw{ samtools_faidx };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -129,13 +128,9 @@ sub download_human_reference {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
 
-    ## Set recipe mode
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    ## Unpack parameters
-    my @reference_genome_versions =
-      @{ $active_parameter_href->{reference_genome_versions} };
-    my %recipe_resource = get_recipe_resources(
+## Unpack parameters
+    my @reference_genome_versions = @{ $active_parameter_href->{reference_genome_versions} };
+    my %recipe                    = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
@@ -149,20 +144,20 @@ sub download_human_reference {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href      => $active_parameter_href,
-            core_number                => $recipe_resource{core_number},
-            directory_id               => q{mip_download},
-            filehandle                 => $filehandle,
-            job_id_href                => $job_id_href,
-            memory_allocation          => $recipe_resource{memory},
-            outdata_dir                => $active_parameter_href->{reference_dir},
-            outscript_dir              => $active_parameter_href->{reference_dir},
-            process_time               => $recipe_resource{time},
-            recipe_data_directory_path => $active_parameter_href->{reference_dir},
-            recipe_directory           => $recipe_name . $UNDERSCORE . $reference_version,
-            recipe_name                => $recipe_name,
-            temp_directory             => $temp_directory,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $recipe{core_number},
+            directory_id                    => q{mip_download},
+            filehandle                      => $filehandle,
+            job_id_href                     => $job_id_href,
+            memory_allocation               => $recipe{memory},
+            outdata_dir                     => $active_parameter_href->{reference_dir},
+            outscript_dir                   => $active_parameter_href->{reference_dir},
+            process_time                    => $recipe{time},
+            recipe_data_directory_path      => $active_parameter_href->{reference_dir},
+            recipe_directory                => $recipe_name . $UNDERSCORE . $reference_version,
+            recipe_name                     => $recipe_name,
+            temp_directory                  => $temp_directory,
+            source_environment_commands_ref => $recipe{load_env_ref},
         }
     );
 
@@ -184,8 +179,7 @@ sub download_human_reference {
     my $outfile_path =
       catfile( $active_parameter_href->{reference_dir}, $reference_href->{outfile} );
     my $outfile_no_gz =
-      remove_file_path_suffix(
-        { file_path => $outfile_path, file_suffixes_ref => [qw{ .gz }], } )
+      remove_file_path_suffix( { file_path => $outfile_path, file_suffixes_ref => [qw{ .gz }], } )
       // $outfile_path;
     samtools_faidx(
         {
@@ -198,7 +192,7 @@ sub download_human_reference {
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## No upstream or downstream dependencies
         slurm_submit_job_no_dependency_dead_end(

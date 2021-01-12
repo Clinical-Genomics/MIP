@@ -124,7 +124,7 @@ sub analysis_gatk_genotypegvcfs {
 
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat gnu_echo gnu_rm };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -139,25 +139,18 @@ sub analysis_gatk_genotypegvcfs {
 
     ## Unpack parameters
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode          = $active_parameter_href->{$recipe_name};
-    my $recipe_files_tracker = 0;
+    my $recipe_files_tracker    = 0;
 
     ## Gatk genotype is most safely processed in single thread mode, but we need some java heap allocation
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe_resource{core_number};
-    my $time        = $recipe_resource{time};
+    my $core_number = $recipe{core_number};
+    my $time        = $recipe{time};
 
     ## If all sites should be included
     if ( $active_parameter_href->{gatk_genotypegvcfs_all_sites} == 1 ) {
@@ -169,7 +162,7 @@ sub analysis_gatk_genotypegvcfs {
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
         {
-            chain_id         => $job_id_chain,
+            chain_id         => $recipe{job_id_chain},
             id               => $case_id,
             file_info_href   => $file_info_href,
             file_name_prefix => $case_id,
@@ -211,7 +204,7 @@ sub analysis_gatk_genotypegvcfs {
                 directory_id          => $case_id,
                 filehandle            => $filehandle,
                 job_id_href           => $job_id_href,
-                memory_allocation     => $recipe_resource{memory},
+                memory_allocation     => $recipe{memory},
                 process_time          => $time,
                 recipe_directory      => $recipe_name,
                 recipe_name           => $recipe_name,
@@ -274,14 +267,12 @@ sub analysis_gatk_genotypegvcfs {
         ## Files to import into GenomicsDB
         if ( $consensus_analysis_type =~ /wes|panel/xms ) {
 
-            $sample_name_map_path =
-              catfile( $outdir_path_prefix, q{analysis_sample_map.txt} );
-            my $echo_outfile_path =
-              catfile( $outdir_path_prefix, q{dynamic_sample_map.txt} );
+            $sample_name_map_path = catfile( $outdir_path_prefix, q{analysis_sample_map.txt} );
+            my $echo_outfile_path = catfile( $outdir_path_prefix, q{dynamic_sample_map.txt} );
             _merge_sample_name_map_files(
                 {
-                    echo_outfile_path => $echo_outfile_path,
-                    filehandle        => $filehandle,
+                    echo_outfile_path           => $echo_outfile_path,
+                    filehandle                  => $filehandle,
                     gatk_genotypegvcfs_ref_gvcf =>
                       $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
                     outfile_path => $sample_name_map_path,
@@ -293,17 +284,17 @@ sub analysis_gatk_genotypegvcfs {
 
         gatk_genomicsdbimport(
             {
-                filehandle                => $filehandle,
-                genomicsdb_workspace_path => $genomicsdb_file_path,
-                intervals_ref             => [$contig],
-                infile_paths_ref          => \@genotype_infile_paths,
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                referencefile_path   => $active_parameter_href->{human_genome_reference},
-                sample_name_map_path => $sample_name_map_path,
+                filehandle                   => $filehandle,
+                genomicsdb_workspace_path    => $genomicsdb_file_path,
+                intervals_ref                => [$contig],
+                infile_paths_ref             => \@genotype_infile_paths,
+                java_use_large_pages         => $active_parameter_href->{java_use_large_pages},
+                memory_allocation            => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                referencefile_path           => $active_parameter_href->{human_genome_reference},
+                sample_name_map_path         => $sample_name_map_path,
                 shared_posixfs_optimizations => 1,
                 temp_directory               => $temp_directory,
-                verbosity => $active_parameter_href->{gatk_logging_level},
+                verbosity                    => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$filehandle} $NEWLINE;
@@ -313,38 +304,35 @@ sub analysis_gatk_genotypegvcfs {
 
         gatk_genotypegvcfs(
             {
-                dbsnp_path =>
-                  $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
+                dbsnp_path => $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
                 filehandle => $filehandle,
-                include_nonvariant_sites =>
-                  $active_parameter_href->{gatk_genotypegvcfs_all_sites},
-                infile_path          => q{gendb://} . $genomicsdb_file_path,
-                intervals_ref        => [$contig],
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                outfile_path         => $outfile_path{$contig},
-                pedigree             => $fam_file_path,
-                referencefile_path   => $active_parameter_href->{human_genome_reference},
-                temp_directory       => $temp_directory,
-                verbosity            => $active_parameter_href->{gatk_logging_level},
+                include_nonvariant_sites => $active_parameter_href->{gatk_genotypegvcfs_all_sites},
+                infile_path              => q{gendb://} . $genomicsdb_file_path,
+                intervals_ref            => [$contig],
+                java_use_large_pages     => $active_parameter_href->{java_use_large_pages},
+                memory_allocation        => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                outfile_path             => $outfile_path{$contig},
+                pedigree                 => $fam_file_path,
+                referencefile_path       => $active_parameter_href->{human_genome_reference},
+                temp_directory           => $temp_directory,
+                verbosity                => $active_parameter_href->{gatk_logging_level},
             }
         );
         say {$filehandle} $NEWLINE;
 
         close $filehandle;
 
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             submit_recipe(
                 {
-                    base_command      => $profile_base_command,
-                    case_id           => $case_id,
-                    dependency_method => q{sample_to_case_parallel},
-                    job_id_chain      => $job_id_chain,
-                    job_id_href       => $job_id_href,
-                    job_reservation_name =>
-                      $active_parameter_href->{job_reservation_name},
-                    log => $log,
+                    base_command         => $profile_base_command,
+                    case_id              => $case_id,
+                    dependency_method    => q{sample_to_case_parallel},
+                    job_id_chain         => $recipe{job_id_chain},
+                    job_id_href          => $job_id_href,
+                    job_reservation_name => $active_parameter_href->{job_reservation_name},
+                    log                  => $log,
                     max_parallel_processes_count_href =>
                       $file_info_href->{max_parallel_processes_count},
                     recipe_file_path     => $recipe_file_path,
