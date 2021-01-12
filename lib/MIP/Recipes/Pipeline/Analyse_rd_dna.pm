@@ -555,7 +555,7 @@ sub pipeline_analyse_rd_dna {
         : undef,                                                        # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
         deeptrio                    => undef,
-        deepvariant                 => undef,
+        deepvariant                 => \&analysis_deepvariant,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
@@ -638,12 +638,11 @@ sub pipeline_analyse_rd_dna {
     );
 
     ## Set deepvariant or deeptrio recipe depending on the presence of parent-child duo or a trio
-    set_recipe_deepvariant(
-        {
-            analysis_recipe_href => \%analysis_recipe,
-            sample_info_href     => $sample_info_href,
-        }
-    );
+    #set_recipe_deepvariant(
+    #    {
+    #        analysis_recipe_href => \%analysis_recipe,
+    #        sample_info_href     => $sample_info_href,
+    #    });
 
     ## Update which recipe to use depending on number of samples
     set_recipe_gatk_variantrecalibration(

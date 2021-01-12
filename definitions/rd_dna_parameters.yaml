@@ -1333,10 +1333,10 @@ gatk_variantrecalibration:
   program_executables:
     - bcftools
     - gatk
-  recipe_type: variant_callers
+#  recipe_type: variant_callers
   outfile_suffix: ".vcf"
   type: recipe
-  variant_caller: haplotypecaller
+#  variant_caller: haplotypecaller
 gatk_calculategenotypeposteriors:
   associated_recipe:
     - gatk_variantrecalibration
