@@ -290,7 +290,7 @@ sub analysis_bwa_mem {
                 read_group_header      => $rg_header_line,
                 soft_clip_sup_align    => $active_parameter_href->{bwa_soft_clip_sup_align},
                 second_infile_path     => $second_fastq_file_path,
-                thread_number          => $recipe_resource{core_number},
+                thread_number          => $recipe{core_number},
             }
         );
 
@@ -711,7 +711,7 @@ sub analysis_bwa_mem2 {
                 read_group_header      => $rg_header_line,
                 soft_clip_sup_align    => $active_parameter_href->{bwa_soft_clip_sup_align},
                 second_infile_path     => $second_fastq_file_path,
-                thread_number          => $recipe_resource{core_number},
+                thread_number          => $recipe{core_number},
             }
         );
 
