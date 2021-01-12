@@ -143,7 +143,6 @@ sub build_human_genome_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_ln };
     use MIP::Language::Java qw{ java_core };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
@@ -151,6 +150,7 @@ sub build_human_genome_prerequisites {
     use MIP::Program::Samtools qw{ samtools_faidx };
     use MIP::Program::Picardtools qw{ picardtools_createsequencedictionary };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Build::Capture_file_prerequisites qw{ build_capture_file_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -161,11 +161,11 @@ sub build_human_genome_prerequisites {
     my $submit_switch;
 
     ## Unpack parameters
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
-            recipe_name           => q{mip},
+            parameter_href        => $parameter_href,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -189,7 +189,7 @@ sub build_human_genome_prerequisites {
                 directory_id                    => $case_id,
                 recipe_name                     => $recipe_name,
                 recipe_directory                => $recipe_name,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
+                source_environment_commands_ref => $recipe{load_env_ref},
             }
         );
     }
@@ -352,7 +352,7 @@ sub build_human_genome_prerequisites {
 
         close $filehandle;
 
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             submit_recipe(
                 {

@@ -83,6 +83,7 @@ gpu_capable_executables:
   data_type: ARRAY
   default:
     - run_deepvariant
+    - run_deeptrio
     - call_variants
   type: mip
 ## HumanGenomeReference
@@ -150,6 +151,7 @@ recipe_core_number:
     chromograph_rhoviz: 1
     chromograph_upd: 1
     cnvnator_ar: 13
+    deeptrio: 36
     deepvariant: 36
     delly_call: 36
     delly_reformat: 13
@@ -214,6 +216,7 @@ recipe_gpu_number:
   data_type: HASH
   default:
     deepvariant: 1
+    deeptrio: 1
   type: mip
 set_recipe_gpu_number:
   associated_recipe:
@@ -279,11 +282,12 @@ recipe_time:
     chromograph_rhoviz: 1
     chromograph_upd: 1
     cnvnator_ar: 1
+    deeptrio: 15
     deepvariant: 10
     delly_call: 20
     delly_reformat: 7
     endvariantannotationblock: 2
-    expansionhunter: 2
+    expansionhunter: 3
     fastqc_ar: 10
     variant_annotation: 3
     frequency_filter: 2
@@ -464,6 +468,12 @@ bwa_mem_hla:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+bwa_mem_run_bwakit:
+  associated_recipe:
+    - bwa_mem
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 bwa_soft_clip_sup_align:
   associated_recipe:
     - bwa_mem
@@ -510,6 +520,17 @@ deepvariant:
   outfile_suffix: ".g.vcf.gz"
   program_executables:
     - run_deepvariant
+  type: recipe
+deeptrio:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _deeptrio
+  outfile_suffix: ".g.vcf.gz"
+  program_executables:
+    - run_deeptrio
   type: recipe
 glnexus_merge:
   analysis_mode: case

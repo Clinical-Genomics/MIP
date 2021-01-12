@@ -16,8 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 # MIPs lib/
-use MIP::Constants
-  qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $DOT $LOG_NAME $NEWLINE $PIPE $SEMICOLON $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -132,12 +131,12 @@ sub analysis_rhocall_annotate {
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_roh };
     use MIP::Program::Rhocall qw{ rhocall_annotate };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -163,28 +162,21 @@ sub analysis_rhocall_annotate {
 
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
     my @contigs_size_ordered    = @{ $file_info_href->{contigs_size_ordered} };
-    my $job_id_chain            = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe                  = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe_resource{core_number};
+    my $core_number = $recipe{core_number};
 
     ## Set and get the io files per chain, id and stream
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
@@ -214,8 +206,8 @@ sub analysis_rhocall_annotate {
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -264,7 +256,7 @@ sub analysis_rhocall_annotate {
                 infile_path  => $infile_path{$contig},
                 outfile_path => $roh_outfile_path,
                 samples_ref  => \@sample_ids,
-                skip_indels => 1, # Skip indels as their genotypes are enriched for errors
+                skip_indels  => 1,    # Skip indels as their genotypes are enriched for errors
             }
         );
         print {$xargsfilehandle} $SEMICOLON . $SPACE;
@@ -286,7 +278,7 @@ sub analysis_rhocall_annotate {
     close $xargsfilehandle
       or $log->logcroak(q{Could not close xargsfilehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -298,13 +290,13 @@ sub analysis_rhocall_annotate {
         );
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -409,7 +401,6 @@ sub analysis_rhocall_viz {
 
     use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{get_recipe_attributes  get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_index bcftools_roh bcftools_view };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
@@ -417,6 +408,7 @@ sub analysis_rhocall_viz {
     use MIP::Program::Rhocall qw{ rhocall_viz };
     use MIP::Program::Ucsc qw{ ucsc_wig_to_big_wig };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Reference qw{ write_contigs_size_file };
     use MIP::Sample_info
       qw{ set_file_path_to_store set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
@@ -442,17 +434,10 @@ sub analysis_rhocall_viz {
     my $infile_path_prefix = $io{out}{file_path_prefix};
     my $infile_path        = $infile_path_prefix . q{.vcf.gz};
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -461,7 +446,7 @@ sub analysis_rhocall_viz {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $sample_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
@@ -484,12 +469,12 @@ sub analysis_rhocall_viz {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
+            core_number           => $recipe{core_number},
             directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
         }
@@ -533,18 +518,17 @@ sub analysis_rhocall_viz {
             filehandle   => $filehandle,
             infile_path  => $sample_vcf,
             outfile_path => $sample_outfile_path_prefix . q{.roh},
-            skip_indels => 1,    # Skip indels as their genotypes are enriched for errors
+            skip_indels  => 1,    # Skip indels as their genotypes are enriched for errors
         }
     );
     say {$filehandle} $NEWLINE;
 
     picardtools_updatevcfsequencedictionary(
         {
-            filehandle  => $filehandle,
-            infile_path => $sample_vcf,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            outfile_path        => $sample_outfile_path_prefix . q{.vcf},
+            filehandle   => $filehandle,
+            infile_path  => $sample_vcf,
+            java_jar     => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            outfile_path => $sample_outfile_path_prefix . q{.vcf},
             sequence_dictionary => $active_parameter_href->{human_genome_reference},
         }
     );
@@ -578,13 +562,11 @@ sub analysis_rhocall_viz {
     print {$filehandle} $NEWLINE;
 
     ## Create chromosome name and size file
-    my $contigs_size_file_path =
-      catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
+    my $contigs_size_file_path = catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
     write_contigs_size_file(
         {
-            fai_file_path => $active_parameter_href->{human_genome_reference}
-              . $DOT . q{fai},
-            outfile_path => $contigs_size_file_path,
+            fai_file_path => $active_parameter_href->{human_genome_reference} . $DOT . q{fai},
+            outfile_path  => $contigs_size_file_path,
         }
     );
 
@@ -603,7 +585,7 @@ sub analysis_rhocall_viz {
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -628,13 +610,13 @@ sub analysis_rhocall_viz {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{case_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{case_to_sample},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

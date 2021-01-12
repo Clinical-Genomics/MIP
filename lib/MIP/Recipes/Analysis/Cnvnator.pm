@@ -146,7 +146,6 @@ sub analysis_cnvnator {
 
     use MIP::Contigs qw{ delete_contig_elements };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Samtools qw{ samtools_create_chromosome_files };
@@ -154,8 +153,9 @@ sub analysis_cnvnator {
       qw{ bcftools_annotate bcftools_concat bcftools_create_reheader_samples_file bcftools_rename_vcf_samples };
     use MIP::Program::Cnvnator
       qw{ cnvnator_read_extraction cnvnator_histogram cnvnator_statistics cnvnator_partition cnvnator_calling cnvnator_convert_to_vcf };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -178,28 +178,21 @@ sub analysis_cnvnator {
     my %infile_path        = %{ $io{in}{file_path_href} };
 
     my $human_genome_reference = $active_parameter_href->{human_genome_reference};
-    my $job_id_chain           = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe                 = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe_resource{core_number};
+    my $core_number = $recipe{core_number};
     my $xargs_file_path_prefix;
 
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => [$infile_name_prefix],
@@ -228,10 +221,10 @@ sub analysis_cnvnator {
             directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
+            memory_allocation     => $recipe{memory},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
-            process_time          => $recipe_resource{time},
+            process_time          => $recipe{time},
             temp_directory        => $temp_directory,
         }
     );
@@ -321,12 +314,8 @@ sub analysis_cnvnator {
                 cnv_bin_size            => $active_parameter_href->{cnv_bin_size},
                 referencedirectory_path => $outdir_path_prefix,
                 filehandle              => $xargsfilehandle,
-                stdoutfile_path         => $stdbasefile_path_prefix
-                  . $UNDERSCORE
-                  . q{histogram.stdout.txt},
-                stderrfile_path => $stdbasefile_path_prefix
-                  . $UNDERSCORE
-                  . q{histogram.stderr.txt},
+                stdoutfile_path => $stdbasefile_path_prefix . $UNDERSCORE . q{histogram.stdout.txt},
+                stderrfile_path => $stdbasefile_path_prefix . $UNDERSCORE . q{histogram.stderr.txt},
             }
         );
         print {$xargsfilehandle} $SEMICOLON . $SPACE;
@@ -353,12 +342,8 @@ sub analysis_cnvnator {
                 regions_ref     => [$contig],
                 cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
                 filehandle      => $xargsfilehandle,
-                stdoutfile_path => $stdbasefile_path_prefix
-                  . $UNDERSCORE
-                  . q{partition.stdout.txt},
-                stderrfile_path => $stdbasefile_path_prefix
-                  . $UNDERSCORE
-                  . q{partition.stderr.txt},
+                stdoutfile_path => $stdbasefile_path_prefix . $UNDERSCORE . q{partition.stdout.txt},
+                stderrfile_path => $stdbasefile_path_prefix . $UNDERSCORE . q{partition.stderr.txt},
             }
         );
         print {$xargsfilehandle} $SEMICOLON . $SPACE;
@@ -374,9 +359,7 @@ sub analysis_cnvnator {
                 regions_ref     => [$contig],
                 cnv_bin_size    => $active_parameter_href->{cnv_bin_size},
                 filehandle      => $xargsfilehandle,
-                stderrfile_path => $stdbasefile_path_prefix
-                  . $UNDERSCORE
-                  . q{calling.stderr.txt},
+                stderrfile_path => $stdbasefile_path_prefix . $UNDERSCORE . q{calling.stderr.txt},
             }
         );
         print {$xargsfilehandle} $SEMICOLON . $SPACE;
@@ -417,17 +400,11 @@ sub analysis_cnvnator {
     foreach my $contig (@contigs) {
 
         ## Name intermediary files
-        my $cnvnator_outfile_path =
-          $outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
+        my $cnvnator_outfile_path = $outfile_path_prefix . $UNDERSCORE . $contig . $outfile_suffix;
         my $fixed_vcffile_path_prefix =
           $outfile_path_prefix . $UNDERSCORE . $contig . $UNDERSCORE . q{fixed};
         my $fixed_header_vcffile_path =
-            $outfile_path_prefix
-          . $UNDERSCORE
-          . $contig
-          . $UNDERSCORE
-          . q{annot}
-          . $outfile_suffix;
+          $outfile_path_prefix . $UNDERSCORE . $contig . $UNDERSCORE . q{annot} . $outfile_suffix;
 
         ## Save infiles for bcftools annotate
         push @concat_infile_paths, $fixed_header_vcffile_path;
@@ -472,7 +449,7 @@ sub analysis_cnvnator {
 
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -484,12 +461,12 @@ sub analysis_cnvnator {
 
         submit_recipe(
             {
-                base_command      => $profile_base_command,
-                case_id           => $case_id,
-                dependency_method => q{sample_to_sample},
-                job_id_chain      => $job_id_chain,
-                job_id_href       => $job_id_href,
-                log               => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path     => $recipe_file_path,
@@ -554,8 +531,7 @@ sub _add_contigs_to_vcfheader {
     # Reference fai file
     print {$filehandle} $human_genome_reference . $DOT . q{fai} . $SPACE;
 
-    say {$filehandle} q{>} . $SPACE . catfile( $temp_directory, q{contig_header.txt} ),
-      $NEWLINE;
+    say {$filehandle} q{>} . $SPACE . catfile( $temp_directory, q{contig_header.txt} ), $NEWLINE;
 
     return;
 }

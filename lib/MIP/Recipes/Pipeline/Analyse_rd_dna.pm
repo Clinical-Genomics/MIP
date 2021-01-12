@@ -442,11 +442,13 @@ sub pipeline_analyse_rd_dna {
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem2 };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Chromograph
       qw{ analysis_chromograph_cov analysis_chromograph_rhoviz analysis_chromograph_upd };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
+    use MIP::Recipes::Analysis::Deeptrio qw { analysis_deeptrio };
     use MIP::Recipes::Analysis::Deepvariant qw { analysis_deepvariant };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
@@ -545,7 +547,7 @@ sub pipeline_analyse_rd_dna {
     my %analysis_recipe = (
         analysisrunstatus  => \&analysis_analysisrunstatus,
         bwa_mem            => undef,                           # Depends on genome build
-        bwa_mem2           => undef,
+        bwa_mem2           => \&analysis_bwa_mem2,
         cadd_ar            => \&analysis_cadd,
         chanjo_sexcheck    => \&analysis_chanjo_sex_check,
         chromograph_cov    => \&analysis_chromograph_cov,
@@ -554,7 +556,8 @@ sub pipeline_analyse_rd_dna {
         ? \&analysis_chromograph_upd
         : undef,                                                        # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
-        deepvariant                 => \&analysis_deepvariant,
+        deeptrio                    => undef,
+        deepvariant                 => undef,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
@@ -632,6 +635,15 @@ sub pipeline_analyse_rd_dna {
         {
             analysis_recipe_href           => \%analysis_recipe,
             human_genome_reference_version => $file_info_href->{human_genome_reference_version},
+            run_bwakit                     => $active_parameter_href->{bwa_mem_run_bwakit},
+        }
+    );
+
+    ## Set deepvariant or deeptrio recipe depending on the presence of parent-child duo or a trio
+    set_recipe_deepvariant(
+        {
+            analysis_recipe_href => \%analysis_recipe,
+            sample_info_href     => $sample_info_href,
         }
     );
 

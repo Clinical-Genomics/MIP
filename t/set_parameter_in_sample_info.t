@@ -90,9 +90,10 @@ my %expected_sample_info = (
 $expected_sample_info{analysis_type} = $active_parameter{analysis_type};
 %{ $expected_sample_info{expected_coverage} } = %{ $active_parameter{expected_coverage} };
 $expected_sample_info{pedigree_file}{path} = $active_parameter{pedigree_file};
-$expected_sample_info{log_file_dir} = dirname( dirname( $active_parameter{log_file} ) );
-$expected_sample_info{last_log_file_path} = $active_parameter{log_file};
-$expected_sample_info{has_trio}           = 0;
+$expected_sample_info{log_file_dir}        = dirname( dirname( $active_parameter{log_file} ) );
+$expected_sample_info{last_log_file_path}  = $active_parameter{log_file};
+$expected_sample_info{has_trio}            = 0;
+$expected_sample_info{has_duo}             = 0;
 
 ## Then these entries should be set in sample info
 is_deeply( \%sample_info, \%expected_sample_info, q{Set parameter in sample_info} );

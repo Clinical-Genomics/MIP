@@ -73,6 +73,7 @@ rd_dna:
     - cnvnator
     - cyrius
     - deepvariant
+    - deeptrio
     - delly
     - expansionhunter
     - fastqc

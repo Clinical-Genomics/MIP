@@ -146,7 +146,7 @@ sub analysis_vep_wgs {
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Vep qw{ variant_effect_predictor };
@@ -181,21 +181,14 @@ sub analysis_vep_wgs {
 
     my @contigs_size_ordered     = @{ $file_info_href->{contigs_size_ordered} };
     my $genome_reference_version = $file_info_href->{human_genome_reference_version};
-    my $job_id_chain             = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe                   = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe_resource{core_number};
+    my $core_number = $recipe{core_number};
     my $xargs_file_path_prefix;
 
     ## Set and get the io files per chain, id and stream
@@ -203,7 +196,7 @@ sub analysis_vep_wgs {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
@@ -241,7 +234,7 @@ sub analysis_vep_wgs {
         {
             node_ram_memory           => $active_parameter_href->{node_ram_memory},
             parallel_processes        => $parallel_processes,
-            process_memory_allocation => $recipe_resource{memory},
+            process_memory_allocation => $recipe{memory},
         }
     );
 
@@ -254,7 +247,7 @@ sub analysis_vep_wgs {
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $memory_allocation,
-            process_time          => $recipe_resource{time},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -364,7 +357,7 @@ sub analysis_vep_wgs {
     close $xargsfilehandle
       or $log->logcroak(q{Could not close xargsfilehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_metafile_in_sample_info(
@@ -390,7 +383,7 @@ sub analysis_vep_wgs {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
                 dependency_method                 => q{sample_to_case},
-                job_id_chain                      => $job_id_chain,
+                job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
                 log                               => $log,
@@ -507,7 +500,7 @@ sub analysis_vep_sv_wes {
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Vep qw{ variant_effect_predictor };
@@ -541,21 +534,14 @@ sub analysis_vep_sv_wes {
 
     my $consensus_analysis_type  = $parameter_href->{cache}{consensus_analysis_type};
     my $genome_reference_version = $file_info_href->{human_genome_reference_version};
-    my $job_id_chain             = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe                   = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe_resource{core_number};
+    my $core_number = $recipe{core_number};
 
     my $xargs_file_path_prefix;
     ## Set and get the io files per chain, id and stream
@@ -563,7 +549,7 @@ sub analysis_vep_sv_wes {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $case_id,
                 file_info_href         => $file_info_href,
                 outdata_dir            => $active_parameter_href->{outdata_dir},
@@ -597,7 +583,7 @@ sub analysis_vep_sv_wes {
         {
             node_ram_memory           => $active_parameter_href->{node_ram_memory},
             parallel_processes        => $core_number,
-            process_memory_allocation => $recipe_resource{memory},
+            process_memory_allocation => $recipe{memory},
         }
     );
 
@@ -610,7 +596,7 @@ sub analysis_vep_sv_wes {
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $memory_allocation,
-            process_time          => $recipe_resource{time},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -697,7 +683,7 @@ sub analysis_vep_sv_wes {
 
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -712,7 +698,7 @@ sub analysis_vep_sv_wes {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
                 dependency_method                 => q{sample_to_case},
-                job_id_chain                      => $job_id_chain,
+                job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
                 log                               => $log,
@@ -828,7 +814,7 @@ sub analysis_vep_sv_wgs {
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Vep qw{ variant_effect_predictor };
@@ -865,17 +851,10 @@ sub analysis_vep_sv_wgs {
     my $consensus_analysis_type  = $parameter_href->{cache}{consensus_analysis_type};
     my $genome_reference_version = $file_info_href->{human_genome_reference_version};
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -886,7 +865,7 @@ sub analysis_vep_sv_wgs {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 outdata_dir      => $active_parameter_href->{outdata_dir},
@@ -913,7 +892,7 @@ sub analysis_vep_sv_wgs {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar @{ $file_info_href->{contigs_size_ordered} },
-            recipe_core_number   => $recipe_resource{core_number},
+            recipe_core_number   => $recipe{core_number},
         }
     );
 
@@ -925,7 +904,7 @@ sub analysis_vep_sv_wgs {
         {
             node_ram_memory           => $active_parameter_href->{node_ram_memory},
             parallel_processes        => $parallel_processes,
-            process_memory_allocation => $recipe_resource{memory},
+            process_memory_allocation => $recipe{memory},
         }
     );
 
@@ -938,7 +917,7 @@ sub analysis_vep_sv_wgs {
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $memory_allocation,
-            process_time          => $recipe_resource{time},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -1090,7 +1069,7 @@ sub analysis_vep_sv_wgs {
     close $xargsfilehandle;
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -1105,7 +1084,7 @@ sub analysis_vep_sv_wgs {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
                 dependency_method                 => q{sample_to_case},
-                job_id_chain                      => $job_id_chain,
+                job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
                 log                               => $log,
@@ -1209,7 +1188,7 @@ sub analysis_vep {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::List qw{ get_splitted_lists };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -1242,17 +1221,10 @@ sub analysis_vep {
 
     my $consensus_analysis_type  = $parameter_href->{cache}{consensus_analysis_type};
     my $genome_reference_version = $file_info_href->{human_genome_reference_version};
-    my $job_id_chain             = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe                   = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -1260,7 +1232,7 @@ sub analysis_vep {
     ## Set and get the io files per chain, id and stream
     %io = parse_io_outfiles(
         {
-            chain_id               => $job_id_chain,
+            chain_id               => $recipe{job_id_chain},
             id                     => $case_id,
             file_info_href         => $file_info_href,
             file_name_prefixes_ref => [$infile_name_prefix],
@@ -1282,12 +1254,12 @@ sub analysis_vep {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
+            core_number           => $recipe{core_number},
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
         }
@@ -1399,7 +1371,7 @@ sub analysis_vep {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -1428,7 +1400,7 @@ sub analysis_vep {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
                 dependency_method                 => q{sample_to_case},
-                job_id_chain                      => $job_id_chain,
+                job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
                 log                               => $log,

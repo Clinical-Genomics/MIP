@@ -21,17 +21,13 @@ use Modern::Perl qw{ 2018 };
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }],
-
-    );
+    my %perl_module = ( q{MIP::PATH::TO::MODULE} => [qw{ SUB_ROUTINE }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }

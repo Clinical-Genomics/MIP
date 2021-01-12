@@ -127,7 +127,7 @@ sub analysis_bootstrapann {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::BootstrapAnn qw{ bootstrapann };
@@ -179,19 +179,11 @@ sub analysis_bootstrapann {
     );
     my $variant_infile_path = $variant_io{out}{file_path};
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    ## Get module parameters
-    my %recipe_resource = get_recipe_resources(
+## Get module parameters
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -202,7 +194,7 @@ sub analysis_bootstrapann {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => \@ase_infile_name_prefixes,
@@ -224,12 +216,12 @@ sub analysis_bootstrapann {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
+            core_number           => $recipe{core_number},
             directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -252,7 +244,7 @@ sub analysis_bootstrapann {
 
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -277,13 +269,13 @@ sub analysis_bootstrapann {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                dependency_method    => q{sample_to_sample},
-                case_id              => $case_id,
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                dependency_method                 => q{sample_to_sample},
+                case_id                           => $case_id,
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
