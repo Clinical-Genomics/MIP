@@ -20,7 +20,6 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      set_container_bind_paths
       set_programs_for_installation
     };
 }
@@ -91,47 +90,6 @@ sub set_programs_for_installation {
         @non_selects =
           array_minus( @non_selects, @{ $active_parameter_href->{select_programs} } );
         delete @{ $active_parameter_href->{container} }{@non_selects};
-    }
-
-    return;
-}
-
-sub set_container_bind_paths {
-
-## Function : Set/add bind paths to container hash
-## Returns  :
-## Arguments: $bind_paths_ref  => Active parameter hash {REF}
-##          : $container_href  => Container hah {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $bind_paths_ref;
-    my $container_href;
-
-    my $tmpl = {
-        bind_paths_ref => {
-            default     => [],
-            required    => 1,
-            store       => \$bind_paths_ref,
-            strict_type => 1,
-        },
-        container_href => {
-            default     => {},
-            required    => 1,
-            store       => \$container_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    if ( $container_href->{program_bind_paths} ) {
-
-        push @{ $container_href->{program_bind_paths} }, @{$bind_paths_ref};
-    }
-    else {
-        $container_href->{program_bind_paths} = $bind_paths_ref;
     }
 
     return;
