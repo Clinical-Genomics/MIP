@@ -441,6 +441,7 @@ sub pipeline_analyse_rd_dna {
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem2 };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Chromograph
@@ -545,7 +546,7 @@ sub pipeline_analyse_rd_dna {
     my %analysis_recipe = (
         analysisrunstatus  => \&analysis_analysisrunstatus,
         bwa_mem            => undef,                           # Depends on genome build
-        bwa_mem2           => undef,
+        bwa_mem2           => \&analysis_bwa_mem2,
         cadd_ar            => \&analysis_cadd,
         chanjo_sexcheck    => \&analysis_chanjo_sex_check,
         chromograph_cov    => \&analysis_chromograph_cov,
@@ -634,6 +635,7 @@ sub pipeline_analyse_rd_dna {
         {
             analysis_recipe_href           => \%analysis_recipe,
             human_genome_reference_version => $file_info_href->{human_genome_reference_version},
+            run_bwakit                     => $active_parameter_href->{bwa_mem_run_bwakit},
         }
     );
 

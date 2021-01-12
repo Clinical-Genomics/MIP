@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $SPACE $TAB };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Bwa}   => [qw{ bwa_mem }],
-);
+    my %perl_module = ( q{MIP::Program::Bwa} => [qw{ bwa_mem }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -46,6 +43,8 @@ diag(   q{Test bwa_mem from Bwa.pm}
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+Readonly my $BASES_TO_PROCESS => 100_000_000;
 
 ## Base arguments
 my @function_base_commands = qw{ bwa mem };
@@ -94,6 +93,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    deterministic_alignment => {
+        input           => 1,
+        expected_output => q{-K} . $SPACE . $BASES_TO_PROCESS,
+    },
     infile_path => {
         input           => q{test_infile_1.fastq},
         expected_output => q{test_infile_1.fastq},

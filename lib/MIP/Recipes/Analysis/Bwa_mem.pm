@@ -283,15 +283,14 @@ sub analysis_bwa_mem {
         # Prior to ALTs in reference genome
         bwa_mem(
             {
-                filehandle              => $filehandle,
-                idxbase                 => $referencefile_path,
-                infile_path             => $fastq_file_path,
-                interleaved_fastq_file  => $is_interleaved_fastq,
-                mark_split_as_secondary => 1,
-                read_group_header       => $rg_header_line,
-                soft_clip_sup_align     => $active_parameter_href->{bwa_soft_clip_sup_align},
-                second_infile_path      => $second_fastq_file_path,
-                thread_number           => $recipe{core_number},
+                filehandle             => $filehandle,
+                idxbase                => $referencefile_path,
+                infile_path            => $fastq_file_path,
+                interleaved_fastq_file => $is_interleaved_fastq,
+                read_group_header      => $rg_header_line,
+                soft_clip_sup_align    => $active_parameter_href->{bwa_soft_clip_sup_align},
+                second_infile_path     => $second_fastq_file_path,
+                thread_number          => $recipe_resource{core_number},
             }
         );
 
@@ -705,15 +704,14 @@ sub analysis_bwa_mem2 {
         # Prior to ALTs in reference genome
         bwa_mem2_mem(
             {
-                filehandle              => $filehandle,
-                idxbase                 => $referencefile_path,
-                infile_path             => $fastq_file_path,
-                interleaved_fastq_file  => $is_interleaved_fastq,
-                mark_split_as_secondary => 1,
-                read_group_header       => $rg_header_line,
-                soft_clip_sup_align     => $active_parameter_href->{bwa_soft_clip_sup_align},
-                second_infile_path      => $second_fastq_file_path,
-                thread_number           => $recipe{core_number},
+                filehandle             => $filehandle,
+                idxbase                => $referencefile_path,
+                infile_path            => $fastq_file_path,
+                interleaved_fastq_file => $is_interleaved_fastq,
+                read_group_header      => $rg_header_line,
+                soft_clip_sup_align    => $active_parameter_href->{bwa_soft_clip_sup_align},
+                second_infile_path     => $second_fastq_file_path,
+                thread_number          => $recipe_resource{core_number},
             }
         );
 

@@ -38,12 +38,14 @@ sub set_recipe_bwa_mem {
 ## Returns  :
 ## Arguments: $analysis_recipe_href           => Analysis recipe hash {REF}
 ##          : $human_genome_reference_version => Human genome reference version
+##          : $run_bwakit                     => Use bwakit for alignment to GRCh38
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $analysis_recipe_href;
     my $human_genome_reference_version;
+    my $run_bwakit;
 
     my $tmpl = {
         analysis_recipe_href => {
@@ -59,20 +61,24 @@ sub set_recipe_bwa_mem {
             store       => \$human_genome_reference_version,
             strict_type => 1,
         },
+        run_bwakit => {
+            defined     => 1,
+            required    => 1,
+            store       => \$run_bwakit,
+            strict_type => 1,
+        }
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Analysis::Bwa_mem
-      qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
+    use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem analysis_run_bwa_mem };
 
     Readonly my $GENOME_BUILD_VERSION_PRIOR_ALTS => 37;
 
     ## Default recipes for genomes pre alt contigs
-    $analysis_recipe_href->{bwa_mem}  = \&analysis_bwa_mem;
-    $analysis_recipe_href->{bwa_mem2} = \&analysis_bwa_mem2;
+    $analysis_recipe_href->{bwa_mem} = \&analysis_bwa_mem;
 
-    if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_PRIOR_ALTS ) {
+    if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_PRIOR_ALTS && $run_bwakit ) {
 
         $analysis_recipe_href->{bwa_mem} = \&analysis_run_bwa_mem;
     }
