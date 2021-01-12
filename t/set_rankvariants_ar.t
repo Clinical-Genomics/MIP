@@ -36,14 +36,14 @@ BEGIN {
         q{MIP::Recipes::Analysis::Rankvariant} => [
             qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected }
         ],
-        q{MIP::Set::Analysis}  => [qw{ set_rankvariants_ar }],
+        q{MIP::Analysis}       => [qw{ set_rankvariants_ar }],
         q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::Analysis qw{ set_rankvariants_ar };
+use MIP::Analysis qw{ set_rankvariants_ar };
 use MIP::Recipes::Analysis::Rankvariant
   qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
 
@@ -55,26 +55,26 @@ diag(   q{Test set_rankvariants_ar from Analysis.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+test_log( {} );
+
 ## Given no recipes and only unaffected
-my $log                = test_log( {} );
-my $sample_id          = q{sample_1};
-my $sample_id_affected = q{sample_2};
-my %active_parameter   = ( sample_ids => [$sample_id], );
-my %parameter          = ( cache => { unaffected => [$sample_id], }, );
 my %analysis_recipe;
-my %expected_recipe = (
-    rankvariant    => \&analysis_rankvariant_unaffected,
-    sv_rankvariant => \&analysis_rankvariant_sv_unaffected,
-);
+my $sample_id        = q{sample_1};
+my %active_parameter = ( sample_ids => [$sample_id], );
+my %parameter        = ( cache      => { unaffected => [$sample_id], }, );
 
 ## Set which recipe to use depending on sample affected status
 set_rankvariants_ar(
     {
         analysis_recipe_href => \%analysis_recipe,
-        log                  => $log,
         parameter_href       => \%parameter,
         sample_ids_ref       => $active_parameter{sample_ids},
     }
+);
+
+my %expected_recipe = (
+    rankvariant    => \&analysis_rankvariant_unaffected,
+    sv_rankvariant => \&analysis_rankvariant_sv_unaffected,
 );
 
 ## Then set rankvariants unaffected recipes
@@ -82,6 +82,7 @@ is_deeply( \%analysis_recipe, \%expected_recipe,
     q{Set unaffected recipes when all samples are unaffected} );
 
 ## Given affected samples
+my $sample_id_affected = q{sample_2};
 push @{ $active_parameter{sample_ids} }, $sample_id_affected;
 
 my %expected_affected_recipe = (
@@ -93,13 +94,12 @@ my %expected_affected_recipe = (
 set_rankvariants_ar(
     {
         analysis_recipe_href => \%analysis_recipe,
-        log                  => $log,
         parameter_href       => \%parameter,
         sample_ids_ref       => $active_parameter{sample_ids},
     }
 );
 
-## Then set rankvaraints affected recipes
+## Then set rankvariants affected recipes
 is_deeply( \%analysis_recipe, \%expected_affected_recipe,
     q{Set recipes when a sample has affected status} );
 

@@ -357,8 +357,9 @@ sub pipeline_analyse_dragen_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Analysis qw{ set_rankvariants_ar };
     use MIP::Parse::Reference qw{ parse_references };
-    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
+    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
@@ -454,7 +455,6 @@ sub pipeline_analyse_dragen_rd_dna {
     set_rankvariants_ar(
         {
             analysis_recipe_href => \%analysis_recipe,
-            log                  => $log,
             parameter_href       => $parameter_href,
             sample_ids_ref       => $active_parameter_href->{sample_ids},
         }
