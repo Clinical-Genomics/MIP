@@ -23,65 +23,11 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      set_recipe_bwa_mem
       set_recipe_deepvariant
       set_recipe_gatk_variantrecalibration
       set_recipe_on_analysis_type
       set_recipe_star_aln
     };
-}
-
-sub set_recipe_bwa_mem {
-
-## Function : Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)
-## Returns  :
-## Arguments: $analysis_recipe_href           => Analysis recipe hash {REF}
-##          : $human_genome_reference_version => Human genome reference version
-##          : $run_bwakit                     => Use bwakit for alignment to GRCh38
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_recipe_href;
-    my $human_genome_reference_version;
-    my $run_bwakit;
-
-    my $tmpl = {
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-        human_genome_reference_version => {
-            defined     => 1,
-            required    => 1,
-            store       => \$human_genome_reference_version,
-            strict_type => 1,
-        },
-        run_bwakit => {
-            defined     => 1,
-            required    => 1,
-            store       => \$run_bwakit,
-            strict_type => 1,
-        }
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem analysis_run_bwa_mem };
-
-    Readonly my $GENOME_BUILD_VERSION_PRIOR_ALTS => 37;
-
-    ## Default recipes for genomes pre alt contigs
-    $analysis_recipe_href->{bwa_mem} = \&analysis_bwa_mem;
-
-    if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_PRIOR_ALTS && $run_bwakit ) {
-
-        $analysis_recipe_href->{bwa_mem} = \&analysis_run_bwa_mem;
-    }
-    return;
 }
 
 sub set_recipe_deepvariant {
