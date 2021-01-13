@@ -29,14 +29,14 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
+        q{MIP::Analysis}                   => [qw{ set_recipe_bwa_mem }],
         q{MIP::Recipes::Analysis::Bwa_mem} => [qw{ analysis_bwa_mem analysis_run_bwa_mem }],
-        q{MIP::Set::Analysis}              => [qw{ set_recipe_bwa_mem }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::Analysis qw{ set_recipe_bwa_mem };
+use MIP::Analysis qw{ set_recipe_bwa_mem };
 use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem analysis_run_bwa_mem };
 
 diag(   q{Test set_recipe_bwa_mem from Analysis.pm}
