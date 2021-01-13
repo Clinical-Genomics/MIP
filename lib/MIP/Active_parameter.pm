@@ -70,6 +70,7 @@ BEGIN {
       set_load_env_environment
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
+      set_programs_for_installation
       set_recipe_mode
       set_recipe_resource
       set_vcfparser_outfile_counter
@@ -2357,6 +2358,76 @@ sub set_pedigree_sample_id_parameter {
 
     ## Add value for sample_id using pedigree info
     $active_parameter_href->{$pedigree_key}{$sample_id} = $pedigree_value;
+
+    return;
+}
+
+sub set_programs_for_installation {
+
+## Function : Process the lists of programs that has been selected for installation
+##          : and update the environment packages
+## Returns  :
+## Arguments: $active_parameter_href => The entire active parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Array::Utils qw{ array_minus };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Check that the options supplied are compatible with each other
+    if (    @{ $active_parameter_href->{skip_programs} }
+        and @{ $active_parameter_href->{select_programs} } )
+    {
+        $log->fatal(
+            q{"--skip_programs" and "--select_programs" are mutually exclusive command line options}
+        );
+        exit 1;
+    }
+
+    ## Set all programs to install for pipelines
+    if ( scalar @{ $active_parameter_href->{select_programs} } == 0 ) {
+
+      PIPELINE:
+        foreach my $pipeline ( @{ $active_parameter_href->{pipelines} } ) {
+
+            push @{ $active_parameter_href->{select_programs} },
+              @{ $active_parameter_href->{$pipeline} };
+        }
+    }
+
+    ## Remove programs to be skipped from container
+    delete @{ $active_parameter_href->{container} }{ @{ $active_parameter_href->{skip_programs} } };
+
+    ## Remove programs to be skipped from select_programs
+    @{ $active_parameter_href->{select_programs} } = array_minus(
+        @{ $active_parameter_href->{select_programs} },
+        @{ $active_parameter_href->{skip_programs} }
+    );
+
+    return if ( not @{ $active_parameter_href->{select_programs} } );
+
+    ## Remove all programs that have not been selected for install
+    my @container_programs = keys %{ $active_parameter_href->{container} };
+    my @not_selected_programs =
+      array_minus( @container_programs, @{ $active_parameter_href->{select_programs} } );
+    delete @{ $active_parameter_href->{container} }{@not_selected_programs};
 
     return;
 }
