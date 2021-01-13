@@ -363,6 +363,20 @@ sub analysis_markduplicates {
             temp_directory       => $temp_directory,
         }
     );
+    say {$filehandle} $NEWLINE;
+
+    ## Rename the bam file index file so that Expansion Hunter can find it
+    say {$filehandle}
+      q{## Copy index file to ".bam.bai" so that Expansionhunter can find it downstream};
+
+    gnu_cp(
+        {
+            filehandle   => $filehandle,
+            force        => 1,
+            infile_path  => $outfile_path_prefix . q{.bai},
+            outfile_path => $outfile_path_prefix . $outfile_suffix . q{.bai},
+        }
+    );
 
     ## Close filehandles
     close $xargsfilehandle;
