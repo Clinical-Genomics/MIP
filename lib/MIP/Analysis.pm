@@ -40,6 +40,7 @@ BEGIN {
       set_parameter_to_broadcast
       set_rankvariants_ar
       set_recipe_bwa_mem
+      set_recipe_deepvariant
       update_prioritize_flag
       update_recipe_mode_for_fastq_compatibility
       update_recipe_mode_for_pedigree
@@ -809,6 +810,56 @@ sub set_recipe_bwa_mem {
     if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_PRIOR_ALTS && $run_bwakit ) {
 
         $analysis_recipe_href->{bwa_mem} = \&analysis_run_bwa_mem;
+    }
+    return;
+}
+
+sub set_recipe_deepvariant {
+
+## Function : Set deeptrio or deepvariant recipe depending on the presence of parent-child duo or trio
+## Returns  :
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $sample_info_href     => Sample info hash {HASH}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Deepvariant qw{ analysis_deepvariant };
+    use MIP::Recipes::Analysis::Deeptrio qw{ analysis_deeptrio };
+
+    $analysis_recipe_href->{deeptrio}    = undef;
+    $analysis_recipe_href->{deepvariant} = \&analysis_deepvariant;
+
+  CONSTELLATION_STATE:
+    foreach my $constellation_state (qw{ has_duo has_trio }) {
+
+        next CONSTELLATION_STATE if ( not $sample_info_href->{$constellation_state} );
+
+        $analysis_recipe_href->{deeptrio}    = \&analysis_deeptrio;
+        $analysis_recipe_href->{deepvariant} = undef;
+        return;
     }
     return;
 }
