@@ -819,12 +819,14 @@ sub set_recipe_deepvariant {
 ## Function : Set deeptrio or deepvariant recipe depending on the presence of parent-child duo or trio
 ## Returns  :
 ## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $deeptrio_mode        => Deeptrio mode
 ##          : $sample_info_href     => Sample info hash {HASH}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $analysis_recipe_href;
+    my $deeptrio_mode;
     my $sample_info_href;
 
     my $tmpl = {
@@ -833,6 +835,11 @@ sub set_recipe_deepvariant {
             defined     => 1,
             required    => 1,
             store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        deeptrio_mode => {
+            required    => 1,
+            store       => \$deeptrio_mode,
             strict_type => 1,
         },
         sample_info_href => {
@@ -851,6 +858,9 @@ sub set_recipe_deepvariant {
 
     $analysis_recipe_href->{deeptrio}    = undef;
     $analysis_recipe_href->{deepvariant} = \&analysis_deepvariant;
+
+    ## Return if deeptrio is turned off
+    return if ( not $deeptrio_mode );
 
   CONSTELLATION_STATE:
     foreach my $constellation_state (qw{ has_duo has_trio }) {
