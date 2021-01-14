@@ -220,11 +220,13 @@ sub parse_rd_dna {
     );
 
     ## Check that the supplied gatk sample map file paths exists
-    check_gatk_sample_map_paths(
-        {
-            sample_map_path => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
-        }
-    );
+    if ( $parameter_href->{gatk_genotypegvcfs}{default} ) {
+        check_gatk_sample_map_paths(
+            {
+                sample_map_path => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
+            }
+        );
+    }
 
     ## Parse parameters with TOML config files
     parse_toml_config_parameters(
