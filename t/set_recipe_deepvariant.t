@@ -62,6 +62,7 @@ $sample_info{has_trio} = 0;
 set_recipe_deepvariant(
     {
         analysis_recipe_href => \%analysis_recipe,
+        deeptrio_mode        => 1,
         sample_info_href     => \%sample_info,
     }
 );
@@ -81,6 +82,7 @@ $sample_info{has_trio} = 1;
 set_recipe_deepvariant(
     {
         analysis_recipe_href => \%analysis_recipe,
+        deeptrio_mode        => 1,
         sample_info_href     => \%sample_info,
     }
 );
@@ -90,6 +92,21 @@ $expected_analysis_recipe{deepvariant} = undef;
 ## Then set deeptrio recipe
 is_deeply( \%analysis_recipe, \%expected_analysis_recipe, q{Set deeptrio recipe for a trio} );
 
+## When deeptrio is turned off
+set_recipe_deepvariant(
+    {
+        analysis_recipe_href => \%analysis_recipe,
+        deeptrio_mode        => 0,
+        sample_info_href     => \%sample_info,
+    }
+);
+$expected_analysis_recipe{deeptrio}    = undef;
+$expected_analysis_recipe{deepvariant} = \&analysis_deepvariant;
+
+## Then set deepvariant recipe
+is_deeply( \%analysis_recipe, \%expected_analysis_recipe,
+    q{Set deepvariant recipe when deeptrio is turned off} );
+
 ## Given neither a duo or trio constellation state
 $sample_info{has_duo}  = 0;
 $sample_info{has_trio} = 0;
@@ -98,6 +115,7 @@ $sample_info{has_trio} = 0;
 set_recipe_deepvariant(
     {
         analysis_recipe_href => \%analysis_recipe,
+        deeptrio_mode        => 1,
         sample_info_href     => \%sample_info,
     }
 );
