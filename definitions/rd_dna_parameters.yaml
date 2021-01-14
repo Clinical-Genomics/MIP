@@ -526,7 +526,7 @@ deeptrio:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _deeptrio
   outfile_suffix: ".g.vcf.gz"
   program_executables:

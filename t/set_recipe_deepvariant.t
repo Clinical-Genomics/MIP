@@ -60,6 +60,7 @@ $sample_info{has_trio} = 0;
 set_recipe_deepvariant(
     {
         analysis_recipe_href => \%analysis_recipe,
+        deeptrio_mode        => 1,
         sample_info_href     => \%sample_info,
     }
 );
@@ -68,8 +69,8 @@ my %expected_analysis_recipe = (
     deeptrio    => \&analysis_deeptrio,
 );
 
-## Then set deepvariant recipe
-is_deeply( \%analysis_recipe, \%expected_analysis_recipe, q{Set deepvariant recipe for a duo} );
+## Then set deeptrio recipe
+is_deeply( \%analysis_recipe, \%expected_analysis_recipe, q{Set deeptrio recipe for a duo} );
 
 ## When constellation state is a trio
 $sample_info{has_duo}  = 0;
@@ -77,14 +78,30 @@ $sample_info{has_trio} = 1;
 set_recipe_deepvariant(
     {
         analysis_recipe_href => \%analysis_recipe,
+        deeptrio_mode        => 1,
         sample_info_href     => \%sample_info,
     }
 );
 $expected_analysis_recipe{deeptrio}    = \&analysis_deeptrio;
 $expected_analysis_recipe{deepvariant} = undef;
 
+## Then set deeptrio recipe
+is_deeply( \%analysis_recipe, \%expected_analysis_recipe, q{Set deeptrio recipe for a trio} );
+
+## When deeptrio is turned off
+set_recipe_deepvariant(
+    {
+        analysis_recipe_href => \%analysis_recipe,
+        deeptrio_mode        => 0,
+        sample_info_href     => \%sample_info,
+    }
+);
+$expected_analysis_recipe{deeptrio}    = undef;
+$expected_analysis_recipe{deepvariant} = \&analysis_deepvariant;
+
 ## Then set deepvariant recipe
-is_deeply( \%analysis_recipe, \%expected_analysis_recipe, q{Set deepvariant recipe for a trio} );
+is_deeply( \%analysis_recipe, \%expected_analysis_recipe,
+    q{Set deepvariant recipe when deeptrio is turned off} );
 
 ## When constellation state is neither a duo or trio
 $sample_info{has_duo}  = 0;
@@ -92,13 +109,14 @@ $sample_info{has_trio} = 0;
 set_recipe_deepvariant(
     {
         analysis_recipe_href => \%analysis_recipe,
+        deeptrio_mode        => 1,
         sample_info_href     => \%sample_info,
     }
 );
 $expected_analysis_recipe{deeptrio}    = undef;
 $expected_analysis_recipe{deepvariant} = \&analysis_deepvariant;
 
-## Then set bwa mem recipe
+## Then set deepvariant recipe
 is_deeply( \%analysis_recipe, \%expected_analysis_recipe,
     q{Set deepvariant recipe when the case is neither a duo or a trio} );
 
