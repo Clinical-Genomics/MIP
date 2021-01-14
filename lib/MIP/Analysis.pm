@@ -846,8 +846,8 @@ sub set_recipe_deepvariant {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Analysis::Deepvariant qw{ analysis_deepvariant };
     use MIP::Recipes::Analysis::Deeptrio qw{ analysis_deeptrio };
+    use MIP::Recipes::Analysis::Deepvariant qw{ analysis_deepvariant };
 
     $analysis_recipe_href->{deeptrio}    = undef;
     $analysis_recipe_href->{deepvariant} = \&analysis_deepvariant;
