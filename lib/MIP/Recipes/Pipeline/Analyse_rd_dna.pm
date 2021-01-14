@@ -643,6 +643,7 @@ sub pipeline_analyse_rd_dna {
     set_recipe_deepvariant(
         {
             analysis_recipe_href => \%analysis_recipe,
+            deeptrio_mode        => $active_parameter_href->{deeptrio},
             sample_info_href     => $sample_info_href,
         }
     );
