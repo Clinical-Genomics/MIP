@@ -18,8 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ %ANALYSIS $ASTERISK $DOT $LOG_NAME $NEWLINE $SPACE $SEMICOLON $UNDERSCORE };
+use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $LOG_NAME $NEWLINE $SPACE $SEMICOLON $UNDERSCORE };
 
 BEGIN {
 
@@ -37,9 +36,8 @@ BEGIN {
 
 ## Constants
 Readonly my $JAVA_MEMORY_ALLOCATION      => 6;
-Readonly my $JAVA_MEMORY_RECIPE_ADDITION => 1;
-Readonly my $JAVA_GUEST_OS_MEMORY        => $ANALYSIS{JAVA_GUEST_OS_MEMORY} +
-  $JAVA_MEMORY_RECIPE_ADDITION;
+Readonly my $JAVA_MEMORY_RECIPE_ADDITION => 2;
+Readonly my $JAVA_GUEST_OS_MEMORY => $ANALYSIS{JAVA_GUEST_OS_MEMORY} + $JAVA_MEMORY_RECIPE_ADDITION;
 
 sub analysis_markduplicates {
 
@@ -193,8 +191,7 @@ sub analysis_markduplicates {
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number       = $recipe_resource{core_number};
-    my $memory_allocation = $recipe_resource{memory};
+    my $core_number = $recipe_resource{core_number};
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
@@ -235,34 +232,31 @@ sub analysis_markduplicates {
     my %outfile_path        = %{ $io{out}{file_path_href} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
 
+    ## Update memory and parallel processes for markduplicates
+    my ( $recipe_memory, $contig_memory_href, $parallel_processes ) = _get_markdup_resources(
+        {
+            active_contigs_ref  => $file_info_href->{bam_contigs},
+            node_memory         => $active_parameter_href->{node_ram_memory},
+            primary_contigs_ref => $file_info_href->{primary_contigs},
+            recipe_core_number  => $core_number,
+        }
+    );
+
     ## Filehandles
     # Create anonymous filehandle
     my $filehandle      = IO::Handle->new();
     my $xargsfilehandle = IO::Handle->new();
 
-    ## Update recipe memory allocation for picard
-    ## Variables used downstream of if statment
-    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
-
-    ## Update the memory allocation
-    $memory_allocation = update_memory_allocation(
-        {
-            node_ram_memory           => $active_parameter_href->{node_ram_memory},
-            parallel_processes        => $core_number,
-            process_memory_allocation => $process_memory_allocation,
-        }
-    );
-
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $parallel_processes,
             directory_id                    => $sample_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            memory_allocation               => $memory_allocation,
+            memory_allocation               => $recipe_memory,
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
@@ -275,14 +269,6 @@ sub analysis_markduplicates {
 
     ## Marking Duplicates
     say {$filehandle} q{## Marking Duplicates};
-
-    my $parallel_processes = get_parallel_processes(
-        {
-            core_number               => $core_number,
-            process_memory_allocation => $process_memory_allocation,
-            recipe_memory_allocation  => $recipe_resource{memory},
-        }
-    );
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -299,19 +285,18 @@ sub analysis_markduplicates {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
 
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-        my $metrics_file = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $metrics_file    = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
+
         picardtools_markduplicates(
             {
                 create_index     => q{true},
                 filehandle       => $xargsfilehandle,
                 infile_paths_ref => [ $infile_path{$contig} ],
-                java_jar =>
-                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                metrics_file         => $metrics_file,
+                java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_use_large_pages       => $active_parameter_href->{java_use_large_pages},
+                memory_allocation          => q{Xmx} . $contig_memory_href->{$contig} . q{g},
+                metrics_file               => $metrics_file,
                 optical_duplicate_distance =>
                   $active_parameter_href->{markduplicates_picardtools_opt_dup_dist},
                 outfile_path       => $outfile_path{$contig},
@@ -327,11 +312,7 @@ sub analysis_markduplicates {
             {
                 filehandle      => $xargsfilehandle,
                 infile_path     => $outfile_path{$contig},
-                stdoutfile_path => $outfile_path_prefix
-                  . $DOT
-                  . $contig
-                  . $UNDERSCORE
-                  . q{metric},
+                stdoutfile_path => $outfile_path_prefix . $DOT . $contig . $UNDERSCORE . q{metric},
                 stderrfile_path_append => $stderrfile_path,
             }
         );
@@ -341,7 +322,7 @@ sub analysis_markduplicates {
     ## Concatenate all metric files
     gnu_cat(
         {
-            filehandle => $filehandle,
+            filehandle       => $filehandle,
             infile_paths_ref =>
               [ $outfile_path_prefix . $DOT . $ASTERISK . $UNDERSCORE . q{metric} ],
             stdoutfile_path => $outfile_path_prefix . $UNDERSCORE . q{metric_all},
@@ -367,23 +348,23 @@ sub analysis_markduplicates {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile      => $outfile_name_prefix,
-                path        => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
-                recipe_name => q{markduplicates},
-                sample_id   => $sample_id,
+                infile           => $outfile_name_prefix,
+                path             => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
+                recipe_name      => q{markduplicates},
+                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -600,11 +581,10 @@ sub analysis_markduplicates_panel {
             create_index     => q{true},
             filehandle       => $filehandle,
             infile_paths_ref => [$infile_path],
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            metrics_file         => $metrics_file,
+            java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_use_large_pages       => $active_parameter_href->{java_use_large_pages},
+            memory_allocation          => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            metrics_file               => $metrics_file,
             optical_duplicate_distance =>
               $active_parameter_href->{markduplicates_picardtools_opt_dup_dist},
             outfile_path       => $outfile_path,
@@ -641,23 +621,23 @@ sub analysis_markduplicates_panel {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile      => $outfile_name_prefix,
-                path        => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
-                recipe_name => q{markduplicates},
-                sample_id   => $sample_id,
+                infile           => $outfile_name_prefix,
+                path             => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
+                recipe_name      => q{markduplicates},
+                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -781,8 +761,7 @@ sub analysis_markduplicates_rna {
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Picardtools
-      qw{ picardtools_markduplicates picardtools_gatherbamfiles };
+    use MIP::Program::Picardtools qw{ picardtools_markduplicates picardtools_gatherbamfiles };
     use MIP::Program::Samtools qw{ samtools_flagstat samtools_index samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{
@@ -930,19 +909,17 @@ sub analysis_markduplicates_rna {
   CONTIG:
     foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
 
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
-        my $metrics_file = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $metrics_file    = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
         picardtools_markduplicates(
             {
                 create_index     => q{true},
                 filehandle       => $xargsfilehandle,
                 infile_paths_ref => [ $infile_path{$contig} ],
-                java_jar =>
-                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-                java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-                memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-                metrics_file         => $metrics_file,
+                java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_use_large_pages       => $active_parameter_href->{java_use_large_pages},
+                memory_allocation          => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                metrics_file               => $metrics_file,
                 optical_duplicate_distance =>
                   $active_parameter_href->{markduplicates_picardtools_opt_dup_dist},
                 outfile_path       => $outfile_path{$contig},
@@ -958,11 +935,7 @@ sub analysis_markduplicates_rna {
             {
                 filehandle      => $xargsfilehandle,
                 infile_path     => $outfile_path{$contig},
-                stdoutfile_path => $outfile_path_prefix
-                  . $DOT
-                  . $contig
-                  . $UNDERSCORE
-                  . q{metric},
+                stdoutfile_path => $outfile_path_prefix . $DOT . $contig . $UNDERSCORE . q{metric},
                 stderrfile_path_append => $stderrfile_path,
             }
         );
@@ -972,7 +945,7 @@ sub analysis_markduplicates_rna {
     ## Concatenate all metric files
     gnu_cat(
         {
-            filehandle => $filehandle,
+            filehandle       => $filehandle,
             infile_paths_ref =>
               [ $outfile_path_prefix . $DOT . $ASTERISK . $UNDERSCORE . q{metric} ],
             stdoutfile_path => $outfile_path_prefix . $UNDERSCORE . q{metric_all},
@@ -1000,8 +973,7 @@ sub analysis_markduplicates_rna {
             create_index     => q{true},
             filehandle       => $filehandle,
             infile_paths_ref => \@gather_infile_paths,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx4g},
             outfile_path         => $outfile_path_prefix . $outfile_suffix,
@@ -1046,10 +1018,10 @@ sub analysis_markduplicates_rna {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile      => $outfile_name_prefix,
-                path        => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
-                recipe_name => q{markduplicates},
-                sample_id   => $sample_id,
+                infile           => $outfile_name_prefix,
+                path             => catfile( $outfile_path_prefix . $UNDERSCORE . q{metric} ),
+                recipe_name      => q{markduplicates},
+                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -1077,13 +1049,13 @@ sub analysis_markduplicates_rna {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -1146,8 +1118,7 @@ sub _calculate_fraction_duplicates_for_all_metric_files {
     $regexp .= q?} ?;
 
     # Print metrics to stdout
-    $regexp .=
-      q?print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n".?;
+    $regexp .= q?print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n".?;
 
     # Print Fraction duplicates to stdout
     $regexp .= q?"Fraction Duplicates: ".$feature{dup}/$feature{map}, "\n"; ?;
@@ -1158,14 +1129,96 @@ sub _calculate_fraction_duplicates_for_all_metric_files {
     ## Sum metric over concatenated file
     print {$filehandle} $regexp . $SPACE;
     print {$filehandle} $outfile_path_prefix . $UNDERSCORE . q{metric_all} . $SPACE;
-    say   {$filehandle} q{>}
-      . $SPACE
-      . $outfile_path_prefix
-      . $UNDERSCORE
-      . q{metric}
-      . $SPACE,
+    say   {$filehandle} q{>} . $SPACE . $outfile_path_prefix . $UNDERSCORE . q{metric} . $SPACE,
       $NEWLINE;
     return;
 }
 
+sub _get_markdup_resources {
+
+## Function : Calculate and return resources for markduplicates recipe
+## Returns  : $recipe_memory, $contig_memory_href, $parallel_processes
+## Arguments: $active_contigs_ref  => Active contigs {REF}
+##          : $node_memory         => Available memory
+##          : $primary_contigs_ref => Primary contigs {REF}
+##          : $recipe_core_number  => Allocated core number
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_contigs_ref;
+    my $node_memory;
+    my $primary_contigs_ref;
+    my $recipe_core_number;
+
+    my $tmpl = {
+        active_contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$active_contigs_ref,
+            strict_type => 1,
+        },
+        node_memory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$node_memory,
+            strict_type => 1,
+        },
+        primary_contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$primary_contigs_ref,
+            strict_type => 1,
+        },
+        recipe_core_number => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_core_number,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use List::Util qw{ sum };
+    use MIP::Environment::Cluster qw{ check_recipe_memory_allocation };
+
+    Readonly my $CONTIG_MEM   => 6;
+    Readonly my $CONTIG_2_MEM => 12;
+
+    ## Java memory per contig
+    my %contig_mem_alloc = map { $_ => $CONTIG_MEM } @{$primary_contigs_ref};
+    $contig_mem_alloc{ $primary_contigs_ref->[1] } = $CONTIG_2_MEM;
+
+    ## Slice hash on active contigs
+    %contig_mem_alloc = %contig_mem_alloc{ @{$active_contigs_ref} };
+
+    ## Calculate max recipe memory in use
+    my @process_mem_allocs        = map { $_ + $JAVA_GUEST_OS_MEMORY } values %contig_mem_alloc;
+    my @sorted_process_mem_allocs = reverse sort { $a <=> $b } @process_mem_allocs;
+    my $max_process_mem           = sum @sorted_process_mem_allocs[ 0 .. $recipe_core_number - 1 ];
+    my $recipe_memory             = check_recipe_memory_allocation(
+        {
+            node_ram_memory          => $node_memory,
+            recipe_memory_allocation => $max_process_mem,
+        }
+    );
+
+    ## Get number of parallel processes given recipe memory
+    my $parallel_processes;
+    my $memory_requirement = 0;
+
+  MEMORY:
+    foreach my $memory_alloc (@sorted_process_mem_allocs) {
+
+        last if ( $memory_requirement >= $recipe_memory );
+
+        $parallel_processes++;
+        $memory_requirement += $memory_alloc;
+    }
+
+    return $recipe_memory, \%contig_mem_alloc, $parallel_processes;
+}
 1;

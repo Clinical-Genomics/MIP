@@ -87,8 +87,9 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
-CONTIG:
+$file_info{primary_contigs} = $file_info{contigs};
 
+CONTIG:
 foreach my $contig ( @{ $file_info{contigs} } ) {
 
     $file_info{io}{TEST}{$sample_id}{$recipe_name}{temp}{file_path_href}{$contig} =

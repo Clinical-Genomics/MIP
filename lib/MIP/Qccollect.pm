@@ -69,7 +69,7 @@ sub check_qc_metric {
     my $reference_metric_href;
 
     my $tmpl = {
-        metric => { defined => 1, required => 1, store => \$metric, strict_type => 1, },
+        metric       => { defined => 1, required => 1, store => \$metric, strict_type => 1, },
         qc_data_href => {
             default     => {},
             defined     => 1,
@@ -373,9 +373,7 @@ sub plink_relation_check {
 
     ## Set FAIL status
     my $status =
-        q{Status:}
-      . $recipe_name . q{:}
-      . $qc_data_href->{sample}{$sample_id}{$recipe_name};
+      q{Status:} . $recipe_name . q{:} . $qc_data_href->{sample}{$sample_id}{$recipe_name};
 
     ## Add to QC data at case level
     add_qc_data_evaluation_info(
@@ -650,8 +648,7 @@ sub get_case_pairwise_comparison {
     foreach my $relationship (@relationship_values) {
 
         ## Splices array into each sample_ids line
-        my @pairwise_comparisons = splice @relationship_values, 0,
-          scalar @{$sample_orders_ref};
+        my @pairwise_comparisons = splice @relationship_values, 0, scalar @{$sample_orders_ref};
 
         ## All columns in .mibs file
       COLUMN:
@@ -726,7 +723,7 @@ sub get_parent_ids {
 
         ## Return father_id and mother_id if defined and not 0
         next SAMPLE_ID if ( not defined $father_id and not defined $mother_id );
-        next SAMPLE_ID if ( $father_id eq 0 and $mother_id eq 0 );
+        next SAMPLE_ID if ( $father_id eq 0        and $mother_id eq 0 );
 
         return $father_id, $mother_id;
     }
@@ -872,10 +869,10 @@ sub parse_sample_qc_metric {
 
             check_qc_metric(
                 {
-                    metric          => $metric,
-                    qc_data_href    => $qc_data_href,
-                    qc_metric_value => $qc_data_recipe_href->{$metric},
-                    recipe          => $recipe_name,
+                    metric                => $metric,
+                    qc_data_href          => $qc_data_href,
+                    qc_metric_value       => $qc_data_recipe_href->{$metric},
+                    recipe                => $recipe_name,
                     reference_metric_href =>
                       $evaluate_metric_href->{$sample_id}{$recipe_name}{$metric},
                 }
@@ -895,11 +892,10 @@ sub parse_sample_qc_metric {
 
             check_qc_metric(
                 {
-                    metric       => $metric,
-                    qc_data_href => $qc_data_href,
-                    qc_metric_value =>
-                      $qc_data_recipe_href->{header}{$data_header}{$metric},
-                    recipe => $recipe_name,
+                    metric                => $metric,
+                    qc_data_href          => $qc_data_href,
+                    qc_metric_value       => $qc_data_recipe_href->{header}{$data_header}{$metric},
+                    recipe                => $recipe_name,
                     reference_metric_href =>
                       $evaluate_metric_href->{$sample_id}{$recipe_name}{$metric},
                 }
@@ -1347,7 +1343,7 @@ sub set_sample_eval_metrics {
     if ($expected_coverage) {
 
         my %eval_expression = (
-            MEAN_TARGET_COVERAGE => {
+            MEDIAN_TARGET_COVERAGE => {
                 lt => $expected_coverage,
             },
         );

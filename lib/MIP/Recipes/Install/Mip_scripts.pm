@@ -115,8 +115,7 @@ sub install_mip_scripts {
 
     my %mip_sub_script = (
         utility_scripts => [qw{ calculate_af.pl max_af.pl }],
-        t =>
-          [qw{ mip_install.test mip_analyse_rd_dna.test mip_core.t mip_analysis.test }],
+        t         => [qw{ mip_install.test mip_analyse_rd_dna.test mip_core.t mip_analysis.test }],
         templates => [
             qw{ 643594-miptest_pedigree.yaml
               gene_panels.bed
@@ -130,7 +129,7 @@ sub install_mip_scripts {
               mip_rd_dna_vcf_rerun_config.yaml
               mip_rd_rna_config.yaml
               program_test_cmds.yaml
-              qc_eval_metric_-v1.2-.yaml
+              qc_eval_metric_-v1.3-.yaml
               qc_regexp_-v1.26-.yaml
               rank_model_-v1.29-.ini
               svrank_model_cmms_-v1.8-.ini
@@ -178,7 +177,7 @@ sub install_mip_scripts {
             {
                 filehandle   => $filehandle,
                 force        => 1,
-                infile_path  => catdir( $Bin, $directory ),
+                infile_path  => catdir( $Bin,               $directory ),
                 outfile_path => catdir( $conda_prefix_path, q{bin} ),
                 recursive    => 1,
             }

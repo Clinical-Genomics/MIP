@@ -109,7 +109,7 @@ set_sample_eval_metrics(
 my %expected = (
     ADM1059A1 => {
         collecthsmetrics => {
-            MEAN_TARGET_COVERAGE => {
+            MEDIAN_TARGET_COVERAGE => {
                 lt => 150,
             },
         },
