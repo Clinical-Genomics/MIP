@@ -1208,15 +1208,15 @@ sub _get_markdup_resources {
 
     ## Get number of parallel processes given recipe memory
     my $parallel_processes;
-    my $memory_demand = 0;
+    my $memory_requirement = 0;
 
   MEMORY:
-    foreach my $memory (@sorted_process_mem_allocs) {
+    foreach my $memory_alloc (@sorted_process_mem_allocs) {
 
-        last if ( $memory_demand >= $recipe_memory );
+        last if ( $memory_requirement >= $recipe_memory );
 
         $parallel_processes++;
-        $memory_demand += $memory;
+        $memory_requirement += $memory_alloc;
     }
 
     return $recipe_memory, \%contig_mem_alloc, $parallel_processes;
