@@ -32,6 +32,7 @@ BEGIN {
       get_order_of_parameters
       get_parameter_attribute
       get_program_executables
+      get_recipe_attributes
       parse_reference_path
       parse_parameter_files
       parse_parameter_recipe_names
@@ -420,6 +421,54 @@ sub get_program_executables {
 
     ## Make unique and return
     return uniq(@program_executables);
+}
+
+sub get_recipe_attributes {
+
+## Function : Return recipe attributes
+## Returns  : $attribute | %attribute
+## Arguments: $attribute      => Attribute key
+##          : $parameter_href => Holds all parameters
+##          : $recipe_name    => Recipe name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $attribute;
+    my $parameter_href;
+    my $recipe_name;
+
+    my $tmpl = {
+        attribute => {
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$recipe_name,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( not exists $parameter_href->{$recipe_name} ) {
+        croak(qq{Recipe name: $recipe_name. Does not exists in parameter hash});
+    }
+
+    ## Get attribute value
+    return $parameter_href->{$recipe_name}{$attribute} if ( defined $attribute and $attribute );
+
+    ## Get recipe attribute hash
+    return %{ $parameter_href->{$recipe_name} };
 }
 
 sub parse_parameter_files {

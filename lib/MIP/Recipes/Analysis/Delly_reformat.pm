@@ -137,13 +137,13 @@ sub analysis_delly_reformat {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_merge bcftools_index bcftools_view };
     use MIP::Program::Delly qw{ delly_call delly_merge };
     use MIP::Program::Picardtools qw{ picardtools_sortvcf };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -154,27 +154,20 @@ sub analysis_delly_reformat {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my %recipe_resource    = get_recipe_resources(
+    my %recipe             = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe_resource{core_number};
+    my $core_number = $recipe{core_number};
 
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
         {
-            chain_id               => $job_id_chain,
+            chain_id               => $recipe{job_id_chain},
             id                     => $case_id,
             file_info_href         => $file_info_href,
             file_name_prefixes_ref => [$case_id],
@@ -202,8 +195,8 @@ sub analysis_delly_reformat {
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -219,9 +212,7 @@ sub analysis_delly_reformat {
     my %delly_sample_file_info;
     my $process_batches_count = 1;
   SAMPLE_ID:
-    while ( my ( $sample_id_index, $sample_id ) =
-        each @{ $active_parameter_href->{sample_ids} } )
-    {
+    while ( my ( $sample_id_index, $sample_id ) = each @{ $active_parameter_href->{sample_ids} } ) {
 
       PROGRAM_TAG:
         while ( my ( $recipe_tag, $stream ) = each %recipe_tag_keys ) {
@@ -249,8 +240,7 @@ sub analysis_delly_reformat {
 
     ## Delly call bcf sample infiles
     my @delly_merge_infile_paths =
-      map { $delly_sample_file_info{$_}{in}{q{.bcf}} }
-      @{ $active_parameter_href->{sample_ids} };
+      map { $delly_sample_file_info{$_}{in}{q{.bcf}} } @{ $active_parameter_href->{sample_ids} };
 
     ## We have something to merge
     if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
@@ -270,11 +260,8 @@ sub analysis_delly_reformat {
                 infile_paths_ref => \@delly_merge_infile_paths,
                 min_size         => 0,
                 max_size         => $SV_MAX_SIZE,
-                outfile_path     => $outfile_path_prefix
-                  . $UNDERSCORE
-                  . q{merged}
-                  . $DOT . q{bcf},
-                stderrfile_path => $recipe_file_path
+                outfile_path     => $outfile_path_prefix . $UNDERSCORE . q{merged} . $DOT . q{bcf},
+                stderrfile_path  => $recipe_file_path
                   . $UNDERSCORE
                   . q{merged}
                   . $DOT
@@ -357,11 +344,8 @@ sub analysis_delly_reformat {
             {
                 filehandle       => $filehandle,
                 infile_paths_ref => \@delly_genotype_outfile_paths,
-                outfile_path     => $outfile_path_prefix
-                  . $UNDERSCORE
-                  . q{to_sort}
-                  . $outfile_suffix,
-                output_type     => q{v},
+                outfile_path => $outfile_path_prefix . $UNDERSCORE . q{to_sort} . $outfile_suffix,
+                output_type  => q{v},
                 stderrfile_path => $xargs_file_path_prefix . $DOT . q{stderr.txt},
                 stdoutfile_path => $xargs_file_path_prefix . $DOT . q{stdout.txt},
             }
@@ -373,17 +357,14 @@ sub analysis_delly_reformat {
         # Only one sample
         say {$filehandle} q{## Only one sample - skip merging and regenotyping};
         say {$filehandle}
-q{## Reformat bcf infile to match outfile from regenotyping with multiple samples};
+          q{## Reformat bcf infile to match outfile from regenotyping with multiple samples};
 
         bcftools_view(
             {
                 filehandle   => $filehandle,
                 output_type  => q{v},
                 infile_path  => $delly_merge_infile_paths[0],
-                outfile_path => $outfile_path_prefix
-                  . $UNDERSCORE
-                  . q{to_sort}
-                  . $outfile_suffix,
+                outfile_path => $outfile_path_prefix . $UNDERSCORE . q{to_sort} . $outfile_suffix,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -393,11 +374,10 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
     say {$filehandle} q{## Picard SortVcf};
     picardtools_sortvcf(
         {
-            filehandle => $filehandle,
+            filehandle       => $filehandle,
             infile_paths_ref =>
               [ $outfile_path_prefix . $UNDERSCORE . q{to_sort} . $outfile_suffix ],
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx2g},
             outfile_path         => $outfile_path_prefix . $DOT . q{vcf},
@@ -413,7 +393,7 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -425,13 +405,13 @@ q{## Reformat bcf infile to match outfile from regenotyping with multiple sample
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                dependency_method    => q{sample_to_case},
-                case_id              => $case_id,
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                dependency_method                 => q{sample_to_case},
+                case_id                           => $case_id,
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

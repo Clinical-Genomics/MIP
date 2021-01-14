@@ -328,15 +328,15 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Analysis qw{ set_rankvariants_ar };
     use MIP::Parse::Reference qw{ parse_references };
-    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
+    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
-    use MIP::Recipes::Analysis::Endvariantannotationblock
-      qw{ analysis_endvariantannotationblock };
+    use MIP::Recipes::Analysis::Endvariantannotationblock qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Mip_vcfparser
       qw{ analysis_mip_vcfparser analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
@@ -352,11 +352,9 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation };
     use MIP::Recipes::Analysis::Vcf_rerun_reformat
       qw{ analysis_vcf_rerun_reformat_sv analysis_vcf_rerun_reformat };
-    use MIP::Recipes::Analysis::Vep
-      qw{ analysis_vep_wgs analysis_vep_sv_wes analysis_vep_sv_wgs };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs analysis_vep_sv_wes analysis_vep_sv_wgs };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
+    use MIP::Recipes::Build::Human_genome_prerequisites qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Rd_dna_vcf_rerun qw{build_rd_dna_vcf_rerun_meta_files};
 
     ### Pipeline specific checks
@@ -403,28 +401,27 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
         frequency_filter                 => \&analysis_frequency_filter,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
-        rankvariant    => undef,                         # Depends on sample features
-        rhocall_ar     => \&analysis_rhocall_annotate,
-        sacct          => \&analysis_sacct,
-        sv_annotate    => \&analysis_sv_annotate,
-        sv_rankvariant => undef,                         # Depends on sample features
-        sv_reformat    => \&analysis_reformat_sv,
-        sv_vcf_rerun_reformat => \&analysis_vcf_rerun_reformat_sv,
-        sv_varianteffectpredictor => undef,                # Depends on analysis type,
-        sv_vcfparser              => undef,                # Depends on analysis type
+        rankvariant               => undef,                             # Depends on sample features
+        rhocall_ar                => \&analysis_rhocall_annotate,
+        sacct                     => \&analysis_sacct,
+        sv_annotate               => \&analysis_sv_annotate,
+        sv_rankvariant            => undef,                             # Depends on sample features
+        sv_reformat               => \&analysis_reformat_sv,
+        sv_vcf_rerun_reformat     => \&analysis_vcf_rerun_reformat_sv,
+        sv_varianteffectpredictor => undef,                             # Depends on analysis type,
+        sv_vcfparser              => undef,                             # Depends on analysis type
         varianteffectpredictor    => \&analysis_vep_wgs,
-        variant_annotation => \&analysis_variant_annotation,
-        vcfparser_ar       => \&analysis_mip_vcfparser,
-        vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
-        version_collect_ar => \&analysis_mip_vercollect,
-        vt_ar              => \&analysis_vt,
+        variant_annotation        => \&analysis_variant_annotation,
+        vcfparser_ar              => \&analysis_mip_vcfparser,
+        vcf_rerun_reformat        => \&analysis_vcf_rerun_reformat,
+        version_collect_ar        => \&analysis_mip_vercollect,
+        vt_ar                     => \&analysis_vt,
     );
 
     ## Special case for rankvariants recipe
     set_rankvariants_ar(
         {
             analysis_recipe_href => \%analysis_recipe,
-            log                  => $log,
             parameter_href       => $parameter_href,
             sample_ids_ref       => $active_parameter_href->{sample_ids},
         }

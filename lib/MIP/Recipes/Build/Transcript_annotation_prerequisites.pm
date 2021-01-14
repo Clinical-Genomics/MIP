@@ -132,10 +132,10 @@ sub build_transcript_annotation_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Ucsc qw{ ucsc_gtf_to_genepred };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -145,11 +145,12 @@ sub build_transcript_annotation_prerequisites {
     my $submit_switch;
 
     ## Unpack parameters
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
-            recipe_name           => q{mip},
+            parameter_href        => $parameter_href,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -175,7 +176,7 @@ sub build_transcript_annotation_prerequisites {
                 job_id_href                     => $job_id_href,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
+                source_environment_commands_ref => $recipe{load_env_ref},
             }
         );
     }
@@ -233,7 +234,7 @@ sub build_transcript_annotation_prerequisites {
 
         close $filehandle;
 
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             submit_recipe(
                 {

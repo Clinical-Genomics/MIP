@@ -131,7 +131,7 @@ sub analysis_reformat_sv {
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -163,25 +163,17 @@ sub analysis_reformat_sv {
     my @infile_paths       = @{ $io{in}{file_paths} };
 
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe                  = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
     my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
         {
-            vcfparser_outfile_count =>
-              $active_parameter_href->{sv_vcfparser_outfile_count},
+            vcfparser_outfile_count => $active_parameter_href->{sv_vcfparser_outfile_count},
         }
     );
 
@@ -194,7 +186,7 @@ sub analysis_reformat_sv {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
@@ -218,12 +210,12 @@ sub analysis_reformat_sv {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
+            core_number           => $recipe{core_number},
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -254,8 +246,7 @@ sub analysis_reformat_sv {
             {
                 filehandle       => $filehandle,
                 infile_paths_ref => [$infile_path],
-                java_jar =>
-                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
                 outfile_path         => $outfile_paths[$infile_index],
@@ -274,13 +265,10 @@ sub analysis_reformat_sv {
               ? q{sv_reformat_remove_genes_file_clinical}
               : q{sv_reformat_remove_genes_file_research};
 
-            my $filter_file_path = catfile( $reference_dir,
-                $active_parameter_href->{sv_reformat_remove_genes_file} );
+            my $filter_file_path =
+              catfile( $reference_dir, $active_parameter_href->{sv_reformat_remove_genes_file} );
             my $filter_outfile_path =
-                $outfile_path_prefix
-              . $UNDERSCORE
-              . q{filtered}
-              . $outfile_suffixes[$infile_index];
+              $outfile_path_prefix . $UNDERSCORE . q{filtered} . $outfile_suffixes[$infile_index];
             ## Removes contig_names from contigs array if no male or other found
             gnu_grep(
                 {
@@ -293,7 +281,7 @@ sub analysis_reformat_sv {
             );
             say {$filehandle} $NEWLINE;
 
-            if ( $recipe_mode == 1 ) {
+            if ( $recipe{mode} == 1 ) {
 
                 ## Save filtered file
                 set_recipe_metafile_in_sample_info(
@@ -318,7 +306,7 @@ sub analysis_reformat_sv {
             }
         );
 
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             my $outfile_path = $outfile_paths[$infile_index];
 
@@ -347,17 +335,17 @@ sub analysis_reformat_sv {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

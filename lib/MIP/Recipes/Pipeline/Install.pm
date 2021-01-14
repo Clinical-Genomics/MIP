@@ -14,19 +14,8 @@ use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## MIPs lib/
-use MIP::Constants qw{
-  $COLON
-  $DOT
-  $LOG_NAME
-  $NEWLINE
-  $SINGLE_QUOTE
-  $SPACE
-  set_container_constants
-};
-use MIP::Recipes::Install::Container qw{ install_containers };
-use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
-use MIP::Recipes::Install::Post_installation qw{ check_mip_installation };
-use MIP::Set::Parameter qw{ set_programs_for_installation };
+use MIP::Constants
+  qw{ $COLON $DOT $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE set_container_constants };
 
 BEGIN {
 
@@ -76,6 +65,11 @@ sub pipeline_install {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ set_programs_for_installation };
+    use MIP::Recipes::Install::Container qw{ install_containers };
+    use MIP::Recipes::Install::Mip_scripts qw{ install_mip_scripts };
+    use MIP::Recipes::Install::Post_installation qw{ check_mip_installation };
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger($LOG_NAME);

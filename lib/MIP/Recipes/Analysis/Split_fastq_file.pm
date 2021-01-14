@@ -1,5 +1,6 @@
 package MIP::Recipes::Analysis::Split_fastq_file;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -127,10 +128,10 @@ sub analysis_split_fastq_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cp gnu_mkdir gnu_mv gnu_rm gnu_split };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Pigz qw{ pigz };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -160,18 +161,11 @@ sub analysis_split_fastq_file {
     my $infile_suffix             = $io{in}{file_constant_suffix};
     my @temp_infile_path_prefixes = @{ $io{temp}{file_path_prefixes} };
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode         = $active_parameter_href->{$recipe_name};
     my $sequence_read_batch = $active_parameter_href->{split_fastq_file_read_batch};
-    my %recipe_resource     = get_recipe_resources(
+    my %recipe              = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -187,15 +181,15 @@ sub analysis_split_fastq_file {
         my ($recipe_file_path) = setup_script(
             {
                 active_parameter_href           => $active_parameter_href,
-                core_number                     => $recipe_resource{core_number},
+                core_number                     => $recipe{core_number},
                 directory_id                    => $sample_id,
                 filehandle                      => $filehandle,
                 job_id_href                     => $job_id_href,
-                memory_allocation               => $recipe_resource{memory},
-                process_time                    => $recipe_resource{time},
+                memory_allocation               => $recipe{memory},
+                process_time                    => $recipe{time},
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
+                source_environment_commands_ref => $recipe{load_env_ref},
                 temp_directory                  => $temp_directory,
             }
         );
@@ -236,7 +230,7 @@ sub analysis_split_fastq_file {
                 decompress  => 1,
                 filehandle  => $filehandle,
                 infile_path => $infile_path,
-                processes   => $recipe_resource{core_number},
+                processes   => $recipe{core_number},
                 stdout      => 1,
             }
         );
@@ -316,14 +310,14 @@ sub analysis_split_fastq_file {
         );
         say {$filehandle} $NEWLINE;
 
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             submit_recipe(
                 {
                     base_command         => $profile_base_command,
                     case_id              => $case_id,
                     dependency_method    => q{sample_to_island},
-                    job_id_chain         => $job_id_chain,
+                    job_id_chain         => $recipe{job_id_chain},
                     job_id_href          => $job_id_href,
                     job_reservation_name => $active_parameter_href->{job_reservation_name},
                     log                  => $log,

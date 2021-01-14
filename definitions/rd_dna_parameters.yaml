@@ -287,7 +287,7 @@ recipe_time:
     delly_call: 20
     delly_reformat: 7
     endvariantannotationblock: 2
-    expansionhunter: 2
+    expansionhunter: 3
     fastqc_ar: 10
     variant_annotation: 3
     frequency_filter: 2
@@ -468,6 +468,12 @@ bwa_mem_hla:
   data_type: SCALAR
   default: 0
   type: recipe_argument
+bwa_mem_run_bwakit:
+  associated_recipe:
+    - bwa_mem
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
 bwa_soft_clip_sup_align:
   associated_recipe:
     - bwa_mem
@@ -520,7 +526,7 @@ deeptrio:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _deeptrio
   outfile_suffix: ".g.vcf.gz"
   program_executables:

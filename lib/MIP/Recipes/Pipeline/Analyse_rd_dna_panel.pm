@@ -133,11 +133,9 @@ sub parse_rd_dna_panel {
     ## Update exome_target_bed files with human_genome_reference_source and human_genome_reference_version
     parse_exome_target_bed(
         {
-            exome_target_bed_file_href => $active_parameter_href->{exome_target_bed},
-            human_genome_reference_source =>
-              $file_info_href->{human_genome_reference_source},
-            human_genome_reference_version =>
-              $file_info_href->{human_genome_reference_version},
+            exome_target_bed_file_href     => $active_parameter_href->{exome_target_bed},
+            human_genome_reference_source  => $file_info_href->{human_genome_reference_source},
+            human_genome_reference_version => $file_info_href->{human_genome_reference_version},
         }
     );
 
@@ -369,23 +367,22 @@ sub pipeline_analyse_rd_dna_panel {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Analysis qw{ set_recipe_bwa_mem };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_references };
-    use MIP::Set::Analysis qw{ set_recipe_bwa_mem };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem2 };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd_panel };
     use MIP::Recipes::Analysis::Endvariantannotationblock
       qw{ analysis_endvariantannotationblock_panel };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter_panel };
-    use MIP::Recipes::Analysis::Gatk_baserecalibration
-      qw{ analysis_gatk_baserecalibration_panel };
+    use MIP::Recipes::Analysis::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration_panel };
     use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
       qw{ analysis_gatk_combinevariantcallsets };
-    use MIP::Recipes::Analysis::Gatk_haplotypecaller
-      qw{ analysis_gatk_haplotypecaller_panel};
+    use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller_panel};
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Gatk_gathervcfs qw{ analysis_gatk_gathervcfs };
     use MIP::Recipes::Analysis::Gatk_genotypegvcfs qw{ analysis_gatk_genotypegvcfs };
@@ -405,8 +402,7 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge_panel };
-    use MIP::Recipes::Analysis::Variant_annotation
-      qw{ analysis_variant_annotation_panel };
+    use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation_panel };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
     use MIP::Recipes::Analysis::Vt qw{ analysis_vt_panel };
     use MIP::Recipes::Build::Rd_dna qw{ build_rd_dna_meta_files };
@@ -450,44 +446,43 @@ sub pipeline_analyse_rd_dna_panel {
     ### Analysis recipes
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
-        analysisrunstatus            => \&analysis_analysisrunstatus,
-        bwa_mem                      => undef,
-        bwa_mem2                     => undef,
-        cadd_ar                      => \&analysis_cadd_panel,
-        endvariantannotationblock    => \&analysis_endvariantannotationblock_panel,
-        fastqc_ar                    => \&analysis_fastqc,
-        frequency_filter             => \&analysis_frequency_filter_panel,
-        gatk_baserecalibration       => \&analysis_gatk_baserecalibration_panel,
-        gatk_combinevariantcallsets  => \&analysis_gatk_combinevariantcallsets,
-        gatk_haplotypecaller         => \&analysis_gatk_haplotypecaller_panel,
-        gatk_gathervcfs              => \&analysis_gatk_gathervcfs,
-        gatk_genotypegvcfs           => \&analysis_gatk_genotypegvcfs,
-        gatk_variantevalall          => \&analysis_gatk_variantevalall,
-        gatk_variantrecalibration    => \&analysis_gatk_variantrecalibration_wes,
-        gzip_fastq                   => \&analysis_gzip_fastq,
-        markduplicates               => \&analysis_markduplicates_panel,
-        multiqc_ar                   => \&analysis_multiqc,
-        picardtools_collecthsmetrics => \&analysis_picardtools_collecthsmetrics,
-        picardtools_collectmultiplemetrics =>
-          \&analysis_picardtools_collectmultiplemetrics,
-        qccollect_ar           => \&analysis_mip_qccollect,
-        rankvariant            => \&analysis_rankvariant,
-        rtg_vcfeval            => \&analysis_rtg_vcfeval,
-        sambamba_depth         => \&analysis_sambamba_depth,
-        samtools_merge         => \&analysis_samtools_merge_panel,
-        variant_annotation     => \&analysis_variant_annotation_panel,
-        varianteffectpredictor => \&analysis_vep,
-        vcfparser_ar           => \&analysis_mip_vcfparser_panel,
-        version_collect_ar     => \&analysis_mip_vercollect,
-        vt_ar                  => \&analysis_vt_panel,
+        analysisrunstatus                  => \&analysis_analysisrunstatus,
+        bwa_mem                            => undef,
+        bwa_mem2                           => \&analysis_bwa_mem2,
+        cadd_ar                            => \&analysis_cadd_panel,
+        endvariantannotationblock          => \&analysis_endvariantannotationblock_panel,
+        fastqc_ar                          => \&analysis_fastqc,
+        frequency_filter                   => \&analysis_frequency_filter_panel,
+        gatk_baserecalibration             => \&analysis_gatk_baserecalibration_panel,
+        gatk_combinevariantcallsets        => \&analysis_gatk_combinevariantcallsets,
+        gatk_haplotypecaller               => \&analysis_gatk_haplotypecaller_panel,
+        gatk_gathervcfs                    => \&analysis_gatk_gathervcfs,
+        gatk_genotypegvcfs                 => \&analysis_gatk_genotypegvcfs,
+        gatk_variantevalall                => \&analysis_gatk_variantevalall,
+        gatk_variantrecalibration          => \&analysis_gatk_variantrecalibration_wes,
+        gzip_fastq                         => \&analysis_gzip_fastq,
+        markduplicates                     => \&analysis_markduplicates_panel,
+        multiqc_ar                         => \&analysis_multiqc,
+        picardtools_collecthsmetrics       => \&analysis_picardtools_collecthsmetrics,
+        picardtools_collectmultiplemetrics => \&analysis_picardtools_collectmultiplemetrics,
+        qccollect_ar                       => \&analysis_mip_qccollect,
+        rankvariant                        => \&analysis_rankvariant,
+        rtg_vcfeval                        => \&analysis_rtg_vcfeval,
+        sambamba_depth                     => \&analysis_sambamba_depth,
+        samtools_merge                     => \&analysis_samtools_merge_panel,
+        variant_annotation                 => \&analysis_variant_annotation_panel,
+        varianteffectpredictor             => \&analysis_vep,
+        vcfparser_ar                       => \&analysis_mip_vcfparser_panel,
+        version_collect_ar                 => \&analysis_mip_vercollect,
+        vt_ar                              => \&analysis_vt_panel,
     );
 
     ## Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)
     set_recipe_bwa_mem(
         {
-            analysis_recipe_href => \%analysis_recipe,
-            human_genome_reference_version =>
-              $file_info_href->{human_genome_reference_version},
+            analysis_recipe_href           => \%analysis_recipe,
+            human_genome_reference_version => $file_info_href->{human_genome_reference_version},
+            run_bwakit                     => $active_parameter_href->{bwa_mem_run_bwakit},
         }
     );
 

@@ -124,11 +124,11 @@ sub analysis_tiddit {
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Svdb qw{ svdb_merge };
     use MIP::Program::Tiddit qw{ tiddit_sv };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -138,20 +138,14 @@ sub analysis_tiddit {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
     my $max_cores_per_node = $active_parameter_href->{max_cores_per_node};
     my $modifier_core_number =
       scalar( @{ $active_parameter_href->{sample_ids} } );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -159,7 +153,7 @@ sub analysis_tiddit {
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
         {
-            chain_id               => $job_id_chain,
+            chain_id               => $recipe{job_id_chain},
             id                     => $case_id,
             file_info_href         => $file_info_href,
             file_name_prefixes_ref => [$case_id],
@@ -182,14 +176,14 @@ sub analysis_tiddit {
         {
             max_cores_per_node   => $max_cores_per_node,
             modifier_core_number => $modifier_core_number,
-            recipe_core_number   => $recipe_resource{core_number},
+            recipe_core_number   => $recipe{core_number},
         }
     );
     my $memory_allocation = update_memory_allocation(
         {
             node_ram_memory           => $active_parameter_href->{node_ram_memory},
             parallel_processes        => $core_number,
-            process_memory_allocation => $recipe_resource{memory},
+            process_memory_allocation => $recipe{memory},
         }
     );
 
@@ -202,7 +196,7 @@ sub analysis_tiddit {
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $memory_allocation,
-            process_time          => $recipe_resource{time},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -215,9 +209,7 @@ sub analysis_tiddit {
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
   SAMPLE_ID:
-    while ( my ( $sample_id_index, $sample_id ) =
-        each @{ $active_parameter_href->{sample_ids} } )
-    {
+    while ( my ( $sample_id_index, $sample_id ) = each @{ $active_parameter_href->{sample_ids} } ) {
 
         ## Get the io infiles per chain and id
         my %sample_io = get_io_files(
@@ -233,9 +225,8 @@ sub analysis_tiddit {
         my $infile_suffix      = $sample_io{in}{file_suffix};
         my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-        $tiddit_sample_file_info{$sample_id}{in} = $infile_path;
-        $tiddit_sample_file_info{$sample_id}{out} =
-          $outfile_path_prefix . $UNDERSCORE . $sample_id;
+        $tiddit_sample_file_info{$sample_id}{in}  = $infile_path;
+        $tiddit_sample_file_info{$sample_id}{out} = $outfile_path_prefix . $UNDERSCORE . $sample_id;
     }
     say {$filehandle} q{wait}, $NEWLINE;
 
@@ -244,9 +235,7 @@ sub analysis_tiddit {
 
     ## Tiddit sv calling per sample id
   SAMPLE_ID:
-    while ( my ( $sample_id_index, $sample_id ) =
-        each @{ $active_parameter_href->{sample_ids} } )
-    {
+    while ( my ( $sample_id_index, $sample_id ) = each @{ $active_parameter_href->{sample_ids} } ) {
 
         $process_batches_count = print_wait(
             {
@@ -260,8 +249,8 @@ sub analysis_tiddit {
         ## Tiddit
         tiddit_sv(
             {
-                filehandle  => $filehandle,
-                infile_path => $tiddit_sample_file_info{$sample_id}{in},
+                filehandle                      => $filehandle,
+                infile_path                     => $tiddit_sample_file_info{$sample_id}{in},
                 minimum_number_supporting_pairs =>
                   $active_parameter_href->{tiddit_minimum_number_supporting_pairs},
                 outfile_path_prefix => $tiddit_sample_file_info{$sample_id}{out},
@@ -290,7 +279,7 @@ sub analysis_tiddit {
 
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -302,13 +291,13 @@ sub analysis_tiddit {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

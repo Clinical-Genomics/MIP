@@ -436,13 +436,15 @@ sub pipeline_analyse_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Analysis qw{ set_rankvariants_ar set_recipe_bwa_mem };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_references };
     use MIP::Set::Analysis
-      qw{ set_recipe_bwa_mem set_recipe_deepvariant set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
+      qw{ set_recipe_deepvariant set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem2 };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Chromograph
@@ -547,7 +549,7 @@ sub pipeline_analyse_rd_dna {
     my %analysis_recipe = (
         analysisrunstatus  => \&analysis_analysisrunstatus,
         bwa_mem            => undef,                           # Depends on genome build
-        bwa_mem2           => undef,
+        bwa_mem2           => \&analysis_bwa_mem2,
         cadd_ar            => \&analysis_cadd,
         chanjo_sexcheck    => \&analysis_chanjo_sex_check,
         chromograph_cov    => \&analysis_chromograph_cov,
@@ -617,7 +619,6 @@ sub pipeline_analyse_rd_dna {
     set_rankvariants_ar(
         {
             analysis_recipe_href => \%analysis_recipe,
-            log                  => $log,
             parameter_href       => $parameter_href,
             sample_ids_ref       => $active_parameter_href->{sample_ids},
         }
@@ -636,15 +637,18 @@ sub pipeline_analyse_rd_dna {
         {
             analysis_recipe_href           => \%analysis_recipe,
             human_genome_reference_version => $file_info_href->{human_genome_reference_version},
+            run_bwakit                     => $active_parameter_href->{bwa_mem_run_bwakit},
         }
     );
 
     ## Set deepvariant or deeptrio recipe depending on the presence of parent-child duo or a trio
-    #set_recipe_deepvariant(
-    #    {
-    #        analysis_recipe_href => \%analysis_recipe,
-    #        sample_info_href     => $sample_info_href,
-    #    });
+    set_recipe_deepvariant(
+        {
+            analysis_recipe_href => \%analysis_recipe,
+            deeptrio_mode        => $active_parameter_href->{deeptrio},
+            sample_info_href     => $sample_info_href,
+        }
+    );
 
     ## Update which recipe to use depending on number of samples
     set_recipe_gatk_variantrecalibration(

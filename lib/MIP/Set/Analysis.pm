@@ -23,8 +23,6 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      set_rankvariants_ar
-      set_recipe_bwa_mem
       set_recipe_deepvariant
       set_recipe_gatk_variantrecalibration
       set_recipe_on_analysis_type
@@ -32,64 +30,19 @@ BEGIN {
     };
 }
 
-sub set_recipe_bwa_mem {
-
-## Function : Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)
-## Returns  :
-## Arguments: $analysis_recipe_href           => Analysis recipe hash {REF}
-##          : $human_genome_reference_version => Human genome reference version
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_recipe_href;
-    my $human_genome_reference_version;
-
-    my $tmpl = {
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-        human_genome_reference_version => {
-            defined     => 1,
-            required    => 1,
-            store       => \$human_genome_reference_version,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Analysis::Bwa_mem
-      qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
-
-    Readonly my $GENOME_BUILD_VERSION_PRIOR_ALTS => 37;
-
-    ## Default recipes for genomes pre alt contigs
-    $analysis_recipe_href->{bwa_mem}  = \&analysis_bwa_mem;
-    $analysis_recipe_href->{bwa_mem2} = \&analysis_bwa_mem2;
-
-    if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_PRIOR_ALTS ) {
-
-        $analysis_recipe_href->{bwa_mem} = \&analysis_run_bwa_mem;
-    }
-    return;
-}
-
 sub set_recipe_deepvariant {
 
 ## Function : Set deeptrio or deepvariant recipe depending on the presence of parent-child duo or trio
 ## Returns  :
 ## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $deeptrio_mode        => Deeptrio mode
 ##          : $sample_info_href     => Sample info hash {HASH}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $analysis_recipe_href;
+    my $deeptrio_mode;
     my $sample_info_href;
 
     my $tmpl = {
@@ -98,6 +51,11 @@ sub set_recipe_deepvariant {
             defined     => 1,
             required    => 1,
             store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        deeptrio_mode => {
+            required    => 1,
+            store       => \$deeptrio_mode,
             strict_type => 1,
         },
         sample_info_href => {
@@ -116,6 +74,9 @@ sub set_recipe_deepvariant {
 
     $analysis_recipe_href->{deepvariant} = \&analysis_deepvariant;
     $analysis_recipe_href->{deeptrio}    = undef;
+
+    ## Return if deeptrio is turned off
+    return if ( not $deeptrio_mode );
 
   CONSTELLATION_STATE:
     foreach my $constellation_state (qw{ has_duo has_trio }) {
@@ -260,76 +221,6 @@ sub set_recipe_on_analysis_type {
 
         $analysis_recipe_href->{$recipe_name} =
           $analysis_type_recipe{$consensus_analysis_type}{$recipe_name};
-    }
-    return;
-}
-
-sub set_rankvariants_ar {
-
-## Function : Update which rankvariants recipe to use
-## Returns  :
-## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
-##          : $log                  => Log object to write to
-##          : $parameter_href       => Parameter hash {REF}
-##          : $sample_ids_ref       => Sample ids {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_recipe_href;
-    my $log;
-    my $parameter_href;
-    my $sample_ids_ref;
-
-    my $tmpl = {
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        sample_ids_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_ids_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Analysis::Rankvariant
-      qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
-
-    if ( defined $parameter_href->{cache}{unaffected}
-        && @{ $parameter_href->{cache}{unaffected} } eq @{$sample_ids_ref} )
-    {
-
-        $log->warn(
-q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'}
-        );
-
-        $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv_unaffected;
-        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant_unaffected;
-    }
-    else {
-
-        $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv;
-        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant;
     }
     return;
 }

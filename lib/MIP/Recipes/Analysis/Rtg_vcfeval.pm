@@ -128,13 +128,13 @@ sub analysis_rtg_vcfeval {
 
     use MIP::Active_parameter qw{ get_exome_target_bed_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_rm  };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bedtools qw{ bedtools_intersect };
     use MIP::Program::Rtg qw{ rtg_vcfeval };
     use MIP::Program::Bcftools qw{ bcftools_rename_vcf_samples };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ get_pedigree_sample_id_attributes set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -160,16 +160,8 @@ sub analysis_rtg_vcfeval {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path        = $io{in}{file_path};
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
     my $nist_id                 = $active_parameter_href->{nist_id}{$sample_id};
     my @nist_versions           = @{ $active_parameter_href->{nist_versions} };
-    my $recipe_mode             = $active_parameter_href->{$recipe_name};
     my $sample_id_analysis_type = get_pedigree_sample_id_attributes(
         {
             attribute        => q{analysis_type},
@@ -185,20 +177,21 @@ sub analysis_rtg_vcfeval {
         }
     );
 
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe_resource{core_number};
+    my $core_number = $recipe{core_number};
 
     ## Set and get the io files per chain, id and stream
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
@@ -226,8 +219,8 @@ sub analysis_rtg_vcfeval {
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
         }
@@ -317,7 +310,7 @@ sub analysis_rtg_vcfeval {
         say {$filehandle} $NEWLINE;
 
         say {$filehandle} q{## Rtg vcfeval};
-        my $rtg_memory = $recipe_resource{memory} - 1 . q{G};
+        my $rtg_memory = $recipe{memory} - 1 . q{G};
 
         rtg_vcfeval(
             {
@@ -341,7 +334,7 @@ sub analysis_rtg_vcfeval {
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -357,7 +350,7 @@ sub analysis_rtg_vcfeval {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
                 dependency_method                 => q{case_to_island},
-                job_id_chain                      => $job_id_chain,
+                job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
                 log                               => $log,

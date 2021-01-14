@@ -128,7 +128,7 @@ sub analysis_sv_combinevariantcallsets {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -149,20 +149,11 @@ sub analysis_sv_combinevariantcallsets {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
     my @structural_variant_callers;
 
     ## Only process active callers
-    foreach my $structural_variant_caller (
-        @{ $parameter_href->{cache}{structural_variant_callers} } )
+    foreach
+      my $structural_variant_caller ( @{ $parameter_href->{cache}{structural_variant_callers} } )
     {
         if ( $active_parameter_href->{$structural_variant_caller} ) {
 
@@ -170,9 +161,10 @@ sub analysis_sv_combinevariantcallsets {
         }
     }
 
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -180,7 +172,7 @@ sub analysis_sv_combinevariantcallsets {
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
         {
-            chain_id               => $job_id_chain,
+            chain_id               => $recipe{job_id_chain},
             id                     => $case_id,
             file_info_href         => $file_info_href,
             file_name_prefixes_ref => [$case_id],
@@ -203,12 +195,12 @@ sub analysis_sv_combinevariantcallsets {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
+            core_number           => $recipe{core_number},
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -344,7 +336,7 @@ sub analysis_sv_combinevariantcallsets {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -382,13 +374,13 @@ sub analysis_sv_combinevariantcallsets {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 parallel_chains_ref => \@parallel_chains,
@@ -571,7 +563,7 @@ sub _preprocess_joint_callers_file {
 
         _add_to_parallel_chain(
             {
-                parallel_chains_ref => $parallel_chains_ref,
+                parallel_chains_ref             => $parallel_chains_ref,
                 structural_variant_caller_chain =>
                   $parameter_href->{$structural_variant_caller}{chain},
             }
@@ -588,10 +580,10 @@ sub _preprocess_joint_callers_file {
             say {$filehandle} q{## Split multiallelic variants};
             bcftools_norm(
                 {
-                    filehandle          => $filehandle,
-                    infile_path         => $infile_path,
-                    multiallelic        => q{-},
-                    outfile_path        => $decompose_outfile_path,
+                    filehandle   => $filehandle,
+                    infile_path  => $infile_path,
+                    multiallelic => q{-},
+                    outfile_path => $decompose_outfile_path,
                 }
             );
             say {$filehandle} $NEWLINE;
@@ -711,12 +703,11 @@ sub _preprocess_single_callers_file {
             my $infile_suffix      = $sample_io{$stream}{file_suffix};
             my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-            push @{ $file_path_href->{$structural_variant_caller} },
-              $infile_path . $DOT . q{gz};
+            push @{ $file_path_href->{$structural_variant_caller} }, $infile_path . $DOT . q{gz};
 
             _add_to_parallel_chain(
                 {
-                    parallel_chains_ref => $parallel_chains_ref,
+                    parallel_chains_ref             => $parallel_chains_ref,
                     structural_variant_caller_chain =>
                       $parameter_href->{$structural_variant_caller}{chain},
                 }
@@ -842,8 +833,7 @@ sub _merge_or_reformat_single_callers_file {
         if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
             ## Merge all structural variant caller's vcf files per sample_id
-            say {$filehandle}
-              q{## Merge all structural variant caller's vcf files per sample_id};
+            say {$filehandle} q{## Merge all structural variant caller's vcf files per sample_id};
 
             bcftools_merge(
                 {

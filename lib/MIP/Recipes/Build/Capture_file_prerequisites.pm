@@ -132,12 +132,12 @@ sub build_capture_file_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_cat gnu_ln };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_createsequencedictionary };
     use MIP::Program::Picardtools qw{ picardtools_intervallisttools };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -150,11 +150,11 @@ sub build_capture_file_prerequisites {
     ## Unpack parameters
     my $interval_list_suffix        = $parameter_build_suffixes_ref->[0];
     my $padded_interval_list_suffix = $parameter_build_suffixes_ref->[1];
-    my $recipe_mode                 = $active_parameter_href->{$recipe_name};
-    my %recipe_resource             = get_recipe_resources(
+    my %recipe                      = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
-            recipe_name           => q{mip},
+            parameter_href        => $parameter_href,
+            recipe_name           => $recipe_name,
         }
     );
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
@@ -176,7 +176,7 @@ sub build_capture_file_prerequisites {
                 job_id_href                     => $job_id_href,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
+                source_environment_commands_ref => $recipe{load_env_ref},
             }
         );
     }
@@ -332,7 +332,7 @@ sub build_capture_file_prerequisites {
 
         close $filehandle;
 
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             submit_recipe(
                 {

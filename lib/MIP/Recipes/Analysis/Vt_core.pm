@@ -111,7 +111,7 @@ sub analysis_vt_core {
             store       => \$build_gatk_index,
             strict_type => 1,
         },
-        cmd_break => { default => $NEWLINE x 2, store => \$cmd_break, strict_type => 1, },
+        cmd_break   => { default => $NEWLINE x 2, store => \$cmd_break, strict_type => 1, },
         core_number => {
             allow       => qr/ \A \d+ \z /xsm,
             default     => 1,
@@ -166,7 +166,7 @@ sub analysis_vt_core {
             store       => \$outfile_path,
             strict_type => 1,
         },
-        parameter_href => { default => {}, strict_type => 1, store => \$parameter_href, },
+        parameter_href       => { default => {}, strict_type => 1, store => \$parameter_href, },
         profile_base_command => {
             default     => q{sbatch},
             store       => \$profile_base_command,
@@ -174,9 +174,8 @@ sub analysis_vt_core {
         },
         recipe_directory =>
           { default => q{vt_core}, store => \$recipe_directory, strict_type => 1, },
-        recipe_name =>
-          { default => q{vt_core}, store => \$recipe_name, strict_type => 1, },
-        tabix => {
+        recipe_name => { default => q{vt_core}, store => \$recipe_name, strict_type => 1, },
+        tabix       => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$tabix,
@@ -188,13 +187,11 @@ sub analysis_vt_core {
             store       => \$uniq,
             strict_type => 1,
         },
-        xargs_file_path_prefix =>
-          { store => \$xargs_file_path_prefix, strict_type => 1, },
+        xargs_file_path_prefix => { store => \$xargs_file_path_prefix, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Program::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -202,6 +199,7 @@ sub analysis_vt_core {
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Bcftools qw{ bcftools_view bcftools_index };
     use MIP::Program::Vt qw{ vt_decompose vt_normalize vt_uniq };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -213,17 +211,10 @@ sub analysis_vt_core {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Set MIP recipe name
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -238,12 +229,12 @@ sub analysis_vt_core {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
+            core_number           => $recipe{core_number},
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe_resource{memory},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
             recipe_name           => $recipe_name,
             recipe_directory      => $recipe_directory,
         }
@@ -258,8 +249,7 @@ sub analysis_vt_core {
     if ( defined $xargs_file_path_prefix && defined $contig ) {
 
         ## Redirect xargs output to program specific stderr file
-        $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
     }
 
     ## Initate processing
@@ -414,7 +404,7 @@ sub analysis_vt_core {
 
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         submit_recipe(
             {
@@ -505,7 +495,7 @@ sub analysis_vt_core_rio {
             strict_type => 1,
             store       => \$bgzip
         },
-        cmd_break => { default => $NEWLINE x 2, strict_type => 1, store => \$cmd_break },
+        cmd_break   => { default     => $NEWLINE x 2, strict_type => 1, store => \$cmd_break },
         contig      => { strict_type => 1, store => \$contig },
         core_number => {
             default     => 1,
@@ -560,9 +550,8 @@ sub analysis_vt_core_rio {
             strict_type => 1,
             store       => \$outfile_path,
         },
-        recipe_directory =>
-          { default => q{vt}, strict_type => 1, store => \$recipe_directory },
-        recipe_name => { default => q{vt}, strict_type => 1, store => \$recipe_name },
+        recipe_directory => { default => q{vt}, strict_type => 1, store => \$recipe_directory },
+        recipe_name      => { default => q{vt}, strict_type => 1, store => \$recipe_name },
         xargs_file_path_prefix => { strict_type => 1, store => \$xargs_file_path_prefix },
         tabix                  => {
             default     => 0,
@@ -582,8 +571,7 @@ sub analysis_vt_core_rio {
 
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Program::Gnu::Software::Gnu_sed qw{ gnu_sed };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_add_to_samples };
+    use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_add_to_samples };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Bcftools qw{ bcftools_view bcftools_index };
     use MIP::Program::Vt qw{ vt_decompose vt_normalize vt_uniq };
@@ -594,9 +582,6 @@ sub analysis_vt_core_rio {
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
-
-    ## Set MIP recipe name
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
 
     my $recipe_info_path;
 
@@ -612,8 +597,7 @@ sub analysis_vt_core_rio {
     if ( defined $xargs_file_path_prefix && defined $contig ) {
 
         ## Redirect xargs output to program specific stderr file
-        $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
     }
 
     ## Initate processing

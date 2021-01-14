@@ -144,12 +144,12 @@ sub analysis_markduplicates {
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::File_info qw{ get_merged_infile_prefix };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_markduplicates picardtools_gatherbamfiles };
     use MIP::Program::Samtools qw{ samtools_flagstat samtools_view };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -172,24 +172,17 @@ sub analysis_markduplicates {
     );
     my %infile_path = %{ $io{in}{file_path_href} };
 
-    my %rec_atr = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $job_id_chain       = $rec_atr{chain};
-    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $xargs_file_path_prefix;
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number       = $recipe_resource{core_number};
-    my $memory_allocation = $recipe_resource{memory};
+    my $core_number       = $recipe{core_number};
+    my $memory_allocation = $recipe{memory};
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
@@ -201,7 +194,7 @@ sub analysis_markduplicates {
 
     ## Outpaths
     ## Assign suffix
-    my $outfile_suffix = $rec_atr{outfile_suffix};
+    my $outfile_suffix = $recipe{outfile_suffix};
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
     my $outfile_tag =
@@ -217,7 +210,7 @@ sub analysis_markduplicates {
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
+                chain_id       => $recipe{job_id_chain},
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 file_paths_ref => \@outfile_paths,
@@ -257,7 +250,7 @@ sub analysis_markduplicates {
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $memory_allocation,
-            process_time          => $recipe_resource{time},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -273,7 +266,7 @@ sub analysis_markduplicates {
         {
             core_number               => $core_number,
             process_memory_allocation => $process_memory_allocation,
-            recipe_memory_allocation  => $recipe_resource{memory},
+            recipe_memory_allocation  => $recipe{memory},
         }
     );
 
@@ -382,7 +375,7 @@ sub analysis_markduplicates {
     close $xargsfilehandle;
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -400,7 +393,7 @@ sub analysis_markduplicates {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
                 dependency_method                 => q{sample_to_sample},
-                job_id_chain                      => $job_id_chain,
+                job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
                 log                               => $log,
@@ -508,11 +501,11 @@ sub analysis_markduplicates_panel {
 
     use MIP::Cluster qw{ update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_markduplicates };
     use MIP::Program::Samtools qw{ samtools_flagstat samtools_view };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -535,30 +528,23 @@ sub analysis_markduplicates_panel {
     my $infile_path        = $io{in}{file_path};
     my $infile_name_prefix = $io{in}{file_name_prefix};
 
-    my %rec_atr = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $job_id_chain       = $rec_atr{chain};
-    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my %recipe_resource    = get_recipe_resources(
+    my %recipe             = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number       = $recipe_resource{core_number};
-    my $memory_allocation = $recipe_resource{memory};
+    my $core_number       = $recipe{core_number};
+    my $memory_allocation = $recipe{memory};
 
     ## Set and get the io files per chain, id and stream
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => [$infile_name_prefix],
@@ -600,7 +586,7 @@ sub analysis_markduplicates_panel {
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $memory_allocation,
-            process_time          => $recipe_resource{time},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => ${active_parameter_href}->{temp_directory},
@@ -653,7 +639,7 @@ sub analysis_markduplicates_panel {
     ## Close filehandles
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -671,7 +657,7 @@ sub analysis_markduplicates_panel {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
                 dependency_method                 => q{sample_to_sample},
-                job_id_chain                      => $job_id_chain,
+                job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
                 log                               => $log,
@@ -795,13 +781,13 @@ sub analysis_markduplicates_rna {
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::File_info qw{ get_merged_infile_prefix };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_markduplicates picardtools_gatherbamfiles };
     use MIP::Program::Samtools qw{ samtools_flagstat samtools_index samtools_view };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{
       set_file_path_to_store
       set_recipe_outfile_in_sample_info };
@@ -825,24 +811,17 @@ sub analysis_markduplicates_rna {
     );
     my %infile_path = %{ $io{in}{file_path_href} };
 
-    my %rec_atr = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $job_id_chain       = $rec_atr{chain};
-    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
     my $xargs_file_path_prefix;
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number       = $recipe_resource{core_number};
-    my $memory_allocation = $recipe_resource{memory};
+    my $core_number       = $recipe{core_number};
+    my $memory_allocation = $recipe{memory};
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
@@ -854,7 +833,7 @@ sub analysis_markduplicates_rna {
 
     ## Outpaths
     ## Assign suffix
-    my $outfile_suffix = $rec_atr{outfile_suffix};
+    my $outfile_suffix = $recipe{outfile_suffix};
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
     my $outfile_tag =
@@ -870,7 +849,7 @@ sub analysis_markduplicates_rna {
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
+                chain_id       => $recipe{job_id_chain},
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 file_paths_ref => \@outfile_paths,
@@ -910,7 +889,7 @@ sub analysis_markduplicates_rna {
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $memory_allocation,
-            process_time          => $recipe_resource{time},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
             temp_directory        => $temp_directory,
@@ -926,7 +905,7 @@ sub analysis_markduplicates_rna {
         {
             core_number               => $core_number,
             process_memory_allocation => $process_memory_allocation,
-            recipe_memory_allocation  => $recipe_resource{memory},
+            recipe_memory_allocation  => $recipe{memory},
         }
     );
 
@@ -1049,7 +1028,7 @@ sub analysis_markduplicates_rna {
     close $xargsfilehandle;
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -1088,7 +1067,7 @@ sub analysis_markduplicates_rna {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
                 dependency_method                 => q{sample_to_sample},
-                job_id_chain                      => $job_id_chain,
+                job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
                 log                               => $log,

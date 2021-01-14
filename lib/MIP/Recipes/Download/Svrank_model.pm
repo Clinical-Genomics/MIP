@@ -117,7 +117,7 @@ sub download_svrank_model {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
@@ -130,17 +130,14 @@ sub download_svrank_model {
     ## Unpack parameters
     my $reference_dir = $active_parameter_href->{reference_dir};
 
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
-    ## Set recipe mode
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    ## Filehandle(s)
+## Filehandle(s)
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
@@ -148,18 +145,18 @@ sub download_svrank_model {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
+            core_number                     => $recipe{core_number},
             directory_id                    => q{mip_download},
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            memory_allocation               => $recipe_resource{memory},
+            memory_allocation               => $recipe{memory},
             outdata_dir                     => $reference_dir,
             outscript_dir                   => $reference_dir,
-            process_time                    => $recipe_resource{time},
+            process_time                    => $recipe{time},
             recipe_data_directory_path      => $active_parameter_href->{reference_dir},
             recipe_directory                => $recipe_name . $UNDERSCORE . $reference_version,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            source_environment_commands_ref => $recipe{load_env_ref},
         }
     );
 
@@ -181,7 +178,7 @@ sub download_svrank_model {
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## No upstream or downstream dependencies
         slurm_submit_job_no_dependency_dead_end(

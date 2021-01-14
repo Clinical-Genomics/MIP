@@ -119,7 +119,7 @@ sub analysis_cadd {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Bash qw{ gnu_cd gnu_export gnu_unset };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -150,28 +150,20 @@ sub analysis_cadd {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
 
-    my $human_genome_reference_version =
-      $file_info_href->{human_genome_reference_version};
-    my $assembly_version = _get_cadd_reference_param(
+    my $human_genome_reference_version = $file_info_href->{human_genome_reference_version};
+    my $assembly_version               = _get_cadd_reference_param(
         {
             reference_source  => $file_info_href->{human_genome_reference_source},
             reference_version => $human_genome_reference_version,
         }
     );
 
-    my $cadd_columns_name = join $COMMA, @{ $active_parameter_href->{cadd_column_names} };
+    my $cadd_columns_name    = join $COMMA, @{ $active_parameter_href->{cadd_column_names} };
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
-    my $job_id_chain         = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe               = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -181,7 +173,7 @@ sub analysis_cadd {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
@@ -199,8 +191,7 @@ sub analysis_cadd {
     my %outfile_path        = %{ $io{out}{file_path_href} };
     my @outfile_paths       = @{ $io{out}{file_paths} };
     my %temp_outdir_path =
-      map { $_ => catdir( $active_parameter_href->{temp_directory}, $_ ) }
-      @contigs_size_ordered;
+      map { $_ => catdir( $active_parameter_href->{temp_directory}, $_ ) } @contigs_size_ordered;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -210,15 +201,15 @@ sub analysis_cadd {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -229,8 +220,7 @@ sub analysis_cadd {
     my $bash_variable =
         q{MIP_BIND}
       . $EQUALS
-      . catdir( $active_parameter_href->{reference_dir},
-        qw{ CADD-scripts data annotations} );
+      . catdir( $active_parameter_href->{reference_dir}, qw{ CADD-scripts data annotations} );
     gnu_export(
         {
             bash_variable => $bash_variable,
@@ -259,7 +249,7 @@ sub analysis_cadd {
     ## Create file commands for xargs
     my ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number      => $recipe_resource{core_number},
+            core_number      => $recipe{core_number},
             filehandle       => $filehandle,
             file_path        => $recipe_file_path,
             recipe_info_path => $recipe_info_path,
@@ -275,8 +265,7 @@ sub analysis_cadd {
         ## Get parameters
         $cadd_outfile_path{$contig} = catfile( $temp_outdir_path{$contig},
             $outfile_name_prefix . $DOT . $contig . $DOT . q{tsv.gz} );
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $view_outfile_path =
           $outfile_path_prefix . $UNDERSCORE . q{view} . $DOT . $contig . $outfile_suffix;
         my $view_infile_path = $infile_path{$contig};
@@ -288,8 +277,7 @@ sub analysis_cadd {
                 {
                     filehandle       => $xargsfilehandle,
                     infile_paths_ref => [
-                        $infile_path{ $contigs_size_ordered[ $index - 1 ] },
-                        $infile_path{$contig}
+                        $infile_path{ $contigs_size_ordered[ $index - 1 ] }, $infile_path{$contig}
                     ],
                     outfile_path    => $view_infile_path,
                     output_type     => q{v},
@@ -350,7 +338,7 @@ sub analysis_cadd {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $recipe_resource{core_number},
+            core_number        => $recipe{core_number},
             filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
@@ -364,8 +352,7 @@ sub analysis_cadd {
     foreach my $contig (@contigs_size_ordered) {
 
         ## Get parameters
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
         ## Parse outfile in case of grch38
         my $cadd_outfile_path = _parse_cadd_outfile(
@@ -420,7 +407,7 @@ sub analysis_cadd {
     close $xargsfilehandle
       or $log->logcroak(q{Could not close xargsfilehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -433,13 +420,13 @@ sub analysis_cadd {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                dependency_method    => q{sample_to_case},
-                case_id              => $case_id,
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                dependency_method                 => q{sample_to_case},
+                case_id                           => $case_id,
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -535,7 +522,7 @@ sub analysis_cadd_panel {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -565,9 +552,8 @@ sub analysis_cadd_panel {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path        = $io{in}{file_path};
 
-    my $human_genome_reference_version =
-      $file_info_href->{human_genome_reference_version};
-    my $assembly_version = _get_cadd_reference_param(
+    my $human_genome_reference_version = $file_info_href->{human_genome_reference_version};
+    my $assembly_version               = _get_cadd_reference_param(
         {
             reference_source  => $file_info_href->{human_genome_reference_source},
             reference_version => $human_genome_reference_version,
@@ -575,17 +561,10 @@ sub analysis_cadd_panel {
     );
 
     my $cadd_columns_name = join $COMMA, @{ $active_parameter_href->{cadd_column_names} };
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -595,7 +574,7 @@ sub analysis_cadd_panel {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $case_id,
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => [$infile_name_prefix],
@@ -618,15 +597,15 @@ sub analysis_cadd_panel {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
+            core_number                     => $recipe{core_number},
             directory_id                    => $case_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
+            memory_allocation               => $recipe{memory},
+            process_time                    => $recipe{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            source_environment_commands_ref => $recipe{load_env_ref},
         }
     );
 
@@ -638,8 +617,7 @@ sub analysis_cadd_panel {
     my $bash_variable =
         q{MIP_BIND}
       . $EQUALS
-      . catdir( $active_parameter_href->{reference_dir},
-        qw{ CADD-scripts data annotations} );
+      . catdir( $active_parameter_href->{reference_dir}, qw{ CADD-scripts data annotations} );
     gnu_export(
         {
             bash_variable => $bash_variable,
@@ -656,8 +634,7 @@ sub analysis_cadd_panel {
             reference_version => $file_info_href->{human_genome_reference_version},
         }
     );
-    my $view_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{view} . $outfile_suffix;
+    my $view_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{view} . $outfile_suffix;
     bcftools_view(
         {
             filehandle   => $filehandle,
@@ -731,7 +708,7 @@ sub analysis_cadd_panel {
     ## Close filehandles
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -744,13 +721,13 @@ sub analysis_cadd_panel {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                dependency_method    => q{sample_to_case},
-                case_id              => $case_id,
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                dependency_method                 => q{sample_to_case},
+                case_id                           => $case_id,
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

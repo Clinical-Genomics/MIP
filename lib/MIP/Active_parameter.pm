@@ -42,6 +42,7 @@ BEGIN {
       get_not_allowed_temp_dirs
       get_package_env_attributes
       get_package_env_cmds
+      get_recipe_resources
       get_user_supplied_pedigree_parameter
       parse_infiles
       parse_recipe_resources
@@ -69,6 +70,7 @@ BEGIN {
       set_load_env_environment
       set_parameter_reference_dir_path
       set_pedigree_sample_id_parameter
+      set_programs_for_installation
       set_recipe_mode
       set_recipe_resource
       set_vcfparser_outfile_counter
@@ -1053,6 +1055,87 @@ sub get_package_env_cmds {
         }
     );
     return @env_method_cmds;
+}
+
+sub get_recipe_resources {
+
+## Function : Return recipe resources
+## Returns  : $recipe_resource | %recipe_resource
+## Arguments: $active_parameter_href => The active parameters for this analysis hash {REF}
+##          : $recipe_name           => Recipe name
+##          : $recipe_resource       => Recipe parameter key
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $recipe_name;
+    my $resource;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        resource => {
+            allow       => [qw{ core_number gpu_number load_env_ref memory mode time }],
+            store       => \$resource,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ get_package_env_cmds };
+    use MIP::Environment::Cluster qw{ check_recipe_memory_allocation };
+
+    ## Initilize variable
+    my @environment_cmds = get_package_env_cmds(
+        {
+            active_parameter_href => $active_parameter_href,
+            package_name          => $recipe_name,
+        }
+    );
+
+    my $core_number     = $active_parameter_href->{recipe_core_number}{$recipe_name};
+    my $process_memory  = $active_parameter_href->{recipe_memory}{$recipe_name};
+    my $core_ram_memory = $active_parameter_href->{core_ram_memory};
+
+    my $memory =
+        ( $process_memory     and $core_number )     ? $process_memory * $core_number
+      : ( not $process_memory and $core_number )     ? $core_number * $core_ram_memory
+      : ( not $process_memory and not $core_number ) ? $core_ram_memory
+      :                                                $process_memory;
+
+    check_recipe_memory_allocation(
+        {
+            node_ram_memory          => $active_parameter_href->{node_ram_memory},
+            recipe_memory_allocation => $memory,
+        }
+    );
+
+    my %recipe_resource = (
+        core_number  => $core_number,
+        gpu_number   => $active_parameter_href->{recipe_gpu_number}{$recipe_name},
+        load_env_ref => \@environment_cmds,
+        memory       => $memory,
+        mode         => $active_parameter_href->{$recipe_name},
+        time         => $active_parameter_href->{recipe_time}{$recipe_name},
+    );
+
+    return $recipe_resource{$resource} if ($resource);
+
+    return %recipe_resource;
+
 }
 
 sub get_user_supplied_pedigree_parameter {
@@ -2275,6 +2358,76 @@ sub set_pedigree_sample_id_parameter {
 
     ## Add value for sample_id using pedigree info
     $active_parameter_href->{$pedigree_key}{$sample_id} = $pedigree_value;
+
+    return;
+}
+
+sub set_programs_for_installation {
+
+## Function : Process the lists of programs that has been selected for installation
+##          : and update the environment packages
+## Returns  :
+## Arguments: $active_parameter_href => The entire active parameter hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Array::Utils qw{ array_minus };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Check that the options supplied are compatible with each other
+    if (    @{ $active_parameter_href->{skip_programs} }
+        and @{ $active_parameter_href->{select_programs} } )
+    {
+        $log->fatal(
+            q{"--skip_programs" and "--select_programs" are mutually exclusive command line options}
+        );
+        exit 1;
+    }
+
+    ## Set all programs to install for pipelines
+    if ( scalar @{ $active_parameter_href->{select_programs} } == 0 ) {
+
+      PIPELINE:
+        foreach my $pipeline ( @{ $active_parameter_href->{pipelines} } ) {
+
+            push @{ $active_parameter_href->{select_programs} },
+              @{ $active_parameter_href->{$pipeline} };
+        }
+    }
+
+    ## Remove programs to be skipped from container
+    delete @{ $active_parameter_href->{container} }{ @{ $active_parameter_href->{skip_programs} } };
+
+    ## Remove programs to be skipped from select_programs
+    @{ $active_parameter_href->{select_programs} } = array_minus(
+        @{ $active_parameter_href->{select_programs} },
+        @{ $active_parameter_href->{skip_programs} }
+    );
+
+    return if ( not @{ $active_parameter_href->{select_programs} } );
+
+    ## Remove all programs that have not been selected for install
+    my @container_programs = keys %{ $active_parameter_href->{container} };
+    my @not_selected_programs =
+      array_minus( @container_programs, @{ $active_parameter_href->{select_programs} } );
+    delete @{ $active_parameter_href->{container} }{@not_selected_programs};
 
     return;
 }
