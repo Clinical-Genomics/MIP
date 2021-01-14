@@ -6,16 +6,17 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,11 +25,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ space separated subroutines };
 }
+
+Readonly my $BASE_COMMAND => q{BASE};
 
 sub name_of_subroutine {
 
@@ -72,8 +73,10 @@ sub name_of_subroutine {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ BASE COMMAND };
+    my @commands = (
+        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
+        qw{ SUBCOMMAND }
+    );
 
     ############################################
     ## ADD COMMAND SPECIFIC FLAGS AND OPTIONS ##

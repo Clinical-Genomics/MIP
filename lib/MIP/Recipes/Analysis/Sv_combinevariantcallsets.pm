@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -25,9 +24,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.20;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_combinevariantcallsets };
@@ -132,14 +128,13 @@ sub analysis_sv_combinevariantcallsets {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools
-      qw{ bcftools_merge bcftools_view bcftools_view_and_index_vcf };
+      qw{ bcftools_merge bcftools_norm bcftools_view bcftools_view_and_index_vcf };
     use MIP::Program::Svdb qw{ svdb_merge };
-    use MIP::Program::Vt qw{ vt_decompose };
     use MIP::Sample_info qw{ set_file_path_to_store
       set_recipe_outfile_in_sample_info
       set_recipe_metafile_in_sample_info };
@@ -154,20 +149,11 @@ sub analysis_sv_combinevariantcallsets {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
     my @structural_variant_callers;
 
     ## Only process active callers
-    foreach my $structural_variant_caller (
-        @{ $parameter_href->{cache}{structural_variant_callers} } )
+    foreach
+      my $structural_variant_caller ( @{ $parameter_href->{cache}{structural_variant_callers} } )
     {
         if ( $active_parameter_href->{$structural_variant_caller} ) {
 
@@ -175,9 +161,10 @@ sub analysis_sv_combinevariantcallsets {
         }
     }
 
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -185,7 +172,7 @@ sub analysis_sv_combinevariantcallsets {
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
         {
-            chain_id               => $job_id_chain,
+            chain_id               => $recipe{job_id_chain},
             id                     => $case_id,
             file_info_href         => $file_info_href,
             file_name_prefixes_ref => [$case_id],
@@ -207,18 +194,16 @@ sub analysis_sv_combinevariantcallsets {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
     ## Split to enable submission to &sample_info_qc later
@@ -306,19 +291,19 @@ sub analysis_sv_combinevariantcallsets {
     ## Alternative file tag
     my $alt_file_tag = $EMPTY_STR;
 
-    if ( $active_parameter_href->{sv_vt_decompose} ) {
+    if ( $active_parameter_href->{sv_decompose} ) {
 
         ## Update file tag
-        $alt_file_tag = $UNDERSCORE . q{vt};
+        $alt_file_tag = $UNDERSCORE . q{decompose};
 
         ## Split multiallelic variants
         say {$filehandle} q{## Split multiallelic variants};
-        vt_decompose(
+        bcftools_norm(
             {
                 filehandle   => $filehandle,
                 infile_path  => $outfile_path,
+                multiallelic => q{-},
                 outfile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
-                smart_decomposition => 1,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -351,7 +336,7 @@ sub analysis_sv_combinevariantcallsets {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -389,13 +374,13 @@ sub analysis_sv_combinevariantcallsets {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 parallel_chains_ref => \@parallel_chains,
@@ -578,7 +563,7 @@ sub _preprocess_joint_callers_file {
 
         _add_to_parallel_chain(
             {
-                parallel_chains_ref => $parallel_chains_ref,
+                parallel_chains_ref             => $parallel_chains_ref,
                 structural_variant_caller_chain =>
                   $parameter_href->{$structural_variant_caller}{chain},
             }
@@ -589,16 +574,16 @@ sub _preprocess_joint_callers_file {
         ## Store merged outfile per caller
         push @{ $file_path_href->{$structural_variant_caller} }, $decompose_outfile_path;
 
-        if ( $active_parameter_href->{sv_vt_decompose} ) {
+        if ( $active_parameter_href->{sv_decompose} ) {
 
             ## Split multiallelic variants
             say {$filehandle} q{## Split multiallelic variants};
-            vt_decompose(
+            bcftools_norm(
                 {
-                    filehandle          => $filehandle,
-                    infile_path         => $infile_path,
-                    outfile_path        => $decompose_outfile_path,
-                    smart_decomposition => 1,
+                    filehandle   => $filehandle,
+                    infile_path  => $infile_path,
+                    multiallelic => q{-},
+                    outfile_path => $decompose_outfile_path,
                 }
             );
             say {$filehandle} $NEWLINE;
@@ -718,12 +703,11 @@ sub _preprocess_single_callers_file {
             my $infile_suffix      = $sample_io{$stream}{file_suffix};
             my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-            push @{ $file_path_href->{$structural_variant_caller} },
-              $infile_path . $DOT . q{gz};
+            push @{ $file_path_href->{$structural_variant_caller} }, $infile_path . $DOT . q{gz};
 
             _add_to_parallel_chain(
                 {
-                    parallel_chains_ref => $parallel_chains_ref,
+                    parallel_chains_ref             => $parallel_chains_ref,
                     structural_variant_caller_chain =>
                       $parameter_href->{$structural_variant_caller}{chain},
                 }
@@ -849,8 +833,7 @@ sub _merge_or_reformat_single_callers_file {
         if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
             ## Merge all structural variant caller's vcf files per sample_id
-            say {$filehandle}
-              q{## Merge all structural variant caller's vcf files per sample_id};
+            say {$filehandle} q{## Merge all structural variant caller's vcf files per sample_id};
 
             bcftools_merge(
                 {

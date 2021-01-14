@@ -9,7 +9,6 @@ use File::Path qw{ make_path };
 use List::Util qw{ none };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error};
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -26,9 +25,6 @@ BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
-    # Set the version for version checking
-    our $VERSION = 1.24;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_founder_id
@@ -38,6 +34,7 @@ BEGIN {
       create_fam_file
       get_is_trio
       gatk_pedigree_flag
+      has_duo
       has_trio
       is_sample_proband_in_trio
       parse_pedigree
@@ -51,6 +48,7 @@ BEGIN {
 }
 
 ## Constants
+Readonly my $DUO_MEMBERS_COUNT  => 2;
 Readonly my $TRIO_MEMBERS_COUNT => 3;
 
 sub check_founder_id {
@@ -494,6 +492,62 @@ sub get_is_trio {
     return;
 }
 
+sub has_duo {
+
+## Function  : Check if case has a parent-child duo and child is affected
+## Returns   : 0 | 1
+## Arguments : $active_parameter_href => Active parameters for this analysis hash {REF}
+##           : $sample_info_href      => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Sample_info qw{ get_pedigree_sample_id_attributes };
+
+    ## Has two samples
+    return 0
+      if ( scalar @{ $active_parameter_href->{sample_ids} } != $DUO_MEMBERS_COUNT );
+
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+
+        my %sample_attributes = get_pedigree_sample_id_attributes(
+            {
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        ## Find a child
+        next SAMPLE_ID if ( not( $sample_attributes{father} or $sample_attributes{mother} ) );
+
+        return 1 if ( $sample_attributes{phenotype} eq q{affected} );
+    }
+    return 0;
+}
+
 sub has_trio {
 
 ## Function  : Check if case has trio
@@ -679,8 +733,7 @@ sub is_sample_proband_in_trio {
     return 0 if ( $phenotype eq q{unaffected} );
 
     ## Get family hash
-    my %family_member_id =
-      get_family_member_id( { sample_info_href => $sample_info_href } );
+    my %family_member_id = get_family_member_id( { sample_info_href => $sample_info_href } );
 
     ## Check if the sample is an affected child
     return 0 if ( none { $_ eq $sample_id } @{ $family_member_id{children} } );
@@ -1137,10 +1190,9 @@ sub set_pedigree_capture_kit_info {
         ## Return a capture kit depending on user info
         my $exome_target_bed_file = get_capture_kit(
             {
-                capture_kit => $capture_kit,
-                supported_capture_kit_href =>
-                  $parameter_href->{supported_capture_kit}{default},
-                is_set_by_user => $is_user_supplied_href->{exome_target_bed},
+                capture_kit                => $capture_kit,
+                supported_capture_kit_href => $parameter_href->{supported_capture_kit}{default},
+                is_set_by_user             => $is_user_supplied_href->{exome_target_bed},
             }
         );
 

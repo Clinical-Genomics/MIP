@@ -8,7 +8,6 @@ use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -24,9 +23,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_dragen_dna_align_vc analysis_dragen_dna_joint_calling };
@@ -130,11 +126,11 @@ sub analysis_dragen_dna_align_vc {
     use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::File::Format::Dragen qw{ create_dragen_fastq_list_sample_id };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Dragen qw{ dragen_dna_analysis };
     use MIP::Program::Ssh qw{ ssh };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{
       get_read_group
       set_recipe_metafile_in_sample_info
@@ -159,17 +155,10 @@ sub analysis_dragen_dna_align_vc {
     );
     my @infile_paths = @{ $io{in}{file_paths} };
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -178,7 +167,7 @@ sub analysis_dragen_dna_align_vc {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => [$sample_id],
@@ -192,27 +181,24 @@ sub analysis_dragen_dna_align_vc {
     my $outdir_path         = $io{out}{dir_path};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path        = $io{out}{file_path};
-    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
-    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
+    my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            set_errexit                     => 0,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            set_errexit           => 0,
         }
     );
 
@@ -299,10 +285,9 @@ sub analysis_dragen_dna_align_vc {
     print {$filehandle} $SPACE;
     my @cmds = dragen_dna_analysis(
         {
-            alignment_output_format => q{BAM},
-            dbsnp_file_path         => $active_parameter_href->{dragen_dbsnp},
-            dragen_hash_ref_dir_path =>
-              $active_parameter_href->{dragen_hash_ref_dir_path},
+            alignment_output_format  => q{BAM},
+            dbsnp_file_path          => $active_parameter_href->{dragen_dbsnp},
+            dragen_hash_ref_dir_path => $active_parameter_href->{dragen_hash_ref_dir_path},
             enable_bam_indexing      => 1,
             enable_duplicate_marking => 1,
             enable_map_align         => 1,
@@ -331,7 +316,7 @@ sub analysis_dragen_dna_align_vc {
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -346,13 +331,13 @@ sub analysis_dragen_dna_align_vc {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -449,11 +434,11 @@ sub analysis_dragen_dna_joint_calling {
 
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Dragen qw{ dragen_dna_analysis };
     use MIP::Program::Ssh qw{ ssh };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -462,17 +447,10 @@ sub analysis_dragen_dna_joint_calling {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -481,7 +459,7 @@ sub analysis_dragen_dna_joint_calling {
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
         {
-            chain_id               => $job_id_chain,
+            chain_id               => $recipe{job_id_chain},
             id                     => $case_id,
             file_info_href         => $file_info_href,
             file_name_prefixes_ref => [$case_id],
@@ -505,26 +483,22 @@ sub analysis_dragen_dna_joint_calling {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            set_errexit                     => 0,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            set_errexit           => 0,
         }
     );
 
     ## Collect infiles for all sample_ids
     my @dragen_infile_paths;
-    while ( my ( $sample_id_index, $sample_id ) =
-        each @{ $active_parameter_href->{sample_ids} } )
-    {
+    while ( my ( $sample_id_index, $sample_id ) = each @{ $active_parameter_href->{sample_ids} } ) {
 
         ## Get the io infiles per chain and id
         my %sample_io = get_io_files(
@@ -575,9 +549,8 @@ sub analysis_dragen_dna_joint_calling {
     print {$filehandle} $SPACE;
     my @combine_cmds = dragen_dna_analysis(
         {
-            dbsnp_file_path => $active_parameter_href->{dragen_dbsnp},
-            dragen_hash_ref_dir_path =>
-              $active_parameter_href->{dragen_hash_ref_dir_path},
+            dbsnp_file_path            => $active_parameter_href->{dragen_dbsnp},
+            dragen_hash_ref_dir_path   => $active_parameter_href->{dragen_hash_ref_dir_path},
             enable_combinegvcfs        => 1,
             filehandle                 => $filehandle,
             force                      => 1,
@@ -609,10 +582,9 @@ sub analysis_dragen_dna_joint_calling {
     print {$filehandle} $SPACE;
     my @joint_call_cmds = dragen_dna_analysis(
         {
-            dbsnp_file_path         => $active_parameter_href->{dragen_dbsnp},
-            disable_vcf_compression => 1,
-            dragen_hash_ref_dir_path =>
-              $active_parameter_href->{dragen_hash_ref_dir_path},
+            dbsnp_file_path            => $active_parameter_href->{dragen_dbsnp},
+            disable_vcf_compression    => 1,
+            dragen_hash_ref_dir_path   => $active_parameter_href->{dragen_hash_ref_dir_path},
             enable_joint_genotyping    => 1,
             filehandle                 => $filehandle,
             force                      => 1,
@@ -635,7 +607,7 @@ sub analysis_dragen_dna_joint_calling {
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -648,12 +620,12 @@ sub analysis_dragen_dna_joint_calling {
 
         submit_recipe(
             {
-                base_command      => $profile_base_command,
-                case_id           => $case_id,
-                dependency_method => q{sample_to_case},
-                job_id_chain      => $job_id_chain,
-                job_id_href       => $job_id_href,
-                log               => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -721,8 +693,7 @@ sub _dragen_wait_loop {
     say {$filehandle} q{else};
     say {$filehandle} q?for i in {1..? . $max_retries . q?}?;
     say {$filehandle} $TAB . q{do};
-    say {$filehandle} $TAB x 2
-      . q{echo "$cmd failed $i times: Retrying in $time_to_sleep"};
+    say {$filehandle} $TAB x 2 . q{echo "$cmd failed $i times: Retrying in $time_to_sleep"};
     say {$filehandle} $TAB x 2, qq{sleep $time_to_sleep};
     say {$filehandle} $TAB x 2, $cmd;
     say {$filehandle} $TAB x 2, q{status=$?};

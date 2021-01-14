@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -18,15 +17,12 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DASH $DOT $FORWARD_SLASH $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gnomad };
@@ -121,12 +117,10 @@ sub download_gnomad {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_dead_end };
-    use MIP::Program::Htslib qw{ htslib_tabix };
-    use MIP::Program::Rtg qw{ rtg_vcfsubset };
+    use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Program::Bcftools qw{ bcftools_index };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -137,37 +131,33 @@ sub download_gnomad {
     ## Unpack parameters
     my $reference_dir = $active_parameter_href->{reference_dir};
 
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
-    ## Set recipe mode
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    ## Filehandle(s)
+## Filehandle(s)
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href      => $active_parameter_href,
-            core_number                => $recipe_resource{core_number},
-            directory_id               => q{mip_download},
-            filehandle                 => $filehandle,
-            job_id_href                => $job_id_href,
-            log                        => $log,
-            memory_allocation          => $recipe_resource{memory},
-            outdata_dir                => $reference_dir,
-            outscript_dir              => $reference_dir,
-            process_time               => $recipe_resource{time},
-            recipe_data_directory_path => $active_parameter_href->{reference_dir},
-            recipe_directory           => $recipe_name . $UNDERSCORE . $reference_version,
-            recipe_name                => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $recipe{core_number},
+            directory_id                    => q{mip_download},
+            filehandle                      => $filehandle,
+            job_id_href                     => $job_id_href,
+            memory_allocation               => $recipe{memory},
+            outdata_dir                     => $reference_dir,
+            outscript_dir                   => $reference_dir,
+            process_time                    => $recipe{time},
+            recipe_data_directory_path      => $active_parameter_href->{reference_dir},
+            recipe_directory                => $recipe_name . $UNDERSCORE . $reference_version,
+            recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe{load_env_ref},
         }
     );
 
@@ -186,38 +176,54 @@ sub download_gnomad {
         }
     );
 
-## Map of key names to keep from reference vcf
-    my %info_key = (
-        q{r2.0.1}    => [ qw{AF AF_POPMAX}, ],
-        q{r2.1.1}    => [ qw{AF AF_popmax}, ],
-        q{r2.1.1_sv} => [ qw{AF POPMAX_AF}, ],
+    my $reformated_outfile = join $UNDERSCORE,
+      ( $genome_version, $recipe_name, q{reformated}, $DASH . $reference_version . q{-.vcf.gz} );
+    my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
+
+    my %gnomad_post_processing = (
+        q{r2.0.1} => {
+            arg_href => {
+                info_keys_ref => [qw{ INFO/AF INFO/AF_POPMAX }],
+            },
+            method => \&_annotate,
+        },
+        q{r2.1.1} => {
+            arg_href => {
+                info_keys_ref => [qw{ INFO/AF INFO/AF_popmax }],
+            },
+            method => \&_annotate,
+        },
+        q{r2.1.1_sv} => {
+            arg_href => {
+                info_keys_ref => [qw{ INFO/AC INFO/AF INFO/POPMAX_AF }],
+            },
+            method => \&_annotate,
+        },
+        q{r3.0} => {
+            arg_href => {
+                info_keys_ref => [
+                    qw{ INFO/AF INFO/AF_afr INFO/AF_amr INFO/AF_ami INFO/AF_eas INFO/AF_nfe INFO/AF_sas }
+                ],
+                recipe_dir_path => dirname($recipe_file_path),
+            },
+            method => \&_annotate_and_calculate_afpopmax,
+        },
     );
 
-    my $reformated_outfile = join $UNDERSCORE,
-      (
-        $genome_version, $recipe_name, q{reformated},
-        $DASH . $reference_version . q{-.vcf.gz}
-      );
-    my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
-    my $rtg_memory              = $recipe_resource{memory} - 1 . q{G};
-
-    rtg_vcfsubset(
+    $gnomad_post_processing{$reference_version}{method}->(
         {
-            filehandle         => $filehandle,
-            infile_path        => catfile( $reference_dir, $reference_href->{outfile} ),
-            keep_info_keys_ref => $info_key{$reference_version},
-            memory             => $rtg_memory,
-            outfile_path       => $reformated_outfile_path,
+            %{ $gnomad_post_processing{$reference_version}{arg_href} },
+            filehandle   => $filehandle,
+            infile_path  => catfile( $reference_dir, $reference_href->{outfile} ),
+            outfile_path => $reformated_outfile_path,
         }
     );
-    say {$filehandle} $NEWLINE;
 
-    htslib_tabix(
+    bcftools_index(
         {
             filehandle  => $filehandle,
-            force       => 1,
             infile_path => $reformated_outfile_path,
-            preset      => q{vcf},
+            output_type => q{tbi},
         }
     );
     say {$filehandle} $NEWLINE;
@@ -226,7 +232,7 @@ sub download_gnomad {
     _build_af_file(
         {
             filehandle        => $filehandle,
-            file_name         => $reference_href->{outfile},
+            file_name         => $reformated_outfile,
             infile_path       => $reformated_outfile_path,
             reference_dir     => $reference_dir,
             reference_version => $reference_version,
@@ -236,7 +242,7 @@ sub download_gnomad {
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## No upstream or downstream dependencies
         slurm_submit_job_no_dependency_dead_end(
@@ -294,7 +300,7 @@ sub _build_af_file {
             strict_type => 1,
         },
         reference_version => {
-            allow       => [qw{ r2.0.1 r2.1.1 r2.1.1_sv }],
+            allow       => [qw{ r2.0.1 r2.1.1 r2.1.1_sv r3.0 }],
             required    => 1,
             store       => \$reference_version,
             strict_type => 1,
@@ -303,17 +309,17 @@ sub _build_af_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Program::Bcftools qw{ bcftools_query };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
 
     ## Don't build file for SV:s
     return if ( $reference_version eq q{r2.1.1_sv} );
 
-    my $outfile_no_suffix = parse_file_suffix(
+    my $outfile_no_suffix = remove_file_path_suffix(
         {
-            file_name   => $file_name,
-            file_suffix => q{.vcf},
+            file_path         => $file_name,
+            file_suffixes_ref => [qw{ .vcf .vcf.gz }],
         }
     );
     my $allele_frq_file_path = catfile( $reference_dir, $outfile_no_suffix . q{.tab.gz} );
@@ -343,6 +349,187 @@ sub _build_af_file {
             filehandle  => $filehandle,
             infile_path => $allele_frq_file_path,
             sequence    => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    return;
+}
+
+sub _annotate {
+
+## Function : Annotate gnomad vcf
+## Returns  :
+## Arguments: $filehandle       => Filehandle
+##          : $infile_path      => Path to infile
+##          : $info_keys_ref    => INFO keys
+##          : $outfile_path     => Path to reformatted file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $info_keys_ref;
+    my $outfile_path;
+
+    my $tmpl = {
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        info_keys_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$info_keys_ref,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Bcftools qw{ bcftools_annotate };
+
+    ## Annotate
+    ## Only include sites for which at least one of the info keys are above zero
+    my $include_record = join $SPACE . $PIPE x 2 . $SPACE, map { $_ . q{>0} } @{$info_keys_ref};
+    bcftools_annotate(
+        {
+            filehandle     => $filehandle,
+            include        => $SINGLE_QUOTE . $include_record . $SINGLE_QUOTE,
+            infile_path    => $infile_path,
+            outfile_path   => $outfile_path,
+            output_type    => q{z},
+            remove_ids_ref => [ map { q{^} . $_ } @{$info_keys_ref} ],
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    return;
+}
+
+sub _annotate_and_calculate_afpopmax {
+
+## Function : Calculate AF_popmax for gnomad r3.0
+## Returns  :
+## Arguments: $filehandle      => Filehandle
+##          : $infile_path     => Path to infile
+##          : $info_keys_ref   => INFO keys
+##          : $outfile_path    => Path to reformatted file
+##          : $recipe_dir_path => Recipe directory path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $info_keys_ref;
+    my $outfile_path;
+    my $recipe_dir_path;
+
+    my $tmpl = {
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        info_keys_ref => {
+            default     => [],
+            required    => 1,
+            store       => \$info_keys_ref,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        recipe_dir_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_dir_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
+    use MIP::Program::Vcfanno qw{ vcfanno };
+    use MIP::Toml qw{ write_toml };
+
+    Readonly my $MAX_RANDOM_NUMBER => 10_000;
+
+    ## Annotate
+    ## Only include sites for which at least one of the info keys are above zero
+    my $include_record = join $SPACE . $PIPE x 2 . $SPACE, map { $_ . q{>0} } @{$info_keys_ref};
+    bcftools_annotate(
+        {
+            filehandle     => $filehandle,
+            include        => $SINGLE_QUOTE . $include_record . $SINGLE_QUOTE,
+            infile_path    => $infile_path,
+            output_type    => q{v},
+            remove_ids_ref => [ map { q{^} . $_ } @{$info_keys_ref} ],
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    ## Calculate af_popmax
+    my $postannotation = {
+        postannotation => [
+            {
+                fields => [qw{ AF_afr AF_ami AF_amr AF_eas AF_nfe AF_sas }],
+                name   => q{AF_popmax},
+                op     => q{max},
+                type   => q{Float},
+            },
+        ],
+    };
+
+    ## Generate a random integer between 0-10,000.
+    my $random_integer = int rand $MAX_RANDOM_NUMBER;
+    my $toml_path =
+      catfile( $recipe_dir_path, $random_integer . $UNDERSCORE . q{calculate_afpopmax.toml} );
+    write_toml(
+        {
+            data_href => $postannotation,
+            path      => $toml_path,
+        }
+    );
+
+    vcfanno(
+        {
+            filehandle           => $filehandle,
+            infile_path          => catfile( $FORWARD_SLASH, qw{ dev stdin } ),
+            toml_configfile_path => $toml_path,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    bcftools_view(
+        {
+            filehandle   => $filehandle,
+            infile_path  => catfile( $FORWARD_SLASH, qw{ dev stdin } ),
+            outfile_path => $outfile_path,
+            output_type  => q{z},
         }
     );
     say {$filehandle} $NEWLINE;

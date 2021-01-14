@@ -107,7 +107,7 @@ MIP is written in perl and therefore requires that perl is installed on your OS.
 * [Perl], version 5.26.0 or above
 * [Cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7043/lib/App/cpanminus.pm)
 * [Miniconda] version 4.5.11
-* Singularity version 3.2.1
+* [Singularity] version 3.2.1
 
 We recommend miniconda for installing perl and cpanm libraries. However, perlbrew can also be used for installing and managing perl and cpanm libraries together with MIP.
 Installation instructions and setting up specific cpanm libraries using perlbrew can be found [here](https://github.com/Clinical-Genomics/development/blob/master/docs/perl/installation/perlbrew.md).
@@ -115,47 +115,35 @@ Installation instructions and setting up specific cpanm libraries using perlbrew
 #### Automated Installation \(Linux x86\_64\)
 Below are instructions for installing the Mutation Identification Pipeline (MIP).
 
-##### 1.Clone the official git repository
+##### 1. Clone the official git repository
 
 ```Bash
 $ git clone https://github.com/Clinical-Genomics/MIP.git
 $ cd MIP
 ```
-##### 2.Install required perl modules from cpan to a specified conda environment
+##### 2. Install required perl modules from cpan to a specified conda environment
 
 ```Bash
 $ bash mip_install_perl.sh -e [mip] -p [$HOME/miniconda3]
 ```  
 
-##### 3.Test conda and mip installation files (optional, but recommended)
+##### 3. Test conda and mip installation files (optional, but recommended)
 
 ```Bash
 $ perl t/mip_install.test
 ```
+A conda environment will be created where MIP with all dependencies will be installed.
 
-##### 4.Create the install instructions for MIP
+##### 4. Install MIP
 ```Bash
 $ perl mip install --environment_name [mip] --reference_dir [$HOME/mip_references]
 ```
-This will generate a bash script called "mip.sh" in your working directory.
+This will cache the containers that are used by MIP.
 
 ###### *Note:*
-  By default the batch script will attempt to install the MIP dependencies in a conda environment called 'mip'. It is possible to specify the name of the environment using the ``--environment_name`` flag.
-
   - For a full list of available options and parameters, run: ``$ perl mip install --help``
-  - For a full list of parameter defaults, run: ``$ perl mip install --ppd``
 
-##### 5.Run the bash script
-
-```Bash
-$ bash mip.sh
-```
-A conda environment will be created where MIP with all dependencies will be installed.
-
-###### *Note:*
-  Some references are quite large and will take time to download. You might want to run this using screen or tmux. Alternatively, the installation script can be submitted as a sbatch job if the flag ``--sbatch_mode`` is used when generating the installation script.
-
-##### 6.Test your MIP installation (optional, but recommended)
+##### 6. Test your MIP installation (optional, but recommended)
 
 Make sure to activate your MIP conda environment before executing prove.
 
@@ -195,7 +183,7 @@ $ mip analyse rd_dna case_3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids
 This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
 
 ###### Running programs in singularity containers
-Aside from a conda environment, MIP uses singularity containers to run programs. Singularity containers that are downloaded using MIP's automated installer will need no extra setup. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `singularity_recipe_bind_path` in the config.
+Aside from a conda environment, MIP uses containers to run programs. You can use either singularity or docker as your container manager. Containers that are downloaded using MIP's automated installer will need no extra setup. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `container_recipe_bind_path` in the config.
 
 In the example below the config has been modified to include the infile directories for the bwa_mem recipe:
   ```Yml
@@ -234,7 +222,8 @@ MIP will place any generated data files in the output data directory specified b
 [Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/aggregated_master.txt
 [Miniconda]: http://conda.pydata.org/miniconda.html
 [Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml
-[Perl]:https://www.perl.org/
+[Perl]: https://www.perl.org/
 [Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_cmms_-v1.28-.ini
+[Singularity]: https://sylabs.io/
 [SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_cmms_-v1.8-.ini
 [Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/qc_regexp_-v1.24-.yaml

@@ -1,7 +1,6 @@
 package MIP::Program::Gnu::Findutils;
 
 use 5.026;
-use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;    #Allow unicode characters in this script
@@ -25,9 +24,6 @@ use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ xargs gnu_find };

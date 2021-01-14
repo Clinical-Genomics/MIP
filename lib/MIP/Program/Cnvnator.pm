@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,15 +16,13 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ cnvnator_calling
@@ -37,6 +34,8 @@ BEGIN {
     };
 
 }
+
+Readonly my $BASE_COMMAND => q{cnvnator};
 
 sub cnvnator_read_extraction {
 
@@ -84,7 +83,7 @@ sub cnvnator_read_extraction {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ cnvnator };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     if ( @{$regions_ref} ) {
 
@@ -170,7 +169,7 @@ sub cnvnator_histogram {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ cnvnator };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     if ( @{$regions_ref} ) {
 
@@ -248,7 +247,7 @@ sub cnvnator_statistics {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ cnvnator };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     if ( @{$regions_ref} ) {
 
@@ -321,7 +320,7 @@ sub cnvnator_partition {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ cnvnator };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     if ( @{$regions_ref} ) {
 
@@ -394,7 +393,7 @@ sub cnvnator_calling {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ cnvnator };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     if ( @{$regions_ref} ) {
 
@@ -465,7 +464,8 @@ sub cnvnator_convert_to_vcf {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ cnvnator2VCF.pl };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{cnvnator2VCF.pl}, } ), );
 
     push @commands, $infile_path;
 

@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
 BEGIN {
 
@@ -42,7 +32,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Build::Human_genome_prerequisites} =>
           [qw{ build_human_genome_prerequisites }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -51,8 +41,7 @@ BEGIN {
 use MIP::Recipes::Build::Human_genome_prerequisites
   qw{ build_human_genome_prerequisites };
 
-diag(   q{Test build_human_genome_prerequisites from Human_genome_prerequisites.pm v}
-      . $MIP::Recipes::Build::Human_genome_prerequisites::VERSION
+diag(   q{Test build_human_genome_prerequisites from Human_genome_prerequisites.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

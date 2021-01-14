@@ -13,6 +13,8 @@ human_genome_reference_file_endings:
   associated_recipe:
     - bwa_mem
   build_file: 1
+mip:
+  chain: TEST
 rtg_vcfeval_reference_genome:
   build_file: 1
 salmon_quant_reference_genome:

@@ -1,0 +1,18 @@
+# TOML
+
+title = "Vcfanno configuration file"
+
+[functions]
+file = "TEST_REFERENCES!/vcfanno_functions_-v1.0-.lua"
+
+[[annotation]]
+file="TEST_REFERENCES!/grch38_loqusdb_snv_indel_-2020-03-24-.vcf.gz"
+fields=["Obs", "Hom"]
+names=["Obs", "Hom"]
+ops=["self", "self"]
+
+[[annotation]]
+file="TEST_REFERENCES!/grch38_gnomad_reformated_-r3.0-.vcf.gz"
+fields = ["AF", "AF_popmax"]
+ops=["self", "self"]
+names=["GNOMADAF", "GNOMADAF_POPMAX"]

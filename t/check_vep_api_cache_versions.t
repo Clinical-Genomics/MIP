@@ -21,18 +21,8 @@ use Test::Trap qw{ :stderr:output(systemsafe) };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.07;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Constants qw{ $COMMA $SPACE set_container_cmd };
+use MIP::Test::Fixtures qw{ test_constants test_log };
 
 BEGIN {
 
@@ -42,7 +32,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Vep}            => [qw{ check_vep_api_cache_versions }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -50,8 +40,7 @@ BEGIN {
 
 use MIP::Vep qw{ check_vep_api_cache_versions };
 
-diag(   q{Test check_vep_api_cache_versions from Vep.pm v}
-      . $MIP::Vep::VERSION
+diag(   q{Test check_vep_api_cache_versions from Vep.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,18 +51,34 @@ diag(   q{Test check_vep_api_cache_versions from Vep.pm v}
 my $test_dir = File::Temp->newdir();
 
 ## Creates log object
-my $log = test_log( {} );
+test_log( {} );
 
 ## Given matching vep API and cache version
-my $vep_binary_path = catdir( $Bin, qw{ data modules miniconda envs mip_ci bin vep } );
 my $vep_directory_cache =
   catdir( $Bin, qw{ data references ensembl-tools-data-100 cache } );
+
+my %process_return = (
+    buffers_ref   => [],
+    error_message => undef,
+    stderrs_ref   => [],
+    stdouts_ref   => [qw{ 100 }],
+    success       => 1,
+);
+test_constants(
+    {
+        test_process_return_href => \%process_return,
+    }
+);
+my $base_command = q{vep};
+my $container_base_command =
+  q{singularity exec docker//docker.io/ensemblorg/ensembl-vep:release_100.2 vep};
+my %container_cmd = ( $base_command => $container_base_command, );
+set_container_cmd( { container_cmd_href => \%container_cmd, } );
 
 ## When comparing API and cache version
 my $match = check_vep_api_cache_versions(
     {
         vep_directory_cache => $vep_directory_cache,
-        vep_binary_path     => $vep_binary_path,
     }
 );
 
@@ -88,9 +93,7 @@ $vep_directory_cache =
 trap {
     check_vep_api_cache_versions(
         {
-            log                 => $log,
             vep_directory_cache => $vep_directory_cache,
-            vep_binary_path     => $vep_binary_path,
         }
     )
 };
@@ -103,13 +106,11 @@ ok( $trap->exit, q{Exit on non matching versions} );
 $vep_directory_cache =
   catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-vep } );
 
-## When trying to retireve the cache versions
+## When trying to get the cache versions
 trap {
     check_vep_api_cache_versions(
         {
-            log                 => $log,
             vep_directory_cache => $vep_directory_cache,
-            vep_binary_path     => $vep_binary_path,
         }
     )
 };
@@ -118,24 +119,29 @@ trap {
 ok( $trap->return, q{Return on unknown cache version} );
 like( $trap->stderr, qr/WARN/xms, q{Warn for unknown VEP cache version} );
 
-## Given a direcory that lacks a working vep bin
-$vep_binary_path = catdir( $Bin, qw{ data modules miniconda envs test_env bin vep} );
-$vep_directory_cache =
-  catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-tools-91 cache } );
+## Given unknown vep api version
+$process_return{stdouts_ref} = [];
+test_constants(
+    {
+        test_process_return_href => \%process_return,
+    }
+);
 
 ## When trying to retrieve API version
 trap {
     check_vep_api_cache_versions(
         {
-            log                 => $log,
             vep_directory_cache => $vep_directory_cache,
-            vep_binary_path     => $vep_binary_path,
         }
     )
 };
 
 ## Then return and print warning message
 ok( $trap->return, q{Return on unknown API version} );
-like( $trap->stderr, qr/WARN/xms, q{Warn for unknown VEP api version} );
+like(
+    $trap->stderr,
+    qr/Could \s+ not \s+ retrieve /xms,
+    q{Warn for unknown VEP api version}
+);
 
 done_testing();

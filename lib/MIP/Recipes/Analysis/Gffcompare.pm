@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gffcompare };
@@ -138,11 +134,11 @@ sub analysis_gffcompare {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gffcompare qw{ gffcompare };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
 
@@ -173,18 +169,11 @@ sub analysis_gffcompare {
     ## GffCompare can take multiple inputs. Add input gtfs as necessary
     my @infile_paths = ($infile_path);
 
-    my %recipe_attribute = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $job_id_chain        = $recipe_attribute{chain};
-    my $recipe_mode         = $active_parameter_href->{$recipe_name};
     my $annotationfile_path = $active_parameter_href->{transcript_annotation};
-    my %recipe_resource     = get_recipe_resources(
+    my %recipe              = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -195,7 +184,7 @@ sub analysis_gffcompare {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => [$infile_name_prefix],
                 id                     => $sample_id,
@@ -218,18 +207,16 @@ sub analysis_gffcompare {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -239,9 +226,9 @@ sub analysis_gffcompare {
     say {$filehandle} q{## GffCompare};
     gffcompare(
         {
-            filehandle           => $filehandle,
-            genome_sequence_path => $active_parameter_href->{human_genome_reference},
-            gtf_reference_path   => $active_parameter_href->{transcript_annotation},
+            filehandle                 => $filehandle,
+            genome_sequence_path       => $active_parameter_href->{human_genome_reference},
+            gtf_reference_path         => $active_parameter_href->{transcript_annotation},
             ignore_non_overlapping_ref => 1,
             infile_paths_ref           => \@infile_paths,
             outfile_path_prefix        => $outfile_path_prefix,
@@ -251,9 +238,9 @@ sub analysis_gffcompare {
 
     ## Rename output files
     say {$filehandle} q{## Rename and move GFFCompare output};
-    my $gff_output_path    = $outfile_path_prefix . $DOT . q{annotated.gtf};
-    my $refmap_infile_path = catfile( $indir_path,
-        $outfile_name_prefix . $DOT . $infile_name . $DOT . q{refmap} );
+    my $gff_output_path = $outfile_path_prefix . $DOT . q{annotated.gtf};
+    my $refmap_infile_path =
+      catfile( $indir_path, $outfile_name_prefix . $DOT . $infile_name . $DOT . q{refmap} );
     my $tmap_infile_path =
       catfile( $indir_path, $outfile_name_prefix . $DOT . $infile_name . $DOT . q{tmap} );
 
@@ -277,7 +264,7 @@ sub analysis_gffcompare {
     ## Close filehandle
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -302,13 +289,13 @@ sub analysis_gffcompare {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_island},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_island},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

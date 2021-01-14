@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,6 +16,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,12 +24,11 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.04;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ svdb_merge svdb_query };
 }
+
+Readonly my $BASE_COMMAND => q{svdb};
 
 sub svdb_merge {
 
@@ -87,21 +86,19 @@ sub svdb_merge {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ svdb --merge };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ),
+        qw{ --merge } );
 
     if ($priority) {
 
-        ## Priority order of structural variant calls
         push @commands, q{--priority} . $SPACE . $priority;
     }
     if ($notag) {
 
-        ## Do not tag variant with origin file
         push @commands, q{--notag};
     }
     if ($same_order) {
 
-        ## Same sample order across vcf files
         push @commands, q{--same_order};
     }
 
@@ -208,7 +205,8 @@ sub svdb_query {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ svdb --query };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ),
+        qw{ --query } );
 
     if ($bnd_distance) {
 

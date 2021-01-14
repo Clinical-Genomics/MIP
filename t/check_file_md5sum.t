@@ -16,22 +16,11 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,17 +29,15 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::File}    => [qw{ check_file_md5sum }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+        q{MIP::Validate::File} => [qw{ check_file_md5sum }],
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::File qw{ check_file_md5sum };
+use MIP::Validate::File qw{ check_file_md5sum };
 
-diag(   q{Test check_file_md5sum from File.pm v}
-      . $MIP::Check::File::VERSION
+diag(   q{Test check_file_md5sum from File.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,7 +85,6 @@ $return = check_file_md5sum(
 is( $return, undef, q{Wrong file suffix - skip} );
 
 ## Given a defined method, when a md5 suffix exists
-$method = q{md5sum};
 my $is_ok = check_file_md5sum(
     {
         filehandle    => $filehandle,

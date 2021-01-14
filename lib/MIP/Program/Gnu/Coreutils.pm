@@ -26,9 +26,6 @@ BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
-    # Set the version for version checking
-    our $VERSION = 1.17;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_cat
       gnu_chmod
@@ -497,9 +494,8 @@ sub gnu_echo {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{echo};
+    my @commands = qw{ echo };
 
-    ## Options
     if ($enable_interpretation) {
         push @commands, q{-e};
     }
@@ -512,7 +508,6 @@ sub gnu_echo {
     push @commands,
       $string_wrapper . join( $EMPTY_STR, @{$strings_ref} ) . $string_wrapper;
 
-    ## Outfile
     if ($outfile_path) {
         push @commands, q{>} . $SPACE . $outfile_path;
     }
@@ -1223,15 +1218,13 @@ sub gnu_sleep {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{sleep};
+    my @commands = qw{ sleep };
 
-    ## Options
     if ( defined $seconds_to_sleep ) {
 
         push @commands, $seconds_to_sleep;
     }
 
-    #Redirect stdout to program specific stdout file
     push @commands,
       unix_standard_streams(
         {

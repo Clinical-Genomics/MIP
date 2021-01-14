@@ -2,6 +2,23 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [10.0.0]
+- Align with the same bwa mem options as used by Broad
+    - Fixed number of bases in each batch
+    - Use bwa mem instead of run-bwamem for alignment to grch38
+- Use Chanjo repos Docker file instead of MIPs
+- Removed support to run bcftools_mpileup as a variant caller
+- Added perl and MIP docker file and use it in recipes
+- Removed PATH check for proxy bins
+- Switched to using container manager instead of proxy bins in recipes
+- Removed support to run variant_integrity
+- Added deepvariant as variant caller and glnexus to merge samples to case vcf
+
+**Tools**  
+chanjo: 4.2.0 -> 4.6  
+deepvariant: 1.0.0  
+glnexus: v1.2.7
+
 ## [9.1.2]
 - Increase markduplicates java memory allocation for chromosme 2.
 - Turn off chromograph_viz for wes analysis
@@ -31,7 +48,7 @@ chromograph 0.3.3 -> 1.0.0
 - Update to chromograph in order to fix the renderering coverage images
 
 **Tools**
-chromograph 0.3.1 -> 0.3.3
+chromograph: 0.3.1 -> 0.3.3
 
 ## [9.0.4]
 - Increased memory allocation for samtools_subsample_mt

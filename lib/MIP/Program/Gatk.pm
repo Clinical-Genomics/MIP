@@ -1,7 +1,6 @@
 package MIP::Program::Gatk;
 
 use 5.026;
-use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;
@@ -17,6 +16,7 @@ use Readonly;
 ## MIPs lib/
 use MIP::Constants
   qw{ $ASTERISK $AMPERSAND $COLON $DOT $DOUBLE_QUOTE $EMPTY_STR $ESCAPE $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Language::Java qw{ java_core };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -24,9 +24,6 @@ use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.21;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -56,6 +53,8 @@ BEGIN {
       gatk_variantrecalibrator
     };
 }
+
+Readonly my $BASE_COMMAND => q{gatk};
 
 sub gatk_applybqsr {
 
@@ -165,10 +164,8 @@ sub gatk_applybqsr {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -181,10 +178,8 @@ sub gatk_applybqsr {
     ## Add tool command
     push @commands, q{ApplyBQSR};
 
-    ## Add infile
     push @commands, q{--input} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -196,7 +191,6 @@ sub gatk_applybqsr {
         }
     );
 
-    ## Add static_quantized_quals
     if ( @{$static_quantized_quals_ref} ) {
         push
           @commands,
@@ -207,11 +201,9 @@ sub gatk_applybqsr {
           . $SPACE, @{$static_quantized_quals_ref};
     }
 
-    ## Add BQSR table
     push @commands,
       q{--bqsr-recal-file} . $SPACE . $base_quality_score_recalibration_file;
 
-    ## Output
     push @commands, q{--output} . $SPACE . $outfile_path;
 
     push @commands,
@@ -361,9 +353,8 @@ sub gatk_applyvqsr {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -378,7 +369,6 @@ sub gatk_applyvqsr {
 
     push @commands, q{--variant} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -531,10 +521,8 @@ sub gatk_asereadcounter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -547,13 +535,10 @@ sub gatk_asereadcounter {
     ## Add tool command
     push @commands, q{ASEReadCounter};
 
-    ## Add infile
     push @commands, q{--input} . $SPACE . $infile_path;
 
-    ## Add variant infile
     push @commands, q{--variant} . $SPACE . $variant_infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -565,7 +550,6 @@ sub gatk_asereadcounter {
         }
     );
 
-    ## Add output
     if ($outfile_path) {
 
         push @commands, q{--output} . $SPACE . $outfile_path;
@@ -886,10 +870,8 @@ sub gatk_baserecalibrator {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -902,10 +884,8 @@ sub gatk_baserecalibrator {
     ## Add tool command
     push @commands, q{BaseRecalibrator};
 
-    ## Add infile
     push @commands, q{--input} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -917,12 +897,10 @@ sub gatk_baserecalibrator {
         }
     );
 
-    ## Add known sites reference
     push @commands,
       q{--known-sites} . $SPACE . join $SPACE . q{--known-sites} . $SPACE,
       @{$known_sites_ref};
 
-    ## Output
     push @commands, q{--output} . $SPACE . $outfile_path;
 
     push @commands,
@@ -1061,9 +1039,8 @@ sub gatk_calculategenotypeposteriors {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -1077,7 +1054,6 @@ sub gatk_calculategenotypeposteriors {
 
     push @commands, q{--variant} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -1224,9 +1200,8 @@ sub gatk_cnnscorevariants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -1241,7 +1216,6 @@ sub gatk_cnnscorevariants {
 
     push @commands, q{--variant} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -1431,7 +1405,7 @@ sub gatk_combinevariants {
     );
 
     ## Add binary to beginning
-    unshift @commands, q{gatk3};
+    unshift @commands, ( get_executable_base_command( { base_command => q{gatk3}, } ), );
 
     if ($exclude_nonvariants) {
 
@@ -1648,9 +1622,6 @@ sub gatk_concatenate_variants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Gatk qw(gatk_gathervcfscloud);
-
-    ## Outfile path to be built
     my $outfile_path;
 
     ## No postfix
@@ -1789,10 +1760,8 @@ sub gatk_gatherbqsrreports {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -1805,11 +1774,9 @@ sub gatk_gatherbqsrreports {
     ## Add tool command
     push @commands, q{GatherBQSRReports};
 
-    ## Add infile
     push @commands, q{--input} . $SPACE . join $SPACE . q{--input} . $SPACE,
       @{$base_quality_score_recalibration_files_ref};
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -1821,7 +1788,6 @@ sub gatk_gatherbqsrreports {
         }
     );
 
-    ## Output
     push @commands, q{--output} . $SPACE . $outfile_path;
 
     push @commands,
@@ -1918,9 +1884,8 @@ sub gatk_gathervcfscloud {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -1935,7 +1900,6 @@ sub gatk_gathervcfscloud {
       q{--input} . $SPACE . join $SPACE . q{--input} . $SPACE,
       @{$infile_paths_ref};
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref   => \@commands,
@@ -2075,9 +2039,8 @@ sub gatk_genomicsdbimport {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -2105,7 +2068,6 @@ sub gatk_genomicsdbimport {
         push @commands, q{--sample-name-map} . $SPACE . $sample_name_map_path;
     }
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -2247,9 +2209,8 @@ sub gatk_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -2264,7 +2225,6 @@ sub gatk_genotypegvcfs {
 
     push @commands, q{--variant} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -2470,10 +2430,8 @@ sub gatk_haplotypecaller {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -2486,10 +2444,8 @@ sub gatk_haplotypecaller {
     ## Add tool command
     push @commands, q{HaplotypeCaller};
 
-    ## Add infile
     push @commands, q{--input} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -2502,14 +2458,12 @@ sub gatk_haplotypecaller {
         }
     );
 
-    ## Add annotaions
     if ( @{$annotations_ref} ) {
         push @commands,
           q{--annotation} . $SPACE . join $SPACE . q{--annotation} . $SPACE,
           @{$annotations_ref};
     }
 
-    ## Add dbsnp
     if ($dbsnp_path) {
 
         push @commands, q{--dbsnp} . $SPACE . $dbsnp_path;
@@ -2519,28 +2473,23 @@ sub gatk_haplotypecaller {
         push @commands, q{--linked-de-bruijn-graph};
     }
 
-    ## No soft clipped bases
     if ($dont_use_soft_clipped_bases) {
 
         push @commands, q{--dont-use-soft-clipped-bases};
     }
 
-    ## Set output mode
     push @commands, q{--emit-ref-confidence} . $SPACE . $emit_ref_confidence;
 
-    ## Add PCR indel model
     if ($pcr_indel_model) {
 
         push @commands, q{--pcr-indel-model} . $SPACE . $pcr_indel_model;
     }
 
-    ## Add sample ploidy
     if ($sample_ploidy) {
 
         push @commands, q{--sample-ploidy} . $SPACE . $sample_ploidy;
     }
 
-    ## Add minimum phred-scaled confidence threshold
     if ($standard_min_confidence_threshold_for_calling) {
         push @commands,
             q{--standard-min-confidence-threshold-for-calling}
@@ -2548,7 +2497,6 @@ sub gatk_haplotypecaller {
           . $standard_min_confidence_threshold_for_calling;
     }
 
-    ## Output
     push @commands, q{--output} . $SPACE . $outfile_path;
 
     push @commands,
@@ -2636,9 +2584,8 @@ sub gatk_indexfeaturefile {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -2651,7 +2598,6 @@ sub gatk_indexfeaturefile {
 
     push @commands, q{--input} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref   => \@commands,
@@ -2871,9 +2817,8 @@ sub gatk_leftalignandtrimvariants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -2887,7 +2832,6 @@ sub gatk_leftalignandtrimvariants {
 
     push @commands, q{--variant} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -3018,10 +2962,8 @@ sub gatk_printreads {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -3034,10 +2976,8 @@ sub gatk_printreads {
     ## Add tool command
     push @commands, q{PrintReads};
 
-    ## Add infile
     push @commands, q{--input} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -3049,7 +2989,6 @@ sub gatk_printreads {
         }
     );
 
-    ## Add Output
     push @commands, q{--output} . $SPACE . $outfile_path;
 
     push @commands,
@@ -3197,9 +3136,8 @@ sub gatk_selectvariants {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -3214,7 +3152,6 @@ sub gatk_selectvariants {
 
     push @commands, q{--variant} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -3368,10 +3305,8 @@ sub gatk_splitncigarreads {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -3384,10 +3319,8 @@ sub gatk_splitncigarreads {
     ## Add tool command
     push @commands, q{SplitNCigarReads};
 
-    ## Add input file
     push @commands, q{--input} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -3398,7 +3331,6 @@ sub gatk_splitncigarreads {
         }
     );
 
-    ## Add output file
     push @commands, q{--output} . $SPACE . $outfile_path;
 
     push @commands,
@@ -3508,9 +3440,8 @@ sub gatk_varianteval {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -3522,7 +3453,6 @@ sub gatk_varianteval {
 
     push @commands, q{VariantEval};
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -3692,9 +3622,8 @@ sub gatk_variantfiltration {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -3708,7 +3637,6 @@ sub gatk_variantfiltration {
 
     push @commands, q{--variant} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,
@@ -3933,9 +3861,8 @@ sub gatk_variantrecalibrator {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ gatk };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
-    ## Add java options
     gatk_java_options(
         {
             commands_ref         => \@commands,
@@ -3950,7 +3877,6 @@ sub gatk_variantrecalibrator {
 
     push @commands, q{--variant} . $SPACE . $infile_path;
 
-    ## Add common options
     gatk_common_options(
         {
             commands_ref       => \@commands,

@@ -6,25 +6,22 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $EQUALS $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    our $VERSION = 1.00;
 
     our @EXPORT_OK = qw{ arriba draw_fusions };
 }
@@ -132,7 +129,7 @@ sub arriba {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ arriba };
+    my @commands = ( get_executable_base_command( { base_command => q{arriba}, } ), );
 
     push @commands, q{-g} . $SPACE . $annotation_file_path;
 
@@ -265,7 +262,7 @@ sub draw_fusions {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ draw_fusions.R };
+    my @commands = ( get_executable_base_command( { base_command => q{draw_fusions.R}, } ), );
 
     push @commands, q{--alignments} . $EQUALS . $alignment_file_path;
 

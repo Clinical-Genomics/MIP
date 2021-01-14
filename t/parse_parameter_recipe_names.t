@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 BEGIN {
 
@@ -40,7 +30,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Parameter}      => [qw{ parse_parameter_recipe_names }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -48,8 +38,7 @@ BEGIN {
 
 use MIP::Parameter qw{ parse_parameter_recipe_names };
 
-diag(   q{Test parse_parameter_recipe_names from Parameter.pm v}
-      . $MIP::Parameter::VERSION
+diag(   q{Test parse_parameter_recipe_names from Parameter.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -57,11 +46,11 @@ diag(   q{Test parse_parameter_recipe_names from Parameter.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+test_log( {} );
 
 ## Given recipe names
 my %parameter = (
-    bcftools_mpileup => {
+    markduplicates_picardtools_opt_dup_dist => {
         associated_recipe => [ qw{ mip }, ],
         data_type         => q{SCALAR},
         default           => 1,

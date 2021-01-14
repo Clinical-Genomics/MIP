@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,16 +30,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Vcfanno}        => [qw{ check_toml_annotation_for_tags }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Vcfanno qw{ check_toml_annotation_for_tags };
 
-diag(   q{Test check_toml_annotation_for_tags from Vcfanno.pm v}
-      . $MIP::Vcfanno::VERSION
+diag(   q{Test check_toml_annotation_for_tags from Vcfanno.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -82,6 +70,7 @@ ok( $is_ok, q{Names and fields match} );
 ## Given missing tag
 $annotation{fields} = [q{MISSING_TAG}];
 $annotation{names}  = [q{MISSING_TAG}];
+%missing_tag        = ();
 
 check_toml_annotation_for_tags(
     {

@@ -8,7 +8,6 @@ use File::Basename qw{ dirname basename };
 use File::Spec::Functions qw{ catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -25,9 +24,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
@@ -138,13 +134,11 @@ sub analysis_rankvariant {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Genmod
-      qw{ genmod_annotate genmod_compound genmod_models genmod_score };
-    use MIP::Sample_info
-      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Program::Genmod qw{ genmod_annotate genmod_compound genmod_models genmod_score };
+    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -170,18 +164,11 @@ sub analysis_rankvariant {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
     my $xargs_file_path_prefix;
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -191,7 +178,7 @@ sub analysis_rankvariant {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
@@ -217,7 +204,7 @@ sub analysis_rankvariant {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar keys %infile_path,
-            recipe_core_number   => $recipe_resource{core_number},
+            recipe_core_number   => $recipe{core_number},
         }
     );
     ## Update memory depending on how many cores that are being used
@@ -225,25 +212,23 @@ sub analysis_rankvariant {
         {
             node_ram_memory           => $active_parameter_href->{node_ram_memory},
             parallel_processes        => $core_number,
-            process_memory_allocation => $recipe_resource{memory},
+            process_memory_allocation => $recipe{memory},
         }
     );
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $memory_allocation,
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $memory_allocation,
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -307,6 +292,7 @@ sub analysis_rankvariant {
             {
                 annotate_region     => $active_parameter_href->{genmod_annotate_regions},
                 filehandle          => $xargsfilehandle,
+                genome_build        => $file_info_href->{human_genome_reference_version},
                 infile_path         => $infile_path,
                 outfile_path        => $genmod_outfile_path,
                 stderrfile_path     => $annotate_stderrfile_path,
@@ -323,11 +309,11 @@ sub analysis_rankvariant {
 
         genmod_models(
             {
-                filehandle   => $xargsfilehandle,
-                case_file    => $case_file_path,
-                case_type    => $active_parameter_href->{genmod_models_case_type},
-                infile_path  => $genmod_indata,
-                outfile_path => $genmod_outfile_path,
+                filehandle                   => $xargsfilehandle,
+                case_file                    => $case_file_path,
+                case_type                    => $active_parameter_href->{genmod_models_case_type},
+                infile_path                  => $genmod_indata,
+                outfile_path                 => $genmod_outfile_path,
                 reduced_penetrance_file_path =>
                   $active_parameter_href->{genmod_models_reduced_penetrance_file},
                 stderrfile_path     => $models_stderrfile_path,
@@ -342,8 +328,7 @@ sub analysis_rankvariant {
 
         ## Genmod Score
         $genmod_module .= $UNDERSCORE . q{score};
-        my $score_stderrfile_path =
-          $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
+        my $score_stderrfile_path = $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
 
         genmod_score(
             {
@@ -383,7 +368,7 @@ sub analysis_rankvariant {
     close $xargsfilehandle
       or $log->logcroak(q{Could not close xargsfilehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -397,15 +382,14 @@ sub analysis_rankvariant {
         if ( defined $active_parameter_href->{rank_model_file} ) {
 
             my ($rank_model_version) =
-              $active_parameter_href->{rank_model_file} =~
-              m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
+              $active_parameter_href->{rank_model_file} =~ m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
 
             set_recipe_metafile_in_sample_info(
                 {
-                    file         => basename( $active_parameter_href->{rank_model_file} ),
-                    metafile_tag => q{rank_model},
-                    path         => $active_parameter_href->{rank_model_file},
-                    recipe_name  => q{genmod},
+                    file             => basename( $active_parameter_href->{rank_model_file} ),
+                    metafile_tag     => q{rank_model},
+                    path             => $active_parameter_href->{rank_model_file},
+                    recipe_name      => q{genmod},
                     sample_info_href => $sample_info_href,
                     version          => $rank_model_version,
                 }
@@ -413,13 +397,13 @@ sub analysis_rankvariant {
         }
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -532,13 +516,11 @@ sub analysis_rankvariant_unaffected {
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Genmod
-      qw{ genmod_annotate genmod_compound genmod_models genmod_score };
-    use MIP::Sample_info
-      qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Program::Genmod qw{ genmod_annotate genmod_compound genmod_models genmod_score };
+    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -564,18 +546,11 @@ sub analysis_rankvariant_unaffected {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
     my $xargs_file_path_prefix;
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -585,7 +560,7 @@ sub analysis_rankvariant_unaffected {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
@@ -611,7 +586,7 @@ sub analysis_rankvariant_unaffected {
         {
             max_cores_per_node   => $active_parameter_href->{max_cores_per_node},
             modifier_core_number => scalar keys %infile_path,
-            recipe_core_number   => $recipe_resource{core_number},
+            recipe_core_number   => $recipe{core_number},
         }
     );
     ## Update memory depending on how many cores that are being used
@@ -619,25 +594,23 @@ sub analysis_rankvariant_unaffected {
         {
             node_ram_memory           => $active_parameter_href->{node_ram_memory},
             parallel_processes        => $core_number,
-            process_memory_allocation => $recipe_resource{memory},
+            process_memory_allocation => $recipe{memory},
         }
     );
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $memory_allocation,
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $memory_allocation,
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -700,6 +673,7 @@ sub analysis_rankvariant_unaffected {
             {
                 annotate_region     => $active_parameter_href->{genmod_annotate_regions},
                 filehandle          => $xargsfilehandle,
+                genome_build        => $file_info_href->{human_genome_reference_version},
                 infile_path         => $genmod_indata,
                 outfile_path        => $genmod_outfile_path,
                 stderrfile_path     => $annotate_stderrfile_path,
@@ -714,7 +688,7 @@ sub analysis_rankvariant_unaffected {
     close $xargsfilehandle
       or $log->logcroak(q{Could not close xargsfilehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -728,15 +702,14 @@ sub analysis_rankvariant_unaffected {
         if ( defined $active_parameter_href->{rank_model_file} ) {
 
             my ($rank_model_version) =
-              $active_parameter_href->{rank_model_file} =~
-              m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
+              $active_parameter_href->{rank_model_file} =~ m/ v(\d+[.]\d+[.]\d+ | \d+[.]\d+) /sxm;
 
             set_recipe_metafile_in_sample_info(
                 {
-                    file         => basename( $active_parameter_href->{rank_model_file} ),
-                    metafile_tag => q{rank_model},
-                    path         => $active_parameter_href->{rank_model_file},
-                    recipe_name  => q{genmod},
+                    file             => basename( $active_parameter_href->{rank_model_file} ),
+                    metafile_tag     => q{rank_model},
+                    path             => $active_parameter_href->{rank_model_file},
+                    recipe_name      => q{genmod},
                     sample_info_href => $sample_info_href,
                     version          => $rank_model_version,
                 }
@@ -744,13 +717,13 @@ sub analysis_rankvariant_unaffected {
         }
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -862,14 +835,12 @@ sub analysis_rankvariant_sv {
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Genmod
-      qw{ genmod_annotate genmod_compound genmod_models genmod_score };
-    use MIP::Sample_info
-      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
+    use MIP::Program::Genmod qw{ genmod_annotate genmod_compound genmod_models genmod_score };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -891,25 +862,17 @@ sub analysis_rankvariant_sv {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my @infile_paths       = @{ $io{in}{file_paths} };
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
     my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
         {
-            vcfparser_outfile_count =>
-              $active_parameter_href->{sv_vcfparser_outfile_count},
+            vcfparser_outfile_count => $active_parameter_href->{sv_vcfparser_outfile_count},
         }
     );
 
@@ -921,7 +884,7 @@ sub analysis_rankvariant_sv {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
@@ -944,18 +907,16 @@ sub analysis_rankvariant_sv {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -1001,14 +962,12 @@ sub analysis_rankvariant_sv {
         my $genmod_module = $UNDERSCORE . q{annotate};
         genmod_annotate(
             {
-                annotate_region => $active_parameter_href->{sv_genmod_annotate_regions},
-                filehandle      => $filehandle,
-                infile_path     => $genmod_indata,
-                outfile_path    => $genmod_outfile_path,
-                stderrfile_path => $recipe_info_path
-                  . $genmod_module
-                  . $DOT
-                  . q{stderr.txt},
+                annotate_region     => $active_parameter_href->{sv_genmod_annotate_regions},
+                filehandle          => $filehandle,
+                genome_build        => $file_info_href->{human_genome_reference_version},
+                infile_path         => $genmod_indata,
+                outfile_path        => $genmod_outfile_path,
+                stderrfile_path     => $recipe_info_path . $genmod_module . $DOT . q{stderr.txt},
                 temp_directory_path => $temp_directory,
                 verbosity           => q{v},
             }
@@ -1042,7 +1001,7 @@ sub analysis_rankvariant_sv {
                 thread_number       => 4,
                 vep                 => $use_vep,
                 verbosity           => q{v},
-                whole_gene => $active_parameter_href->{sv_genmod_models_whole_gene},
+                whole_gene          => $active_parameter_href->{sv_genmod_models_whole_gene},
             }
         );
 
@@ -1053,11 +1012,11 @@ sub analysis_rankvariant_sv {
         $genmod_module .= $UNDERSCORE . q{score};
         genmod_score(
             {
-                filehandle   => $filehandle,
-                case_file    => $fam_file_path,
-                case_type    => $active_parameter_href->{sv_genmod_models_case_type},
-                infile_path  => $genmod_indata,
-                outfile_path => catfile( dirname( devnull() ), q{stdout} ),
+                filehandle           => $filehandle,
+                case_file            => $fam_file_path,
+                case_type            => $active_parameter_href->{sv_genmod_models_case_type},
+                infile_path          => $genmod_indata,
+                outfile_path         => catfile( dirname( devnull() ), q{stdout} ),
                 rank_model_file_path => $active_parameter_href->{sv_rank_model_file},
                 rank_result          => 1,
                 stderrfile_path      => $recipe_info_path
@@ -1092,7 +1051,7 @@ sub analysis_rankvariant_sv {
 
         say {$filehandle} $AMPERSAND . $NEWLINE;
 
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             set_recipe_outfile_in_sample_info(
                 {
@@ -1107,7 +1066,7 @@ sub analysis_rankvariant_sv {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Add to sample_info
         if ( defined $active_parameter_href->{sv_rank_model_file} ) {
@@ -1118,7 +1077,7 @@ sub analysis_rankvariant_sv {
 
             set_recipe_metafile_in_sample_info(
                 {
-                    file => basename( $active_parameter_href->{sv_rank_model_file} ),
+                    file             => basename( $active_parameter_href->{sv_rank_model_file} ),
                     metafile_tag     => q{sv_rank_model},
                     path             => $active_parameter_href->{sv_rank_model_file},
                     recipe_name      => q{sv_genmod},
@@ -1130,13 +1089,13 @@ sub analysis_rankvariant_sv {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -1247,12 +1206,11 @@ sub analysis_rankvariant_sv_unaffected {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Genmod qw{ genmod_annotate };
-    use MIP::Sample_info
-      qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -1275,25 +1233,17 @@ sub analysis_rankvariant_sv_unaffected {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my @infile_paths       = @{ $io{in}{file_paths} };
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
     my @vcfparser_analysis_types = get_vcf_parser_analysis_suffix(
         {
-            vcfparser_outfile_count =>
-              $active_parameter_href->{sv_vcfparser_outfile_count},
+            vcfparser_outfile_count => $active_parameter_href->{sv_vcfparser_outfile_count},
         }
     );
 
@@ -1305,7 +1255,7 @@ sub analysis_rankvariant_sv_unaffected {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
@@ -1327,18 +1277,16 @@ sub analysis_rankvariant_sv_unaffected {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -1356,6 +1304,7 @@ sub analysis_rankvariant_sv_unaffected {
             {
                 annotate_region => $active_parameter_href->{sv_genmod_annotate_regions},
                 filehandle      => $filehandle,
+                genome_build    => $file_info_href->{human_genome_reference_version},
                 infile_path     => $infile_path,
                 outfile_path    => $outfile_paths[$infile_index],
                 stderrfile_path => $recipe_info_path
@@ -1370,7 +1319,7 @@ sub analysis_rankvariant_sv_unaffected {
 
         say {$filehandle} $AMPERSAND . $NEWLINE;
 
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             set_recipe_outfile_in_sample_info(
                 {
@@ -1385,7 +1334,7 @@ sub analysis_rankvariant_sv_unaffected {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Add to Sample_info
         if ( defined $active_parameter_href->{sv_rank_model_file} ) {
@@ -1396,7 +1345,7 @@ sub analysis_rankvariant_sv_unaffected {
 
             set_recipe_metafile_in_sample_info(
                 {
-                    file => basename( $active_parameter_href->{sv_rank_model_file} ),
+                    file             => basename( $active_parameter_href->{sv_rank_model_file} ),
                     metafile_tag     => q{sv_rank_model},
                     path             => $active_parameter_href->{sv_rank_model_file},
                     recipe_name      => q{sv_genmod},
@@ -1409,13 +1358,13 @@ sub analysis_rankvariant_sv_unaffected {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

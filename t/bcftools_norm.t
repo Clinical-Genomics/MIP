@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,16 +32,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Bcftools} => [qw{ bcftools_norm }],
-        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Bcftools qw{ bcftools_norm };
 
-diag(   q{Test bcftools_norm from Bcftools.pm v}
-      . $MIP::Program::Bcftools::VERSION
+diag(   q{Test bcftools_norm from Bcftools.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -80,17 +68,17 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    outfile_path => {
-        input           => q{outfile.txt},
-        expected_output => q{--output outfile.txt},
-    },
     multiallelic => {
         input           => q{+},
         expected_output => q{--multiallelics +both},
     },
-    reference_path => {
-        input           => q{path_to_fasta_ref},
-        expected_output => q{--fasta-ref path_to_fasta_ref},
+    outfile_path => {
+        input           => q{outfile.txt},
+        expected_output => q{--output outfile.txt},
+    },
+    remove_duplicates => {
+        input           => q{1},
+        expected_output => q{--rm-dup none},
     },
 );
 
@@ -99,10 +87,6 @@ my %specific_argument = (
         input           => q{infile.test},
         expected_output => q{infile.test},
     },
-    multiallelic => {
-        input           => q{+},
-        expected_output => q{--multiallelics +both},
-    },
     multiallelic_type => {
         input           => q{snps},
         expected_output => q{--multiallelics +snps},
@@ -110,6 +94,14 @@ my %specific_argument = (
     output_type => {
         input           => q{v},
         expected_output => q{--output-type v},
+    },
+    reference_path => {
+        input           => q{path_to_fasta_ref},
+        expected_output => q{--fasta-ref path_to_fasta_ref},
+    },
+    remove_duplicates_type => {
+        input           => q{all},
+        expected_output => q{--rm-dup all},
     },
 );
 

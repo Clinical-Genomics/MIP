@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
 BEGIN {
 
@@ -41,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Build::Rtg_prerequisites} => [qw{ build_rtg_prerequisites }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -49,8 +39,7 @@ BEGIN {
 
 use MIP::Recipes::Build::Rtg_prerequisites qw{ build_rtg_prerequisites };
 
-diag(   q{Test build_rtg_prerequisites from Rtg_prerequisites.pm v}
-      . $MIP::Recipes::Build::Rtg_prerequisites::VERSION
+diag(   q{Test build_rtg_prerequisites from Rtg_prerequisites.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

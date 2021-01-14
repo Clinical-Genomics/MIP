@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.09;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_salmon_quant_prerequisites };
@@ -145,12 +141,12 @@ sub build_salmon_quant_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_package_source_env_cmds get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Star_fusion qw{ star_fusion_gtf_file_to_feature_seqs };
     use MIP::Program::Salmon qw{ salmon_index };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -158,14 +154,11 @@ sub build_salmon_quant_prerequisites {
     Readonly my $NUMBER_OF_CORES   => $active_parameter_href->{max_cores_per_node};
     Readonly my $PROCESSING_TIME   => 5;
 
-    ## Set recipe mode
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    ## Unpack parameters
-    my $job_id_chain    = $parameter_href->{$recipe_name}{chain};
-    my %recipe_resource = get_recipe_resources(
+## Unpack parameters
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -185,12 +178,11 @@ sub build_salmon_quant_prerequisites {
             directory_id                    => $case_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
+            memory_allocation               => $recipe{memory},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
             process_time                    => $PROCESSING_TIME,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            source_environment_commands_ref => $recipe{load_env_ref},
         }
     );
 
@@ -202,9 +194,7 @@ sub build_salmon_quant_prerequisites {
     say {$filehandle} q{## Building Salmon dir files};
     ## Get parameters
     my $salmon_quant_directory_tmp =
-        $active_parameter_href->{salmon_quant_reference_genome}
-      . $UNDERSCORE
-      . $random_integer;
+      $active_parameter_href->{salmon_quant_reference_genome} . $UNDERSCORE . $random_integer;
 
     # Create temp dir
     gnu_mkdir(
@@ -241,8 +231,7 @@ sub build_salmon_quant_prerequisites {
   PREREQ:
     foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
 
-        my $intended_file_path =
-          $active_parameter_href->{salmon_quant_reference_genome} . $suffix;
+        my $intended_file_path = $active_parameter_href->{salmon_quant_reference_genome} . $suffix;
 
         ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
         check_exist_and_move_file(
@@ -256,7 +245,7 @@ sub build_salmon_quant_prerequisites {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         submit_recipe(
             {
@@ -265,7 +254,7 @@ sub build_salmon_quant_prerequisites {
                 case_id            => $case_id,
                 job_id_href        => $job_id_href,
                 log                => $log,
-                job_id_chain       => $job_id_chain,
+                job_id_chain       => $recipe{job_id_chain},
                 recipe_file_path   => $recipe_file_path,
                 sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile => $active_parameter_href->{submission_profile},

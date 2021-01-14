@@ -22,17 +22,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
 BEGIN {
 
@@ -42,7 +32,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Analysis} => [qw{ update_recipe_mode_for_fastq_compatibility }],
-        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures}   => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -51,8 +41,7 @@ BEGIN {
 use MIP::Analysis qw{ update_recipe_mode_for_fastq_compatibility };
 use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
-diag(   q{Test update_recipe_mode_for_fastq_compatibility from Analysis.pm v}
-      . $MIP::Analysis::VERSION
+diag(   q{Test update_recipe_mode_for_fastq_compatibility from Analysis.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

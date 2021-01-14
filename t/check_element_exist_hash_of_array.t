@@ -16,22 +16,11 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,17 +29,15 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Check::Hash}    => [qw{ check_element_exist_hash_of_array }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+        q{MIP::List}           => [qw{ check_element_exist_hash_of_array }],
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Check::Hash qw{ check_element_exist_hash_of_array };
+use MIP::List qw{ check_element_exist_hash_of_array };
 
-diag(   q{Test check_element_exist_hash_of_array from Hash.pm v}
-      . $MIP::Check::Hash::VERSION
+diag(   q{Test check_element_exist_hash_of_array from List.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,7 +45,7 @@ diag(   q{Test check_element_exist_hash_of_array from Hash.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-# Create the hash of arrays
+## Given a hash of arrays
 my %file_info = (
     exome_target_bed => [qw{ .interval_list .pad100.interval_list }],
 
@@ -69,7 +56,21 @@ my %file_info = (
     human_genome_reference_file_endings => [qw{ .dict .fai }],
 );
 
-# Test an existing key and an element not part of the array hash
+## When a key that is not part of hash is used
+my $return = check_element_exist_hash_of_array(
+    {
+        element  => q{.another_file_ending},
+        hash_ref => \%file_info,
+        key      => q{not_a_key},
+    }
+);
+
+## Then return zero
+is( $return, 0, q{Key is not part of hash} );
+
+## Given an existing key and a missing element
+
+## When not part of the array hash
 my $not_exist = check_element_exist_hash_of_array(
     {
         element  => q{.another_file_ending},
@@ -78,8 +79,10 @@ my $not_exist = check_element_exist_hash_of_array(
     }
 );
 
+## Then return undef
 is( $not_exist, undef, q{Element not part of hash of arrays} );
 
+## When part of array
 my $exist = check_element_exist_hash_of_array(
     {
         element  => q{.amb},
@@ -88,6 +91,7 @@ my $exist = check_element_exist_hash_of_array(
     }
 );
 
+## Then return true
 is( $exist, 1, q{Element is part of hash of arrays} );
 
 done_testing();

@@ -21,17 +21,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 ## Constants
 Readonly my $COMMA        => q{,};
@@ -47,7 +37,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::File_info}      => [qw{ set_human_genome_reference_features }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -56,8 +46,7 @@ BEGIN {
 use MIP::File_info qw{ set_human_genome_reference_features };
 use MIP::Log::MIP_log4perl qw{ initiate_logger };
 
-diag(   q{Test set_human_genome_reference_features from File_info.pm v}
-      . $MIP::File_info::VERSION
+diag(   q{Test set_human_genome_reference_features from File_info.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

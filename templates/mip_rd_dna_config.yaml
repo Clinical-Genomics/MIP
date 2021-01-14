@@ -30,7 +30,7 @@ sv_genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 sv_rank_model_file: svrank_model_cmms_-v1.8-.ini
 sv_svdb_query_db_files:
   # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
-  grch37_gnomad.genomes_-r2.1.1_sv-.vcf: gnomad_sv|AF|AC|AF|AC|1
+  grch37_gnomad_reformated_-r2.1.1_sv-.vcf.gz: gnomad_sv|AF|AC|AF|AC|1
   grch37_loqusdb_sv_-2020-04-20.vcf: clinical_genomics_loqus|Obs|Obs|Obs|Obs
   grch37_mip_sv_svdb_export_-2018-10-09-.vcf: clinical_genomics_mip|AF|OCC|FRQ|OCC|1
   grch37_svdb_query_decipher_-v1.0.0-.vcf: decipher|AF|OCC|FRQ|OCC
@@ -38,8 +38,6 @@ sv_svdb_query_db_files:
   grch37_svdb_query_clingen_cgh_pathogenic_-v1.0.0-.vcf: clingen_cgh_pathogenic
   grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi|AF|OCC|FRQ|OCC|1
   grch37_swegen_concat_sort_-20170830-.vcf: swegen|AF|OCC|FRQ|OCC|1
-qccollect_eval_metric_file: qc_eval_metric_-v1.3-.yaml
-qccollect_regexp_file: qc_regexp_-v1.26-.yaml
 vcf2cytosure_blacklist: grch37_cytosure_blacklist_-1.0-.bed
 vcfanno_config: grch37_vcfanno_config_-v1.13-.toml
 ### Analysis
@@ -49,8 +47,8 @@ fqf_annotations:
   - GNOMADAF
   - GNOMADAF_popmax
   - SWEGENAF
-gatk_combinevariants_prioritize_caller: haplotypecaller
-gatk_path: /opt/conda/opt/gatk-3.8
+gatk_combinevariants_prioritize_caller: deepvariant,haplotypecaller
+gatk_path: /usr
 picardtools_path: /usr/picard
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 sv_genmod_models_case_type: cmms

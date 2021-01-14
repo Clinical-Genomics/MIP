@@ -22,21 +22,12 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
+
 use MIP::Test::Writefile qw{ test_write_to_file };
-
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $CORE_NR => 8;
+Readonly my $GPU_NR => 1;
 
 BEGIN {
 
@@ -46,8 +37,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Slurm}  => [qw{ slurm_build_sbatch_header }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-        q{MIP::Test::Writefile} => [qw{ test_write_to_file }],
+q{MIP::Test::Writefile} => [qw{ test_write_to_file }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -57,8 +47,7 @@ use MIP::Program::Slurm qw{ slurm_build_sbatch_header };
 
 my $separator = q{\n};
 
-diag(   q{Test slurm_build_sbatch_header from Slurm.pm v}
-      . $MIP::Program::Slurm::VERSION
+diag(   q{Test slurm_build_sbatch_header from Slurm.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -83,6 +72,10 @@ my %argument = (
     email_types_ref => {
         inputs_ref      => [qw{ BEGIN FAIL END }],
         expected_output => q{--mail-type=BEGIN,FAIL,END},
+    },
+    gpu_number => {
+        input           => $GPU_NR,
+        expected_output => q{--gpus=} . $GPU_NR,
     },
     job_name => {
         input           => q{test_job_name},
@@ -115,6 +108,7 @@ my @commands = slurm_build_sbatch_header(
         core_number              => $argument{core_number}{input},
         email                    => $argument{email}{input},
         email_types_ref          => $argument{email_types_ref}{inputs_ref},
+        gpu_number               => $argument{gpu_number}{input},
         job_name                 => $argument{job_name}{input},
         process_time             => $argument{process_time}{input},
         project_id               => $argument{project_id}{input},

@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -22,12 +21,8 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.03;
-
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ parse_references parse_reference_for_vt parse_toml_config_for_vcf_tags };
+    our @EXPORT_OK = qw{ parse_references parse_reference_for_vt parse_toml_config_for_vcf_tags };
 }
 
 sub parse_references {
@@ -149,8 +144,7 @@ sub parse_reference_for_vt {
         {
             active_parameter_href => $active_parameter_href,
             parameter_href        => $parameter_href,
-            vt_references_ref =>
-              \@{ $active_parameter_href->{decompose_normalize_references} },
+            vt_references_ref     => \@{ $active_parameter_href->{decompose_normalize_references} },
         }
     );
 

@@ -1,6 +1,5 @@
 package MIP::Program::Gnu::Software::Gnu_make;
 
-use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;
@@ -20,9 +19,6 @@ use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_make };

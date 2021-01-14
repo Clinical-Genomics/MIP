@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,15 +16,13 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ plink_calculate_inbreeding
@@ -34,6 +31,8 @@ BEGIN {
       plink_fix_fam_ped_map_freq
       plink_sex_check plink_variant_pruning };
 }
+
+Readonly my $BASE_COMMAND => q{plink2};
 
 sub plink_variant_pruning {
 
@@ -127,7 +126,7 @@ sub plink_variant_pruning {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ plink2 };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     if ($make_bed) {
 
@@ -250,7 +249,7 @@ sub plink_fix_fam_ped_map_freq {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ plink2 };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
 
@@ -362,7 +361,7 @@ sub plink_calculate_inbreeding {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ plink2 };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
 
@@ -449,7 +448,7 @@ sub plink_create_mibs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ plink2 };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     push @commands, q{--ped} . $SPACE . $ped_file_path;
 
@@ -538,7 +537,7 @@ sub plink_check_sex_chroms {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ plink2 };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
 
@@ -615,7 +614,7 @@ sub plink_sex_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ plink2 };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     push @commands, q{--bfile} . $SPACE . $binary_fileset_prefix;
 

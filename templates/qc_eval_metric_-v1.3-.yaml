@@ -1,11 +1,4 @@
 ---
-mixed:
-  variant_integrity_ar_mendel:
-    fraction_of_errors:
-      gt: 0.06
-  variant_integrity_ar_father:
-    fraction_of_common_variants:
-      lt: 0.55
 panel:
   bamstats:
     percentage_mapped_reads:
@@ -23,12 +16,6 @@ panel:
   markduplicates:
     fraction_duplicates:
       gt: 0.8
-  variant_integrity_ar_mendel:
-    fraction_of_errors:
-      gt: 0.06
-  variant_integrity_ar_father:
-    fraction_of_common_variants:
-      lt: 0.55
 wgs:
   bamstats:
     percentage_mapped_reads:
@@ -46,12 +33,6 @@ wgs:
   markduplicates:
     fraction_duplicates:
       gt: 0.2
-  variant_integrity_ar_mendel:
-    fraction_of_errors:
-      gt: 0.06
-  variant_integrity_ar_father:
-    fraction_of_common_variants:
-      lt: 0.55
 wes:
   bamstats:
     percentage_mapped_reads:
@@ -69,12 +50,6 @@ wes:
   markduplicates:
     fraction_duplicates:
       gt: 0.2
-  variant_integrity_ar_mendel:
-    fraction_of_errors:
-      gt: 0.06
-  variant_integrity_ar_father:
-    fraction_of_common_variants:
-      lt: 0.55
 wts:
   collectrnaseqmetrics:
     PCT_MRNA_BASES:

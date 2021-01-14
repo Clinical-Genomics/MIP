@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -21,12 +20,8 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.03;
-
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ run_analyse_pipeline run_download_pipeline run_install_pipeline };
+    our @EXPORT_OK = qw{ run_analyse_pipeline run_download_pipeline run_install_pipeline };
 }
 
 sub run_analyse_pipeline {
@@ -124,13 +119,11 @@ sub run_analyse_pipeline {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Recipes
-    use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna
-      qw{ pipeline_analyse_dragen_rd_dna };
+    use MIP::Recipes::Pipeline::Analyse_dragen_rd_dna qw{ pipeline_analyse_dragen_rd_dna };
     use MIP::Recipes::Pipeline::Analyse_rd_dna qw{ pipeline_analyse_rd_dna };
     use MIP::Recipes::Pipeline::Analyse_rd_dna_panel qw{ pipeline_analyse_rd_dna_panel };
     use MIP::Recipes::Pipeline::Analyse_rd_rna qw{ pipeline_analyse_rd_rna };
-    use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun
-      qw{ pipeline_analyse_rd_dna_vcf_rerun };
+    use MIP::Recipes::Pipeline::Analyse_rd_dna_vcf_rerun qw{ pipeline_analyse_rd_dna_vcf_rerun };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -186,23 +179,12 @@ sub run_download_pipeline {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Pipeline::Download_rd_dna qw{ pipeline_download_rd_dna };
-    use MIP::Recipes::Pipeline::Download_rd_rna qw{ pipeline_download_rd_rna };
+    use MIP::Recipes::Pipeline::Download qw{ pipeline_download };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Unpack
-    my $pipeline_type = $active_parameter_href->{download_pipeline_type};
-
-    ## Create dispatch table of pipelines
-    my %pipeline = (
-        rd_dna => \&pipeline_download_rd_dna,
-        rd_rna => \&pipeline_download_rd_rna,
-    );
-
-    $log->info( q{Pipeline download type: } . $pipeline_type );
-    $pipeline{$pipeline_type}->(
+    pipeline_download(
         {
             active_parameter_href => $active_parameter_href,
             temp_directory        => $active_parameter_href->{temp_directory},
@@ -216,13 +198,11 @@ sub run_install_pipeline {
 ## Function : Run install pipeline recipe
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this install hash {REF}
-##          : $pipeline              => Pipeline
 
     my ($arg_href) = @_;
 
-## Flatten argument(s)
+    ## Flatten argument(s)
     my $active_parameter_href;
-    my $pipeline;
 
     my $tmpl = {
         active_parameter_href => {
@@ -230,13 +210,6 @@ sub run_install_pipeline {
             defined     => 1,
             required    => 1,
             store       => \$active_parameter_href,
-            strict_type => 1,
-        },
-        pipeline => {
-            allow       => [q{mip_install}],
-            defined     => 1,
-            required    => 1,
-            store       => \$pipeline,
             strict_type => 1,
         },
     };
@@ -248,14 +221,8 @@ sub run_install_pipeline {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Create dispatch table of pipelines
-    my %pipeline_table = ( mip_install => \&pipeline_install, );
-
-    $log->info(
-        q{Installing pipelines: } . join $SPACE,
-        @{ $active_parameter_href->{pipelines} }
-    );
-    $pipeline_table{$pipeline}->(
+    $log->info( q{Installing pipelines: } . join $SPACE, @{ $active_parameter_href->{pipelines} } );
+    pipeline_install(
         {
             active_parameter_href => $active_parameter_href,
             quiet                 => $active_parameter_href->{quiet},

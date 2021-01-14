@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Path qw{ make_path };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ create_dragen_fastq_list_sample_id };

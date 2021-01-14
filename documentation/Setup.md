@@ -34,36 +34,41 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - Simple Linux Utility for Resource Management ([SLURM]) (version: 18.08.0)
 
 #### **Pipeline: Rare disease**
-- [Bcftools] (version: 1.9)
-- [BedTools] (version: 2.29.0)
+- [Bcftools] (version: 1.10.2)
+- [BedTools] (version: 2.2.29)
 - [BWA] (version: 0.7.17)
-- [BWAKit] (version: 0.7.15)
-- [CADD] (version: 1.4)
-- [Chanjo] (version: 4.2.0)
-- [Cnvnator] (version: 0.3.3)
-- [Expansionhunter] (version 3.0.0)
-- [Delly] (version: 0.8.1)
-- [FastQC] (version: 0.11.8)
-- [GATK] (version: 3.8 and 4.1.3)
+- [BWAKit] (version: 0.7.17)
+- [CADD] (version: 1.6)
+- [Chanjo] (version: 4.6.0)
+- [Chromograph] (version: 1.0.0)
+- [Cnvnator] (version: 0.4.1)
+- [Cyrius] (version: 1.0)
+- [Expansionhunter] (version 3.2.2)
+- [FastQC] (version: 0.11.9)
+- [Deepvariant] (version: 1.0.0)
+- [GATK] (version: 3.8.1 and 4.1.8)
 - [GENMOD] (version: 3.7.3)
-- [Htslib] (version: 1.9)
+- [Glnexus] (version: 1.2.7)
+- [Htslib] (version: 1.10.2)
 - [Manta] (version: 1.6.0)
-- [MultiQC] (version: 1.6)
-- [Peddy] (version: 0.4.2)
-- [PicardTools] (version: 2.20.7)
+- [MultiQC] (version: 1.9)
+- [Peddy] (version: 0.4.3)
+- [PicardTools] (version: 2.23.4)
 - [PLINK] (version: 1.90b3x35)
 - [Rhocall] (version: 0.5.1)
 - [rtg-tools] (version: 3.10.1)
 - [Sambamba] (version: 0.6.8)
-- [Samtools] (version: 1.9)
+- [Samtools] (version: 1.10.2)
+- [SMNCopyNumberCaller] (version: 4b2c1ad)
 - [Stranger] (version: 0.5.5)
 - [Svdb] (version: 2.2.0)
-- [Tiddit] (version: 2.7.1)
+- [Telomerecat] (version: 3.4.0)
+- [Tiddit] (version: 2.8.0)
 - [Upd] (version: 0.1)
-- [Variant_integrity] (version: 0.0.4)
-- [Vcf2cytosure] (version: 0.4.3)
+- [Varg] (version: 1.2.0)
+- [Vcf2cytosure] (version: 0.5.1)
 - [Vcfanno] (version: 0.3.2)
-- [VEP] (version: 97) with plugin "ExACpLI", "MaxEntScan, LoFtool"
+- [VEP] (version: 100) with plugin "ExACpLI", "MaxEntScan, LoFtool", "SpliceAI"
 - [VT] (version: 20151110)
 
 The version number after the software name are tested for compatibility with MIP.
@@ -152,18 +157,21 @@ Corresponding MIP references:
 [BWAKit]: https://github.com/lh3/bwa/tree/master/bwakit
 [CADD]: (https://github.com/kircherlab/CADD-scripts)
 [Chanjo]: https://chanjo.readthedocs.org/en/latest/
+[Chromograph]: https://github.com/mikaell/chromograph
 [Cnvnator]: https://github.com/abyzovlab/CNVnator
-[Configuration file]: https://github.com/henrikstranneheim/MIP/blob/master/templates/mip_config.yaml
+[Configuration file]: ../templates/mip_rd_dna_config.yaml
+[Cyrius]: https://github.com/Illumina/Cyrius
+[Deepvariant]: https://github.com/google/deepvariant
 [Expansionhunter]: https://github.com/Illumina/ExpansionHunter
-[Delly]: https://github.com/dellytools/delly/
 [FastQC]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 [GATK]: http://www.broadinstitute.org/gatk/
 [GENMOD]: https://github.com/moonso/genmod/
+[Glnexus]: https://github.com/dnanexus-rnd/GLnexus
 [Htslib]: http://www.htslib.org/
 [Manta]: https://github.com/Illumina/manta
 [MultiQC]: https://github.com/ewels/MultiQC
 [Peddy]: https://github.com/brentp/peddy
-[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml   
+[Pedigree file]: ../templates/643594-miptest_pedigree.yaml  
 [PicardTools]: http://broadinstitute.github.io/picard/
 [PLINK]: https://www.cog-genomics.org/plink2
 [Rhocall]: https://github.com/dnil/rhocall
@@ -171,12 +179,14 @@ Corresponding MIP references:
 [Sambamba]: http://lomereiter.github.io/sambamba/
 [Samtools]: http://www.htslib.org/
 [SLURM]: http://slurm.schedmd.com/
+[SMNCopyNumberCaller]: https://github.com/Illumina/SMNCopyNumberCaller
 [Stranger]: https://github.com/moonso/stranger
 [Svdb]: https://github.com/J35P312/SVDB
 [Tabix]: http://samtools.sourceforge.net/tabix.shtml
+[Telomerecat]: https://github.com/cancerit/telomerecat
 [Tiddit]: https://github.com/J35P312/TIDDIT
 [Upd]: https://github.com/bjhall/upd
-[Variant_integrity]: https://github.com/moonso/variant_integrity
+[Varg]: https://github.com/Clinical-Genomics/varg  
 [Vcf2cytosure]: https://github.com/NBISweden/vcf2cytosure
 [Vcfanno]: https://github.com/brentp/vcfanno
 [VEP]: https://github.com/Ensembl/ensembl-vep

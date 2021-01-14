@@ -16,23 +16,12 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes };
 
 BEGIN {
 
@@ -42,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Delly_reformat} => [qw{ analysis_delly_reformat }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -50,8 +39,7 @@ BEGIN {
 
 use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
 
-diag(   q{Test analysis_delly_reformat from Delly_reformat.pm v}
-      . $MIP::Recipes::Analysis::Delly_reformat::VERSION
+diag(   q{Test analysis_delly_reformat from Delly_reformat.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -83,56 +71,54 @@ my %file_info = test_mip_hashes(
     }
 );
 
-## Special case since delly_reformat needs to collect from recipe not immediate upstream
-SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-    %{ $file_info{io}{TEST}{$sample_id}{gatk_baserecalibration} } = test_mip_hashes(
-        {
-            mip_hash_name => q{io},
-        }
-    );
-}
-
-SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-    $file_info{io}{TEST}{$sample_id}{gatk_baserecalibration}{out}{file_path_prefix} =
-      q{file_path_prefix};
-    $file_info{io}{TEST}{$sample_id}{gatk_baserecalibration}{out}{file_suffix} =
-      q{.bam};
-}
-
-SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-    %{ $file_info{io}{TEST}{$sample_id}{$recipe_name} } = test_mip_hashes(
-        {
-            mip_hash_name => q{io},
-        }
-    );
-}
-
-SAMPLE_ID:
-foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
-
-    $file_info{io}{TEST}{$sample_id}{$recipe_name}{in}{file_path_prefix} =
-      q{file_path_prefix};
-    $file_info{io}{TEST}{$sample_id}{$recipe_name}{in}{file_suffix} =
-      q{.bcf};
-}
-
-my %job_id;
 my %parameter = test_mip_hashes(
     {
         mip_hash_name => q{recipe_parameter},
         recipe_name   => $recipe_name,
     }
 );
-@{ $parameter{cache}{order_recipes_ref} } =
-  ( qw{ gatk_baserecalibration }, $recipe_name );
-$parameter{$recipe_name}{outfile_suffix} = q{.vcf};
-$parameter{gatk_baserecalibration}{chain} = q{TEST};
+
+## Special case since delly_reformat needs to collect from recipe not immediate upstream
+my @order_recipes = ( qw{ gatk_baserecalibration }, $recipe_name );
+SAMPLE_ID:
+foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+    test_add_io_for_recipe(
+        {
+            chain_id => q{CHAIN_MAIN},
+            file_info_href => \%file_info,
+            id             => $sample_id,
+            parameter_href => \%parameter,
+            recipe_name    => q{gatk_baserecalibration},
+            step           => q{bam},
+        }
+    );
+}
+
+SAMPLE_ID:
+foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+    test_add_io_for_recipe(
+    {
+        file_info_href    => \%file_info,
+        id                => $sample_id,
+        parameter_href    => \%parameter,
+        order_recipes_ref => \@order_recipes,
+        outfile_suffix => q{.bcf},
+        recipe_name       => $recipe_name,
+        step              => q{vcf},
+    }
+);
+}
+
+SAMPLE_ID:
+foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
+
+    $file_info{io}{TEST}{$sample_id}{$recipe_name}{in}{file_suffix} =
+      q{.bcf};
+}
+
+my %job_id;
 
 my %sample_info;
 

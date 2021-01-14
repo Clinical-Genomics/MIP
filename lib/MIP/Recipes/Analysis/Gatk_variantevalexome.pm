@@ -22,9 +22,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.13;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantevalexome };
 
@@ -129,11 +126,11 @@ sub analysis_gatk_variantevalexome {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view };
     use MIP::Program::Gatk qw{ gatk_indexfeaturefile gatk_varianteval };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw(set_recipe_outfile_in_sample_info);
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -158,20 +155,12 @@ sub analysis_gatk_variantevalexome {
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $gatk_jar =
-      catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
-    my $recipe_mode        = $active_parameter_href->{$recipe_name};
+    my $gatk_jar = catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my %recipe_resource    = get_recipe_resources(
+    my %recipe             = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -181,7 +170,7 @@ sub analysis_gatk_variantevalexome {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
                 outdata_dir            => $active_parameter_href->{outdata_dir},
@@ -204,18 +193,16 @@ sub analysis_gatk_variantevalexome {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -250,24 +237,23 @@ sub analysis_gatk_variantevalexome {
     say {$filehandle} q{## GATK varianteval};
     gatk_varianteval(
         {
-            dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
-            filehandle      => $filehandle,
-            indel_gold_standard_file_path =>
-              $active_parameter_href->{gatk_varianteval_gold},
-            infile_paths_ref     => [$view_outfile_path],
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            verbosity            => $active_parameter_href->{gatk_logging_level},
-            memory_allocation    => q{Xmx2g},
-            outfile_path         => $outfile_path,
-            referencefile_path   => $referencefile_path,
-            temp_directory       => $temp_directory,
+            dbsnp_file_path               => $active_parameter_href->{gatk_varianteval_dbsnp},
+            filehandle                    => $filehandle,
+            indel_gold_standard_file_path => $active_parameter_href->{gatk_varianteval_gold},
+            infile_paths_ref              => [$view_outfile_path],
+            java_use_large_pages          => $active_parameter_href->{java_use_large_pages},
+            verbosity                     => $active_parameter_href->{gatk_logging_level},
+            memory_allocation             => q{Xmx2g},
+            outfile_path                  => $outfile_path,
+            referencefile_path            => $referencefile_path,
+            temp_directory                => $temp_directory,
         }
     );
     say {$filehandle} $NEWLINE;
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -281,13 +267,13 @@ sub analysis_gatk_variantevalexome {
         );
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{case_to_island},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{case_to_island},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

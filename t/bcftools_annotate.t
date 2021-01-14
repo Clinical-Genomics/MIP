@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,8 +32,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Bcftools} => [qw{ bcftools_annotate }],
-        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -51,8 +40,7 @@ BEGIN {
 use MIP::Program::Bcftools qw{ bcftools_annotate };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test bcftools_annotate from Bcftools.pm v}
-      . $MIP::Program::Bcftools::VERSION
+diag(   q{Test bcftools_annotate from Bcftools.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -98,6 +86,10 @@ my %specific_argument = (
     headerfile_path => {
         input           => q{headerlines},
         expected_output => q{--header-lines headerlines},
+    },
+    include => {
+        input           => q{INFO/CSQ[*]~":p[.]"},
+        expected_output => q{--include INFO/CSQ[*]~":p[.]"},
     },
     infile_path => {
         input           => q{infile.test},

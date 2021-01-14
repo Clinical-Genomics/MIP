@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,8 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Picardtools} => [qw{ picardtools_collecthsmetrics }],
-        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -50,8 +39,7 @@ BEGIN {
 use MIP::Program::Picardtools qw{ picardtools_collecthsmetrics };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test picardtools_collecthsmetrics from Picardtools.pm v}
-      . $MIP::Program::Picardtools::VERSION
+diag(   q{Test picardtools_collecthsmetrics from Picardtools.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

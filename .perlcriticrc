@@ -1,0 +1,16 @@
+## Modifications to perl critic policies for MIP development
+severity = 1
+
+## Increase the number of lines between open and close filehandle, default 9
+[InputOutput::RequireBriefOpen]
+lines = 100
+
+[InputOutput::RequireCheckedSyscalls]
+functions = :builtins
+exclude_functions = print say
+
+[-Perl::Critic::Policy::Modules::RequireVersionVar]
+
+## Perltidy has already been run with a diffrent slightlty modified rules
+[-CodeLayout::RequireTidyCode]
+

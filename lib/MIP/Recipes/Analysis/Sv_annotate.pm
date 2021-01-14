@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -25,9 +24,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.24;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sv_annotate };
@@ -132,7 +128,6 @@ sub analysis_sv_annotate {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw(gnu_mv);
     use MIP::Io::Read qw{ read_from_file };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -143,6 +138,7 @@ sub analysis_sv_annotate {
     use MIP::Program::Picardtools qw{ sort_vcf };
     use MIP::Program::Svdb qw{ svdb_query };
     use MIP::Program::Vcfanno qw{ vcfanno };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -168,19 +164,12 @@ sub analysis_sv_annotate {
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $job_id_chain            = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode        = $active_parameter_href->{$recipe_name};
-    my $sequence_dict_file = catfile( $reference_dir,
+    my $sequence_dict_file      = catfile( $reference_dir,
         $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} );
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -189,7 +178,7 @@ sub analysis_sv_annotate {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $case_id,
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => [$infile_name_prefix],
@@ -211,18 +200,16 @@ sub analysis_sv_annotate {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -261,11 +248,7 @@ sub analysis_sv_annotate {
             if ($annotation_file_counter) {
 
                 $svdb_infile_path =
-                    $outfile_path_prefix
-                  . $alt_file_tag
-                  . $outfile_suffix
-                  . $DOT
-                  . $outfile_tracker;
+                  $outfile_path_prefix . $alt_file_tag . $outfile_suffix . $DOT . $outfile_tracker;
 
                 ## Increment now that infile has been set
                 $outfile_tracker++;
@@ -330,10 +313,9 @@ sub analysis_sv_annotate {
         {
             active_parameter_href => $active_parameter_href,
             filehandle            => $filehandle,
-            infile_paths_ref =>
-              [ $outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
-            outfile => $outfile_path_prefix . $outfile_alt_file_tag . $outfile_suffix,
-            sequence_dict_file => $sequence_dict_file,
+            infile_paths_ref      => [ $outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
+            outfile               => $outfile_path_prefix . $outfile_alt_file_tag . $outfile_suffix,
+            sequence_dict_file    => $sequence_dict_file,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -346,7 +328,7 @@ sub analysis_sv_annotate {
         ## Build the exclude filter command
         my $exclude_filter = _build_bcftools_filter(
             {
-                annotations_ref => \@svdb_query_annotations,
+                annotations_ref               => \@svdb_query_annotations,
                 fqf_bcftools_filter_threshold =>
                   $active_parameter_href->{fqf_bcftools_filter_threshold},
             }
@@ -358,8 +340,8 @@ sub analysis_sv_annotate {
                 apply_filters_ref => [qw{ PASS }],
                 exclude           => $exclude_filter,
                 filehandle        => $filehandle,
-                infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
-                outfile_path => $outfile_path_prefix
+                infile_path       => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                outfile_path      => $outfile_path_prefix
                   . $alt_file_tag
                   . $UNDERSCORE . q{filt}
                   . $outfile_suffix,
@@ -378,9 +360,9 @@ sub analysis_sv_annotate {
         say {$filehandle} q{## Remove common variants};
         vcfanno(
             {
-                filehandle   => $filehandle,
-                infile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
-                luafile_path => $active_parameter_href->{vcfanno_functions},
+                filehandle             => $filehandle,
+                infile_path            => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                luafile_path           => $active_parameter_href->{vcfanno_functions},
                 stderrfile_path_append => $stderrfile_path,
                 toml_configfile_path   => $active_parameter_href->{sv_vcfanno_config},
             }
@@ -408,7 +390,7 @@ sub analysis_sv_annotate {
         ## Build the exclude filter command
         my $exclude_filter = _build_bcftools_filter(
             {
-                annotations_ref => \@vcfanno_annotations,
+                annotations_ref               => \@vcfanno_annotations,
                 fqf_bcftools_filter_threshold =>
                   $active_parameter_href->{fqf_bcftools_filter_threshold},
             }
@@ -416,11 +398,11 @@ sub analysis_sv_annotate {
 
         bcftools_filter(
             {
-                exclude      => $exclude_filter,
-                filehandle   => $filehandle,
-                infile_path  => $DASH,
-                outfile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
-                output_type  => q{v},
+                exclude                => $exclude_filter,
+                filehandle             => $filehandle,
+                infile_path            => $DASH,
+                outfile_path           => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                output_type            => q{v},
                 stderrfile_path_append => $stderrfile_path,
             }
         );
@@ -435,10 +417,9 @@ sub analysis_sv_annotate {
             {
                 active_parameter_href => $active_parameter_href,
                 filehandle            => $filehandle,
-                infile_paths_ref =>
-                  [ $outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
-                outfile            => $outfile_path,
-                sequence_dict_file => $sequence_dict_file,
+                infile_paths_ref      => [ $outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
+                outfile               => $outfile_path,
+                sequence_dict_file    => $sequence_dict_file,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -446,7 +427,7 @@ sub analysis_sv_annotate {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -458,13 +439,13 @@ sub analysis_sv_annotate {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

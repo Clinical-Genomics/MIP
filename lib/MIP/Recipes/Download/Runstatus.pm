@@ -23,9 +23,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.01;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_runstatus };
 
@@ -86,7 +83,7 @@ sub download_runstatus {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Language::Shell qw{ check_mip_process_paths };
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -99,17 +96,14 @@ sub download_runstatus {
     ## Unpack parameters
     my $reference_dir = $active_parameter_href->{reference_dir};
 
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
-    ## Set recipe mode
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    ## Filehandle(s)
+## Filehandle(s)
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
@@ -117,19 +111,18 @@ sub download_runstatus {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
+            core_number                     => $recipe{core_number},
             directory_id                    => q{mip_download},
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
+            memory_allocation               => $recipe{memory},
             outdata_dir                     => $reference_dir,
             outscript_dir                   => $reference_dir,
-            process_time                    => $recipe_resource{time},
+            process_time                    => $recipe{time},
             recipe_data_directory_path      => $active_parameter_href->{reference_dir},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            source_environment_commands_ref => $recipe{load_env_ref},
         }
     );
 
@@ -154,14 +147,14 @@ sub download_runstatus {
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         submit_recipe(
             {
                 base_command        => $profile_base_command,
                 dependency_method   => q{add_to_all},
                 job_dependency_type => q{afterany},
-                job_id_chain        => q{PAN},
+                job_id_chain        => q{ALL},
                 job_id_href         => $job_id_href,
                 log                 => $log,
                 recipe_file_path    => $recipe_file_path,

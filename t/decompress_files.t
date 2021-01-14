@@ -21,17 +21,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE $NEWLINE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,7 +31,6 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::File::Decompression} => [qw{ decompress_files }],
-        q{MIP::Test::Fixtures}      => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -49,8 +38,7 @@ BEGIN {
 
 use MIP::File::Decompression qw{ decompress_files };
 
-diag(   q{Test decompress_files from Decompression.pm v}
-      . $MIP::File::Decompression::VERSION
+diag(   q{Test decompress_files from Decompression.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,11 +50,15 @@ diag(   q{Test decompress_files from Decompression.pm v}
 my $file_paths_ref = [q{a_file_path.gz}];
 my $file_path      = q{a_file_path.gz};
 my $outdir_path    = q{a_outdir};
-my $outfile_path   = q{a_outfile};
-my @programs       = qw{ gzip tar unzip };
+
+my %program = (
+    gzip  => q{a_outfile.gz},
+    tar   => q{a_outfile.tar},
+    unzip => q{a_outfile.zip},
+);
 
 PROGRAM:
-foreach my $program (@programs) {
+while ( my ( $program, $outfile_path ) = each %program ) {
 
     my @decompress_commands = decompress_files(
         {
@@ -81,6 +73,8 @@ foreach my $program (@programs) {
 }
 
 ## Given missing file_paths for tar
+my $outfile_path = q{a_outfile};
+
 trap {
     decompress_files(
         {

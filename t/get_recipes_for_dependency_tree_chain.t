@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,8 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Dependency_tree} => [qw{ get_recipes_for_dependency_tree_chain }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -50,8 +39,7 @@ BEGIN {
 use MIP::Dependency_tree qw{ get_recipes_for_dependency_tree_chain };
 use MIP::Test::Fixtures qw{ test_mip_hashes };
 
-diag(   q{Test get_recipes_for_dependency_tree_chain from Dependency_tree.pm v}
-      . $MIP::Dependency_tree::VERSION
+diag(   q{Test get_recipes_for_dependency_tree_chain from Dependency_tree.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

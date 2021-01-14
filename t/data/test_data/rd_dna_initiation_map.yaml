@@ -43,7 +43,9 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
     - PARALLEL:
-      - bcftools_mpileup
+      - CHAIN_DEEPVAR:
+        - deepvariant
+        - glnexus_merge
       - GATK_HAPLOTYPECALLER:
         - gatk_haplotypecaller
         - gatk_genotypegvcfs
@@ -55,8 +57,6 @@ CHAIN_ALL:
       - peddy_ar
     - CHAIN_PLINK:
       - plink
-    - CHAIN_VINTEGRITY:
-      - variant_integrity_ar
     - CHAIN_RTEVAL:
       - rtg_vcfeval
     - CHAIN_GATKEVALALL:

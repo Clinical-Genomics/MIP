@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_mip_hashes };
 
 BEGIN {
 
@@ -41,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Qccollect}      => [qw{ set_sample_eval_metrics }],
-        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -49,8 +39,7 @@ BEGIN {
 
 use MIP::Qccollect qw{ set_sample_eval_metrics };
 
-diag(   q{Test set_sample_eval_metrics from Qccollect.pm v}
-      . $MIP::Qccollect::VERSION
+diag(   q{Test set_sample_eval_metrics from Qccollect.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,10 +47,8 @@ diag(   q{Test set_sample_eval_metrics from Qccollect.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $PCT_PF_READS_ALIGNED              => 0.95;
-Readonly my $PCT_ADAPTER                       => 0.0005;
-Readonly my $VARIANT_INTEGRITY_AR_MENDEL_MIXED => 0.08;
-Readonly my $VARIANT_INTEGRITY_AR_MENDEL_WGS   => 0.06;
+Readonly my $PCT_ADAPTER          => 0.0005;
+Readonly my $PCT_PF_READS_ALIGNED => 0.95;
 
 my %sample_info = test_mip_hashes(
     {
@@ -73,23 +60,11 @@ my %sample_info = test_mip_hashes(
 my %eval_metric = (
     wgs => {
         collectmultiplemetrics => {
-            PCT_PF_READS_ALIGNED => {
-                lt => $PCT_PF_READS_ALIGNED,
-            },
             PCT_ADAPTER => {
                 gt => $PCT_ADAPTER,
             },
-        },
-        variant_integrity_ar_mendel => {
-            fraction_of_errors => {
-                gt => $VARIANT_INTEGRITY_AR_MENDEL_WGS,
-            },
-        },
-    },
-    mixed => {
-        variant_integrity_ar_mendel => {
-            fraction_of_errors => {
-                gt => $VARIANT_INTEGRITY_AR_MENDEL_MIXED,
+            PCT_PF_READS_ALIGNED => {
+                lt => $PCT_PF_READS_ALIGNED,
             },
         },
     },

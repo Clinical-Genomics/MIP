@@ -9,7 +9,7 @@ use File::Basename qw{ dirname };
 use File::Path qw{ remove_tree };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
-use IPC::Cmd qw(can_run run);
+use IPC::Cmd qw{ can_run };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use Test::More;
@@ -19,26 +19,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
+use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
+
 
 my $VERBOSE = 0;
-our $VERSION = 1.02;
 
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
-
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
 
 BEGIN {
 
@@ -47,21 +35,21 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Program::Gnu::Bash}      => [qw{ gnu_set }],
-        q{MIP::Program::Gnu::Coreutils} => [qw{ gnu_mkdir }],
+        q{MIP::Environment::Child_process} => [qw{ child_process }],
+        q{MIP::Program::Gnu::Bash}         => [qw{ gnu_set }],
+        q{MIP::Program::Gnu::Coreutils}    => [qw{ gnu_mkdir }],
         q{MIP::Language::Shell} => [qw{ build_shebang create_housekeeping_function }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
+use MIP::Environment::Child_process qw{ child_process };
 use MIP::Program::Gnu::Bash qw{ gnu_set };
 use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
 use MIP::Language::Shell qw{ build_shebang create_housekeeping_function };
 
-diag(   q{Test create_housekeeping_function from Shell.pm v}
-      . $MIP::Language::Shell::VERSION
+diag(   q{Test create_housekeeping_function from Shell.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -69,28 +57,22 @@ diag(   q{Test create_housekeeping_function from Shell.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-# Create anonymous filehandle
-my $filehandle = IO::Handle->new();
-
-# Create housekeeping function test sbatch file
+## Given a create housekeeping function test sbatch file
 my $bash_file_path = catfile( cwd(), q{test_create_housekeeping_function.sh} );
 my $log_file_path  = catdir( cwd(), q{test_create_housekeeping_function} );
 
-# Temporary directory
 my $temp_dir = catdir( cwd(), q{.test_create_housekeeping_function} );
 
-# Open filehandle for bash file
-open $filehandle, q{>}, $bash_file_path
+open my $filehandle, q{>}, $bash_file_path
   or croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
-## Open filehandle for log file
 open my $LOG_FH, q{>}, $log_file_path . q{.status}
   or croak( q{Cannot write to '} . $bash_file_path . q{' :} . $OS_ERROR . $NEWLINE );
 
 # Touch file
 say {$LOG_FH} q{Logging};
 
-## Write to bash file
+## When building the recipe
 _build_test_file_recipe(
     {
         recipe_bash_file_path => $bash_file_path,
@@ -102,18 +84,27 @@ _build_test_file_recipe(
 close $filehandle;
 close $LOG_FH;
 
-## Testing write to file
+## Then the recipe file should exist
 ok( -e $bash_file_path, q{Create bash} );
 
+## Then the recipe file should be able to be executed
 ok( can_run(q{bash}), q{Checking can run bash binary} );
 
-my $cmds_ref = [ q{bash}, $bash_file_path ];
-my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
-  run( command => $cmds_ref, verbose => $VERBOSE );
+my $cmds_ref       = [ q{bash}, $bash_file_path ];
+my %process_return = child_process(
+    {
+        commands_ref => $cmds_ref,
+        process_type => q{ipc_cmd_run},
+    }
+);
 
-## Testing housekeeping function
+## Then process should return success
+ok( $process_return{success}, q{Executed bash recipe successfully} );
+
+## Then the housekeeping function should have removed the temp dir
 ok( !-d $temp_dir, q{Performed housekeeping} );
 
+## Clean-up
 remove_tree( $bash_file_path, $log_file_path . q{.status} );
 
 done_testing();
@@ -124,12 +115,12 @@ done_testing();
 
 sub _build_test_file_recipe {
 
-##Function : Builds the test file for testing the housekeeping function
-##Returns  : ""
-##Arguments: $recipe_bash_file_path => Test file to write recipe to
-##         : $recipe_filehandle     => filehandle to write to
-##         : $recipe_log_file_path  => Log file path
-##         : $recipe_temp_dir       => Temporary directory to use for test
+## Function : Builds the test file for testing the housekeeping function
+## Returns  :
+## Arguments: $recipe_bash_file_path => Test file to write recipe to
+##          : $recipe_filehandle     => filehandle to write to
+##          : $recipe_log_file_path  => Log file path
+##          : $recipe_temp_dir       => Temporary directory to use for test
 
     my ($arg_href) = @_;
 
@@ -148,7 +139,6 @@ sub _build_test_file_recipe {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Add bash shebang
     build_shebang(
         {
             filehandle => $recipe_filehandle,
@@ -156,7 +146,6 @@ sub _build_test_file_recipe {
     );
     print {$filehandle} $NEWLINE;
 
-    ## Set shell attributes
     gnu_set(
         {
             filehandle  => $recipe_filehandle,
@@ -175,11 +164,11 @@ sub _build_test_file_recipe {
     );
     say {$recipe_filehandle} $NEWLINE;
 
-    # Create housekeeping fucntion to remove temp_dir
+    # Create housekeeping function to remove temp_dir
     create_housekeeping_function(
         {
             filehandle         => $recipe_filehandle,
-            job_ids_ref        => [qw{job_id_test}],
+            job_ids_ref        => [qw{ job_id_test }],
             log_file_path      => $recipe_log_file_path,
             remove_dir         => $recipe_temp_dir,
             trap_function_name => q{finish},

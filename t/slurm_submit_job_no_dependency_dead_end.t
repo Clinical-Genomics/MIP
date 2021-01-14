@@ -16,26 +16,11 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+use MIP::Test::Fixtures qw{ test_mip_hashes test_log };
 
 BEGIN {
 
@@ -46,7 +31,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Processmanagement::Slurm_processes} =>
           [qw{ slurm_submit_job_no_dependency_dead_end }],
-        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -54,8 +39,7 @@ BEGIN {
 
 use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
 
-diag(   q{Test slurm_submit_job_no_dependency_dead_end from Slurm_processes.pm v}
-      . $MIP::Processmanagement::Slurm_processes::VERSION
+diag(   q{Test slurm_submit_job_no_dependency_dead_end from Slurm_processes.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -79,15 +63,15 @@ slurm_submit_job_no_dependency_dead_end(
     }
 );
 
-## Then add job_id returned to PAN
+## Then add job_id returned to ALL
 my $expected_return = q{1234};
-is( $job_id{PAN}{PAN}[0], $expected_return, q{Added job_id to PAN } );
+is( $job_id{ALL}{ALL}[0], $expected_return, q{Added job_id to ALL } );
 
 ## Then job_id hash should stay the same except for pan
-# Clear PAN for this test
-delete $job_id{PAN};
+# Clear ALL for this test
+delete $job_id{ALL};
 
 my %original_job_id = test_mip_hashes( { mip_hash_name => q{job_id}, } );
-is_deeply( \%job_id, \%original_job_id, q{Did not add to dependecies} );
+is_deeply( \%job_id, \%original_job_id, q{Did not add to dependencies} );
 
 done_testing();

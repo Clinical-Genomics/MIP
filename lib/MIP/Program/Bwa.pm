@@ -1,21 +1,21 @@
 package MIP::Program::Bwa;
 
 use 5.026;
-use strict;
+use Carp;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
+use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
-use Carp;
-use English qw{ -no_match_vars };
-use Params::Check qw{ check allow last_error };
 
 ## CPANM
 use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -23,13 +23,14 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.06;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ bwa_index bwa_mem bwa_mem2_mem bwa_mem2_index run_bwamem };
 
 }
+Readonly my $BASES_TO_PROCESS    => 100_000_000;
+Readonly my $BWA_BASE_COMMAND    => q{bwa};
+Readonly my $BWA2_BASE_COMMAND   => q{bwa-mem2};
+Readonly my $RUNBWA_BASE_COMMAND => q{run-bwamem};
 
 sub bwa_index {
 
@@ -65,7 +66,7 @@ sub bwa_index {
         filehandle => {
             store => \$filehandle,
         },
-        prefix => { defined => 1, required => 1, store => \$prefix, strict_type => 1, },
+        prefix           => { defined => 1, required => 1, store => \$prefix, strict_type => 1, },
         reference_genome => {
             defined     => 1,
             required    => 1,
@@ -88,7 +89,8 @@ sub bwa_index {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bwa index };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BWA_BASE_COMMAND, } ), qw{ index } );
 
     push @commands, q{-p} . $SPACE . $prefix;
 
@@ -123,7 +125,8 @@ sub bwa_mem {
 
 ## Function : Perl wrapper for writing bwa mem recipe to $filehandle. Based on bwa 0.7.15-r1140.
 ## Returns  : @commands
-## Arguments: $filehandle              => Sbatch filehandle to write to
+## Arguments: $deterministic_alignment => Fixed number of input bases
+##          : $filehandle              => Sbatch filehandle to write to
 ##          : $idxbase                 => Idxbase (human genome references and bwa mem idx files)
 ##          : $infile_path             => Infile path (read 1 or interleaved i.e. read 1 and 2)
 ##          : $interleaved_fastq_file  => Smart pairing
@@ -151,10 +154,17 @@ sub bwa_mem {
     my $thread_number;
 
     ## Default(s)
+    my $deterministic_alignment;
     my $interleaved_fastq_file;
     my $mark_split_as_secondary;
 
     my $tmpl = {
+        deterministic_alignment => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$deterministic_alignment,
+            strict_type => 1,
+        },
         filehandle => { store => \$filehandle, },
         idxbase    => {
             defined     => 1,
@@ -184,15 +194,13 @@ sub bwa_mem {
         second_infile_path  => { store => \$second_infile_path, strict_type => 1, },
         soft_clip_sup_align => {
             allow       => [ undef, 0, 1 ],
-            default     => 0,
             store       => \$soft_clip_sup_align,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-        thread_number   => {
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
+        thread_number          => {
             allow       => qr/ ^\d+$ /xms,
             store       => \$thread_number,
             strict_type => 1,
@@ -201,8 +209,13 @@ sub bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bwa mem };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BWA_BASE_COMMAND, } ), qw{ mem } );
 
+    if ($deterministic_alignment) {
+
+        push @commands, q{-K} . $SPACE . $BASES_TO_PROCESS;
+    }
     if ($thread_number) {
 
         push @commands, q{-t} . $SPACE . $thread_number;
@@ -259,7 +272,8 @@ sub bwa_mem2_mem {
 
 ## Function : Perl wrapper for writing bwa mem 2 mem recipe to $filehandle. Based on bwa mem 2 2.0.
 ## Returns  : @commands
-## Arguments: $filehandle              => Sbatch filehandle to write to
+## Arguments: $deterministic_alignment => Fixed number of input bases
+##          : $filehandle              => Sbatch filehandle to write to
 ##          : $idxbase                 => Idxbase (human genome references and bwa mem idx files)
 ##          : $infile_path             => Infile path (read 1 or interleaved i.e. read 1 and 2)
 ##          : $interleaved_fastq_file  => Smart pairing
@@ -287,10 +301,17 @@ sub bwa_mem2_mem {
     my $thread_number;
 
     ## Default(s)
+    my $deterministic_alignment;
     my $interleaved_fastq_file;
     my $mark_split_as_secondary;
 
     my $tmpl = {
+        deterministic_alignment => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$deterministic_alignment,
+            strict_type => 1,
+        },
         filehandle => { store => \$filehandle, },
         idxbase    => {
             defined     => 1,
@@ -320,15 +341,13 @@ sub bwa_mem2_mem {
         second_infile_path  => { store => \$second_infile_path, strict_type => 1, },
         soft_clip_sup_align => {
             allow       => [ undef, 0, 1 ],
-            default     => 0,
             store       => \$soft_clip_sup_align,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-        thread_number   => {
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
+        thread_number          => {
             allow       => qr/ ^\d+$ /xms,
             store       => \$thread_number,
             strict_type => 1,
@@ -337,8 +356,13 @@ sub bwa_mem2_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bwa-mem2 mem };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BWA2_BASE_COMMAND, } ), qw{ mem } );
 
+    if ($deterministic_alignment) {
+
+        push @commands, q{-K} . $SPACE . $BASES_TO_PROCESS;
+    }
     if ($thread_number) {
 
         push @commands, q{-t} . $SPACE . $thread_number;
@@ -418,7 +442,7 @@ sub bwa_mem2_index {
         filehandle => {
             store => \$filehandle,
         },
-        prefix => { defined => 1, required => 1, store => \$prefix, strict_type => 1, },
+        prefix           => { defined => 1, required => 1, store => \$prefix, strict_type => 1, },
         reference_genome => {
             defined     => 1,
             required    => 1,
@@ -441,7 +465,8 @@ sub bwa_mem2_index {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ bwa-mem2 index };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BWA2_BASE_COMMAND, } ), qw{ index } );
 
     push @commands, q{-p} . $SPACE . $prefix;
 
@@ -523,12 +548,11 @@ sub run_bwamem {
             store       => \$outfiles_prefix_path,
             strict_type => 1,
         },
-        read_group_header  => { store => \$read_group_header,  strict_type => 1, },
-        second_infile_path => { store => \$second_infile_path, strict_type => 1, },
-        stderrfile_path    => { store => \$stderrfile_path,    strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        thread_number => {
+        read_group_header      => { store => \$read_group_header,      strict_type => 1, },
+        second_infile_path     => { store => \$second_infile_path,     strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        thread_number          => {
             allow       => qr/ ^\d+$ /xms,
             store       => \$thread_number,
             strict_type => 1,
@@ -537,7 +561,8 @@ sub run_bwamem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ run-bwamem };
+    my @commands =
+      ( get_executable_base_command( { base_command => $RUNBWA_BASE_COMMAND, } ), );
 
     if ($thread_number) {
 

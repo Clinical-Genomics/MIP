@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $EQUALS $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $MIN_MAP_QUALITY => q{30};
@@ -45,16 +35,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Rseqc} => [qw{ rseqc_read_duplication }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Rseqc qw{ rseqc_read_duplication };
 
-diag(   q{Test rseqc_read_duplication from Rseqc.pm v}
-      . $MIP::Program::Rseqc::VERSION
+diag(   q{Test rseqc_read_duplication from Rseqc.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

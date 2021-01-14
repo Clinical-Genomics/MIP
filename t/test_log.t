@@ -20,17 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = '1.0.0';
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $COMMA => q{,};
@@ -53,8 +43,7 @@ BEGIN {
 
 use MIP::Test::Fixtures qw{ test_log };
 
-diag(   q{Test test_log from Fixtures.pm v}
-      . $MIP::Test::Fixtures::VERSION
+diag(   q{Test test_log from Fixtures.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

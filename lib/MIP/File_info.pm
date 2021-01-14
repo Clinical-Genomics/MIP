@@ -8,7 +8,6 @@ use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -24,9 +23,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.15;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       add_sample_fastq_file_lanes
@@ -34,6 +30,7 @@ BEGIN {
       check_parameter_metafiles
       get_consensus_sequence_run_type
       get_is_sample_files_compressed
+      get_merged_infile_prefix
       get_sample_file_attribute
       parse_file_compression_features
       parse_files_compression_status
@@ -45,6 +42,8 @@ BEGIN {
       set_human_genome_reference_features
       set_infiles
       set_is_sample_files_compressed
+      set_human_genome_reference_features
+      set_merged_infile_prefix
       set_primary_contigs
       set_sample_file_attribute
       set_sample_max_parallel_processes_count
@@ -376,6 +375,40 @@ sub get_is_sample_files_compressed {
     return;
 }
 
+sub get_merged_infile_prefix {
+
+## Function : Get the merged infile prefix for a sample id
+## Returns  : $merged_infile_prefix
+## Arguments: $file_info_href => File info hash {REF}
+##          : $sample_id      => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return $file_info_href->{$sample_id}{merged_infile};
+}
+
 sub get_sample_file_attribute {
 
 ## Function : Get sample file attributes
@@ -498,18 +531,14 @@ sub parse_file_compression_features {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Path qw{ check_gzipped };
+    use MIP::Validate::Data qw{ %constraint };
 
     my %attribute = (
         is_file_compressed => 0,
         read_file_command  => q{cat},
     );
 
-    ## Check if a file is gzipped.
-    my $is_gzipped = check_gzipped( { file_name => $file_name, } );
-
-    ## Gzipped
-    if ($is_gzipped) {
+    if ( $constraint{is_gzipped}->($file_name) ) {
 
         $attribute{is_file_compressed} = 1;
         $attribute{read_file_command}  = q{gzip -d -c};
@@ -1043,8 +1072,8 @@ sub set_human_genome_reference_features {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Constants qw{ set_genome_build_constants };
-    use MIP::File::Path qw{ check_gzipped };
     use MIP::Parameter qw{ set_parameter_build_file_status };
+    use MIP::Validate::Data qw{ %constraint };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -1093,8 +1122,7 @@ sub set_human_genome_reference_features {
     $file_info_href->{human_genome_reference_name_prefix} =
       fileparse( $human_genome_reference, qr/[.]fasta | [.]fasta[.]gz/xsm );
 
-    $file_info_href->{human_genome_compressed} =
-      check_gzipped( { file_name => $human_genome_reference, } );
+    $file_info_href->{human_genome_compressed} = $constraint{is_gzipped}->($human_genome_reference);
 
     if ( $file_info_href->{human_genome_compressed} ) {
 
@@ -1207,6 +1235,50 @@ sub set_is_sample_files_compressed {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     $file_info_href->{is_files_compressed}{$sample_id} = $compression_status;
+    return;
+}
+
+sub set_merged_infile_prefix {
+
+## Function : Set the merged infile prefix for sample id
+## Returns  :
+## Arguments: $file_info_href       => File info hash {REF}
+##          : $merged_infile_prefix => Merged infile prefix
+##          : $sample_id            => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $merged_infile_prefix;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        merged_infile_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$merged_infile_prefix,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $file_info_href->{$sample_id}{merged_infile} = $merged_infile_prefix;
+
     return;
 }
 

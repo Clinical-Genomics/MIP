@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -22,97 +21,12 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.17;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      set_rankvariants_ar
-      set_recipe_bwa_mem
       set_recipe_gatk_variantrecalibration
       set_recipe_on_analysis_type
       set_recipe_star_aln
     };
-}
-
-sub set_recipe_bwa_mem {
-
-## Function : Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)
-## Returns  :
-## Arguments: $analysis_recipe_href           => Analysis recipe hash {REF}
-##          : $human_genome_reference_source  => Human genome reference source
-##          : $human_genome_reference_version => Human genome reference version
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_recipe_href;
-    my $human_genome_reference_source;
-    my $human_genome_reference_version;
-
-    my $tmpl = {
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-        human_genome_reference_source => {
-            defined     => 1,
-            required    => 1,
-            store       => \$human_genome_reference_source,
-            strict_type => 1,
-        },
-        human_genome_reference_version => {
-            defined     => 1,
-            required    => 1,
-            store       => \$human_genome_reference_version,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Analysis::Bwa_mem
-      qw{ analysis_bwa_mem analysis_bwa_mem2 analysis_run_bwa_mem };
-
-    Readonly my $GENOME_BUILD_VERSION_GRCH_PRIOR_ALTS => 37;
-    Readonly my $GENOME_BUILD_VERSION_HG_PRIOR_ALTS   => 19;
-
-    if ( $human_genome_reference_source eq q{grch} ) {
-
-        # Human genome version > grch37
-        if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_GRCH_PRIOR_ALTS ) {
-
-            # Use bwa run mem recipe
-            $analysis_recipe_href->{bwa_mem} = \&analysis_run_bwa_mem;
-            return;
-        }
-
-        # Human genome version <= grch37
-        # Use bwa mem recipes
-        $analysis_recipe_href->{bwa_mem}  = \&analysis_bwa_mem;
-        $analysis_recipe_href->{bwa_mem2} = \&analysis_bwa_mem2;
-        return;
-    }
-
-    # hgXX build
-
-    # Human genome version > hg19
-    if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_HG_PRIOR_ALTS ) {
-
-        # Use bwa run mem recipe
-        $analysis_recipe_href->{bwa_mem} = \&analysis_run_bwa_mem;
-        return;
-    }
-
-    ## Human genome version <= hg19
-    # Use bwa mem recipe
-    $analysis_recipe_href->{bwa_mem}  = \&analysis_bwa_mem;
-    $analysis_recipe_href->{bwa_mem2} = \&analysis_bwa_mem2;
-
-    return;
 }
 
 sub set_recipe_gatk_variantrecalibration {
@@ -160,8 +74,7 @@ sub set_recipe_gatk_variantrecalibration {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Analysis::Gatk_cnnscorevariants
-      qw{ analysis_gatk_cnnscorevariants };
+    use MIP::Recipes::Analysis::Gatk_cnnscorevariants qw{ analysis_gatk_cnnscorevariants };
 
     ## Use already set gatk_variantrecalibration recipe
     return if ( @{$sample_ids_ref} != 1 );
@@ -169,8 +82,7 @@ sub set_recipe_gatk_variantrecalibration {
     return if ( not $use_cnnscorevariants );
 
     $log->warn(
-q{Switched from VariantRecalibration to CNNScoreVariants for single sample analysis}
-    );
+        q{Switched from VariantRecalibration to CNNScoreVariants for single sample analysis});
 
     ## Use new CNN recipe for single samples
     $analysis_recipe_href->{gatk_variantrecalibration} = \&analysis_gatk_cnnscorevariants;
@@ -248,76 +160,6 @@ sub set_recipe_on_analysis_type {
 
         $analysis_recipe_href->{$recipe_name} =
           $analysis_type_recipe{$consensus_analysis_type}{$recipe_name};
-    }
-    return;
-}
-
-sub set_rankvariants_ar {
-
-## Function : Update which rankvariants recipe to use
-## Returns  :
-## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
-##          : $log                  => Log object to write to
-##          : $parameter_href       => Parameter hash {REF}
-##          : $sample_ids_ref       => Sample ids {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_recipe_href;
-    my $log;
-    my $parameter_href;
-    my $sample_ids_ref;
-
-    my $tmpl = {
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$parameter_href,
-            strict_type => 1,
-        },
-        sample_ids_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_ids_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Analysis::Rankvariant
-      qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
-
-    if ( defined $parameter_href->{cache}{unaffected}
-        && @{ $parameter_href->{cache}{unaffected} } eq @{$sample_ids_ref} )
-    {
-
-        $log->warn(
-q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'}
-        );
-
-        $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv_unaffected;
-        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant_unaffected;
-    }
-    else {
-
-        $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv;
-        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant;
     }
     return;
 }

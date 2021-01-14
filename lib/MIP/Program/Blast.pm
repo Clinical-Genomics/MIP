@@ -1,11 +1,11 @@
 package MIP::Program::Blast;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -16,15 +16,13 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ blast_blastn blast_makeblastdb };
@@ -140,8 +138,7 @@ sub blast_blastn {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ blastn };
+     my @commands = ( get_executable_base_command( { base_command => q{blastn}, } ), );
 
     push @commands, q{-query} . $SPACE . $query_file_path;
 
@@ -237,8 +234,7 @@ sub blast_makeblastdb {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ makeblastdb };
+     my @commands = ( get_executable_base_command( { base_command => q{makeblastdb}, } ), );
 
     push @commands, q{-in} . $SPACE . $cdna_seq_file_path;
 

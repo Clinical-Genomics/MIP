@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -18,9 +17,6 @@ use Readonly;
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_dragen_rd_dna_meta_files };
@@ -92,8 +88,7 @@ sub build_dragen_rd_dna_meta_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
+    use MIP::Recipes::Build::Human_genome_prerequisites qw{ build_human_genome_prerequisites };
 
     my %build_recipe =
       ( human_genome_reference_file_endings => \&build_human_genome_prerequisites, );
@@ -102,9 +97,7 @@ sub build_dragen_rd_dna_meta_files {
     foreach my $parameter_build_name ( keys %build_recipe ) {
 
       RECIPE:
-        foreach
-          my $recipe ( @{ $parameter_href->{$parameter_build_name}{associated_recipe} } )
-        {
+        foreach my $recipe ( @{ $parameter_href->{$parameter_build_name}{associated_recipe} } ) {
 
             next RECIPE if ( not $active_parameter_href->{$recipe} );
 
@@ -113,15 +106,14 @@ sub build_dragen_rd_dna_meta_files {
 
             $build_recipe{$parameter_build_name}->(
                 {
-                    active_parameter_href => $active_parameter_href,
-                    file_info_href        => $file_info_href,
-                    job_id_href           => $job_id_href,
-                    log                   => $log,
-                    parameter_build_suffixes_ref =>
-                      \@{ $file_info_href->{$parameter_build_name} },
-                    parameter_href   => $parameter_href,
-                    recipe_name      => $recipe,
-                    sample_info_href => $sample_info_href,
+                    active_parameter_href        => $active_parameter_href,
+                    file_info_href               => $file_info_href,
+                    job_id_href                  => $job_id_href,
+                    log                          => $log,
+                    parameter_build_suffixes_ref => \@{ $file_info_href->{$parameter_build_name} },
+                    parameter_href               => $parameter_href,
+                    recipe_name                  => $recipe,
+                    sample_info_href             => $sample_info_href,
                 }
             );
 

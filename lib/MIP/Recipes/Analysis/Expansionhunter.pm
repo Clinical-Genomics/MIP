@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.29;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_expansionhunter };
@@ -131,14 +127,15 @@ sub analysis_expansionhunter {
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
-    use MIP::Program::Bcftools qw{ bcftools_rename_vcf_samples bcftools_view };
+    use MIP::Program::Bcftools
+      qw{ bcftools_index bcftools_norm bcftools_rename_vcf_samples bcftools_view };
     use MIP::Program::Expansionhunter qw{ expansionhunter };
+    use MIP::Program::Htslib qw{ htslib_bgzip };
     use MIP::Program::Stranger qw{ stranger };
     use MIP::Program::Svdb qw{ svdb_merge };
-    use MIP::Program::Vt qw{ vt_decompose };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info
       qw{ get_pedigree_sample_id_attributes set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -152,21 +149,13 @@ sub analysis_expansionhunter {
     my $max_cores_per_node = $active_parameter_href->{max_cores_per_node};
     my $modifier_core_number =
       scalar( @{ $active_parameter_href->{sample_ids} } );
-    my $human_genome_reference =
-      $arg_href->{active_parameter_href}{human_genome_reference};
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
+    my $human_genome_reference = $arg_href->{active_parameter_href}{human_genome_reference};
     my $variant_catalog_file_path =
       $active_parameter_href->{expansionhunter_variant_catalog_file_path};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -174,7 +163,7 @@ sub analysis_expansionhunter {
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
         {
-            chain_id               => $job_id_chain,
+            chain_id               => $recipe{job_id_chain},
             id                     => $case_id,
             file_info_href         => $file_info_href,
             file_name_prefixes_ref => [$case_id],
@@ -198,32 +187,30 @@ sub analysis_expansionhunter {
         {
             max_cores_per_node   => $max_cores_per_node,
             modifier_core_number => $modifier_core_number,
-            recipe_core_number   => $recipe_resource{core_number},
+            recipe_core_number   => $recipe{core_number},
         }
     );
     my $memory_allocation = update_memory_allocation(
         {
             node_ram_memory           => $active_parameter_href->{node_ram_memory},
             parallel_processes        => $core_number,
-            process_memory_allocation => $recipe_resource{memory},
+            process_memory_allocation => $recipe{memory},
         }
     );
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $memory_allocation,
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $memory_allocation,
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -233,9 +220,7 @@ sub analysis_expansionhunter {
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
   SAMPLE_ID:
-    while ( my ( $sample_id_index, $sample_id ) =
-        each @{ $active_parameter_href->{sample_ids} } )
-    {
+    while ( my ( $sample_id_index, $sample_id ) = each @{ $active_parameter_href->{sample_ids} } ) {
 
         ## Get the io infiles per chain and id
         my %sample_io = get_io_files(
@@ -266,13 +251,12 @@ sub analysis_expansionhunter {
 
     ## Expansion hunter calling per sample id
     # Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
-    my @vt_infile_paths;
-    my @vt_outfile_paths;
+    my @decompose_infile_paths;
+    my @decompose_infile_path_prefixes;
+    my @decompose_outfile_paths;
 
   SAMPLE_ID:
-    while ( my ( $sample_id_index, $sample_id ) =
-        each @{ $active_parameter_href->{sample_ids} } )
-    {
+    while ( my ( $sample_id_index, $sample_id ) = each @{ $active_parameter_href->{sample_ids} } ) {
 
         $process_batches_count = print_wait(
             {
@@ -312,10 +296,12 @@ sub analysis_expansionhunter {
             }
         );
         say {$filehandle} $AMPERSAND, $NEWLINE;
-        push @vt_infile_paths, $sample_outfile_path_prefix . $outfile_suffix;
-        push @vt_outfile_paths,
+        push @decompose_infile_paths,         $sample_outfile_path_prefix . $outfile_suffix;
+        push @decompose_infile_path_prefixes, $sample_outfile_path_prefix;
+        push @decompose_outfile_paths,
             $outfile_path_prefix
-          . $UNDERSCORE . q{vt}
+          . $UNDERSCORE
+          . q{decompose}
           . $UNDERSCORE
           . $sample_id
           . $outfile_suffix;
@@ -326,17 +312,38 @@ sub analysis_expansionhunter {
     ## Split multiallelic variants
     say {$filehandle} q{## Split multiallelic variants};
     ## Create iterator object
-    my $vt_file_paths_iter = each_array( @vt_infile_paths, @vt_outfile_paths );
+    my $decompose_file_paths_iter =
+      each_array( @decompose_infile_paths, @decompose_infile_path_prefixes,
+        @decompose_outfile_paths );
 
-  VT_FILES_ITER:
-    while ( my ( $vt_infile_path, $vt_outfile_path ) = $vt_file_paths_iter->() ) {
+  DECOMPOSE_FILES_ITER:
+    while ( my ( $decompose_infile_path, $decompose_infile_path_prefix, $decompose_outfile_path ) =
+        $decompose_file_paths_iter->() )
+    {
 
-        vt_decompose(
+        htslib_bgzip(
             {
-                filehandle          => $filehandle,
-                infile_path         => $vt_infile_path,
-                outfile_path        => $vt_outfile_path,
-                smart_decomposition => 1,
+                filehandle      => $filehandle,
+                infile_path     => $decompose_infile_path,
+                stdoutfile_path => $decompose_infile_path_prefix . q{.bcf},
+                write_to_stdout => 1,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+        bcftools_index(
+            {
+                filehandle  => $filehandle,
+                infile_path => $decompose_infile_path_prefix . q{.bcf},
+                output_type => q{tbi},
+            }
+        );
+        say {$filehandle} $NEWLINE;
+        bcftools_norm(
+            {
+                filehandle   => $filehandle,
+                infile_path  => $decompose_infile_path_prefix . q{.bcf},
+                multiallelic => q{-},
+                outfile_path => $decompose_outfile_path,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -345,12 +352,12 @@ sub analysis_expansionhunter {
     ## Get parameters
     ## Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
     my $svdb_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge} . $outfile_suffix;
+      $outfile_path_prefix . $UNDERSCORE . q{decompose_svdbmerge} . $outfile_suffix;
 
     svdb_merge(
         {
             filehandle       => $filehandle,
-            infile_paths_ref => \@vt_outfile_paths,
+            infile_paths_ref => \@decompose_outfile_paths,
             notag            => 1,
             stdoutfile_path  => $svdb_outfile_path,
         }
@@ -360,7 +367,7 @@ sub analysis_expansionhunter {
     say {$filehandle} q{## Stranger annotation};
 
     my $stranger_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge_ann} . $outfile_suffix;
+      $outfile_path_prefix . $UNDERSCORE . q{decompose_svdbmerge_ann} . $outfile_suffix;
     stranger(
         {
             filehandle        => $filehandle,
@@ -388,7 +395,7 @@ sub analysis_expansionhunter {
 
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -412,13 +419,13 @@ sub analysis_expansionhunter {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

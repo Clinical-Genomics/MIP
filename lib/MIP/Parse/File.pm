@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -24,48 +23,9 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.17;
-
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ parse_file_suffix parse_io_outfiles };
+    our @EXPORT_OK = qw{ parse_io_outfiles };
 
-}
-
-sub parse_file_suffix {
-
-## Function : Parse file suffix in filename.suffix(.gz). Removes suffix if matching else return undef
-## Returns  : undef | $file_name
-## Arguments: $file_name   => File name
-##          : $file_suffix => File suffix to be removed
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name;
-    my $file_suffix;
-
-    my $tmpl = {
-        file_name => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_name
-        },
-        file_suffix => {
-            required    => 1,
-            defined     => 1,
-            strict_type => 1,
-            store       => \$file_suffix
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my ($file_name_nosuffix) =
-      $file_name =~ / (\S+)($file_suffix$ | $file_suffix.gz$) /xsm;
-
-    return $file_name_nosuffix;
 }
 
 sub parse_io_outfiles {
@@ -174,7 +134,7 @@ sub parse_io_outfiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes };
+    use MIP::Parameter qw{ get_recipe_attributes };
     use MIP::Set::File qw{ set_io_files };
 
     my @file_paths = @{$file_paths_ref};
@@ -190,7 +150,7 @@ sub parse_io_outfiles {
         );
         my $outfile_tag    = $rec_atr{file_tag}       //= $EMPTY_STR;
         my $outfile_suffix = $rec_atr{outfile_suffix} //= $EMPTY_STR;
-        my $directory = catdir( $outdata_dir, $id, $recipe_name );
+        my $directory      = catdir( $outdata_dir, $id, $recipe_name );
 
         ## Default paths with iterators
         if ( @{$iterators_ref} and $file_name_prefix ) {
@@ -206,10 +166,8 @@ sub parse_io_outfiles {
                 }
             }
             @file_paths =
-              map {
-                catfile( $directory,
-                    $file_name_prefix . $outfile_tag . $_ . $outfile_suffix )
-              } @iterators;
+              map { catfile( $directory, $file_name_prefix . $outfile_tag . $_ . $outfile_suffix ) }
+              @iterators;
         }
         ## Default paths without iterators
         else {

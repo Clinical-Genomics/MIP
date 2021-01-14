@@ -16,23 +16,12 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,16 +31,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Workloadmanager::Slurm} => [qw{ slurm_sbatch }],
-        q{MIP::Test::Fixtures}         => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Workloadmanager::Slurm qw{ slurm_sbatch };
 
-diag(   q{Test slurm_sbatch from SLURM.pm v}
-      . $MIP::Workloadmanager::Slurm::VERSION
+diag(   q{Test slurm_sbatch from Slurm.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

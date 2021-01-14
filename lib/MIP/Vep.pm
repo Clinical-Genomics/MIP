@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,14 +16,11 @@ use autodie qw{ :all };
 use List::MoreUtils qw { any };
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $SPACE };
+use MIP::Constants qw{ %CONTAINER_CMD $LOG_NAME $SPACE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -38,24 +34,14 @@ sub check_vep_api_cache_versions {
 
 ## Function : Compare VEP API and VEP chache versions. Exit if non-match
 ## Returns  :
-## Arguments: $vep_binary_path     => VEP binary path {REF}
-##          : $vep_directory_cache => VEP cache directory path {REF}
+## Arguments: $vep_directory_cache => VEP cache directory path {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $vep_directory_cache;
 
-    ## Default(s)
-    my $vep_binary_path;
-
     my $tmpl = {
-        vep_binary_path => {
-            default     => q{vep},
-            defined     => 1,
-            store       => \$vep_binary_path,
-            strict_type => 1,
-        },
         vep_directory_cache => {
             defined     => 1,
             required    => 1,
@@ -67,23 +53,24 @@ sub check_vep_api_cache_versions {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use File::Find::Rule;
-    use MIP::Environment::Executable qw{ get_binary_version };
+    use MIP::Environment::Executable qw{ get_binary_version get_executable };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my $vep_version = get_binary_version(
+    my %capture_version_cmd = get_executable( { executable_name => q{vep} } );
+    my $vep_version         = get_binary_version(
         {
-            binary      => q{vep},
-            binary_path => $vep_binary_path,
+            binary                   => q{vep},
+            binary_path              => $CONTAINER_CMD{vep},
+            capture_version_cmd_href => \%capture_version_cmd,
         }
     );
 
     ## Check that a version number was picked up
     if ( not $vep_version ) {
         $log->warn(
-q{Could not retrieve VEP version. Skipping checking that VEP api and cache matches.}
-        );
+            q{Could not retrieve VEP version. Skipping checking that VEP api and cache matches.});
         return;
     }
 
@@ -292,8 +279,7 @@ sub _get_vep_cache_species_dir_path {
     foreach my $species_cache (@vep_species_cache) {
 
         ## Get species specific cache dir
-        $vep_cache_species_dir_path =
-          abs_path( catdir( $vep_directory_cache, $species_cache ) );
+        $vep_cache_species_dir_path = abs_path( catdir( $vep_directory_cache, $species_cache ) );
         last if ( -e $vep_cache_species_dir_path );
     }
     return $vep_cache_species_dir_path;
@@ -377,10 +363,8 @@ sub _check_vep_custom_annotation_options {
               . q{ has a not allowed option value '}
               . $option . q{ => }
               . $custom_ann_option_href->{$option} );
-        $log->fatal(
-            q{Allowed options are: } . join $SPACE,
-            @{ $check_vep_annotations{$option}{allow} }
-        );
+        $log->fatal( q{Allowed options are: } . join $SPACE,
+            @{ $check_vep_annotations{$option}{allow} } );
         exit 1;
     }
     return 1;

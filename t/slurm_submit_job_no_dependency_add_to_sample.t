@@ -16,22 +16,11 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_mip_hashes test_log };
 
 BEGIN {
 
@@ -42,7 +31,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Processmanagement::Slurm_processes} =>
           [qw{ slurm_submit_job_no_dependency_add_to_sample }],
-        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -51,8 +40,7 @@ BEGIN {
 use MIP::Processmanagement::Slurm_processes
   qw{ slurm_submit_job_no_dependency_add_to_sample };
 
-diag(   q{Test slurm_submit_job_no_dependency_add_to_sample from Slurm_processes.pm v}
-      . $MIP::Processmanagement::Slurm_processes::VERSION
+diag(   q{Test slurm_submit_job_no_dependency_add_to_sample from Slurm_processes.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -82,13 +70,13 @@ slurm_submit_job_no_dependency_add_to_sample(
     }
 );
 
-## Then add job_id returned to PAN
+## Then add job_id returned to ALL
 my $expected_return = q{1234};
-is( $job_id{PAN}{PAN}[0], $expected_return, q{Added job_id to PAN } );
+is( $job_id{ALL}{ALL}[0], $expected_return, q{Added job_id to ALL } );
 
-## Then job_id hash should stay the same except for pan
-# Clear PAN for this test
-delete $job_id{PAN};
+## Then job_id hash should stay the same except for ALL
+# Clear ALL for this test
+delete $job_id{ALL};
 
 my @sample_job_ids = qw{ job_id_1 job_id_2 1234 };
 is_deeply( \@{ $job_id{case1_MAIN}{sample1_MAIN} },

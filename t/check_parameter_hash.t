@@ -22,17 +22,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.05;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -43,8 +33,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Parameter}      => [qw{ check_parameter_hash }],
         q{MIP::Io::Read}       => [qw{ read_from_file }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -52,8 +41,7 @@ BEGIN {
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Parameter qw{ check_parameter_hash };
 
-diag(   q{Test check_parameter_hash from Parameter.pm v}
-      . $MIP::Parameter::VERSION
+diag(   q{Test check_parameter_hash from Parameter.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

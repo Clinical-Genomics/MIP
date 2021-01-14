@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $EQUALS $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,8 +32,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Rtg}   => [qw{ rtg_vcfeval }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -51,8 +40,7 @@ BEGIN {
 use MIP::Program::Rtg qw{ rtg_vcfeval };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test rtg_vcfeval from Rtg.pm v}
-      . $MIP::Program::Rtg::VERSION
+diag(   q{Test rtg_vcfeval from Rtg.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

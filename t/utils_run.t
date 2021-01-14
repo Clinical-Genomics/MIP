@@ -21,17 +21,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $COMMA => q{,};
@@ -45,16 +35,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Cli::Utils}     => [qw{ run }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Cli::Utils qw{ run };
 
-diag(   q{Test run from Utils.pm v}
-      . $MIP::Cli::Utils::VERSION
+diag(   q{Test run from Utils.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

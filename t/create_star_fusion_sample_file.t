@@ -22,17 +22,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE $TAB };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $INDEX_READ_1_SECOND_PAIR => 2;
@@ -46,16 +36,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::File::Format::Star_fusion} => [qw{ create_star_fusion_sample_file }],
-        q{MIP::Test::Fixtures}            => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::File::Format::Star_fusion qw{ create_star_fusion_sample_file };
 
-diag(   q{Test create_star_fusion_sample_file from Star_fusion.pm v}
-      . $MIP::File::Format::Star_fusion::VERSION
+diag(   q{Test create_star_fusion_sample_file from Star_fusion.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

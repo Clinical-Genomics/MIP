@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -16,20 +15,24 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $DASH $NEWLINE $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
+
+## Constants
+Readonly my $GENOME_BUILD_VERSION_37 => 37;
+Readonly my $GENOME_BUILD_VERSION_38 => 38;
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.04;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =
       qw{ genmod_annotate genmod_compound genmod_filter genmod_models genmod_score };
 }
+
+Readonly my $BASE_COMMAND => q{genmod};
 
 sub genmod_annotate {
 
@@ -39,6 +42,7 @@ sub genmod_annotate {
 ##          : $append_stderr_info     => Append stderr info to file
 ##          : $cadd_file_paths_ref    => Specify the path to a bgzipped cadd file (with index) with variant scores
 ##          : $filehandle             => Filehandle to write to
+##          : $genome_build           => Genome build
 ##          : $infile_path            => Infile path to read from
 ##          : $max_af                 => If the MAX AF should be annotated
 ##          : $outfile_path           => Outfile path to write to
@@ -55,6 +59,7 @@ sub genmod_annotate {
     ## Flatten argument(s)
     my $cadd_file_paths_ref;
     my $filehandle;
+    my $genome_build;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
@@ -85,7 +90,13 @@ sub genmod_annotate {
         },
         cadd_file_paths_ref =>
           { default => [], store => \$cadd_file_paths_ref, strict_type => 1, },
-        filehandle  => { store => \$filehandle, },
+        filehandle   => { store => \$filehandle, },
+        genome_build => {
+            allow       => [ undef, $GENOME_BUILD_VERSION_37, $GENOME_BUILD_VERSION_38 ],
+            required    => 0,
+            store       => \$genome_build,
+            strict_type => 1,
+        },
         infile_path => {
             defined     => 1,
             required    => 1,
@@ -123,8 +134,7 @@ sub genmod_annotate {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Genmod annotate
-    my @commands = qw{ genmod };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     if ($verbosity) {
 
@@ -134,27 +144,19 @@ sub genmod_annotate {
     ## Genmod sub command
     push @commands, q{annotate};
 
-    if ($temp_directory_path) {
-
-        push @commands, q{--temp_dir} . $SPACE . $temp_directory_path;
-    }
     if ($annotate_region) {
 
         push @commands, q{--annotate_regions};
-    }
-    if ($thousand_g_file_path) {
-
-        push @commands, q{--thousand-g} . $SPACE . $thousand_g_file_path;
-    }
-    if ($spidex_file_path) {
-
-        push @commands, q{--spidex} . $SPACE . $spidex_file_path;
     }
     if ( @{$cadd_file_paths_ref} ) {
 
         push @commands,
           q{--cadd_file} . $SPACE . join $SPACE . q{--cadd_file} . $SPACE,
           @{$cadd_file_paths_ref};
+    }
+    if ($genome_build) {
+
+        push @commands, q{--genome-build} . $SPACE . $genome_build,;
     }
     if ($max_af) {
 
@@ -163,6 +165,18 @@ sub genmod_annotate {
     if ($outfile_path) {
 
         push @commands, q{--outfile} . $SPACE . $outfile_path;
+    }
+    if ($spidex_file_path) {
+
+        push @commands, q{--spidex} . $SPACE . $spidex_file_path;
+    }
+    if ($temp_directory_path) {
+
+        push @commands, q{--temp_dir} . $SPACE . $temp_directory_path;
+    }
+    if ($thousand_g_file_path) {
+
+        push @commands, q{--thousand-g} . $SPACE . $thousand_g_file_path;
     }
 
     push @commands, $infile_path;
@@ -261,8 +275,7 @@ sub genmod_compound {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Genmod compound
-    my @commands = qw{ genmod };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     if ($verbosity) {
 
@@ -373,8 +386,7 @@ sub genmod_filter {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Genmod filter
-    my @commands = qw{ genmod };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     if ($verbosity) {
 
@@ -392,7 +404,6 @@ sub genmod_filter {
         push @commands, q{--outfile} . $SPACE . $outfile_path;
     }
 
-    ## Infile
     push @commands, $infile_path;
 
     push @commands,
@@ -516,8 +527,7 @@ sub genmod_models {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Genmod annotate
-    my @commands = qw{ genmod };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     if ($verbosity) {
 
@@ -531,7 +541,6 @@ sub genmod_models {
         push @commands, q{--temp_dir} . $SPACE . $temp_directory_path;
     }
 
-    ## Case file
     push @commands, q{--family_file} . $SPACE . $case_file;
 
     if ($case_type) {
@@ -671,8 +680,7 @@ sub genmod_score {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Genmod score
-    my @commands = qw{ genmod };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     if ($verbosity) {
 
@@ -686,7 +694,6 @@ sub genmod_score {
         push @commands, q{--temp_dir} . $SPACE . $temp_directory_path;
     }
 
-    ## Case file
     push @commands, q{--family_file} . $SPACE . $case_file;
 
     if ($case_type) {
@@ -698,7 +705,6 @@ sub genmod_score {
         push @commands, q{--rank_results};
     }
 
-    ## Rank model file
     push @commands, q{--score_config} . $SPACE . $rank_model_file_path;
 
     if ($outfile_path) {

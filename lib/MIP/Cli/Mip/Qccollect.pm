@@ -5,7 +5,6 @@ use Carp;
 use Cwd;
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -19,14 +18,12 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 ## MIPs lib/
 use MIP::Constants qw{ $NEWLINE };
 
-our $VERSION = 1.02;
-
 command_short_description(q{MIP qccollect command});
 
 command_long_description(q{Entry point for collecting MIP QC metrics});
 
 command_usage(
-q{qccollect <options> -si [sample_info.yaml] -r [regexp.yaml] -e [eval_metric.yaml] -o [outfile]}
+q{qccollect <options> --sample_info_file [sample_info.yaml] --regexp_file [regexp.yaml] --eval_metric_file [eval_metric.yaml] -o [outfile]}
 );
 
 ## Define, check and get Cli supplied parameters

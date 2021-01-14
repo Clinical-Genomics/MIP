@@ -18,6 +18,7 @@ human_genome_reference: human_genome.fasta
 gatk_logging_level: INFO
 java_use_large_pages: 1
 max_cores_per_node: 36
+mip: 2
 node_ram_memory: 180
 picardtools_path: a_test_path
 project_id: wamdu
@@ -49,7 +50,12 @@ load_env:
     sambamba:
 recipe_core_number:
   bwa_mem: 30
+  deepvariant: 35
+recipe_gpu_number:
+  deepvariant: 1
 recipe_memory:
   bwa_mem: 4
+  deepvariant: 5
 recipe_time:
   bwa_mem: 30
+  deepvariant: 10

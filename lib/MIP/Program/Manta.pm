@@ -9,7 +9,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile};
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;
@@ -19,15 +18,13 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.03;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ manta_config manta_workflow };
@@ -94,8 +91,8 @@ sub manta_config {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
-    my @commands = qw{ configManta.py };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{configManta.py}, } ), );
 
     if ($referencefile_path) {
 
@@ -111,7 +108,6 @@ sub manta_config {
         push @commands, q{--exome};
     }
 
-    ## Infile
     push @commands, q{--bam} . $SPACE . join $SPACE . q{--bam} . $SPACE,
       @{$infile_paths_ref};
 
@@ -187,8 +183,8 @@ sub manta_workflow {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Manta
-    my @commands = qw{ runWorkflow.py };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{runWorkflow.py}, } ), );
 
     push @commands, catfile( $outdirectory_path, q{runWorkflow.py} );
 

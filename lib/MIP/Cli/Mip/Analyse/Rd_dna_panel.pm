@@ -3,7 +3,6 @@ package MIP::Cli::Mip::Analyse::Rd_dna_panel;
 use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -16,8 +15,6 @@ use Moose::Util::TypeConstraints;
 
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
-
-our $VERSION = 1.11;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -272,14 +269,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{replace_iupac} => (
-            documentation => q{Replace IUPAC code in alternative alleles with N},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
         q{gzip_fastq} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Gzip fastq files},
@@ -334,6 +323,14 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     option(
         q{bwa_mem_hla} => (
             documentation => q{Apply HLA typing},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{bwa_mem_run_bwakit} => (
+            documentation => q{Use bwakit when aligning to GRCh38},
             is            => q{rw},
             isa           => Bool,
         )
@@ -1163,15 +1160,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
         q{endvariantannotationblock} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{End variant annotation block by concatenating files},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{variant_integrity_ar} => (
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{QC for samples relationship},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )

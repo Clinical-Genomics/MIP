@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE $UNDERSCORE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,16 +30,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Fastq}          => [qw{ define_mip_fastq_file_features }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Fastq qw{ define_mip_fastq_file_features };
 
-diag(   q{Test define_mip_fastq_file_features from Fastq.pm v}
-      . $MIP::Fastq::VERSION
+diag(   q{Test define_mip_fastq_file_features from Fastq.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -21,17 +21,7 @@ use Modern::Perl qw{ 2018 };
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,16 +31,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Telomerecat} => [qw{ telomerecat_bam2length }],
-        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Telomerecat qw{ telomerecat_bam2length };
 
-diag(   q{Test telomerecat_bam2length from Telomerecat.pm v}
-      . $MIP::Program::Telomerecat::VERSION
+diag(   q{Test telomerecat_bam2length from Telomerecat.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,6 +16,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $COMMA $EQUALS $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -24,12 +24,11 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.08;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ rtg_base rtg_format rtg_vcfeval rtg_vcfsubset };
 }
+
+Readonly my $BASE_COMMAND => q{rtg};
 
 sub rtg_base {
 
@@ -58,8 +57,7 @@ sub rtg_base {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    # Stores commands depending on input parameters
-    my @commands = qw{ rtg };
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     push @commands, q{RTG_MEM} . $EQUALS . $memory;
 
@@ -136,8 +134,8 @@ sub rtg_format {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ rtg format };
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ format } );
 
     push @commands, q{--format} . $EQUALS . $input_format;
 

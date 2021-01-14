@@ -18,8 +18,6 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ space separated subroutines };
 }
@@ -57,7 +55,7 @@ sub name_of_subroutine {
             strict_type => 1,
         },
         scalar => {
-            allow       => qr/ ^\d+$ /sxm,
+            allow       => qr/ \A \d+ \z /sxm,
             default     => 1,
             store       => \$scalar,
             strict_type => 1,

@@ -71,19 +71,22 @@ else
   conda create --name "$ENV_NAME" --yes  -c conda-forge libgcc-ng gxx_linux-64=7.3.0 python=3.7.7
 fi
 
-conda install --name "$ENV_NAME" --yes -c bioconda -c conda-forge perl=5.26.2=h516909a_1006 perl-app-cpanminus perl-log-log4perl perl-moosex-app perl-file-copy-recursive perl-timedate perl-set-intervaltree perl-params-validate
+conda install --name "$ENV_NAME" --yes -c bioconda -c conda-forge perl=5.26.2=h516909a_1006 perl-app-cpanminus perl-log-log4perl perl-moosex-app perl-file-copy-recursive perl-timedate perl-datetime-format-strptime perl-set-intervaltree perl-params-validate bcftools=1.9=ha228f0b_4
 
 conda activate "$ENV_NAME"
 
 cpanm --installdeps .
 
-if [ "$DEV" = true ]; then 
-    
+if [ "$DEV" = true ]; then
+
     ## Install dev modules from cpan
     cpanm Perl::Tidy@20200110 Perl::Critic@1.138 Data::Printer@0.40
 
-    ## Install yamllint 
-    conda install --name "$ENV_NAME" --yes -c conda-forge yamllint=1.20.0
+    ## Install pre-commit and yamllint
+    conda install --name "$ENV_NAME" --yes -c conda-forge pre-commit=2.9.3 yamllint=1.20.0
+
+    ## Install hooks
+    pre-commit install --install-hooks
 fi
 
 conda deactivate

@@ -8,7 +8,6 @@ use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ use MIP::Constants qw{ $COLON $COMMA $LOG_NAME $NEWLINE $SPACE };
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -456,18 +452,14 @@ sub check_toml_config_for_vcf_tags {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ get_binary_path };
+    use MIP::Environment::Executable qw{ get_executable_base_command };
     use MIP::Io::Read qw{ read_from_file };
     use MIP::Vcfanno qw{ check_toml_annotation_for_tags };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my $bcftools_binary_path = get_binary_path(
-        {
-            active_parameter_href => $active_parameter_href,
-            binary                => q{bcftools},
-        }
-    );
+    my $bcftools_binary_path =
+      get_executable_base_command( { base_command => q{bcftools}, } );
 
     ## TOML parameters
     my %toml = (
@@ -575,8 +567,6 @@ sub get_dict_contigs {
 
     # Save contigs
     my @contigs = split $COMMA, join $COMMA, @{ $return{stdouts_ref} };
-
-    #my @contigs = split $COMMA, join $COMMA, @{$stdout_buf_ref};
 
     return @contigs if (@contigs);
 

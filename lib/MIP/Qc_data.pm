@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -22,9 +21,6 @@ use MIP::Constants qw{ $SPACE $NEWLINE };
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -151,8 +147,7 @@ sub add_qc_data_recipe_info {
     if ( $sample_id and $infile ) {
 
         ## Add to array
-        push @{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe_name}{$key} },
-          $value;
+        push @{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe_name}{$key} }, $value;
         return;
     }
 
@@ -644,8 +639,7 @@ sub parse_qc_recipe_data {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Qc_data
-      qw{ add_to_qc_data parse_qc_recipe_table_data set_header_metrics_to_qc_data };
+    use MIP::Qc_data qw{ add_to_qc_data parse_qc_recipe_table_data set_header_metrics_to_qc_data };
 
   REG_EXP_ATTRIBUTE:
     for my $attribute ( keys %{ $regexp_href->{$recipe} } ) {

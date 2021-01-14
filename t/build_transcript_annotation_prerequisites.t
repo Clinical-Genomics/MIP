@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
 BEGIN {
 
@@ -42,7 +32,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Build::Transcript_annotation_prerequisites} =>
           [qw{ build_transcript_annotation_prerequisites }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -52,8 +42,7 @@ use MIP::Recipes::Build::Transcript_annotation_prerequisites
   qw{ build_transcript_annotation_prerequisites };
 
 diag(
-q{Test build_transcript_annotation_prerequisites from Transcript_annotation_prerequisites.pm v}
-      . $MIP::Recipes::Build::Transcript_annotation_prerequisites::VERSION
+    q{Test build_transcript_annotation_prerequisites from Transcript_annotation_prerequisites.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -84,8 +73,7 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$active_parameter{transcript_annotation} =
-  q{grch37_gencode_annotation_reformated_-v31-.gtf};
+$active_parameter{transcript_annotation} = q{grch37_gencode_annotation_reformated_-v31-.gtf};
 ## Submission via slurm_mock
 $active_parameter{$recipe_name} = 1;
 
@@ -97,6 +85,7 @@ my %file_info = test_mip_hashes(
 );
 my %job_id;
 my %parameter = test_mip_hashes( { mip_hash_name => q{recipe_parameter}, } );
+$parameter{$recipe_name} = undef;
 
 my %sample_info;
 

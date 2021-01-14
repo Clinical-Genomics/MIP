@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -21,9 +20,6 @@ use MIP::Constants qw{ $COLON $COMMA $DOT $EQUALS $PIPE $SEMICOLON $SPACE $TAB }
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -81,23 +77,11 @@ sub get_vcf_header_line_by_id {
 
     use MIP::Environment::Child_process qw{ child_process };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
 
-    ## Export MIP_BIND to bind reference path to htslib sif in proxy bin
-    my @check_header_cmds = gnu_export(
-        {
-                bash_variable => q{MIP_BIND}
-              . $EQUALS
-              . $vcf_file_path
-              . $COLON
-              . $vcf_file_path,
-        }
-    );
-    push @check_header_cmds, $SEMICOLON;
+    my @check_header_cmds;
 
     ## Stream vcf using bcftools
-    push @check_header_cmds,
-      $bcftools_binary_path . $SPACE . q{view} . $SPACE . $vcf_file_path;
+    push @check_header_cmds, $bcftools_binary_path . $SPACE . q{view} . $SPACE . $vcf_file_path;
     push @check_header_cmds, $PIPE;
 
     ## Assemble perl regexp for detecting keys in vcf
@@ -109,9 +93,6 @@ sub get_vcf_header_line_by_id {
         }
       );
     push @check_header_cmds, $SEMICOLON;
-
-    ## Unset MIP_BIND after system parsing
-    push @check_header_cmds, gnu_unset( { bash_variable => q{MIP_BIND}, } );
 
     my %process_return = child_process(
         {

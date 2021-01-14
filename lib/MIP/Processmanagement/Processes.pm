@@ -7,7 +7,6 @@ use FindBin qw{ $Bin };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -24,9 +23,6 @@ use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 BEGIN {
     use base qw{ Exporter };
     require Exporter;
-
-    # Set the version for version checking
-    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -55,6 +51,7 @@ BEGIN {
       limit_job_id_string
       print_wait
       submit_recipe
+      track_job_id_status
       write_job_ids_to_file
     };
 }
@@ -1629,9 +1626,9 @@ sub get_all_job_ids {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    return if ( not exists $job_id_href->{PAN} );
+    return if ( not exists $job_id_href->{ALL} );
 
-    return @{ $job_id_href->{PAN}{PAN} };
+    return @{ $job_id_href->{ALL}{ALL} };
 }
 
 sub limit_job_id_string {
@@ -1671,7 +1668,7 @@ sub limit_job_id_string {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Set maximum job_ids to track limit
-    Readonly my $MAX_JOB_IDS_TO_TRACK => 100;
+    Readonly my $MAX_JOB_IDS_TO_TRACK => 1000;
 
     # Alias job_id chain array
     my $job_ids_ref = $job_id_href->{$case_id_chain_key}{$chain_key};
@@ -1689,7 +1686,7 @@ sub limit_job_id_string {
 
 sub print_wait {
 
-## Function : Calculates when to print "wait" statement and prints "wait" to supplied filehandle when adequate.
+## Function : Calculates when to print "wait" statement and prints "wait" to supplied filehandle when adequate
 ## Returns  : $process_batches_count
 ## Arguments: $filehandle            => filehandle to print "wait" statment to
 ##          : $max_process_number    => The maximum number of processes to be use before printing "wait" statement
@@ -1728,19 +1725,17 @@ sub print_wait {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Gnu::Bash qw{gnu_wait};
+    use MIP::Program::Gnu::Bash qw{ gnu_wait };
 
-    # Using only nr of processs eq the maximum number of process scaled by the batch count
-    if ( $process_counter == $process_batches_count * $max_process_number ) {
+    ## Return if nr of processes has not reached the max for this batch
+    return $process_batches_count
+      if ( $process_counter != $process_batches_count * $max_process_number );
 
-        # Print wait statement to filehandle
-        gnu_wait( { filehandle => $filehandle, } );
-        say {$filehandle} $NEWLINE;
+    gnu_wait( { filehandle => $filehandle, } );
+    say {$filehandle} $NEWLINE;
 
-# Increase the maximum number of processs allowed to be used since "wait" was just printed
-        $process_batches_count = $process_batches_count + 1;
-    }
-    return $process_batches_count;
+    ## Increment and then return maximum number of processes allowed to be used since "wait" was just printed
+    return ++$process_batches_count;
 }
 
 sub submit_recipe {
@@ -1883,6 +1878,68 @@ sub submit_recipe {
         }
     );
     return 1;
+}
+
+sub track_job_id_status {
+
+## Function : Write command to track job_ids status
+## Returns  :
+## Arguments: $filehandle              => Filehandle to write to
+##          : $job_ids_ref             => Job ids
+##          : $log_file_path           => Log file to write job_id progress to
+##          : $sacct_format_fields_ref => Format and fields of sacct output
+##          : $submission_profile      => Process manager
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $job_ids_ref;
+    my $log_file_path;
+    my $sacct_format_fields_ref;
+
+    ## Default(s)
+    my $submission_profile;
+
+    my $tmpl = {
+        filehandle => { required => 1, store => \$filehandle, },
+        job_ids_ref   => { default     => [], store => \$job_ids_ref, strict_type => 1, },
+        log_file_path => { strict_type => 1,  store => \$log_file_path, },
+        sacct_format_fields_ref => {
+            default     => [],
+            store       => \$sacct_format_fields_ref,
+            strict_type => 1,
+        },
+        submission_profile => {
+            default     => q{slurm},
+            store       => \$submission_profile,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Workloadmanager::Slurm qw{ slurm_track_progress };
+
+    return 0 if ( not @{$job_ids_ref} );
+
+    return 0 if ( not defined $log_file_path
+        and not $log_file_path );
+
+    if ( $submission_profile eq q{slurm} ) {
+        ## Output SLURM info on each job via sacct command
+        ## and write to log file path
+
+        slurm_track_progress(
+            {
+                filehandle              => $filehandle,
+                job_ids_ref             => $job_ids_ref,
+                log_file_path           => $log_file_path,
+                sacct_format_fields_ref => $sacct_format_fields_ref,
+            }
+        );
+    }
+    return;
 }
 
 sub write_job_ids_to_file {

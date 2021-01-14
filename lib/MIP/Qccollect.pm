@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -22,9 +21,6 @@ use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE $SPACE $TAB $UNDERSCORE };
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
