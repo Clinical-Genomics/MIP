@@ -145,7 +145,7 @@ sub analysis_markduplicates {
     use MIP::File_info qw{ get_merged_infile_prefix };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_markduplicates picardtools_gatherbamfiles };
