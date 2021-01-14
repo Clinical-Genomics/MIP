@@ -10,54 +10,12 @@ use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
-## CPANM
-use Readonly;
-
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ update_dynamic_config_parameters update_with_dynamic_config_parameters };
-}
-
-sub update_dynamic_config_parameters {
-
-## Function : Updates a scalar reference with dynamic parameter values. Leaves other entries untouched.
-## Returns  :
-## Arguments: $active_parameter_ref   => Active parameter for this analysis {REF}
-##          : $dynamic_parameter_href => Map of dynamic parameters
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_ref;
-    my $dynamic_parameter_href;
-
-    my $tmpl = {
-        active_parameter_ref => {
-            required => 1,
-            store    => \$active_parameter_ref,
-        },
-        dynamic_parameter_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$dynamic_parameter_href,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-  DYNAMIC_PARAMETER:
-    while ( my ( $dynamic_parameter_name, $dynamic_parameter_value ) =
-        each %{$dynamic_parameter_href} )
-    {
-
-        ${$active_parameter_ref} =~ s/$dynamic_parameter_name!/$dynamic_parameter_value/xsmgi;
-    }
-    return;
+    our @EXPORT_OK = qw{ update_with_dynamic_config_parameters };
 }
 
 sub update_with_dynamic_config_parameters {
@@ -88,6 +46,8 @@ sub update_with_dynamic_config_parameters {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ update_dynamic_config_parameters };
 
     ## Return if variable isn't in use
     return if ( not defined $active_parameter_href );
