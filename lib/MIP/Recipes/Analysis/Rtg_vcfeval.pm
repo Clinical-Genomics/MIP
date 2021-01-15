@@ -204,7 +204,6 @@ sub analysis_rtg_vcfeval {
     );
 
     my $outdir_path_prefix  = $io{out}{dir_path_prefix};
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
 
     ## Filehandles

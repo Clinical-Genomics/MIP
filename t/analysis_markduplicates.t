@@ -71,8 +71,9 @@ my %file_info = test_mip_hashes(
     }
 );
 
-$file_info{$sample_id}{merged_infile} = q{a_prefix};
+$file_info{$sample_id}{merged_infile}          = q{a_prefix};
 $file_info{$sample_id}{$recipe_name}{file_tag} = q{mdup};
+$file_info{primary_contigs}                    = $file_info{contigs};
 
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -83,11 +84,11 @@ my %parameter = test_mip_hashes(
 );
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $sample_id,
-        parameter_href    => \%parameter,
-        recipe_name       => $recipe_name,
-        step              => q{bam},
+        file_info_href => \%file_info,
+        id             => $sample_id,
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{bam},
     }
 );
 

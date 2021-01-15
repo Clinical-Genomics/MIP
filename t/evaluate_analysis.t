@@ -69,8 +69,7 @@ my %sample_info = test_mip_hashes(
     }
 );
 
-my $eval_metric_file =
-  catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.3-.yaml} );
+my $eval_metric_file = catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.3-.yaml} );
 
 ## Then set the relevant evaluation metrics for the analysis
 my $is_ok = evaluate_analysis(
@@ -115,10 +114,6 @@ trap {
     )
 };
 ## Then skip evaluation
-like(
-    $trap->stderr,
-    qr/Supplied\seval_metric_file/xms,
-    q{No relevant evaluation metrics}
-);
+like( $trap->stderr, qr/Supplied\seval_metric_file/xms, q{No relevant evaluation metrics} );
 
 done_testing();

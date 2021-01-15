@@ -37,9 +37,9 @@ BEGIN {
       parse_sample_fastq_file_attributes
       parse_select_file_contigs
       set_alt_loci_contigs
-      set_bam_contigs
       set_dict_contigs
       set_file_tag
+      set_human_genome_reference_features
       set_infiles
       set_is_sample_files_compressed
       set_human_genome_reference_features
@@ -868,26 +868,26 @@ sub set_alt_loci_contigs {
     return;
 }
 
-sub set_bam_contigs {
+sub set_primary_contigs {
 
-## Function : Set bam contigs
+## Function : Set primary contigs
 ## Returns  :
-## Arguments: $bam_contig_set_name => Bam contig set identifier
+## Arguments: $contig_set_name     => Contig set identifier
 ##          : $file_info_href      => File info hash {REF}
 ##          : $primary_contigs_ref => Primary contig hash {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $bam_contig_set_name;
+    my $contig_set_name;
     my $file_info_href;
     my $primary_contigs_ref;
 
     my $tmpl = {
-        bam_contig_set_name => {
+        contig_set_name => {
             defined     => 1,
             required    => 1,
-            store       => \$bam_contig_set_name,
+            store       => \$contig_set_name,
             strict_type => 1,
         },
         file_info_href => {
@@ -909,7 +909,7 @@ sub set_bam_contigs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Set bam contig sets
-    @{ $file_info_href->{$bam_contig_set_name} } = @{$primary_contigs_ref};
+    @{ $file_info_href->{$contig_set_name} } = @{$primary_contigs_ref};
 
     return;
 }
@@ -1278,52 +1278,6 @@ sub set_merged_infile_prefix {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     $file_info_href->{$sample_id}{merged_infile} = $merged_infile_prefix;
-
-    return;
-}
-
-sub set_primary_contigs {
-
-## Function : Set primary contigs
-## Returns  :
-## Arguments: $file_info_href          => File info hash {REF}
-##          : $primary_contigs_ref     => Primary contig hash {REF}
-##          : $primary_contig_set_name => Primary contig set identifier
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_info_href;
-    my $primary_contigs_ref;
-    my $primary_contig_set_name;
-
-    my $tmpl = {
-        file_info_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_href,
-            strict_type => 1,
-        },
-        primary_contigs_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$primary_contigs_ref,
-            strict_type => 1,
-        },
-        primary_contig_set_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$primary_contig_set_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## Set primary contig sets
-    @{ $file_info_href->{$primary_contig_set_name} } = @{$primary_contigs_ref};
 
     return;
 }

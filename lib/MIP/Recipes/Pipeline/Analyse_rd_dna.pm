@@ -128,7 +128,8 @@ sub parse_rd_dna {
     ## Constants
     Readonly my @MIP_VEP_PLUGINS                 => qw{ sv_vep_plugin vep_plugin };
     Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES => qw{ cnvnator_ar delly_reformat tiddit };
-    Readonly my @ONLY_WGS_RECIPIES => qw{ cnvnator_ar delly_call delly_reformat expansionhunter
+    Readonly my @ONLY_WGS_RECIPIES               =>
+      qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter
       samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
@@ -436,10 +437,11 @@ sub pipeline_analyse_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Analysis qw{ set_rankvariants_ar set_recipe_bwa_mem set_recipe_deepvariant };
+    use MIP::Analysis
+      qw{ set_rankvariants_ar set_recipe_bwa_mem set_recipe_deepvariant set_recipe_gatk_variantrecalibration };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Parse::Reference qw{ parse_references };
-    use MIP::Set::Analysis qw{ set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type };
+    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
@@ -653,7 +655,6 @@ sub pipeline_analyse_rd_dna {
     set_recipe_gatk_variantrecalibration(
         {
             analysis_recipe_href => \%analysis_recipe,
-            log                  => $log,
             sample_ids_ref       => $active_parameter_href->{sample_ids},
             use_cnnscorevariants => $active_parameter_href->{gatk_cnnscorevariants},
         }

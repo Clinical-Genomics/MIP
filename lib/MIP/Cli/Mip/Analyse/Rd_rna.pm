@@ -48,13 +48,12 @@ sub run {
     my $level     = q{rd_rna};
     my %parameter = get_parameter_from_definition_files( { level => $level, } );
 
-    my @rd_rna_definition_file_paths =
-      get_parameter_definition_file_paths( { level => $level, } );
+    my @rd_rna_definition_file_paths = get_parameter_definition_file_paths( { level => $level, } );
 
     ### To write parameters and their values to log in logical order
     ## Adds the order of first level keys from definition files to array
-    my @order_parameters = get_order_of_parameters(
-        { define_parameters_files_ref => \@rd_rna_definition_file_paths, } );
+    my @order_parameters =
+      get_order_of_parameters( { define_parameters_files_ref => \@rd_rna_definition_file_paths, } );
 
     ## Print recipes if requested and exit
     print_recipe(
@@ -297,11 +296,10 @@ sub _build_usage {
 
     option(
         q{gatk_baserecalibration} => (
-            cmd_tags => [q{Analysis recipe switch}],
-            documentation =>
-              q{Recalibration of bases using GATK BaseReCalibrator/PrintReads},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Recalibration of bases using GATK BaseReCalibrator/PrintReads},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -542,8 +540,7 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             cmd_tags      => [q{Default: CONSERVATIVE; Set to "0" to disable}],
             documentation => q{PCR indel model to use},
             is            => q{rw},
-            isa =>
-              ArrayRef [ enum( [ 0, qw{ AGGRESSIVE CONSERVATIVE HOSTILE NONE } ] ), ],
+            isa => ArrayRef [ enum( [ 0, qw{ AGGRESSIVE CONSERVATIVE HOSTILE NONE } ] ), ],
         )
     );
 
@@ -657,12 +654,11 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_variantfiltration_cluster_size} => (
-            cmd_flag => q{gatk_variantfiltration_cluster_size},
-            cmd_tags => [q{Default: 3}],
-            documentation =>
-              q{GATK VariantFiltration, the number of SNPs which make up a cluster},
-            is  => q{rw},
-            isa => Int,
+            cmd_flag      => q{gatk_variantfiltration_cluster_size},
+            cmd_tags      => [q{Default: 3}],
+            documentation => q{GATK VariantFiltration, the number of SNPs which make up a cluster},
+            is            => q{rw},
+            isa           => Int,
         )
     );
 
@@ -678,10 +674,10 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
 
     option(
         q{gatk_variantfiltration_cluster_window_size} => (
-            cmd_flag => q{gatk_variantfiltration_cluster_window_size},
-            cmd_tags => [q{Default: 35}],
+            cmd_flag      => q{gatk_variantfiltration_cluster_window_size},
+            cmd_tags      => [q{Default: 35}],
             documentation =>
-q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered SNPs},
+              q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered SNPs},
             is  => q{rw},
             isa => Int,
         )
@@ -716,7 +712,7 @@ q{GATK VariantFiltration, window size (in bases) in which to evaluate clustered 
 
     option(
         q{qccollect_regexp_file} => (
-            cmd_tags => [q{Default: qc_regexp_-v1.25-.yaml}],
+            cmd_tags      => [q{Default: qc_regexp_-v1.25-.yaml}],
             documentation =>
 q{Regular expression file containing the regular expression to be used for each program},
             is  => q{rw},
@@ -726,8 +722,7 @@ q{Regular expression file containing the regular expression to be used for each 
 
     option(
         q{qccollect_sampleinfo_file} => (
-            cmd_tags =>
-              [q{Default: {outdata_dir}/{case_id}/{case_id}_qc_sample_info.yaml}],
+            cmd_tags      => [q{Default: {outdata_dir}/{case_id}/{case_id}_qc_sample_info.yaml}],
             documentation =>
               q{Sample info file containing info on what to parse from this analysis run},
             is  => q{rw},
@@ -744,11 +739,10 @@ q{Regular expression file containing the regular expression to be used for each 
     );
     option(
         q{multiqc_ar} => (
-            cmd_tags => [q{Analysis recipe switch}],
-            documentation =>
-              q{Create aggregate bioinformatics analysis report across many samples},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Create aggregate bioinformatics analysis report across many samples},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
@@ -827,8 +821,7 @@ q{Regular expression file containing the regular expression to be used for each 
             cmd_tags      => [q{Default: reverse_stranded}],
             documentation => q{Strandedness of library},
             is            => q{rw},
-            isa =>
-              ArrayRef [ enum( [qw{ unstranded forward_stranded reverse_stranded }] ), ],
+            isa => ArrayRef [ enum( [qw{ unstranded forward_stranded reverse_stranded }] ), ],
         )
     );
 

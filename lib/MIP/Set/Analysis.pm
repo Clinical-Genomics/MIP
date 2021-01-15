@@ -23,71 +23,9 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      set_recipe_gatk_variantrecalibration
       set_recipe_on_analysis_type
       set_recipe_star_aln
     };
-}
-
-sub set_recipe_gatk_variantrecalibration {
-
-## Function : Update which gatk variant recalibration to use depending on number of samples
-## Returns  :
-## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
-##          : $log                  => Log object to write to
-##          : $sample_ids_ref       => Sample ids {REF}
-##          : $use_cnnscorevariants => Use gatk cnnscorevariants recipe
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_recipe_href;
-    my $log;
-    my $sample_ids_ref;
-    my $use_cnnscorevariants;
-
-    my $tmpl = {
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
-        },
-        sample_ids_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_ids_ref,
-            strict_type => 1,
-        },
-        use_cnnscorevariants => {
-            store       => \$use_cnnscorevariants,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Analysis::Gatk_cnnscorevariants qw{ analysis_gatk_cnnscorevariants };
-
-    ## Use already set gatk_variantrecalibration recipe
-    return if ( @{$sample_ids_ref} != 1 );
-
-    return if ( not $use_cnnscorevariants );
-
-    $log->warn(
-        q{Switched from VariantRecalibration to CNNScoreVariants for single sample analysis});
-
-    ## Use new CNN recipe for single samples
-    $analysis_recipe_href->{gatk_variantrecalibration} = \&analysis_gatk_cnnscorevariants;
-
-    return;
 }
 
 sub set_recipe_on_analysis_type {
