@@ -1265,7 +1265,7 @@ sub parse_infiles {
         my @infiles = get_file_names(
             {
                 file_directory   => $infile_directory,
-                rule_name        => q{*.fastq*},
+                rule_name        => qr/ [.](fastq|fq)([.]gz)? \z /xmsn,
                 rule_skip_subdir => q{original_fastq_files},
             }
         );

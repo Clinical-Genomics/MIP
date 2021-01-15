@@ -646,7 +646,7 @@ sub _fastq_file_name_regexp {
 
     my %fastq_file_name_regexp = (
         features => [qw{ lane date flowcell infile_sample_id index direction }],
-        regexp   => q?(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq?,
+        regexp   => q!(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).(?:fastq|fq)!,
     );
 
     return %fastq_file_name_regexp;

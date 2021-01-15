@@ -300,8 +300,7 @@ sub get_file_names {
             strict_type => 1,
         },
         rule_name => {
-            store       => \$rule_name,
-            strict_type => 1,
+            store => \$rule_name,
         },
         rule_skip_subdir => {
             store       => \$rule_skip_subdir,
