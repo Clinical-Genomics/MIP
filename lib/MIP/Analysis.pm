@@ -41,6 +41,7 @@ BEGIN {
       set_rankvariants_ar
       set_recipe_bwa_mem
       set_recipe_deepvariant
+      set_recipe_gatk_variantrecalibration
       update_prioritize_flag
       update_recipe_mode_for_fastq_compatibility
       update_recipe_mode_for_pedigree
@@ -871,6 +872,62 @@ sub set_recipe_deepvariant {
         $analysis_recipe_href->{deepvariant} = undef;
         return;
     }
+    return;
+}
+
+sub set_recipe_gatk_variantrecalibration {
+
+## Function : Update which gatk variant recalibration to use depending on number of samples
+## Returns  :
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $sample_ids_ref       => Sample ids {REF}
+##          : $use_cnnscorevariants => Use gatk cnnscorevariants recipe
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $sample_ids_ref;
+    my $use_cnnscorevariants;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+        use_cnnscorevariants => {
+            store       => \$use_cnnscorevariants,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Gatk_cnnscorevariants qw{ analysis_gatk_cnnscorevariants };
+
+    ## Use already set gatk_variantrecalibration recipe
+    return if ( @{$sample_ids_ref} != 1 );
+
+    return if ( not $use_cnnscorevariants );
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    $log->warn(
+        q{Switched from VariantRecalibration to CNNScoreVariants for single sample analysis});
+
+    ## Use new CNN recipe for single samples
+    $analysis_recipe_href->{gatk_variantrecalibration} = \&analysis_gatk_cnnscorevariants;
+
     return;
 }
 

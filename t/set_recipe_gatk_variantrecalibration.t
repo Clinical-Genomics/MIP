@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -30,14 +29,14 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::Analysis}  => [qw{ set_recipe_gatk_variantrecalibration }],
+        q{MIP::Analysis}       => [qw{ set_recipe_gatk_variantrecalibration }],
         q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::Analysis qw{ set_recipe_gatk_variantrecalibration };
+use MIP::Analysis qw{ set_recipe_gatk_variantrecalibration };
 use MIP::Recipes::Analysis::Gatk_cnnscorevariants qw{ analysis_gatk_cnnscorevariants };
 
 diag(   q{Test set_recipe_gatk_variantrecalibration from Analysis.pm}
@@ -48,50 +47,48 @@ diag(   q{Test set_recipe_gatk_variantrecalibration from Analysis.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { no_screen => 1, } );
+test_log( { no_screen => 1, } );
 
 ## Given more than a single sample
 my %analysis_recipe;
 my $gatk_cnnscorevariants = 1;
 my @sample_ids            = qw{ sample_1 sample_2 };
 
+## When setting the gat variantrecalibration recipe to use
 set_recipe_gatk_variantrecalibration(
     {
         analysis_recipe_href => \%analysis_recipe,
-        log                  => $log,
         sample_ids_ref       => \@sample_ids,
         use_cnnscorevariants => $gatk_cnnscorevariants,
     }
 );
 
 ## Then skip setting cnnscorevariants recipe in hash
-is( $analysis_recipe{gatk_variantrecalibration},
-    undef, q{Skip when more than single sample} );
+is( $analysis_recipe{gatk_variantrecalibration}, undef, q{Skip when more than single sample} );
 
 ## Given single sample, when not to use cnnscorevariants
 $gatk_cnnscorevariants = 0;
 pop @sample_ids;
 
+## When setting the gat variantrecalibration recipe to use
 set_recipe_gatk_variantrecalibration(
     {
         analysis_recipe_href => \%analysis_recipe,
-        log                  => $log,
         sample_ids_ref       => \@sample_ids,
         use_cnnscorevariants => $gatk_cnnscorevariants,
     }
 );
 
 ## Then skip setting cnnscorevariants recipe in hash
-is( $analysis_recipe{gatk_variantrecalibration},
-    undef, q{Skip when not using cnnscorevariants} );
+is( $analysis_recipe{gatk_variantrecalibration}, undef, q{Skip when not using cnnscorevariants} );
 
 ## Given single sample, when turned on cnnscorevariants
 $gatk_cnnscorevariants = 1;
 
+## When setting the gat variantrecalibration recipe to use
 set_recipe_gatk_variantrecalibration(
     {
         analysis_recipe_href => \%analysis_recipe,
-        log                  => $log,
         sample_ids_ref       => \@sample_ids,
         use_cnnscorevariants => $gatk_cnnscorevariants,
     }
