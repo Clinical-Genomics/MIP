@@ -33,14 +33,13 @@ our $USAGE = build_usage( {} );
 my $VERBOSE = 1;
 ## Set paths
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data} );
-my $eval_metric_file =
-  catfile( dirname($Bin), qw{ templates qc_eval_metric_-v1.2-.yaml } );
-my $mip_path      = catfile( dirname($Bin), q{mip} );
-my $log_file_path = catfile( cwd(),         q{qc_metrics_qccollect.log} );
-my $test_reference_path = catdir( $cluster_constant_path, q{references} );
-my $regexp_file_path    = catfile( $test_reference_path, q{qc_regexp_-v1.26-.yaml} );
-my $sample_info_file    = catfile( $cluster_constant_path,
-    qw{ test_data 643594-miptest_qc_sample_info_ci.yaml } );
+my $eval_metric_file      = catfile( dirname($Bin), qw{ templates qc_eval_metric_-v1.3-.yaml } );
+my $mip_path              = catfile( dirname($Bin), q{mip} );
+my $log_file_path         = catfile( cwd(),         q{qc_metrics_qccollect.log} );
+my $test_reference_path   = catdir( $cluster_constant_path, q{references} );
+my $regexp_file_path      = catfile( $test_reference_path, q{qc_regexp_-v1.26-.yaml} );
+my $sample_info_file =
+  catfile( $cluster_constant_path, qw{ test_data 643594-miptest_qc_sample_info_ci.yaml } );
 my $outfile = catfile( cwd(), q{qc_metrics.yaml} );
 
 ### User Options
@@ -76,12 +75,9 @@ ok( can_run(q{mip}), q{Checking can run mip} );
 ## Test execution of mip
 # Create array ref for cmd
 my $cmds_ref = [
-    q{perl},           $mip_path,
-    qw{ qccollect},    q{--log_file},
-    $log_file_path,    q{--eval_metric_file},
-    $eval_metric_file, q{--regexp_file},
-    $regexp_file_path, q{--sample_info_file},
-    $sample_info_file, q{--evaluate_plink_gender},
+    q{perl},           $mip_path,             qw{ qccollect},    q{--log_file},
+    $log_file_path,    q{--eval_metric_file}, $eval_metric_file, q{--regexp_file},
+    $regexp_file_path, q{--sample_info_file}, $sample_info_file, q{--evaluate_plink_gender},
     q{--outfile},      $outfile,
 ];
 

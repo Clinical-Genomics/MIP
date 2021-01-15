@@ -22,16 +22,13 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::File_info}      => [qw{ set_primary_contigs }],
-);
+    my %perl_module = ( q{MIP::File_info} => [qw{ set_primary_contigs }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -62,14 +59,13 @@ my %file_info;
 
 set_primary_contigs(
     {
-        file_info_href          => \%file_info,
-        primary_contigs_ref     => \@grch38_contigs,
-        primary_contig_set_name => $contig_set,
+        file_info_href      => \%file_info,
+        primary_contigs_ref => \@grch38_contigs,
+        contig_set_name     => $contig_set,
     }
 );
 
 ## Then priamry contigs sets should be set for 38
-is_deeply( \@{ $file_info{$contig_set} },
-    \@grch38_contigs, q{Set grch38 reference contigs} );
+is_deeply( \@{ $file_info{$contig_set} }, \@grch38_contigs, q{Set grch38 reference contigs} );
 
 done_testing();

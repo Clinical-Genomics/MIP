@@ -59,8 +59,7 @@ my %sample_info = test_mip_hashes(
 );
 
 ## Given a file with evaluation metrics
-my $eval_metric_file =
-  catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.3-.yaml} );
+my $eval_metric_file = catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.3-.yaml} );
 
 ## When defining the evaluation metrics based on the analysis
 my %evaluate_metric = define_evaluate_metric(

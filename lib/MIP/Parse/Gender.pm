@@ -23,6 +23,7 @@ use MIP::Constants qw{ $BACKWARD_SLASH
   $DASH
   $DOT
   $DOUBLE_QUOTE
+  $EQUALS
   $LOG_NAME
   $OPEN_PARENTHESIS
   $PIPE
@@ -323,8 +324,12 @@ sub parse_fastq_for_gender {
         ## Build command for streaming of chunk from fastq file(s)
         my @bwa_infiles = build_stream_file_cmd( { fastq_files_ref => \@fastq_files, } );
 
+        ## Make reference dir available
+        my @commands = ( q{SINGULARITY_BIND} . $EQUALS . $active_parameter_href->{reference_dir} );
+
         ## Build bwa mem command
-        my @commands = bwa_mem2_mem(
+        push @commands,
+          bwa_mem2_mem(
             {
                 idxbase                 => $referencefile_path,
                 infile_path             => $bwa_infiles[0],
@@ -333,7 +338,7 @@ sub parse_fastq_for_gender {
                 second_infile_path      => $bwa_infiles[1],
                 thread_number           => 2,
             }
-        );
+          );
         push @commands, $PIPE;
 
         ## Cut column with contig name

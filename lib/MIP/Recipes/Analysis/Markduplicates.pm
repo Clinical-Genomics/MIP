@@ -32,7 +32,7 @@ BEGIN {
 
 ## Constants
 Readonly my $JAVA_MEMORY_ALLOCATION      => 6;
-Readonly my $JAVA_MEMORY_RECIPE_ADDITION => 1;
+Readonly my $JAVA_MEMORY_RECIPE_ADDITION => 2;
 Readonly my $JAVA_GUEST_OS_MEMORY => $ANALYSIS{JAVA_GUEST_OS_MEMORY} + $JAVA_MEMORY_RECIPE_ADDITION;
 
 sub analysis_markduplicates {
@@ -223,23 +223,20 @@ sub analysis_markduplicates {
     my %outfile_path        = %{ $io{out}{file_path_href} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
 
+    ## Update memory and parallel processes for markduplicates
+    my ( $recipe_memory, $contig_memory_href, $parallel_processes ) = _get_markdup_resources(
+        {
+            active_contigs_ref  => $file_info_href->{bam_contigs},
+            node_memory         => $active_parameter_href->{node_ram_memory},
+            primary_contigs_ref => $file_info_href->{primary_contigs},
+            recipe_core_number  => $core_number,
+        }
+    );
+
     ## Filehandles
     # Create anonymous filehandle
     my $filehandle      = IO::Handle->new();
     my $xargsfilehandle = IO::Handle->new();
-
-    ## Update recipe memory allocation for picard
-    ## Variables used downstream of if statment
-    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
-
-    ## Update the memory allocation
-    $memory_allocation = update_memory_allocation(
-        {
-            node_ram_memory           => $active_parameter_href->{node_ram_memory},
-            parallel_processes        => $core_number,
-            process_memory_allocation => $process_memory_allocation,
-        }
-    );
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -249,7 +246,7 @@ sub analysis_markduplicates {
             directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $memory_allocation,
+            memory_allocation     => $recipe_memory,
             process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
@@ -261,14 +258,6 @@ sub analysis_markduplicates {
 
     ## Marking Duplicates
     say {$filehandle} q{## Marking Duplicates};
-
-    my $parallel_processes = get_parallel_processes(
-        {
-            core_number               => $core_number,
-            process_memory_allocation => $process_memory_allocation,
-            recipe_memory_allocation  => $recipe{memory},
-        }
-    );
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -287,6 +276,7 @@ sub analysis_markduplicates {
 
         my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
         my $metrics_file    = $outfile_path_prefix . $DOT . $contig . $DOT . q{metric};
+
         picardtools_markduplicates(
             {
                 create_index     => q{true},
@@ -294,7 +284,7 @@ sub analysis_markduplicates {
                 infile_paths_ref => [ $infile_path{$contig} ],
                 java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages       => $active_parameter_href->{java_use_large_pages},
-                memory_allocation          => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                memory_allocation          => q{Xmx} . $contig_memory_href->{$contig} . q{g},
                 metrics_file               => $metrics_file,
                 optical_duplicate_distance =>
                   $active_parameter_href->{markduplicates_picardtools_opt_dup_dist},
@@ -1141,4 +1131,91 @@ sub _calculate_fraction_duplicates_for_all_metric_files {
     return;
 }
 
+sub _get_markdup_resources {
+
+## Function : Calculate and return resources for markduplicates recipe
+## Returns  : $recipe_memory, $contig_memory_href, $parallel_processes
+## Arguments: $active_contigs_ref  => Active contigs {REF}
+##          : $node_memory         => Available memory
+##          : $primary_contigs_ref => Primary contigs {REF}
+##          : $recipe_core_number  => Allocated core number
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_contigs_ref;
+    my $node_memory;
+    my $primary_contigs_ref;
+    my $recipe_core_number;
+
+    my $tmpl = {
+        active_contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$active_contigs_ref,
+            strict_type => 1,
+        },
+        node_memory => {
+            defined     => 1,
+            required    => 1,
+            store       => \$node_memory,
+            strict_type => 1,
+        },
+        primary_contigs_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$primary_contigs_ref,
+            strict_type => 1,
+        },
+        recipe_core_number => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_core_number,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use List::Util qw{ sum };
+    use MIP::Environment::Cluster qw{ check_recipe_memory_allocation };
+
+    Readonly my $CONTIG_MEM   => 6;
+    Readonly my $CONTIG_2_MEM => 12;
+
+    ## Java memory per contig
+    my %contig_mem_alloc = map { $_ => $CONTIG_MEM } @{$primary_contigs_ref};
+    $contig_mem_alloc{ $primary_contigs_ref->[1] } = $CONTIG_2_MEM;
+
+    ## Slice hash on active contigs
+    %contig_mem_alloc = %contig_mem_alloc{ @{$active_contigs_ref} };
+
+    ## Calculate max recipe memory in use
+    my @process_mem_allocs        = map { $_ + $JAVA_GUEST_OS_MEMORY } values %contig_mem_alloc;
+    my @sorted_process_mem_allocs = reverse sort { $a <=> $b } @process_mem_allocs;
+    my $max_process_mem           = sum @sorted_process_mem_allocs[ 0 .. $recipe_core_number - 1 ];
+    my $recipe_memory             = check_recipe_memory_allocation(
+        {
+            node_ram_memory          => $node_memory,
+            recipe_memory_allocation => $max_process_mem,
+        }
+    );
+
+    ## Get number of parallel processes given recipe memory
+    my $parallel_processes;
+    my $memory_requirement = 0;
+
+  MEMORY:
+    foreach my $memory_alloc (@sorted_process_mem_allocs) {
+
+        last if ( $memory_requirement >= $recipe_memory );
+
+        $parallel_processes++;
+        $memory_requirement += $memory_alloc;
+    }
+
+    return $recipe_memory, \%contig_mem_alloc, $parallel_processes;
+}
 1;
