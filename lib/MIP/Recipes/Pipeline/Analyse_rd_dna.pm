@@ -220,7 +220,7 @@ sub parse_rd_dna {
     );
 
     ## Check that the supplied gatk sample map file paths exists
-    if ( $parameter_href->{gatk_genotypegvcfs}{default} ) {
+    if ( $active_parameter_href->{gatk_genotypegvcfs} ) {
         check_gatk_sample_map_paths(
             {
                 sample_map_path => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
