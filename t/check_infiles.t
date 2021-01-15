@@ -130,4 +130,17 @@ my $is_ok = check_infiles(
 ## Then return true
 ok( $is_ok, q{Passed check} );
 
+## Given external indata
+$is_ok = check_infiles(
+    {
+        external_data    => 1,
+        infiles_ref      => \@wrong_infiles,
+        infile_directory => $infile_directory,
+        sample_id        => $sample_id,
+    }
+);
+
+## Then return true
+ok( $is_ok, q{Passed check for external data} );
+
 done_testing();

@@ -1273,6 +1273,7 @@ sub parse_infiles {
         ## Check infiles found and that they contain sample_id
         check_infiles(
             {
+                external_data    => $active_parameter_href->{external_data},
                 infiles_ref      => \@infiles,
                 infile_directory => $infile_directory,
                 sample_id        => $sample_id,

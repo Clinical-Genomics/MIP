@@ -29,18 +29,25 @@ sub check_infiles {
 
 ## Function : Check infiles found and that they contain sample_id
 ## Returns  :
-## Arguments: $infiles_ref      => Infiles to check {REF}
+## Arguments: $external data    => Skip check on external data
+##          : $infiles_ref      => Infiles to check {REF}
 ##          : $infile_directory => Infile directory
 ##          : $sample_id        => Sample id
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $external_data;
     my $infiles_ref;
     my $infile_directory;
     my $sample_id;
 
     my $tmpl = {
+        external_data => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$external_data,
+            strict_type => 1,
+        },
         infile_directory => {
             defined     => 1,
             required    => 1,
@@ -73,6 +80,8 @@ sub check_infiles {
             qq{Could not find any fastq files in supplied infiles directory: $infile_directory});
         exit 1;
     }
+
+    return 1 if ($external_data);
 
     ## Check that infiledirs/infile contains sample_id in filename
   INFILE:

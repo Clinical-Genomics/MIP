@@ -79,6 +79,12 @@ exclude_contigs:
   data_type: ARRAY
   mandatory: no
   type: mip
+external_data:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
 case_id:
   associated_recipe:
     - mip

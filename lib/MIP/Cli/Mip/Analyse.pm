@@ -66,6 +66,15 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
         )
     );
 
+    parameter(
+        q{case_id} => (
+            documentation => q{Group id of samples to be compared},
+            is            => q{rw},
+            isa           => Str,
+            required      => 1,
+        )
+    );
+
     option(
         q{cluster_constant_path} => (
             documentation => q{Set the cluster constant path},
@@ -136,12 +145,11 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
         )
     );
 
-    parameter(
-        q{case_id} => (
-            documentation => q{Group id of samples to be compared},
+    option(
+        q{external_data} => (
+            documentation => q{Disable checks of fastq filename},
             is            => q{rw},
-            isa           => Str,
-            required      => 1,
+            isa           => Bool,
         )
     );
 
