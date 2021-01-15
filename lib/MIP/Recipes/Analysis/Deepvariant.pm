@@ -143,8 +143,6 @@ sub analysis_deepvariant {
             stream         => q{in},
         }
     );
-    use Data::Printer;
-    p %io;
 
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
