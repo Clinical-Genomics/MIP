@@ -128,11 +128,6 @@ sub analysis_glnexus {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    my %consensus_analysis_type_map =
-      ( MIXED => q{WGS}, PANEL => q{WES}, WGS => q{WGS}, WES => q{WES} );
-
-    my $consensus_analysis_type =
-      $consensus_analysis_type_map{ uc $parameter_href->{cache}{consensus_analysis_type} };
 
     my %recipe = parse_recipe_prerequisites(
         {
@@ -204,8 +199,6 @@ sub analysis_glnexus {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    my $config_type = q{DeepVariant} . $consensus_analysis_type;
-
     if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
         ## Glnexus
@@ -213,7 +206,7 @@ sub analysis_glnexus {
 
         glnexus_merge(
             {
-                config           => $config_type,
+                config           => q{DeepVariant_unfiltered},
                 dir              => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
                 filehandle       => $filehandle,
                 infile_paths_ref => \@genotype_infile_paths,
