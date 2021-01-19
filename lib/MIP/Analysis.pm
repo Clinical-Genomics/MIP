@@ -967,7 +967,6 @@ sub set_recipe_on_analysis_type {
       qw{ analysis_gatk_variantrecalibration_wes analysis_gatk_variantrecalibration_wgs };
     use MIP::Recipes::Analysis::Mip_vcfparser
       qw{ analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
-    use MIP::Recipes::Analysis::Telomerecat qw{ analysis_telomerecat };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_sv_wes analysis_vep_sv_wgs };
 
     my %analysis_type_recipe = (
