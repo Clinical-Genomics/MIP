@@ -29,14 +29,23 @@ sub check_gatk_sample_map_paths {
 
 ## Function : Check that the supplied gatk sample map file paths exists
 ## Returns  :
-## Arguments: $sample_map_path => Sample map path
+## Arguments: $gatk_genotypegvcfs_mode => On/off switch for gatk_genotypevcfs recipe
+##          : $sample_map_path        => Sample map path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $gatk_genotypegvcfs_mode;
     my $sample_map_path;
 
     my $tmpl = {
+        gatk_genotypegvcfs_mode => {
+            allow       => [qw{ 0 1 }],
+            defined     => 1,
+            required    => 1,
+            store       => \$gatk_genotypegvcfs_mode,
+            strict_type => 1,
+        },
         sample_map_path => {
             defined     => 1,
             required    => 1,
@@ -46,6 +55,8 @@ sub check_gatk_sample_map_paths {
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not $gatk_genotypegvcfs_mode );
 
     use MIP::Io::Read qw{ read_from_file };
 
