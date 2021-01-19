@@ -21,8 +21,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures
-  qw{ test_add_io_for_recipe test_log test_mip_hashes };
+use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes };
 
 BEGIN {
 
@@ -33,15 +32,13 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Analysis::Gatk_combinevariantcallsets} =>
           [qw{ analysis_gatk_combinevariantcallsets }],
-        q{MIP::Test::Fixtures} =>
-          [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
+        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
-  qw{ analysis_gatk_combinevariantcallsets };
+use MIP::Recipes::Analysis::Gatk_combinevariantcallsets qw{ analysis_gatk_combinevariantcallsets };
 
 diag(   q{Test analysis_gatk_combinevariantcallsets from Gatk_combinevariantcallsets.pm}
       . $COMMA
@@ -72,7 +69,7 @@ my $case_id = $active_parameter{case_id};
 $active_parameter{gatk_path}                            = q{gatk.jar};
 $active_parameter{gatk_combinevariantcallsets_bcf_file} = 1;
 
-my @variant_callers = qw{ gatk_variantrecalibration deepvariant };
+my @variant_callers = qw{ gatk_variantrecalibration glnexus_merge };
 
 my %file_info = test_mip_hashes(
     {
@@ -101,6 +98,7 @@ foreach my $caller (@variant_callers) {
         }
     );
     push @{ $parameter{cache}{variant_callers} }, $caller;
+    $active_parameter{$caller} = 1;
 }
 
 my @order_recipes = ( qw{ gatk_variantrecalibration glnexus_merge }, $recipe_name );

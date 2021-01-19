@@ -21,8 +21,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures
-  qw{ test_add_io_for_recipe test_log test_mip_hashes };
+use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes };
 
 BEGIN {
 
@@ -32,8 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Vcf2cytosure} => [qw{ analysis_vcf2cytosure }],
-        q{MIP::Test::Fixtures} =>
-          [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
+        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -82,7 +80,7 @@ my %parameter = test_mip_hashes(
 );
 
 ## Special case since vcf2cytosure needs to collect from recipes not immediate upstream
-my @order_recipes = ( qw{ gatk_baserecalibration sv_annotate }, $recipe_name );
+my @order_recipes = ( qw{ markduplicates sv_annotate }, $recipe_name );
 
 SAMPLE_ID:
 foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
@@ -92,7 +90,7 @@ foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
             file_info_href => \%file_info,
             id             => $sample_id,
             parameter_href => \%parameter,
-            recipe_name    => q{gatk_baserecalibration},
+            recipe_name    => q{markduplicates},
             step           => q{bam},
         }
     );

@@ -82,8 +82,6 @@ my %parameter = test_mip_hashes(
     }
 );
 
-my @order_recipes = ( qw{ markduplicates }, $recipe_name );
-
 SAMPLE_ID:
 foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
 
@@ -92,18 +90,8 @@ foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
             file_info_href => \%file_info,
             id             => $sample_id,
             parameter_href => \%parameter,
-            recipe_name    => q{markduplicates},
+            recipe_name    => $recipe_name,
             step           => q{bam},
-        }
-    );
-    test_add_io_for_recipe(
-        {
-            file_info_href    => \%file_info,
-            id                => $sample_id,
-            order_recipes_ref => \@order_recipes,
-            parameter_href    => \%parameter,
-            recipe_name       => $recipe_name,
-            step              => q{vcf},
         }
     );
 }

@@ -12,7 +12,6 @@ CHAIN_ALL:
     - bwa_mem2
     - samtools_merge
     - markduplicates
-    - gatk_baserecalibration
     # Parallel chains (branches), which inherit from MAIN in initiation
     - CHAIN_CHSEX:
       - chanjo_sexcheck
@@ -58,6 +57,7 @@ CHAIN_ALL:
         - deeptrio
         - glnexus_merge
       - GATK_HAPLOTYPECALLER:
+        - gatk_baserecalibration
         - gatk_haplotypecaller
         - gatk_genotypegvcfs
         - gatk_gathervcfs

@@ -232,7 +232,7 @@ sub analysis_vcf2cytosure {
       $infile_path;
 
     ## Collect BAM infiles for dependence recipes streams for all sample_ids
-    my %recipe_tag_keys = ( gatk_baserecalibration => q{out}, );
+    my %recipe_tag_keys = ( markduplicates => q{out}, );
 
     my $process_batches_count = 1;
     while ( my ( $sample_id_index, $sample_id ) = each @{ $active_parameter_href->{sample_ids} } ) {

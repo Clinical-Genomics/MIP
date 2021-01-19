@@ -158,8 +158,8 @@ sub analysis_deeptrio {
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 parameter_href => $parameter_href,
-                recipe_name    => q{markduplicates},
-                stream         => q{out},
+                recipe_name    => $recipe_name,
+                stream         => q{in},
             }
         );
         $infile_name_prefix = $sample_bam_io{in}{file_name_prefix};

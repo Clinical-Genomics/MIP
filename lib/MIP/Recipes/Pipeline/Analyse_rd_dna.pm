@@ -223,7 +223,8 @@ sub parse_rd_dna {
     ## Check that the supplied gatk sample map file paths exists
     check_gatk_sample_map_paths(
         {
-            sample_map_path => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
+            gatk_genotypegvcfs_mode => $active_parameter_href->{gatk_genotypegvcfs},
+            sample_map_path         => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
         }
     );
 
@@ -558,7 +559,7 @@ sub pipeline_analyse_rd_dna {
         : undef,                                                        # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
         deeptrio                    => undef,
-        deepvariant                 => undef,
+        deepvariant                 => \&analysis_deepvariant,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,

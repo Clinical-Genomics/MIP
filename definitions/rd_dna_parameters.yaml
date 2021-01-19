@@ -553,7 +553,7 @@ gatk_baserecalibration:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _brecal
   outfile_suffix: ".bam"
   program_executables:
@@ -1220,7 +1220,7 @@ gatk_haplotypecaller:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _haptc
   outfile_suffix: ".vcf"
   program_executables:
@@ -1291,7 +1291,7 @@ gatk_genotypegvcfs:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _gent
   outfile_suffix: ".vcf"
   program_executables:
@@ -1316,7 +1316,7 @@ gatk_gathervcfs:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: ""
   outfile_suffix: ".vcf"
   program_executables:
@@ -1334,7 +1334,7 @@ gatk_variantrecalibration:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _vrecal
   program_executables:
     - bcftools

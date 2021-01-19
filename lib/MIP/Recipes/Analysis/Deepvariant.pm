@@ -139,14 +139,14 @@ sub analysis_deepvariant {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            recipe_name    => q{markduplicates},
-            stream         => q{out},
+            recipe_name    => $recipe_name,
+            stream         => q{in},
         }
     );
 
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my $infile_path_prefix = $io{out}{file_path_prefix};
-    my $infile_suffix      = $io{out}{file_suffix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
     my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};

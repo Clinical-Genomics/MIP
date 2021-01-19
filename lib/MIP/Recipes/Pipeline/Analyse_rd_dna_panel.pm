@@ -194,7 +194,8 @@ sub parse_rd_dna_panel {
     ## Check that the supplied gatk sample map file paths exists
     check_gatk_sample_map_paths(
         {
-            sample_map_path => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
+            gatk_genotypegvcfs_mode => $active_parameter_href->{gatk_genotypegvcfs},
+            sample_map_path         => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
         }
     );
 

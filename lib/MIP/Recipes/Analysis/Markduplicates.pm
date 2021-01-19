@@ -144,7 +144,7 @@ sub analysis_markduplicates {
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::File_info qw{ get_merged_infile_prefix };
     use MIP::Get::File qw{ get_io_files };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_markduplicates picardtools_gatherbamfiles };
@@ -344,6 +344,20 @@ sub analysis_markduplicates {
             outfile_path         => $outfile_path_prefix . $outfile_suffix,
             referencefile_path   => $referencefile_path,
             temp_directory       => $temp_directory,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Rename the bam file index file so that Expansion Hunter can find it
+    say {$filehandle}
+      q{## Copy index file to ".bam.bai" so that Expansionhunter can find it downstream};
+
+    gnu_cp(
+        {
+            filehandle   => $filehandle,
+            force        => 1,
+            infile_path  => $outfile_path_prefix . q{.bai},
+            outfile_path => $outfile_path_prefix . $outfile_suffix . q{.bai},
         }
     );
 
