@@ -1,5 +1,6 @@
 package MIP::Config;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -251,8 +252,8 @@ sub parse_dynamic_config_parameters {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ update_dynamic_config_parameters };
-    use MIP::Update::Parameters qw{  update_with_dynamic_config_parameters };
+    use MIP::Active_parameter
+      qw{ update_dynamic_config_parameters update_with_dynamic_config_parameters };
 
     ## Loop through all config dynamic parameters and update value
   DYNAMIC_PARAM:

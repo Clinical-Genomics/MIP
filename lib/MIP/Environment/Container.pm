@@ -108,12 +108,7 @@ sub build_container_cmd {
         {
 
             ## Installation specific bind paths
-            if (
-                Dive(
-                    $container_href, ( $container_name, q{bind_path}, $executable_name, )
-                )
-              )
-            {
+            if ( Dive( $container_href, ( $container_name, q{bind_path}, $executable_name, ) ) ) {
                 push @{ $recipe_executable_bind_path_href->{$executable_name} },
                   $container_href->{$container_name}{bind_path}{$executable_name};
             }
@@ -193,9 +188,7 @@ sub get_recipe_executable_bind_path {
     my $temp_directory_quoted = quote_bash_variable(
         { string_with_variable_to_quote => $active_parameter_href->{temp_directory}, } );
     my $xdg_runtime_dir =
-        $temp_directory_quoted
-      . $COLON
-      . catfile( $EMPTY_STR, qw{ run user }, q{$(id -u)} );
+      $temp_directory_quoted . $COLON . catfile( $EMPTY_STR, qw{ run user }, q{$(id -u)} );
 
     my %recipe_executable_bind_path;
     my @recipes = get_cache(
@@ -268,9 +261,9 @@ sub parse_containers {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Active_parameter qw{ update_with_dynamic_config_parameters };
     use MIP::Config qw{ get_install_containers };
     use MIP::Constants qw{ set_container_cmd };
-    use MIP::Update::Parameters qw{ update_with_dynamic_config_parameters };
 
     %{ $active_parameter_href->{container} } =
       get_install_containers(

@@ -16,15 +16,10 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
+use MIP::Constants qw{ $COMMA $SPACE };
 
 BEGIN {
 
@@ -32,14 +27,12 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Set::Analysis}  => [qw{ set_recipe_on_analysis_type }],
-);
+    my %perl_module = ( q{MIP::Analysis} => [qw{ set_recipe_on_analysis_type }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::Analysis qw{ set_recipe_on_analysis_type };
+use MIP::Analysis qw{ set_recipe_on_analysis_type };
 use MIP::Recipes::Analysis::Mip_vcfparser
   qw{ analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
 
@@ -64,12 +57,13 @@ set_recipe_on_analysis_type(
     }
 );
 
-## Then set wgs recipe
+## Then set no recipe
 is_deeply( \%analysis_recipe, \%expected_recipe, q{Set no recipe when no program} );
 
 ## Given program name and wes
 $analysis_recipe{sv_vcfparser} = undef;
 my %expected_wes_recipe = ( sv_vcfparser => \&analysis_mip_vcfparser_sv_wes, );
+
 ## Update which recipe to use depending on consensus analysis type
 set_recipe_on_analysis_type(
     {
@@ -78,16 +72,12 @@ set_recipe_on_analysis_type(
     }
 );
 
-## Then set wgs recipe
-is(
-    $analysis_recipe{sv_vcfparser},
-    $expected_wes_recipe{sv_vcfparser},
-    q{Set wes recipe}
-);
+## Then set wes recipe
+is( $analysis_recipe{sv_vcfparser}, $expected_wes_recipe{sv_vcfparser}, q{Set wes recipe} );
 
 ## Given an existing wes recipes and wgs
 $consensus_analysis_type = q{wgs};
-my %expected_wgs_recipe = ( sv_vcfparser => \&analysis_mip_vcfparser_sv_wgs, );
+
 ## Update which recipe to use depending on consensus analysis type
 set_recipe_on_analysis_type(
     {
@@ -96,11 +86,28 @@ set_recipe_on_analysis_type(
     }
 );
 
+my %expected_wgs_recipe = ( sv_vcfparser => \&analysis_mip_vcfparser_sv_wgs, );
+
 ## Then wgs recipe should be set instead of wes
+is( $analysis_recipe{sv_vcfparser}, $expected_wgs_recipe{sv_vcfparser}, q{Set wgs recipe} );
+
+## Given program name, wes but not known consensus_analysis_type
+$consensus_analysis_type = q{not_known_consensus};
+$analysis_recipe{sv_vcfparser} = undef;
+
+## Update which recipe to use depending on consensus analysis type
+set_recipe_on_analysis_type(
+    {
+        consensus_analysis_type => $consensus_analysis_type,
+        analysis_recipe_href    => \%analysis_recipe,
+    }
+);
+
+## Then wgs recipe should be set
 is(
     $analysis_recipe{sv_vcfparser},
     $expected_wgs_recipe{sv_vcfparser},
-    q{Set wgs recipe}
+    q{Set wgs recipe when not known consensus analysis type}
 );
 
 ## Given a mixed consensus analysis type
@@ -117,10 +124,6 @@ set_recipe_on_analysis_type(
 );
 
 ## Then wgs recipe should be set as a default
-is(
-    $analysis_recipe{sv_vcfparser},
-    $expected_default_recipe{sv_vcfparser},
-    q{Set default recipe}
-);
+is( $analysis_recipe{sv_vcfparser}, $expected_default_recipe{sv_vcfparser}, q{Set default recipe} );
 
 done_testing();
