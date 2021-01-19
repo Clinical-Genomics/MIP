@@ -79,6 +79,7 @@ BEGIN {
       update_recipe_mode_with_dry_run_all
       update_reference_parameters
       update_to_absolute_path
+      update_with_dynamic_config_parameters
       write_references
     };
 }
@@ -2900,6 +2901,99 @@ sub update_to_absolute_path {
                 path           => $active_parameter_href->{$parameter_name},
             }
         );
+    }
+    return;
+}
+
+sub update_with_dynamic_config_parameters {
+
+## Function : Updates the config file to particular user/cluster with dynamic config parameters following specifications. Leaves other entries untouched.
+## Returns  :
+## Arguments: $active_parameter_href  => Active parameters for this analysis hash {REF}
+##          : $dynamic_parameter_href => Map of dynamic parameters
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $dynamic_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            required => 1,
+            store    => \$active_parameter_href,
+        },
+        dynamic_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$dynamic_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Active_parameter qw{ update_dynamic_config_parameters };
+
+    ## Return if variable isn't in use
+    return if ( not defined $active_parameter_href );
+
+    ## HASH
+    if ( ref $active_parameter_href eq q{HASH} ) {
+
+      KEY:
+        foreach my $key ( keys %{$active_parameter_href} ) {
+
+            next KEY if ( not defined $active_parameter_href->{$key} );
+
+            if (   ref $active_parameter_href->{$key} eq q{HASH}
+                or ref $active_parameter_href->{$key} eq q{ARRAY} )
+            {
+
+                update_with_dynamic_config_parameters(
+                    {
+                        active_parameter_href  => $active_parameter_href->{$key},
+                        dynamic_parameter_href => $dynamic_parameter_href,
+                    }
+                );
+            }
+
+            ## Update parameter
+            update_dynamic_config_parameters(
+                {
+                    active_parameter_ref   => \$active_parameter_href->{$key},
+                    dynamic_parameter_href => $dynamic_parameter_href,
+                }
+            );
+        }
+    }
+    ##  ARRAY
+    elsif ( ref $active_parameter_href eq q{ARRAY} ) {
+
+      ELEMENT:
+        while ( my ( $element_index, $element ) = each @{$active_parameter_href} ) {
+
+            next ELEMENT if ( not defined $element );
+
+            if ( ref $element eq q{HASH} or ref $element eq q{ARRAY} ) {
+
+                update_with_dynamic_config_parameters(
+                    {
+                        active_parameter_href  => $element,
+                        dynamic_parameter_href => $dynamic_parameter_href,
+                    }
+                );
+            }
+
+            ## Update parameter
+            update_dynamic_config_parameters(
+                {
+                    active_parameter_ref   => \$active_parameter_href->[$element_index],
+                    dynamic_parameter_href => $dynamic_parameter_href,
+                }
+            );
+        }
     }
     return;
 }

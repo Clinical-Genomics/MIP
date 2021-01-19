@@ -22,10 +22,10 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Active_parameter qw{ update_with_dynamic_config_parameters };
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Test::Fixtures qw{ test_log };
-use MIP::Update::Parameters qw{ update_with_dynamic_config_parameters };
 
 BEGIN {
 
@@ -51,9 +51,9 @@ diag(   q{Test parse_vep_plugin from Active_parameter.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { no_screen => 1, } );
+test_log( { no_screen => 1, } );
 
-## Read config for most up to date format
+## Given a config with vep plugins
 my %rd_dna_config = read_from_file(
     {
         format => q{yaml},
