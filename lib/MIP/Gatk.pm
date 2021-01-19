@@ -40,7 +40,7 @@ sub check_gatk_sample_map_paths {
 
     my $tmpl = {
         gatk_genotypegvcfs_mode => {
-            allow       => [qw{ 0 1 }],
+            allow       => [qw{ 0 1 2 }],
             defined     => 1,
             required    => 1,
             store       => \$gatk_genotypegvcfs_mode,
