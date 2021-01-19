@@ -23,83 +23,8 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      set_recipe_on_analysis_type
       set_recipe_star_aln
     };
-}
-
-sub set_recipe_on_analysis_type {
-
-## Function : Set which recipe to use depending on consensus analysis type
-## Returns  :
-## Arguments: $analysis_recipe_href    => Analysis recipe hash {REF}
-##          : $consensus_analysis_type => Consensus analysis type
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $analysis_recipe_href;
-    my $consensus_analysis_type;
-
-    my $tmpl = {
-        analysis_recipe_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$analysis_recipe_href,
-            strict_type => 1,
-        },
-        consensus_analysis_type => {
-            defined     => 1,
-            required    => 1,
-            store       => \$consensus_analysis_type,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Recipes::Analysis::Gatk_variantrecalibration
-      qw{ analysis_gatk_variantrecalibration_wes analysis_gatk_variantrecalibration_wgs };
-    use MIP::Recipes::Analysis::Mip_vcfparser
-      qw{ analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
-    use MIP::Recipes::Analysis::Telomerecat qw{ analysis_telomerecat };
-    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_sv_wes analysis_vep_sv_wgs };
-
-    my %analysis_type_recipe = (
-        vrn => {
-            sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
-            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wgs,
-        },
-        wes => {
-            gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wes,
-            sv_varianteffectpredictor => \&analysis_vep_sv_wes,
-            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wes,
-        },
-        wgs => {
-            gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wgs,
-            sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
-            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wgs,
-        },
-    );
-
-    ## If not a defined consensus analysis type e.g. "mixed"
-    if ( not exists $analysis_type_recipe{$consensus_analysis_type} ) {
-
-        ## Use wgs as fallback
-        $consensus_analysis_type = q{wgs};
-    }
-
-  ANALYSIS_RECIPE:
-    foreach my $recipe_name ( keys %{$analysis_recipe_href} ) {
-
-        next ANALYSIS_RECIPE
-          if ( not exists $analysis_type_recipe{$consensus_analysis_type}{$recipe_name} );
-
-        $analysis_recipe_href->{$recipe_name} =
-          $analysis_type_recipe{$consensus_analysis_type}{$recipe_name};
-    }
-    return;
 }
 
 sub set_recipe_star_aln {

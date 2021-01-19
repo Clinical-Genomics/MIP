@@ -436,10 +436,10 @@ sub pipeline_analyse_rd_dna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Analysis
-      qw{ set_rankvariants_ar set_recipe_bwa_mem set_recipe_deepvariant set_recipe_gatk_variantrecalibration };
+      qw{ set_rankvariants_ar set_recipe_bwa_mem set_recipe_deepvariant set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
+    use MIP::Parameter qw{ get_cache };
     use MIP::Parse::Reference qw{ parse_references };
-    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
@@ -623,11 +623,17 @@ sub pipeline_analyse_rd_dna {
         }
     );
 
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
     ## Update which recipe to use depending on consensus analysis type
     set_recipe_on_analysis_type(
         {
             analysis_recipe_href    => \%analysis_recipe,
-            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+            consensus_analysis_type => $consensus_analysis_type,
         }
     );
 
