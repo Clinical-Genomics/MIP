@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -30,7 +29,7 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Set::Analysis}  => [qw{ set_recipe_star_aln }],
+        q{MIP::Analysis}       => [qw{ set_recipe_star_aln }],
         q{MIP::Test::Fixtures} => [qw{ test_mip_hashes }],
     );
 
@@ -38,7 +37,7 @@ BEGIN {
 }
 
 use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln analysis_star_aln_mixed };
-use MIP::Set::Analysis qw{ set_recipe_star_aln };
+use MIP::Analysis qw{ set_recipe_star_aln };
 
 diag(   q{Test set_recipe_star_aln from Analysis.pm}
       . $COMMA
@@ -48,15 +47,18 @@ diag(   q{Test set_recipe_star_aln from Analysis.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given a sample with file info
-my $mip_file_format = q{ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane1};
-my $sample_id       = q{ADM1059A1};
-my %file_info       = test_mip_hashes( { mip_hash_name => q{file_info}, } );
-my @sample_ids      = ( $sample_id, );
-
+## Given an analysis recipe and a mip_file_format
 my %analysis_recipe;
+my $mip_file_format = q{ADM1059A1_161011_HHJJCCCXY_NAATGCGC_lane1};
 
-# When sample has consensus sequence run type
+## Given a sample with file info
+my %file_info = test_mip_hashes( { mip_hash_name => q{file_info}, } );
+
+## Given a sample id
+my $sample_id  = q{ADM1059A1};
+my @sample_ids = ( $sample_id, );
+
+## When setting star_aln recipe
 set_recipe_star_aln(
     {
         analysis_recipe_href => \%analysis_recipe,
@@ -66,13 +68,13 @@ set_recipe_star_aln(
 );
 
 ## Then use analysis_star_aln recipe
-is( $analysis_recipe{star_aln},
-    \&analysis_star_aln, q{Set star_aln single sequence run type} );
+is( $analysis_recipe{star_aln}, \&analysis_star_aln, q{Set star_aln single sequence run type} );
 
-# When sample has mixed single and paired end fastq files
+## Given a sample with mixed single and paired end fastq files
 push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, $mip_file_format;
 $file_info{$sample_id}{$mip_file_format}{sequence_run_type} = q{paired-end};
 
+## When setting star_aln recipe
 set_recipe_star_aln(
     {
         analysis_recipe_href => \%analysis_recipe,
@@ -81,7 +83,7 @@ set_recipe_star_aln(
     }
 );
 
-## Then use analysis_star_aln recipe_mixed
+## Then use analysis_star_aln mixed recipe
 is( $analysis_recipe{star_aln},
     \&analysis_star_aln_mixed, q{Set star_aln multiple sequence run type} );
 

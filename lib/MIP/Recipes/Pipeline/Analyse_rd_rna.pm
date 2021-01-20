@@ -114,7 +114,7 @@ sub parse_rd_rna {
 
     ## Constants
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
-    
+
     ## Set analysis constants
     set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
@@ -366,8 +366,10 @@ sub pipeline_analyse_rd_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Recipes
+    use MIP::Analysis qw{ set_recipe_star_aln };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
+
+    ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Arriba qw{ analysis_arriba };
     use MIP::Recipes::Analysis::Bcftools_merge qw{ analysis_bcftools_merge };
@@ -375,13 +377,10 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::BootstrapAnn qw{ analysis_bootstrapann };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Gatk_asereadcounter qw{ analysis_gatk_asereadcounter };
-    use MIP::Recipes::Analysis::Gatk_baserecalibration
-      qw{ analysis_gatk_baserecalibration_rna };
+    use MIP::Recipes::Analysis::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration_rna };
     use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
-    use MIP::Recipes::Analysis::Gatk_splitncigarreads
-      qw{ analysis_gatk_splitncigarreads };
-    use MIP::Recipes::Analysis::Gatk_variantfiltration
-      qw{ analysis_gatk_variantfiltration };
+    use MIP::Recipes::Analysis::Gatk_splitncigarreads qw{ analysis_gatk_splitncigarreads };
+    use MIP::Recipes::Analysis::Gatk_variantfiltration qw{ analysis_gatk_variantfiltration };
     use MIP::Recipes::Analysis::Genebody_coverage qw{ analysis_genebody_coverage };
     use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
@@ -391,8 +390,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Picardtools_collectrnaseqmetrics
       qw{ analysis_picardtools_collectrnaseqmetrics };
-    use MIP::Recipes::Analysis::Picardtools_mergesamfiles
-      qw{ analysis_picardtools_mergesamfiles };
+    use MIP::Recipes::Analysis::Picardtools_mergesamfiles qw{ analysis_picardtools_mergesamfiles };
     use MIP::Recipes::Analysis::Preseq qw{ analysis_preseq };
     use MIP::Recipes::Analysis::Rseqc qw{ analysis_rseqc };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
@@ -403,7 +401,6 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Vcf_ase_reformat qw{ analysis_vcf_ase_reformat};
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
     use MIP::Recipes::Build::Rd_rna qw{ build_rd_rna_meta_files };
-    use MIP::Set::Analysis qw{ set_recipe_star_aln };
 
     ### Pipeline specific checks
     parse_rd_rna(
