@@ -154,9 +154,7 @@ sub get_gatk_intervals {
             strict_type => 1,
         },
         exome_target_bed_href => {
-            default     => {},
-            store       => \$exome_target_bed_href,
-            strict_type => 1,
+            store => \$exome_target_bed_href,
         },
         file_ending => {
             store       => \$file_ending,

@@ -25,8 +25,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK =
-      qw{ analysis_markduplicates analysis_markduplicates_panel analysis_markduplicates_rna };
+    our @EXPORT_OK = qw{ analysis_markduplicates analysis_markduplicates_panel };
 
 }
 
@@ -582,7 +581,6 @@ sub analysis_markduplicates_panel {
         )
     );
 
-    #my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path        = $io{out}{file_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
