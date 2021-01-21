@@ -133,9 +133,9 @@ sub parse_io_outfiles {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File_info qw{ set_io_files };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Parameter qw{ get_recipe_attributes };
-    use MIP::Set::File qw{ set_io_files };
 
     my @file_paths = @{$file_paths_ref};
 
