@@ -21,7 +21,6 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 
-
 ## Constants
 Readonly my $COMMA => q{,};
 Readonly my $SPACE => q{ };
@@ -33,15 +32,15 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Get::File}      => [qw{ get_io_files }],
-        q{MIP::Set::File}      => [qw{ set_io_files }],
-);
+        q{MIP::File_info} => [qw{ set_io_files }],
+        q{MIP::Get::File} => [qw{ get_io_files }],
+    );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
+use MIP::File_info qw{ set_io_files };
 use MIP::Get::File qw{ get_io_files };
-use MIP::Set::File qw{ set_io_files };
 
 diag(   q{Test get_io_files from File.pm}
       . $COMMA
@@ -72,18 +71,16 @@ my @file_paths_2 = (
     catfile(qw{ a test picard_mergesamfiles file_1.txt}),
     catfile(qw{ a test picard_mergesamfiles file_2.txt}),
 );
-my @delly_file_paths = (
-    catfile(qw{ a test delly_call dc_file_1.bcf}),
-    catfile(qw{ a test delly_call dc_file_2.bcf}),
-);
+my @delly_file_paths =
+  ( catfile(qw{ a test delly_call dc_file_1.bcf}), catfile(qw{ a test delly_call dc_file_2.bcf}), );
 
 my %file_info = (
     $id => {
-        mip_infiles_dir => catfile(qw{ a dir }),
-        mip_infiles     => [qw{ fastq_sample_1_1.fastq.gz fastq_sample_1_2.fastq.gz }],
-        base            => { file_paths => \@base_paths, },
-        base_temp       => { file_paths => \@base_temp_paths, },
-        bwa_mem         => { file_paths => \@file_paths, },
+        mip_infiles_dir      => catfile(qw{ a dir }),
+        mip_infiles          => [qw{ fastq_sample_1_1.fastq.gz fastq_sample_1_2.fastq.gz }],
+        base                 => { file_paths => \@base_paths, },
+        base_temp            => { file_paths => \@base_temp_paths, },
+        bwa_mem              => { file_paths => \@file_paths, },
         picard_mergesamfiles => { file_paths => \@file_paths_2, },
         delly_call           => { file_paths => \@delly_file_paths, },
     },
@@ -239,7 +236,7 @@ my $first_in_chain_recipe_name = q{chanjo_sexcheck};
 is_deeply(
     \@{ $file_info{$id}{picard_mergesamfiles}{file_paths} },
     \@{ $io{$stream}{file_paths} },
-q{Got picard_mergesamfiles outfile features as infiles for chanjo_sexcheck for sample_1}
+    q{Got picard_mergesamfiles outfile features as infiles for chanjo_sexcheck for sample_1}
 );
 
 ## Given a recipe downstream of PARALLEL chain and other chain

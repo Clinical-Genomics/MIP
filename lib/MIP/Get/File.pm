@@ -94,7 +94,7 @@ sub get_io_files {
     ## Avoid autovivification of variable
     use Data::Diver qw{ Dive };
     use List::MoreUtils qw{ before };
-    use MIP::Set::File qw{ set_io_files };
+    use MIP::File_info qw{ set_io_files };
 
     ## Constants
     Readonly my $CHAIN_MAIN => q{CHAIN_MAIN};

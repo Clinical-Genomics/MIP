@@ -119,6 +119,7 @@ sub analysis_vcf_rerun_reformat_sv {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File_info qw{ set_io_files };
     use MIP::Get::File qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -126,7 +127,6 @@ sub analysis_vcf_rerun_reformat_sv {
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_io_files };
 
     ### PREPROCESSING:
 
