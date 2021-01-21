@@ -136,13 +136,13 @@ sub salmon_quant {
     my $outdir_path;
     my $read_1_fastq_paths_ref;
     my $read_2_fastq_paths_ref;
+    my $read_files_command;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
 
     ## Default(s)
     my $lib_type;
-    my $read_files_command;
     my $validate_mappings;
 
     my $tmpl = {
@@ -185,7 +185,8 @@ sub salmon_quant {
             strict_type => 1,
         },
         read_files_command => {
-            default     => q{pigz -dc},
+            required    => 1,
+            defined     => 1,
             store       => \$read_files_command,
             strict_type => 1,
         },

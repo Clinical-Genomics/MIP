@@ -17,7 +17,7 @@ use List::MoreUtils qw{ uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE };
 
 BEGIN {
 
@@ -129,6 +129,7 @@ sub analysis_salmon_quant {
 
     use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
+    use MIP::Program::Pigz qw{ pigz };
     use MIP::Program::Salmon qw{ salmon_quant };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
@@ -230,6 +231,13 @@ sub analysis_salmon_quant {
         }
     );
 
+    my @read_file_commands = pigz(
+        {
+            decompress => 1,
+            stdout     => 1,
+        }
+    );
+
     ## For paired end
     if ( $sequence_run_type eq q{paired-end} ) {
 
@@ -249,6 +257,8 @@ sub analysis_salmon_quant {
                 outdir_path            => $outdir_path,
                 read_1_fastq_paths_ref => \@read_1_fastq_paths,
                 read_2_fastq_paths_ref => \@read_2_fastq_paths,
+                read_files_command     => join $SPACE,
+                @read_file_commands,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -263,6 +273,8 @@ sub analysis_salmon_quant {
                 index_path             => $referencefile_dir_path,
                 outdir_path            => $outdir_path,
                 read_1_fastq_paths_ref => \@infile_paths,
+                read_files_command     => join $SPACE,
+                @read_file_commands,
             }
         );
         say {$filehandle} $NEWLINE;

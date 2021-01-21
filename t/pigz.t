@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Pigz}  => [qw{ pigz }],
-);
+    my %perl_module = ( q{MIP::Program::Pigz} => [qw{ pigz }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -57,23 +54,14 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = (
-    filehandle => {
-        input           => undef,
-        expected_output => \@function_base_commands,
-    },
-    infile_path => {
-        input           => q{infile_path},
-        expected_output => q{infile_path},
-    },
-);
-
 my %specific_argument = (
     decompress => {
         input           => q{decompress},
         expected_output => q{--decompress},
+    },
+    infile_path => {
+        input           => q{infile_path},
+        expected_output => q{infile_path},
     },
     outfile_path => {
         input           => q{outfile_path},
@@ -109,20 +97,13 @@ my %specific_argument = (
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&pigz;
 
-## Test both base and function specific arguments
-my @arguments = ( \%required_argument, \%specific_argument );
-
-HASHES_OF_ARGUMENTS:
-foreach my $argument_href (@arguments) {
-    my @commands = test_function(
-        {
-            argument_href              => $argument_href,
-            do_test_base_command       => 1,
-            function_base_commands_ref => \@function_base_commands,
-            module_function_cref       => $module_function_cref,
-            required_argument_href     => \%required_argument,
-        }
-    );
-}
+my @commands = test_function(
+    {
+        argument_href              => \%specific_argument,
+        do_test_base_command       => 1,
+        function_base_commands_ref => \@function_base_commands,
+        module_function_cref       => $module_function_cref,
+    }
+);
 
 done_testing();
