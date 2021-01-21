@@ -1650,13 +1650,11 @@ sub _set_io_files_constant {
         my @uniq_elements =
           uniq( @{ $io_recipe_href->{$stream}{$file_feature} } );
 
-        ## If unique
-        if ( scalar @uniq_elements == 1 ) {
+        next FILE_FEATURE if ( not scalar @uniq_elements == 1 );
 
-            ## Set file constant suffix
-            $io_recipe_href->{$stream}{$file_constant_feature} =
-              $uniq_elements[0];
-        }
+        ## Unique - Set file constant suffix
+        $io_recipe_href->{$stream}{$file_constant_feature} =
+          $uniq_elements[0];
     }
     return;
 }
