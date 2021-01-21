@@ -152,11 +152,7 @@ sub analysis_gatk_baserecalibration {
     use MIP::Program::Samtools qw{ samtools_index samtools_view };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Sample_info qw{
-      set_file_path_to_store
-      set_recipe_outfile_in_sample_info
-      set_recipe_metafile_in_sample_info
-    };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -175,10 +171,7 @@ sub analysis_gatk_baserecalibration {
             stream         => q{in},
         }
     );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my %infile_path        = %{ $io{in}{file_path_href} };
+    my %infile_path = %{ $io{in}{file_path_href} };
 
     my $analysis_type      = $active_parameter_href->{analysis_type}{$sample_id};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
@@ -828,10 +821,7 @@ sub analysis_gatk_baserecalibration_rna {
             stream         => q{in},
         }
     );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my %infile_path        = %{ $io{in}{file_path_href} };
+    my %infile_path = %{ $io{in}{file_path_href} };
 
     my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
     my %recipe        = parse_recipe_prerequisites(
