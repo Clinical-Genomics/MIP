@@ -149,15 +149,10 @@ sub analysis_gatk_baserecalibration {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_applybqsr gatk_baserecalibrator gatk_gatherbqsrreports };
-    use MIP::Program::Picardtools qw{ picardtools_gatherbamfiles };
     use MIP::Program::Samtools qw{ samtools_index samtools_view };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
-    use MIP::Sample_info qw{
-      set_file_path_to_store
-      set_recipe_outfile_in_sample_info
-      set_recipe_metafile_in_sample_info
-    };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -176,10 +171,7 @@ sub analysis_gatk_baserecalibration {
             stream         => q{in},
         }
     );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my %infile_path        = %{ $io{in}{file_path_href} };
+    my %infile_path = %{ $io{in}{file_path_href} };
 
     my $analysis_type      = $active_parameter_href->{analysis_type}{$sample_id};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
@@ -384,68 +376,6 @@ sub analysis_gatk_baserecalibration {
         say {$xargsfilehandle} $NEWLINE;
     }
 
-    ## Gather BAM files
-    say {$filehandle} q{## Gather BAM files};
-
-    ## Assemble infile paths in contig order and not per size
-    my @gather_infile_paths =
-      map { $outfile_path{$_} } @{ $file_info_href->{bam_contigs} };
-    my $store_outfile_path = $outfile_path_prefix . $outfile_suffix;
-
-    picardtools_gatherbamfiles(
-        {
-            create_index     => q{true},
-            filehandle       => $filehandle,
-            infile_paths_ref => \@gather_infile_paths,
-            java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
-            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            memory_allocation    => q{Xmx4g},
-            outfile_path         => $outfile_path_prefix . $outfile_suffix,
-            referencefile_path   => $referencefile_path,
-            temp_directory       => $temp_directory,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    ## Rename the bam file index file so that Expansion Hunter can find it
-    say {$filehandle}
-      q{## Copy index file to ".bam.bai" so that Expansionhunter can find it downstream};
-
-    gnu_cp(
-        {
-            filehandle   => $filehandle,
-            force        => 1,
-            infile_path  => $outfile_path_prefix . q{.bai},
-            outfile_path => $outfile_path_prefix . $outfile_suffix . q{.bai},
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    ## Create BAM to CRAM for long term storage
-
-    $store_outfile_path = $outfile_path_prefix . $DOT . q{cram};
-
-    say {$filehandle} q{## Convert BAM to CRAM for long term storage};
-    samtools_view(
-        {
-            filehandle         => $filehandle,
-            infile_path        => $outfile_path_prefix . $outfile_suffix,
-            outfile_path       => $store_outfile_path,
-            output_format      => q{cram},
-            referencefile_path => $referencefile_path,
-            thread_number      => $parallel_processes,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    ## Index CRAM
-    samtools_index(
-        {
-            filehandle  => $filehandle,
-            infile_path => $store_outfile_path,
-        }
-    );
-
     close $xargsfilehandle;
     close $filehandle;
 
@@ -455,20 +385,9 @@ sub analysis_gatk_baserecalibration {
         set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
-                path             => $store_outfile_path,
+                path             => $outfile_paths[0],
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        set_file_path_to_store(
-            {
-                format           => q{cram},
-                id               => $sample_id,
-                path             => $store_outfile_path,
-                path_index       => $store_outfile_path . $DOT . q{crai},
-                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -589,9 +508,8 @@ sub analysis_gatk_baserecalibration_panel {
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_applybqsr gatk_baserecalibrator };
-    use MIP::Program::Samtools qw{ samtools_index samtools_view };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -730,30 +648,6 @@ sub analysis_gatk_baserecalibration_panel {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Create BAM to CRAM for long term storage
-    my $store_outfile_path = $outfile_path_prefix . $DOT . q{cram};
-
-    say {$filehandle} q{## Convert BAM to CRAM for long term storage};
-    samtools_view(
-        {
-            filehandle         => $filehandle,
-            infile_path        => $outfile_path,
-            outfile_path       => $store_outfile_path,
-            output_format      => q{cram},
-            referencefile_path => $referencefile_path,
-            thread_number      => $parallel_processes,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    ## Index CRAM
-    samtools_index(
-        {
-            filehandle  => $filehandle,
-            infile_path => $store_outfile_path,
-        }
-    );
-
     close $filehandle;
 
     if ( $recipe{mode} == 1 ) {
@@ -762,20 +656,9 @@ sub analysis_gatk_baserecalibration_panel {
         set_recipe_outfile_in_sample_info(
             {
                 infile           => $outfile_name_prefix,
-                path             => $store_outfile_path,
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        set_file_path_to_store(
-            {
-                format           => q{cram},
-                id               => $sample_id,
-                path             => $store_outfile_path,
-                path_index       => $store_outfile_path . $DOT . q{crai},
-                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -938,10 +821,7 @@ sub analysis_gatk_baserecalibration_rna {
             stream         => q{in},
         }
     );
-    my $indir_path_prefix  = $io{in}{dir_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_name_prefix = $io{in}{file_name_prefix};
-    my %infile_path        = %{ $io{in}{file_path_href} };
+    my %infile_path = %{ $io{in}{file_path_href} };
 
     my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
     my %recipe        = parse_recipe_prerequisites(

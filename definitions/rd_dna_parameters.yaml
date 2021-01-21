@@ -502,6 +502,7 @@ markduplicates:
   outfile_suffix: ".bam"
   program_executables:
     - picard
+    - samtools
   type: recipe
 markduplicates_picardtools_opt_dup_dist:
   associated_recipe:

@@ -1321,8 +1321,10 @@ sub update_recipe_mode_for_pedigree {
         );
         $log->warn( q{Turned off}
               . $COLON
+              . $SPACE
               . $recipe
-              . q{as it is not compatible with this pedigrees phenotypes constellation} );
+              . $SPACE
+              . q{as it is not compatible with this pedigree} );
     }
     return;
 }
