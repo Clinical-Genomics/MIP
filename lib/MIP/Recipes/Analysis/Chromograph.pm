@@ -124,7 +124,7 @@ sub analysis_chromograph_cov {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Contigs qw{ delete_contig_elements };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Chromograph qw{ chromograph };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -358,7 +358,7 @@ sub analysis_chromograph_rhoviz {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Path qw{ remove_file_path_suffix };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -634,7 +634,7 @@ sub analysis_chromograph_upd {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Contigs qw{ delete_contig_elements };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Pedigree qw{ is_sample_proband_in_trio };

@@ -121,8 +121,7 @@ sub analysis_trim_galore {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ update_memory_allocation };
-    use MIP::File_info qw{ get_sample_file_attribute };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files get_sample_file_attribute };
     use MIP::Program::Trim_galore qw{ trim_galore };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };

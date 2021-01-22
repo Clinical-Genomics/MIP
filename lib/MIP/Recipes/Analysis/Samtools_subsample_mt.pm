@@ -125,7 +125,7 @@ sub analysis_samtools_subsample_mt {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Executable qw{ get_executable_base_command };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Language::Awk qw{ awk };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Samtools qw{ samtools_index samtools_view };

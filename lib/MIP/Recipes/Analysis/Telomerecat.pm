@@ -110,7 +110,7 @@ sub analysis_telomerecat {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Telomerecat qw{ telomerecat_bam2length };
     use MIP::Processmanagement::Processes qw{ submit_recipe };

@@ -127,7 +127,7 @@ sub analysis_sv_combinevariantcallsets {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
@@ -533,7 +533,7 @@ sub _preprocess_joint_callers_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
 
     my $joint_caller = q{manta | delly_reformat | tiddit};
     my $stream       = q{out};
@@ -672,7 +672,7 @@ sub _preprocess_single_callers_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
 
     my $joint_caller = q{manta | delly_reformat | tiddit};
     my $stream       = q{out};

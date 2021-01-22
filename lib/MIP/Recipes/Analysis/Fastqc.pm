@@ -128,8 +128,7 @@ sub analysis_fastqc {
 
     use MIP::Cluster qw{ update_core_number_to_seq_mode update_memory_allocation };
     use MIP::Environment::Cluster qw{ check_max_core_number };
-    use MIP::File_info qw{ get_sample_file_attribute };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files get_sample_file_attribute };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Parse::File qw{ parse_io_outfiles };

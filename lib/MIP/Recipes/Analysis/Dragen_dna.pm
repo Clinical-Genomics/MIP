@@ -123,9 +123,8 @@ sub analysis_dragen_dna_align_vc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::File::Format::Dragen qw{ create_dragen_fastq_list_sample_id };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files get_sample_file_attribute };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Dragen qw{ dragen_dna_analysis };
     use MIP::Program::Ssh qw{ ssh };
@@ -433,7 +432,7 @@ sub analysis_dragen_dna_joint_calling {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Pedigree qw{ create_fam_file };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Dragen qw{ dragen_dna_analysis };
     use MIP::Program::Ssh qw{ ssh };

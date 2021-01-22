@@ -118,7 +118,7 @@ sub analysis_cadd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Bash qw{ gnu_cd gnu_export gnu_unset };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
@@ -521,7 +521,7 @@ sub analysis_cadd_panel {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
     use MIP::Language::Perl qw{ perl_nae_oneliners };

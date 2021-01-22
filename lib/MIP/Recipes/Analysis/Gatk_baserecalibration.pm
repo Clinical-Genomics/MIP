@@ -142,9 +142,8 @@ sub analysis_gatk_baserecalibration {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes };
-    use MIP::File_info qw{ get_merged_infile_prefix };
+    use MIP::File_info qw{ get_io_files get_merged_infile_prefix };
     use MIP::Gatk qw{ get_gatk_intervals };
-    use MIP::Get::File qw{ get_io_files };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -504,7 +503,7 @@ sub analysis_gatk_baserecalibration_panel {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{ get_exome_target_bed_file };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_applybqsr gatk_baserecalibrator };
@@ -791,9 +790,8 @@ sub analysis_gatk_baserecalibration_rna {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes };
-    use MIP::File_info qw{ get_merged_infile_prefix };
+    use MIP::File_info qw{ get_io_files get_merged_infile_prefix };
     use MIP::Gatk qw{ get_gatk_intervals };
-    use MIP::Get::File qw{ get_io_files };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
