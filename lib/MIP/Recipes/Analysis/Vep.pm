@@ -145,8 +145,7 @@ sub analysis_vep_wgs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
@@ -499,8 +498,7 @@ sub analysis_vep_sv_wes {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
@@ -813,8 +811,7 @@ sub analysis_vep_sv_wgs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
@@ -1187,9 +1184,8 @@ sub analysis_vep {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::List qw{ get_splitted_lists };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Recipe qw{ parse_recipe_prerequisites };

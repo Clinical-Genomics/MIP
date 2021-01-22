@@ -111,12 +111,12 @@ sub analysis_multiqc {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Multiqc qw{ multiqc };
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_metafile_in_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
 

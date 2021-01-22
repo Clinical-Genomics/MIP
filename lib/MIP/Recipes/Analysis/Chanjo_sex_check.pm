@@ -120,8 +120,7 @@ sub analysis_chanjo_sex_check {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Chanjo qw{ chanjo_sex };
     use MIP::Recipe qw{ parse_recipe_prerequisites };

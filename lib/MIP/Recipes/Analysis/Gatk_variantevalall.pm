@@ -126,9 +126,8 @@ sub analysis_gatk_variantevalall {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Language::Java qw{ java_core };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_varianteval gatk_selectvariants };
     use MIP::Recipe qw{ parse_recipe_prerequisites };

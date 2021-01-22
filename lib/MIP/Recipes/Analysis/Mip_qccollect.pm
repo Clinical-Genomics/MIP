@@ -117,7 +117,7 @@ sub analysis_mip_qccollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Mip qw{ mip_qccollect };
     use MIP::Recipe qw{ parse_recipe_prerequisites };

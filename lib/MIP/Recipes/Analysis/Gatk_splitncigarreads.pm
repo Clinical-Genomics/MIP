@@ -143,9 +143,8 @@ sub analysis_gatk_splitncigarreads {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes };
-    use MIP::File_info qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_splitncigarreads };
     use MIP::Recipe qw{ parse_recipe_prerequisites };

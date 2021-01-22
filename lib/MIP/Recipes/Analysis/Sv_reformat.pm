@@ -130,9 +130,8 @@ sub analysis_reformat_sv {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
-    use MIP::File_info qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Picardtools qw{ picardtools_sortvcf };

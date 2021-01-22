@@ -127,9 +127,8 @@ sub analysis_rtg_vcfeval {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{ get_exome_target_bed_file };
-    use MIP::File_info qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_rm  };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bedtools qw{ bedtools_intersect };
     use MIP::Program::Rtg qw{ rtg_vcfeval };
     use MIP::Program::Bcftools qw{ bcftools_rename_vcf_samples };

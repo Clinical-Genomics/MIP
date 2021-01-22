@@ -122,10 +122,9 @@ sub analysis_gatk_genotypegvcfs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat gnu_echo gnu_rm };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_genomicsdbimport  gatk_genotypegvcfs };
     use MIP::Recipe qw{ parse_recipe_prerequisites };

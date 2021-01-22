@@ -143,8 +143,7 @@ sub analysis_samtools_merge {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files set_merged_infile_prefix };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles set_merged_infile_prefix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Samtools qw{ samtools_merge samtools_view };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
@@ -462,8 +461,7 @@ sub analysis_samtools_merge_panel {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files set_merged_infile_prefix };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles set_merged_infile_prefix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Samtools qw{ samtools_merge samtools_view };
     use MIP::Recipe qw{ parse_recipe_prerequisites };

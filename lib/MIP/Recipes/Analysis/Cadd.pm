@@ -118,11 +118,10 @@ sub analysis_cadd {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Bash qw{ gnu_cd gnu_export gnu_unset };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_concat bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
     use MIP::Program::Htslib qw{ htslib_tabix };
@@ -521,11 +520,10 @@ sub analysis_cadd_panel {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
     use MIP::Program::Cadd qw{ cadd };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };

@@ -139,8 +139,7 @@ sub analysis_mip_vcfparser {
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Mip qw{ mip_vcfparser };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
@@ -511,10 +510,9 @@ sub analysis_mip_vcfparser_panel {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
-    use MIP::File_info qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::List qw{ get_splitted_lists };
     use MIP::Parameter qw{ get_cache };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view bcftools_view_and_index_vcf };
     use MIP::Program::Gatk qw{ gatk_concatenate_variants };
@@ -864,8 +862,7 @@ sub analysis_mip_vcfparser_sv_wes {
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Mip qw{ mip_vcfparser };
@@ -1162,9 +1159,8 @@ sub analysis_mip_vcfparser_sv_wgs {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
-    use MIP::File_info qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::List qw{ check_element_exist_hash_of_array };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_concatenate_variants };
     use MIP::Program::Mip qw{ mip_vcfparser };

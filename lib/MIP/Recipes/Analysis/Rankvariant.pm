@@ -132,8 +132,7 @@ sub analysis_rankvariant {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Genmod qw{ genmod_annotate genmod_compound genmod_models genmod_score };
@@ -514,8 +513,7 @@ sub analysis_rankvariant_unaffected {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Genmod qw{ genmod_annotate genmod_compound genmod_models genmod_score };
@@ -834,8 +832,7 @@ sub analysis_rankvariant_sv {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Genmod qw{ genmod_annotate genmod_compound genmod_models genmod_score };
@@ -1205,8 +1202,7 @@ sub analysis_rankvariant_sv_unaffected {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Genmod qw{ genmod_annotate };
     use MIP::Recipe qw{ parse_recipe_prerequisites };

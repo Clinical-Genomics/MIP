@@ -129,8 +129,7 @@ sub analysis_picardtools_collectrnaseqmetrics {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_collectrnaseqmetrics };
     use MIP::Recipe qw{ parse_recipe_prerequisites };

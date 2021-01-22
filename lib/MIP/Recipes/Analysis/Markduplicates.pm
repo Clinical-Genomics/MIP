@@ -141,9 +141,8 @@ sub analysis_markduplicates {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
-    use MIP::File_info qw{ get_io_files get_merged_infile_prefix };
+    use MIP::File_info qw{ get_io_files get_merged_infile_prefix parse_io_outfiles };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat gnu_cp };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_markduplicates picardtools_gatherbamfiles };
     use MIP::Program::Samtools qw{ samtools_flagstat samtools_index samtools_view };
@@ -524,8 +523,7 @@ sub analysis_markduplicates_panel {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ update_memory_allocation };
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Program::Picardtools qw{ picardtools_markduplicates };
