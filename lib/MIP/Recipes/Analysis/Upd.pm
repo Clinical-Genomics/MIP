@@ -121,14 +121,14 @@ sub analysis_upd {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Path qw{ remove_file_path_suffix };
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Pedigree qw{ is_sample_proband_in_trio };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gnu::Coreutils qw{ gnu_sort };
     use MIP::Program::Ucsc qw{ ucsc_bed_to_big_bed };
     use MIP::Program::Upd qw{ upd_call };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Reference qw{ write_contigs_size_file };
     use MIP::Sample_info qw{ get_family_member_id
       set_file_path_to_store

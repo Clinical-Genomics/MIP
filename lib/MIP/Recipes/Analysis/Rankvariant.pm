@@ -132,14 +132,14 @@ sub analysis_rankvariant {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
-    use MIP::Pedigree qw{ create_fam_file };
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Pedigree qw{ create_fam_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Genmod qw{ genmod_annotate genmod_compound genmod_models genmod_score };
-    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -514,14 +514,14 @@ sub analysis_rankvariant_unaffected {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
-    use MIP::Pedigree qw{ create_fam_file };
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Pedigree qw{ create_fam_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Genmod qw{ genmod_annotate genmod_compound genmod_models genmod_score };
-    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -834,12 +834,12 @@ sub analysis_rankvariant_sv {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Genmod qw{ genmod_annotate genmod_compound genmod_models genmod_score };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -1205,11 +1205,11 @@ sub analysis_rankvariant_sv_unaffected {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Genmod qw{ genmod_annotate };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 

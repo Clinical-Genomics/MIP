@@ -130,7 +130,7 @@ sub analysis_rhocall_annotate {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_roh };
@@ -400,7 +400,7 @@ sub analysis_rhocall_viz {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Path qw{ remove_file_path_suffix };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_index bcftools_roh bcftools_view };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };

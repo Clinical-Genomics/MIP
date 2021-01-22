@@ -30,6 +30,7 @@ BEGIN {
       add_sample_no_direction_infile_prefixes
       check_parameter_metafiles
       get_consensus_sequence_run_type
+      get_io_files
       get_is_sample_files_compressed
       get_merged_infile_prefix
       get_sample_file_attribute
@@ -334,6 +335,194 @@ sub get_consensus_sequence_run_type {
         return 0 if ( not $has_consensus );
     }
     return $consensus_type;
+}
+
+sub get_io_files {
+
+## Function : Get the io files per chain, id and stream
+## Returns  : %io
+## Arguments: $file_info_href => File info hash {REF}
+##          : $id             => Id (sample or case)
+##          : $parameter_href => Parameter hash {REF}
+##          : $recipe_name    => Recipe name
+##          : $stream         => Stream (in or out or temp)
+##          : $temp_directory => Temporary directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $id;
+    my $parameter_href;
+    my $recipe_name;
+    my $stream;
+    my $temp_directory;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in out temp }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Data::Diver qw{ Dive };
+    use List::MoreUtils qw{ before };
+    use MIP::File_info qw{ set_io_files };
+    use MIP::Parameter qw{ get_parameter_attribute };
+
+    ## Constants
+    Readonly my $CHAIN_MAIN         => q{CHAIN_MAIN};
+    Readonly my $UPSTREAM_DIRECTION => q{out};
+
+    ## Unpack
+    my $chain_id = get_parameter_attribute(
+        {
+            attribute      => q{chain},
+            parameter_href => $parameter_href,
+            parameter_name => $recipe_name,
+        }
+    );
+
+    ## Not first in chain - return file features
+    if ( Dive( $file_info_href, ( q{io}, $chain_id, $id, $recipe_name, $stream ) ) ) {
+
+        return %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
+    }
+    else {
+        ## First in chain - need to find out stream file features of correct upstream recipe
+
+        ## Unpack
+        my @order_recipes =
+          @{ $parameter_href->{cache}{order_recipes_ref} };
+
+        ## Find upstream recipes starting from (and not including) recipe_name
+        my @upstream_recipes =
+          reverse before { $_ eq $recipe_name } @order_recipes;
+
+      UPSTREAM_RECIPE:
+        foreach my $upstream_recipe (@upstream_recipes) {
+
+            # Get chain id
+            my $upstream_chain_id = $parameter_href->{$upstream_recipe}{chain};
+
+            ## No io file features found in chain and stream
+            next UPSTREAM_RECIPE
+              if (
+                not Dive(
+                    $file_info_href,
+                    ( q{io}, $upstream_chain_id, $id, $upstream_recipe, $UPSTREAM_DIRECTION )
+                )
+              );
+
+            ## PARALLEL CHAIN with multiple recipes
+            # second in chain
+            if ( $upstream_chain_id eq $chain_id ) {
+
+                ## Switch upstream out to recipe in - i.e. inherit from upstream
+                _inherit_upstream_io_files(
+                    {
+                        chain_id           => $chain_id,
+                        id                 => $id,
+                        file_info_href     => $file_info_href,
+                        recipe_name        => $recipe_name,
+                        stream             => $stream,
+                        temp_directory     => $temp_directory,
+                        upstream_direction => $UPSTREAM_DIRECTION,
+                        upstream_chain_id  => $upstream_chain_id,
+                        upstream_recipe    => $upstream_recipe,
+                    }
+                );
+
+                ##  Return set file features
+                return %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
+            }
+
+            ## Do not inherit from other chains than self or MAIN
+            next UPSTREAM_RECIPE if ( $upstream_chain_id ne q{MAIN} );
+
+            ## Found io file features found in chain, id, recipe and stream
+            if (
+                Dive(
+                    $file_info_href,
+                    ( q{io}, $upstream_chain_id, $id, $upstream_recipe, $UPSTREAM_DIRECTION )
+                )
+              )
+            {
+
+                ## Switch upstream out to recipe in - i.e. inherit from upstream
+                _inherit_upstream_io_files(
+                    {
+                        chain_id           => $chain_id,
+                        id                 => $id,
+                        file_info_href     => $file_info_href,
+                        recipe_name        => $recipe_name,
+                        stream             => $stream,
+                        temp_directory     => $temp_directory,
+                        upstream_direction => $UPSTREAM_DIRECTION,
+                        upstream_chain_id  => $upstream_chain_id,
+                        upstream_recipe    => $upstream_recipe,
+                    }
+                );
+
+                ##  Return set file features
+                return %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
+            }
+        }
+    }
+
+    ## At root of initation map - add base
+    # Build infiles path
+    my @base_file_paths =
+      map { catfile( $file_info_href->{$id}{mip_infiles_dir}, $_ ) }
+      @{ $file_info_href->{$id}{mip_infiles} };
+
+    set_io_files(
+        {
+            chain_id       => $CHAIN_MAIN,
+            id             => $id,
+            file_paths_ref => \@base_file_paths,
+            file_info_href => $file_info_href,
+            recipe_name    => $recipe_name,
+            stream         => $stream,
+            temp_directory => $temp_directory,
+        }
+    );
+    return %{ $file_info_href->{io}{$CHAIN_MAIN}{$id}{$recipe_name} };
 }
 
 sub get_is_sample_files_compressed {
@@ -1574,6 +1763,111 @@ sub set_select_file_contigs {
     ## Set select contig sets
     @{ $file_info_href->{select_file_contigs} } = @{$select_file_contigs_ref};
 
+    return;
+}
+
+sub _inherit_upstream_io_files {
+
+## Function : Switch upstream out to recipe in - i.e. inherit from upstream
+## Returns  : %io
+## Arguments: $chain_id           => Chain id
+##          : $id                 => Id (sample or case)
+##          : $file_info_href     => File info hash {REF}
+##          : $recipe_name        => Recipe name
+##          : $stream             => Stream (in or out or temp)
+##          : $temp_directory     => Temporary directory
+##          : $upstream_direction => Upstream direction
+##          : $upstream_chain_id  => Upstream chain id
+##          : $upstream_recipe    => Upstream recipe
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $recipe_name;
+    my $stream;
+    my $temp_directory;
+    my $upstream_direction;
+    my $upstream_chain_id;
+    my $upstream_recipe;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in out temp }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+        upstream_direction => {
+            defined     => 1,
+            required    => 1,
+            store       => \$upstream_direction,
+            strict_type => 1,
+        },
+        upstream_chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$upstream_chain_id,
+            strict_type => 1,
+        },
+        upstream_recipe => {
+            defined     => 1,
+            required    => 1,
+            store       => \$upstream_recipe,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Switch upstream out to recipe in - i.e. inherit from upstream
+    my @upstream_outfile_paths =
+      @{ $file_info_href->{io}{$upstream_chain_id}{$id}{$upstream_recipe}{$upstream_direction}
+          {file_paths} };
+
+    set_io_files(
+        {
+            chain_id       => $chain_id,
+            id             => $id,
+            file_paths_ref => \@upstream_outfile_paths,
+            file_info_href => $file_info_href,
+            recipe_name    => $recipe_name,
+            stream         => $stream,
+            temp_directory => $temp_directory,
+        }
+    );
     return;
 }
 

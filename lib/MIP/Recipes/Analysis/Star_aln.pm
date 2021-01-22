@@ -126,8 +126,7 @@ sub analysis_star_aln {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_sample_file_attribute };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files get_sample_file_attribute };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv gnu_rm };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Samtools qw{ samtools_index };
@@ -481,8 +480,7 @@ sub analysis_star_aln_mixed {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_sample_file_attribute };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files get_sample_file_attribute };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv gnu_rm };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Samtools qw{ samtools_index };

@@ -142,9 +142,8 @@ sub analysis_gatk_haplotypecaller {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes };
-    use MIP::File_info qw{ set_io_files };
+    use MIP::File_info qw{ get_io_files set_io_files };
     use MIP::Gatk qw{ get_gatk_intervals };
-    use MIP::Get::File qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -496,7 +495,7 @@ sub analysis_gatk_haplotypecaller_panel {
 
     use MIP::Active_parameter qw{ get_exome_target_bed_file };
     use MIP::Cluster qw{ update_memory_allocation };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Pedigree qw{ create_fam_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };

@@ -111,7 +111,7 @@ sub analysis_star_caller {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };

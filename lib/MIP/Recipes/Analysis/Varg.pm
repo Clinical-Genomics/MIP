@@ -112,11 +112,11 @@ sub analysis_varg {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Varg qw{ varg_compare };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 

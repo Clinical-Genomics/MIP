@@ -115,7 +115,7 @@ sub analysis_variant_annotation {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_concat bcftools_index bcftools_view };
     use MIP::Program::Vcfanno qw{ vcfanno };
@@ -424,7 +424,7 @@ sub analysis_variant_annotation_panel {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_index bcftools_view };
     use MIP::Program::Vcfanno qw{ vcfanno };

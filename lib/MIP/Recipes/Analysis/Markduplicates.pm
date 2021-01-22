@@ -141,8 +141,7 @@ sub analysis_markduplicates {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
-    use MIP::File_info qw{ get_merged_infile_prefix };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files get_merged_infile_prefix };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat gnu_cp };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -525,7 +524,7 @@ sub analysis_markduplicates_panel {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ update_memory_allocation };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cp };

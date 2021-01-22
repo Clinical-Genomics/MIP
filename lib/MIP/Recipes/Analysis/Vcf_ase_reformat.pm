@@ -136,12 +136,11 @@ sub analysis_vcf_ase_reformat {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ set_io_files };
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::File_info qw{ get_io_files set_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 

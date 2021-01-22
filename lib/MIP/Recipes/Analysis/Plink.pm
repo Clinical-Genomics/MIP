@@ -127,9 +127,9 @@ sub analysis_plink {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Pedigree qw{ create_fam_file };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::Pedigree qw{ create_fam_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_sort bcftools_norm bcftools_view };
     use MIP::Program::Plink

@@ -121,8 +121,7 @@ sub analysis_gzip_fastq {
 
     use MIP::Cluster qw{ update_core_number_to_seq_mode };
     use MIP::Environment::Cluster qw{ check_max_core_number };
-    use MIP::File_info qw{ get_is_sample_files_compressed get_sample_file_attribute };
-    use MIP::Get::File qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files get_is_sample_files_compressed get_sample_file_attribute };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gzip qw{ gzip };

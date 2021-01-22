@@ -127,13 +127,13 @@ sub analysis_vcf2cytosure {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_core_number update_memory_allocation };
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::File_info qw{ get_io_files };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ print_wait submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view bcftools_rename_vcf_samples };
     use MIP::Program::Tiddit qw{ tiddit_coverage };
     use MIP::Program::Vcf2cytosure qw{ vcf2cytosure_convert };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info
       qw{ get_pedigree_sample_id_attributes set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };

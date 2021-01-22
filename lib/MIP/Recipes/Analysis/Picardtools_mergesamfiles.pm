@@ -148,17 +148,16 @@ sub analysis_picardtools_mergesamfiles {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
-    use MIP::File_info qw{ set_merged_infile_prefix };
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::File_info qw{ get_io_files set_merged_infile_prefix };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_gatherbamfiles picardtools_mergesamfiles };
     use MIP::Program::Sambamba qw{ split_and_index_aligment_file };
     use MIP::Program::Samtools qw{ samtools_index };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
