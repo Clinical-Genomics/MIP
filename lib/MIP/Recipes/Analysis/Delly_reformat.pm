@@ -136,9 +136,8 @@ sub analysis_delly_reformat {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_merge bcftools_index bcftools_view };
     use MIP::Program::Delly qw{ delly_call delly_merge };
     use MIP::Program::Picardtools qw{ picardtools_sortvcf };

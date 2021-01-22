@@ -127,8 +127,7 @@ sub analysis_bwa_mem {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files get_sample_file_attribute };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files get_sample_file_attribute parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_mem };
     use MIP::Program::Samtools qw{ samtools_index samtools_stats samtools_sort samtools_view };
@@ -545,8 +544,7 @@ sub analysis_bwa_mem2 {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files get_sample_file_attribute };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files get_sample_file_attribute parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_mem2_mem };
     use MIP::Program::Samtools qw{ samtools_index samtools_stats samtools_sort samtools_view };
@@ -966,8 +964,7 @@ sub analysis_run_bwa_mem {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Executable qw{ get_executable_base_command };
-    use MIP::File_info qw{ get_io_files get_sample_file_attribute };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files get_sample_file_attribute parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bwa qw{ bwa_mem run_bwamem };
     use MIP::Program::Samtools qw{ samtools_index samtools_stats samtools_sort samtools_view };

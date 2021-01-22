@@ -130,9 +130,8 @@ sub analysis_endvariantannotationblock {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
-    use MIP::File_info qw{ get_io_files };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Gatk qw{ gatk_concatenate_variants };
@@ -447,8 +446,7 @@ sub analysis_endvariantannotationblock_panel {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
