@@ -60,31 +60,29 @@ sub pigz {
     my $verbose;
 
     my $tmpl = {
+        decompress  => { store => \$decompress, strict_type => 1, },
+        filehandle  => { store => \$filehandle, },
         infile_path => {
             defined     => 1,
-            required    => 1,
             store       => \$infile_path,
             strict_type => 1,
         },
-        stdout       => { store => \$stdout,       strict_type => 1, },
-        decompress   => { store => \$decompress,   strict_type => 1, },
         outfile_path => { store => \$outfile_path, strict_type => 1, },
         processes    => {
             allow       => qr{ \A\d+\z }sxm,
             store       => \$processes,
             strict_type => 1,
         },
-        filehandle      => { store => \$filehandle, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
         quiet => {
             allow       => [ 0, 1 ],
             default     => 0,
             store       => \$quiet,
             strict_type => 1,
         },
-        verbose => {
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdout                 => { store => \$stdout,                 strict_type => 1, },
+        verbose                => {
             allow       => [ 0, 1 ],
             default     => 0,
             store       => \$verbose,
@@ -96,6 +94,11 @@ sub pigz {
 
     my @commands = ( get_executable_base_command( { base_command => q{pigz} } ), );
 
+    if ($decompress) {
+
+        push @commands, q{--decompress};
+    }
+
     if ($processes) {
 
         push @commands, q{--processes} . $SPACE . $processes;
@@ -106,22 +109,20 @@ sub pigz {
         push @commands, q{--quiet};
     }
 
-    if ($verbose) {
-
-        push @commands, q{--verbose};
-    }
-
-    if ($decompress) {
-
-        push @commands, q{--decompress};
-    }
-
     if ($stdout) {
 
         push @commands, q{--stdout};
     }
 
-    push @commands, $infile_path;
+    if ($verbose) {
+
+        push @commands, q{--verbose};
+    }
+
+    if ($infile_path) {
+
+        push @commands, $infile_path;
+    }
 
     if ($outfile_path) {
 

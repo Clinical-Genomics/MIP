@@ -131,7 +131,7 @@ recipe_time:
     fastqc_ar: 1
     gatk_asereadcounter: 2
     gatk_baserecalibration: 5
-    gatk_haplotypecaller: 4
+    gatk_haplotypecaller: 6
     gatk_splitncigarreads: 8
     gatk_variantfiltration: 1
     genebody_coverage: 3
@@ -139,7 +139,7 @@ recipe_time:
     gzip_fastq: 2
     markduplicates: 8
     multiqc_ar: 1
-    picardtools_collectrnaseqmetrics: 1
+    picardtools_collectrnaseqmetrics: 2
     picardtools_mergesamfiles: 2
     preseq_ar: 2
     qccollect_ar: 1
@@ -163,12 +163,12 @@ recipe_memory:
     dna_vcf_reformat: 2
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
-    genebody_coverage: 8
+    genebody_coverage: 12
     multiqc_ar: 10
     picardtools_collectrnaseqmetrics: 5
     picardtools_mergesamfiles: 5
     preseq_ar: 8
-    rseqc: 25
+    rseqc: 30
     salmon_quant: 2
     star_aln: 3
     star_fusion: 3
@@ -277,6 +277,7 @@ salmon_quant:
   file_tag: quant
   outfile_suffix: ".sf"
   program_executables:
+    - pigz
     - salmon
   type: recipe
 salmon_quant_reference_genome:

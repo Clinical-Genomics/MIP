@@ -2,7 +2,6 @@
 CHAIN_ALL:
   - CHAIN_MAIN:
     - gzip_fastq
-  # Parallel chains (branch)
   - CHAIN_FASTQC:
     - fastqc_ar
   - CHAIN_MAIN:
@@ -17,27 +16,26 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     - star_aln
     - picardtools_mergesamfiles
-    - CHAIN_PTCRM:
-      - picardtools_collectrnaseqmetrics
     - CHAIN_STRINGTIE:
       - stringtie_ar
       - gffcompare_ar
     - CHAIN_QC:
       - PARALLEL:
+        - picardtools_collectrnaseqmetrics
         - preseq_ar
         - rseqc
         - genebody_coverage
-  - CHAIN_ASE:
-    - markduplicates
-    - gatk_splitncigarreads
-    - gatk_baserecalibration
-    - gatk_haplotypecaller
-    - gatk_variantfiltration
-    - dna_vcf_reformat
-    - gatk_asereadcounter
-    - bootstrapann
-    - bcftools_merge
-    - varianteffectpredictor
+    - CHAIN_ASE:
+      - markduplicates
+      - gatk_splitncigarreads
+      - gatk_baserecalibration
+      - gatk_haplotypecaller
+      - gatk_variantfiltration
+      - dna_vcf_reformat
+      - gatk_asereadcounter
+      - bootstrapann
+      - bcftools_merge
+      - varianteffectpredictor
   - qccollect_ar
   - version_collect_ar
   - multiqc_ar
