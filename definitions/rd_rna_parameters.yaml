@@ -198,7 +198,7 @@ recipe_core_number:
     gffcompare_ar: 1
     gzip_fastq: 0
     multiqc_ar: 1
-    markduplicates: 16
+    markduplicates: 13
     picardtools_collectrnaseqmetrics: 1
     picardtools_mergesamfiles: 13
     preseq_ar: 1
