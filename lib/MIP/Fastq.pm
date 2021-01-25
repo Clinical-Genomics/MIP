@@ -26,11 +26,11 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      get_stream_fastq_file_cmd
       casava_header_features
       check_interleaved
       define_mip_fastq_file_features
       get_read_length
+      get_stream_fastq_file_cmd
       parse_fastq_file_header_attributes
       parse_fastq_infiles
       parse_fastq_infiles_format };
@@ -38,66 +38,6 @@ BEGIN {
 
 ## Constants
 Readonly my $SUM_FOR_INTERLEAVED_DIRECTIONS => 3;
-
-sub get_stream_fastq_file_cmd {
-
-## Function : Build command for streaming of chunk from fastq file(s)
-## Returns  : @read_files_chunk_cmds
-## Arguments: $fastq_files_ref => Fastq files {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $fastq_files_ref;
-
-    my $tmpl = {
-        fastq_files_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$fastq_files_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Program::Gnu::Coreutils qw{ gnu_head gnu_tail };
-
-    ## Constants
-    Readonly my $BYTE_START_POS => 10_000;
-    Readonly my $BYTE_STOP_POS  => $BYTE_START_POS * 300;
-
-    my @read_files_chunk_cmds;
-
-  FILE:
-    foreach my $file_path ( @{$fastq_files_ref} ) {
-
-        ## Check gzipped status of file path to choose correct cat binary (cat or gzip)
-        ## Also prepend stream character
-        my @cmds = _get_file_read_commands(
-            {
-                file_path => $file_path,
-            }
-        );
-
-        push @cmds, $PIPE;
-
-        ## Start of byte chunk
-        push @cmds, gnu_tail( { number => $PLUS . $BYTE_START_POS, } );
-
-        push @cmds, $PIPE;
-
-        ## End of byte chunk
-        push @cmds, gnu_head( { number => $BYTE_STOP_POS, } );
-
-        $cmds[-1] = $cmds[-1] . $CLOSE_PARENTHESIS;
-
-        ## Join for command line
-        push @read_files_chunk_cmds, join $SPACE, @cmds;
-    }
-    return @read_files_chunk_cmds;
-}
 
 sub casava_header_features {
 
@@ -500,6 +440,66 @@ sub get_read_length {
 
     ## Return read length
     return $process_return{stdouts_ref}[0];
+}
+
+sub get_stream_fastq_file_cmd {
+
+## Function : Build command for streaming of chunk from fastq file(s)
+## Returns  : @read_files_chunk_cmds
+## Arguments: $fastq_files_ref => Fastq files {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $fastq_files_ref;
+
+    my $tmpl = {
+        fastq_files_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$fastq_files_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Gnu::Coreutils qw{ gnu_head gnu_tail };
+
+    ## Constants
+    Readonly my $BYTE_START_POS => 10_000;
+    Readonly my $BYTE_STOP_POS  => $BYTE_START_POS * 300;
+
+    my @read_files_chunk_cmds;
+
+  FILE:
+    foreach my $file_path ( @{$fastq_files_ref} ) {
+
+        ## Check gzipped status of file path to choose correct cat binary (cat or gzip)
+        ## Also prepend stream character
+        my @cmds = _get_file_read_commands(
+            {
+                file_path => $file_path,
+            }
+        );
+
+        push @cmds, $PIPE;
+
+        ## Start of byte chunk
+        push @cmds, gnu_tail( { number => $PLUS . $BYTE_START_POS, } );
+
+        push @cmds, $PIPE;
+
+        ## End of byte chunk
+        push @cmds, gnu_head( { number => $BYTE_STOP_POS, } );
+
+        $cmds[-1] = $cmds[-1] . $CLOSE_PARENTHESIS;
+
+        ## Join for command line
+        push @read_files_chunk_cmds, join $SPACE, @cmds;
+    }
+    return @read_files_chunk_cmds;
 }
 
 sub parse_fastq_infiles {
