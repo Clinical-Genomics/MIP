@@ -3,7 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [9.1.2]
-- Increase markduplicates java memory allocation for chromosme 2.
+- Fix memory allocation for mip-rna markduplicates.
+
+## [9.1.2]
+- Increase markduplicates java memory allocation for chromosome 2.
 - Turn off chromograph_viz for wes analysis
 - Chromograph exits gracefully on empty infile
 - Use median coverage instead of expected coverage when evaluating whether expected coverage has been reached or not [#1719](https://github.com/Clinical-Genomics/MIP/issues/1719)
