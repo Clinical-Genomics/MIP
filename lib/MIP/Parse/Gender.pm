@@ -18,16 +18,13 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $BACKWARD_SLASH
-  $CLOSE_PARENTHESIS
   $COLON
   $DASH
   $DOT
   $DOUBLE_QUOTE
   $EQUALS
   $LOG_NAME
-  $OPEN_PARENTHESIS
   $PIPE
-  $PLUS
   $SPACE
   $UNDERSCORE };
 
@@ -36,71 +33,12 @@ BEGIN {
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ build_stream_file_cmd
+    our @EXPORT_OK = qw{
       get_number_of_male_reads
       get_sampling_fastq_files
       parse_fastq_for_gender
       update_gender_info
     };
-}
-
-sub build_stream_file_cmd {
-
-## Function : Build command for streaming of chunk from fastq file(s)
-## Returns  : @bwa_infiles
-## Arguments: $fastq_files_ref => Fastq files {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $fastq_files_ref;
-
-    my $tmpl = {
-        fastq_files_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$fastq_files_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Program::Gnu::Coreutils qw{ gnu_head gnu_tail };
-
-    ## Constants
-    Readonly my $BYTE_START_POS => 10_000;
-    Readonly my $BYTE_STOP_POS  => $BYTE_START_POS * 300;
-
-    my @bwa_infiles;
-
-  FILE:
-    foreach my $file_path ( @{$fastq_files_ref} ) {
-
-        ## Check gzipped status of file path to choose correct cat binary (cat or gzip). Also prepend stream character.
-        my @cmds_cat = _get_file_read_commands(
-            {
-                file_path => $file_path,
-            }
-        );
-
-        push @cmds_cat, $PIPE;
-
-        ## Start of byte chunk
-        push @cmds_cat, gnu_tail( { number => $PLUS . $BYTE_START_POS, } );
-
-        push @cmds_cat, $PIPE;
-
-        ## End of byte chunk
-        push @cmds_cat, gnu_head( { number => $BYTE_STOP_POS, } );
-
-        $cmds_cat[-1] = $cmds_cat[-1] . $CLOSE_PARENTHESIS;
-
-        ## Join for command line
-        push @bwa_infiles, join $SPACE, @cmds_cat;
-    }
-    return @bwa_infiles;
 }
 
 sub get_number_of_male_reads {
@@ -272,6 +210,7 @@ sub parse_fastq_for_gender {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{ get_active_parameter_attribute };
+    use MIP::Fastq qw{ get_stream_fastq_file_cmd };
     use MIP::File_info qw{ get_sample_file_attribute };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cut };
     use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
@@ -322,7 +261,7 @@ sub parse_fastq_for_gender {
         @fastq_files = map { catfile( $infiles_dir, $_ ) } @fastq_files;
 
         ## Build command for streaming of chunk from fastq file(s)
-        my @bwa_infiles = build_stream_file_cmd( { fastq_files_ref => \@fastq_files, } );
+        my @bwa_infiles = get_stream_fastq_file_cmd( { fastq_files_ref => \@fastq_files, } );
 
         ## Make reference dir available
         my @commands = ( q{SINGULARITY_BIND} . $EQUALS . $active_parameter_href->{reference_dir} );
@@ -508,53 +447,6 @@ sub update_gender_info {
         }
     );
     return 1;
-}
-
-sub _get_file_read_commands {
-
-## Function : Check gzipped status of file path to choose correct cat binary (cat or gzip). Also prepend stream character.
-## Returns  : @read_cmds
-## Arguments: $file_path => Fastq File path to check status for
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_path;
-
-    my $tmpl = {
-        file_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_path,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
-    use MIP::Program::Gzip qw{ gzip };
-    use MIP::Validate::Data qw{ %constraint };
-
-    my @read_cmds;
-
-    if ( $constraint{is_gzipped}->($file_path) ) {
-        @read_cmds = gzip(
-            {
-                decompress       => 1,
-                infile_paths_ref => [$file_path],
-                stdout           => 1,
-            }
-        );
-    }
-    else {
-
-        @read_cmds = gnu_cat( { infile_paths_ref => [$file_path], } );
-    }
-
-    $read_cmds[0] = q{<} . $OPEN_PARENTHESIS . $read_cmds[0];
-
-    return @read_cmds;
 }
 
 1;
