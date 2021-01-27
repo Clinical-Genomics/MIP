@@ -609,7 +609,7 @@ rseqc_transcripts_file:
     - genebody_coverage
     - rseqc
   data_type: SCALAR
-  default: grch37_gencode_annotation_reformated_-v31-.bed
+  default: grch37_gencode_annotation_reformated_-v34-.bed
   exists_check: file
   is_reference: 1
   reference: reference_dir

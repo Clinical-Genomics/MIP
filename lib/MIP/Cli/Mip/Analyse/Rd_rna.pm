@@ -499,7 +499,7 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
 
     option(
         q{rseqc_transcripts_file} => (
-            cmd_tags      => [q{Rseqc transcripts file: Format: GTF}],
+            cmd_tags      => [q{Rseqc transcripts file: Format: bed}],
             documentation => q{Input for rseqc to build transcript bed format file},
             is            => q{rw},
             isa           => Str,
