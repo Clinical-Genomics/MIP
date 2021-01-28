@@ -34,6 +34,7 @@ BEGIN {
       get_is_sample_files_compressed
       get_merged_infile_prefix
       get_sample_file_attribute
+      get_sampling_fastq_files
       parse_file_compression_features
       parse_files_compression_status
       parse_io_outfiles
@@ -682,6 +683,57 @@ sub get_sample_file_attribute {
 
     ## Return requested attribute
     return $stored_attribute;
+}
+
+sub get_sampling_fastq_files {
+
+## Function : Get sample fastq files. Either single-end, paired-end or interleaved
+## Returns  : $is_interleaved_fastq, @fastq_files
+## Arguments: $file_info_sample_href => File info sample hash
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_sample_href;
+
+    my $tmpl = {
+        file_info_sample_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_sample_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @fastq_files;
+
+    ## Perform per single-end or read pair
+    my $paired_end_tracker = 0;
+
+  INFILE_PREFIX:
+    foreach my $infile_prefix ( @{ $file_info_sample_href->{no_direction_infile_prefixes} } ) {
+
+        push @fastq_files, $file_info_sample_href->{mip_infiles}[$paired_end_tracker];
+
+        my $sequence_run_type = $file_info_sample_href->{$infile_prefix}{sequence_run_type};
+
+        # If second read direction is present
+        if ( $sequence_run_type eq q{paired-end} ) {
+
+            # Increment to collect correct read 2
+            $paired_end_tracker = $paired_end_tracker + 1;
+            push @fastq_files, $file_info_sample_href->{mip_infiles}[$paired_end_tracker];
+        }
+
+        my $is_interleaved_fastq = $sequence_run_type eq q{interleaved} ? 1 : 0;
+
+        ## Only perform once per sample and fastq file(s)
+        return $is_interleaved_fastq, @fastq_files;
+    }
+    return;
 }
 
 sub parse_file_compression_features {
