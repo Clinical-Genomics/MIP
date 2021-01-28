@@ -59,8 +59,10 @@ transcript_annotation:
   associated_recipe:
     - arriba_ar
     - blobfish
+    - genebody_coverage
     - gffcompare_ar
     - picardtools_collectrnaseqmetrics
+    - rseqc
     - salmon_quant
     - star_aln
     - star_fusion
@@ -605,16 +607,6 @@ rseqc:
     - read_duplication.py
   outfile_suffix: ".txt"
   type: recipe
-rseqc_transcripts_file:
-  associated_recipe:
-    - genebody_coverage
-    - rseqc
-  data_type: SCALAR
-  default: grch37_gencode_annotation_reformated_-v31-.bed
-  exists_check: file
-  is_reference: 1
-  reference: reference_dir
-  type: path
 genebody_coverage:
   analysis_mode: sample
   associated_recipe:
@@ -624,8 +616,8 @@ genebody_coverage:
   file_tag: _genecov
   program_executables:
     - bam2wig.py
-    - wigToBigWig
     - geneBody_coverage2.py
+    - wigToBigWig
   outfile_suffix: ".txt"
   type: recipe
 ## Preseq

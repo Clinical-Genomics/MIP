@@ -163,8 +163,9 @@ sub analysis_rseqc {
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
     my $infile_suffix        = $io{in}{file_suffix};
     my $infile_path          = $infile_path_prefix . $infile_suffix;
-    my $bed_file_path        = $active_parameter_href->{rseqc_transcripts_file};
-    my %recipe               = parse_recipe_prerequisites(
+    my $bed_file_path        = $active_parameter_href->{transcript_annotation}
+      . $file_info_href->{transcript_annotation_file_endings}[0];
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
             parameter_href        => $parameter_href,

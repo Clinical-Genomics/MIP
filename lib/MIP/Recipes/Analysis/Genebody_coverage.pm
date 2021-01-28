@@ -228,10 +228,12 @@ sub analysis_genebody_coverage {
 
     ## Calculate genebody coverage
     say {$filehandle} q{## Calculate genebody coverage};
-    my $bigwig_infile_path = $outfile_path_prefix . $DOT . q{bw};
+    my $bigwig_infile_path        = $outfile_path_prefix . $DOT . q{bw};
+    my $transcript_annotation_bed = $active_parameter_href->{transcript_annotation}
+      . $file_info_href->{transcript_annotation_file_endings}[0];
     rseqc_genebody_coverage2(
         {
-            bed_file_path       => $active_parameter_href->{rseqc_transcripts_file},
+            bed_file_path       => $transcript_annotation_bed,
             filehandle          => $filehandle,
             infile_path         => $bigwig_infile_path,
             outfile_path_prefix => $outfile_path_prefix,

@@ -185,8 +185,8 @@ sub analysis_picardtools_collectrnaseqmetrics {
     my $outfile_path        = $io{out}{file_path};
 
     my $transcript_annotation = $active_parameter_href->{transcript_annotation};
-    my $refflat_ending        = $file_info_href->{transcript_annotation_file_endings}[0];
-    my $rrna_ending           = $file_info_href->{transcript_annotation_file_endings}[1];
+    my $refflat_ending        = $file_info_href->{transcript_annotation_file_endings}[1];
+    my $rrna_ending           = $file_info_href->{transcript_annotation_file_endings}[2];
 
     ## Filehandles
     # Create anonymous filehandle
