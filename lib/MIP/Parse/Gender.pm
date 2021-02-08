@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use utf8;
@@ -174,7 +174,12 @@ sub parse_fastq_for_gender {
           );
 
         ## Get the number of male reads by aligning fastq read chunk and counting "chrY" or "Y" aligned reads
-        my $y_read_count = get_number_of_male_reads( { commands_ref => \@commands, } );
+        my $y_read_count = get_number_of_male_reads(
+            {
+                commands_ref  => \@commands,
+                outscript_dir => catdir( $active_parameter_href->{outscript_dir}, $sample_id ),
+            }
+        );
 
         ## Update gender info in active_parameter and update contigs depending on results
         update_gender_info(

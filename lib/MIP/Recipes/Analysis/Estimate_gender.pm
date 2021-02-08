@@ -4,8 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use FindBin qw{ $Bin };
-use File::Path qw{ remove_tree };
+use File::Path qw{ make_path };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -18,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $LOG_NAME $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $COLON $LOG_NAME $SPACE };
 
 BEGIN {
     require Exporter;
@@ -32,12 +31,14 @@ sub get_number_of_male_reads {
 
 ## Function : Get the number of male reads by aligning fastq read chunk and counting "chrY" or "Y" aligned reads
 ## Returns  : $y_read_count
-## Arguments: $commands_ref => Command array for estimating number of male reads {REF}
+## Arguments: $commands_ref  => Command array for estimating number of male reads {REF}
+##          : $outscript_dir => Directory to write the bash script to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $commands_ref;
+    my $outscript_dir;
 
     my $tmpl = {
         commands_ref => {
@@ -47,31 +48,34 @@ sub get_number_of_male_reads {
             store       => \$commands_ref,
             strict_type => 1,
         },
+        outscript_dir => => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outscript_dir,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Child_process qw{ child_process };
 
-    ## Constants
-    Readonly my $MAX_RANDOM_NUMBER => 10_000;
-
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Generate a random integer between 0-10,000.
-    my $random_integer = int rand $MAX_RANDOM_NUMBER;
+    make_path($outscript_dir);
 
-    ## Temporary bash file for commands
-    my $bash_temp_file =
-      catfile( $Bin, q{estimate_gender_from_reads} . $UNDERSCORE . $random_integer . q{.sh} );
+    ## Recipe bash file for commands to estimate gender
+    my $bash_file = catfile( $outscript_dir, q{estimate_gender_from_reads} . q{.sh} );
 
-    open my $filehandle, q{>}, $bash_temp_file
-      or croak q{Cannot write to} . $SPACE . $bash_temp_file . $COLON . $SPACE . $OS_ERROR;
+    open my $filehandle, q{>}, $bash_file
+      or croak q{Cannot write to} . $SPACE . $bash_file . $COLON . $SPACE . $OS_ERROR;
+
+    $log->info(qq{Writing estimation of gender recipe to: $bash_file});
 
     ## Write to file
     say {$filehandle} join $SPACE, @{$commands_ref};
 
-    my $cmds_ref       = [ q{bash}, $bash_temp_file ];
+    my $cmds_ref       = [ q{bash}, $bash_file ];
     my %process_return = child_process(
         {
             commands_ref => $cmds_ref,
@@ -84,7 +88,6 @@ sub get_number_of_male_reads {
 
     ## Clean-up
     close $filehandle;
-    remove_tree($bash_temp_file);
 
     return $y_read_count;
 }

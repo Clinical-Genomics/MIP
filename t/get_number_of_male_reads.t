@@ -5,7 +5,9 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Path qw{ remove_tree };
+use File::Spec::Functions qw{ catdir catfile };
+use File::Temp;
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -51,9 +53,19 @@ test_log( { no_screen => 1, } );
 ## Given an arbitrary command
 my @commands = qw{ ls };
 
+## Given a outscript dir
+my $outscript_dir = catfile( File::Temp->newdir() );
+
 ## Then return stdout
-my $is_ok = get_number_of_male_reads( { commands_ref => \@commands, } );
+my $is_ok = get_number_of_male_reads(
+    {
+        commands_ref  => \@commands,
+        outscript_dir => $outscript_dir,
+    }
+);
 
 ok( $is_ok, q{Executed bash script and captured return} );
+
+remove_tree($outscript_dir);
 
 done_testing();
