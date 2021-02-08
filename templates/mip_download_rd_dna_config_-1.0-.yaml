@@ -462,6 +462,13 @@ reference_feature:
         outfile_check: grch38_expansionhunter_variant_catalog_-3.1.2-.json.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/disease_loci/ExpansionHunter-v3.1.2/
+      4.0.2:
+        file: variant_catalog_hg38.json
+        file_check: variant_catalog_hg38.json.md5
+        outfile: grch38_expansionhunter_variant_catalog_-4.0.2-.json
+        outfile_check: grch38_expansionhunter_variant_catalog_-4.0.2-.json.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/disease_loci/ExpansionHunter-v4.0.2/
   gatk_mitochondrial_ref:
     grch38:
       v0_m_amb:
