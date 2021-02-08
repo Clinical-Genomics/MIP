@@ -2,8 +2,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [9.1.2]
+## [9.1.3]
 - Fix memory allocation for mip-rna markduplicates.
+- Update to repeat expansion calling
+
+**Tools**  
+expansionhunter 3.1.2 -> 4.0.2  
+stranger 0.5.5 -> 0.7
 
 ## [9.1.2]
 - Increase markduplicates java memory allocation for chromosome 2.

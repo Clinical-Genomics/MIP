@@ -91,6 +91,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    family_id => {
+        input           => q{case_id},
+        expected_output => q{--family_id} . $SPACE . q{case_id},
+    },
     infile_path => {
         input           => catfile(qw{ a infile.vcf }),
         expected_output => catfile(qw{ a infile.vcf }),
