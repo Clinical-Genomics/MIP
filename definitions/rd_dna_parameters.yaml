@@ -215,7 +215,7 @@ recipe_gpu_number:
     - mip
   data_type: HASH
   default:
-    deepvariant: 1
+    deepvariant: 0
     deeptrio: 1
   type: mip
 set_recipe_gpu_number:
