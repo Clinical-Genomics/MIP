@@ -179,8 +179,6 @@ sub slurm_build_sbatch_header {
 
     if ($gpu_number) {
 
-        #        push @commands, q{--partition=} . q{gpu};
-        #        push @commands, q{--gpus=} . $gpu_number;
         push @commands, q{--gres=gpu};
     }
 
