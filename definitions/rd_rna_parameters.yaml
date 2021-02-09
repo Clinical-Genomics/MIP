@@ -455,6 +455,12 @@ arriba_proteindomain_path:
     - arriba_ar
   data_type: SCALAR
   type: path
+arriba_use_sample_id_as_display_name:
+  associated_recipe:
+    - arriba_ar
+  data_type: SCALAR
+  default: 0
+  type: mip
 ## Merge bam files
 picardtools_mergesamfiles:
   analysis_mode: sample

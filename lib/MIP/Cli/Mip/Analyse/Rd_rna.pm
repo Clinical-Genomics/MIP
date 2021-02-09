@@ -152,6 +152,15 @@ sub _build_usage {
     );
 
     option(
+        q{arriba_use_sample_id_as_display_name} => (
+            cmd_tags      => [q{Default: 0}],
+            documentation => q{Use sample id as display name for arriba fusion report},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{bcftools_merge} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Merge vcfs before annotation},

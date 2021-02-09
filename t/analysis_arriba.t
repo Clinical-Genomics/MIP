@@ -42,7 +42,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Arriba} => [qw{ analysis_arriba }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures}            => [qw{ test_log test_mip_hashes test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -59,7 +59,7 @@ diag(   q{Test analysis_arriba from Arriba.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
+test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
 my $recipe_name    = q{arriba_ar};
@@ -121,6 +121,7 @@ my %sample_info = (
                     },
                 },
             },
+            sample_display_name => q{The_Rabbit_of_Caerbannog},
         },
     },
 );
