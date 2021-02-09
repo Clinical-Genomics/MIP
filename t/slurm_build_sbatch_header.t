@@ -27,7 +27,7 @@ use MIP::Test::Writefile qw{ test_write_to_file };
 
 ## Constants
 Readonly my $CORE_NR => 8;
-Readonly my $GPU_NR => 1;
+Readonly my $GPU_NR  => 1;
 
 BEGIN {
 
@@ -37,7 +37,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Slurm}  => [qw{ slurm_build_sbatch_header }],
-q{MIP::Test::Writefile} => [qw{ test_write_to_file }],
+        q{MIP::Test::Writefile} => [qw{ test_write_to_file }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -75,7 +75,7 @@ my %argument = (
     },
     gpu_number => {
         input           => $GPU_NR,
-        expected_output => q{--gpus=} . $GPU_NR,
+        expected_output => q{--gres=gpu},
     },
     job_name => {
         input           => q{test_job_name},
