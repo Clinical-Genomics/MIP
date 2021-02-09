@@ -47,7 +47,7 @@ diag(   q{Test parse_fastq_for_gender from Gender.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { no_screen => 1 } );
+test_log( { no_screen => 0, } );
 
 ## Given no other gender
 my %active_parameter = test_mip_hashes(
