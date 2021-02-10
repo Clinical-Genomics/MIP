@@ -109,7 +109,7 @@ sub parse_dragen_rd_dna {
     use MIP::Fastq qw{ parse_fastq_infiles };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Parameter qw{ get_cache };
-    use MIP::Parse::Gender qw{ parse_fastq_for_gender };
+    use MIP::Recipes::Analysis::Estimate_gender qw{ parse_fastq_for_gender };
     use MIP::Reference qw{ get_select_file_contigs };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Vep qw{
