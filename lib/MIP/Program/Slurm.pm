@@ -179,7 +179,7 @@ sub slurm_build_sbatch_header {
 
     if ($gpu_number) {
 
-        push @commands, q{--gres=gpu};
+        push @commands, q{--gres=gpu:} . $gpu_number;
     }
 
     ## Add sbatch shebang

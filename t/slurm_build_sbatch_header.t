@@ -75,7 +75,7 @@ my %argument = (
     },
     gpu_number => {
         input           => $GPU_NR,
-        expected_output => q{--gres=gpu},
+        expected_output => q{--gres=gpu:} . $GPU_NR,
     },
     job_name => {
         input           => q{test_job_name},
