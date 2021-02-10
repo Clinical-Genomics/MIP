@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [9.1.3]
 - Fix memory allocation for mip-rna markduplicates.
 - Update to repeat expansion calling
+- Add possibility to rename arriba fusion report from with sample display name
 
 **Tools**  
 expansionhunter 3.1.2 -> 4.0.2  
