@@ -30,16 +30,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Gender}  => [qw{ parse_fastq_for_gender }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }],
+        q{MIP::Recipes::Analysis::Estimate_gender} => [qw{ parse_fastq_for_gender }],
+        q{MIP::Test::Fixtures}                     => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::Gender qw{ parse_fastq_for_gender };
+use MIP::Recipes::Analysis::Estimate_gender qw{ parse_fastq_for_gender };
 
-diag(   q{Test parse_fastq_for_gender from Gender.pm}
+diag(   q{Test parse_fastq_for_gender from Estimate_gender.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

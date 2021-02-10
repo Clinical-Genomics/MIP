@@ -116,7 +116,7 @@ sub parse_rd_dna {
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
     use MIP::Parameter qw{ get_cache };
-    use MIP::Parse::Gender qw{ parse_fastq_for_gender };
+    use MIP::Recipes::Analysis::Estimate_gender qw{ parse_fastq_for_gender };
     use MIP::Reference qw{ get_select_file_contigs parse_exome_target_bed parse_nist_parameters };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Vep qw{
