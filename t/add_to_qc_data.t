@@ -22,16 +22,13 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Qc_data}        => [qw{ add_to_qc_data }],
-);
+    my %perl_module = ( q{MIP::Qc_data} => [qw{ add_to_qc_data }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -48,13 +45,11 @@ diag(   q{Test add_to_qc_data from Qc_data.pm}
 
 ## Given recipe metric when key value pair
 my $attribute = q{greeting};
-my $infile    = q{an_infile};
 my $recipe    = q{japan_greetings};
 my %qc_data;
 my %qc_header;
 my $value          = q{konnichi wa};
 my %qc_recipe_data = ( $recipe => { $attribute => [$value], }, );
-my $sample_id      = q{sample_1};
 my %sample_info;
 
 add_to_qc_data(
@@ -91,5 +86,39 @@ add_to_qc_data(
 ## Then qc data metric should be present on case level
 is_deeply( \@{ $qc_data{recipe}{$recipe_goodbye}{$attribute_goodbye} },
     \@goodbyes, q{Added qc data metrics key array pair} );
+
+## Clean-up from previous tests
+delete $qc_data{metrics};
+
+## Given an infile and sample_id
+my $infile    = q{an_infile};
+my $sample_id = q{sample_1};
+
+add_to_qc_data(
+    {
+        attribute           => $attribute,
+        infile              => $infile,
+        qc_data_href        => \%qc_data,
+        qc_header_href      => \%qc_header,
+        qc_recipe_data_href => \%qc_recipe_data,
+        recipe              => $recipe,
+        sample_info_href    => \%sample_info,
+        sample_id           => $sample_id,
+    }
+);
+my %expected_metric = (
+    metrics => [
+        {
+            header => undef,
+            id     => $sample_id,
+            input  => $infile,
+            name   => $attribute,
+            value  => $value,
+            step   => $recipe,
+        },
+    ],
+);
+
+is_deeply( $qc_data{metrics}, $expected_metric{metrics}, q{Set metrics in qc_data} );
 
 done_testing();

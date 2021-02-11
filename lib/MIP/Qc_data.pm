@@ -36,6 +36,7 @@ BEGIN {
       parse_qc_recipe_table_data
       parse_regexp_hash_and_collect
       set_header_metrics_to_qc_data
+      set_metrics_to_store
       set_qc_data_recipe_info
     };
 }
@@ -330,6 +331,16 @@ sub add_to_qc_data {
                 value        => $data_metric,
             }
         );
+        set_metrics_to_store(
+            {
+                id           => $sample_id,
+                input        => $infile,
+                metric_name  => $attribute,
+                metric_value => $data_metric,
+                qc_data_href => $qc_data_href,
+                recipe_name  => $recipe,
+            }
+        );
     }
     elsif ( not exists $qc_header_href->{$recipe} ) {
         ## Write array to qc_data for metrics without header
@@ -345,6 +356,16 @@ sub add_to_qc_data {
                     recipe_name  => $recipe,
                     sample_id    => $sample_id,
                     value        => $data_metric,
+                }
+            );
+            set_metrics_to_store(
+                {
+                    id           => $sample_id,
+                    input        => $infile,
+                    metric_name  => $attribute,
+                    metric_value => $data_metric,
+                    qc_data_href => $qc_data_href,
+                    recipe_name  => $recipe,
                 }
             );
         }
@@ -783,6 +804,17 @@ sub parse_qc_recipe_table_data {
                         value             => $data_metric,
                     }
                 );
+                set_metrics_to_store(
+                    {
+                        header       => $regexp_key,
+                        id           => $sample_id,
+                        input        => $infile,
+                        metric_name  => $qc_header,
+                        metric_value => $data_metric,
+                        qc_data_href => $qc_data_href,
+                        recipe_name  => $recipe,
+                    }
+                );
             }
         }
     }
@@ -1064,4 +1096,91 @@ sub set_qc_data_recipe_info {
     return;
 }
 
+sub set_metrics_to_store {
+
+## Function : Set metric and meta data in qc_data hash
+## Returns  :
+## Arguments: $header       => Metrics table header
+##          : $id           => Id associated with metric (sample_id|case_id)
+##          : $input        => Input source used to generate metric from
+##          : $metric_name  => Name of metric
+##          : $metric_value => Value to store
+##          : $qc_data_href => Qc_data hash {REF}
+##          : $recipe_name  => Recipe to set attributes for
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $header;
+    my $id;
+    my $input;
+    my $metric_name;
+    my $metric_value;
+    my $qc_data_href;
+    my $recipe_name;
+
+    my $tmpl = {
+        header => {
+            store       => \$header,
+            strict_type => 1,
+        },
+        id => {
+            store       => \$id,
+            strict_type => 1,
+        },
+        input => {
+            store       => \$input,
+            strict_type => 1,
+        },
+        metric_name => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$metric_name,
+        },
+        metric_value => {
+            store       => \$metric_value,
+            strict_type => 1,
+        },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $metric_value );
+
+    ## Build metric meta data hash
+    my %metric_info = (
+        header => $header,
+        id     => $id,
+        input  => $input,
+        name   => $metric_name,
+        step   => $recipe_name,
+        value  => $metric_value,
+    );
+
+    if ( defined $input and defined $metric_name ) {
+        ## Remove old entries for the same metrics name and input
+        @{ $qc_data_href->{metrics} } =
+          grep {
+                  $_->{value} ne $metric_value
+              and $_->{name} ne $metric_name
+              and $_->{input} ne $input
+          } @{ $qc_data_href->{metrics} };
+    }
+    ## Set metric according to metric info
+    push @{ $qc_data_href->{metrics} }, {%metric_info};
+
+    return;
+}
 1;
