@@ -91,22 +91,4 @@ my %expected_metric_info = (
 ## Then metric info should be set
 is_deeply( \%qc_data, \%expected_metric_info, q{Set metrics in hash} );
 
-## Given a duplicate metric
-
-## When setting metric to store
-set_metrics_to_store(
-    {
-        header       => $header,
-        id           => $sample_id,
-        input        => $input,
-        metric_name  => $metric_name,
-        metric_value => $metric_value,
-        qc_data_href => \%qc_data,
-        recipe_name  => $recipe_name,
-    }
-);
-
-## Then metric info should be set
-is_deeply( \%qc_data, \%expected_metric_info, q{Skip duplicate metric} );
-
 done_testing();

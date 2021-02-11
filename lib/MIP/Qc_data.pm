@@ -1169,15 +1169,6 @@ sub set_metrics_to_store {
         value  => $metric_value,
     );
 
-    if ( defined $input and defined $metric_name ) {
-        ## Remove old entries for the same metrics name and input
-        @{ $qc_data_href->{metrics} } =
-          grep {
-                  $_->{value} ne $metric_value
-              and $_->{name} ne $metric_name
-              and $_->{input} ne $input
-          } @{ $qc_data_href->{metrics} };
-    }
     ## Set metric according to metric info
     push @{ $qc_data_href->{metrics} }, {%metric_info};
 
