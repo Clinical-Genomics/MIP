@@ -35,7 +35,7 @@ sub stranger {
 
 ## Function : Perl wrapper for stranger annotation of repeat expansions.
 ## Returns  : @commands
-## Arguments: $family_id              => Family id
+## Arguments: $case_id                => Case id
 ##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile
 ##          : $log_level              => Log level
@@ -48,7 +48,7 @@ sub stranger {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $family_id;
+    my $case_id;
     my $filehandle;
     my $infile_path;
     my $repeats_file_path;
@@ -61,8 +61,8 @@ sub stranger {
     my $log_level;
 
     my $tmpl = {
-        family_id => {
-            store       => \$family_id,
+        case_id => {
+            store       => \$case_id,
             strict_type => 1,
         },
         filehandle => {
@@ -103,9 +103,9 @@ sub stranger {
 
     my @commands = qw{ stranger };
 
-    if ($family_id) {
+    if ($case_id) {
 
-        push @commands, q{--family_id} . $SPACE . $family_id;
+        push @commands, q{--family_id} . $SPACE . $case_id;
     }
 
     push @commands, q{--loglevel} . $SPACE . $log_level;

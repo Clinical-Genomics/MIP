@@ -91,7 +91,7 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    family_id => {
+    case_id => {
         input           => q{case_id},
         expected_output => q{--family_id} . $SPACE . q{case_id},
     },

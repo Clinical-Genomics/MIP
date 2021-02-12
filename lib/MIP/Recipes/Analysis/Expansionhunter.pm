@@ -352,7 +352,7 @@ sub analysis_expansionhunter {
       $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge_ann} . $outfile_suffix;
     stranger(
         {
-            family_id         => $case_id,
+            case_id           => $case_id,
             filehandle        => $filehandle,
             infile_path       => $svdb_outfile_path,
             repeats_file_path => $variant_catalog_file_path,
