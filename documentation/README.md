@@ -1,6 +1,6 @@
 # MIP - Mutation Identification Pipeline
 
-[![Build Status](https://travis-ci.org/Clinical-Genomics/MIP.svg?branch=develop)](https://travis-ci.org/Clinical-Genomics/MIP)
+![MIP CI conda production install](https://github.com/Clinical-Genomics/MIP/workflows/MIP%20CI%20conda%20production%20install/badge.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/Clinical-Genomics/MIP/badge.svg?branch=develop)](https://coveralls.io/github/Clinical-Genomics/MIP?branch=develop)
 [![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/Clinical-Genomics/MIP/develop/LICENSE)
 [![GitHub Releases](https://img.shields.io/github/release/Clinical-Genomics/MIP.svg)](https://github.com/Clinical-Genomics/MIP/releases)
@@ -195,11 +195,11 @@ $ mip analyse rd_dna case_3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids
 This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
 
 ###### Running programs in singularity containers
-Aside from a conda environment, MIP uses singularity containers to run programs. Singularity containers that are downloaded using MIP's automated installer will need no extra setup. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `singularity_recipe_bind_path` in the config.
+Aside from a conda environment, MIP uses singularity containers to run programs. Singularity containers that are downloaded using MIP's automated installer will need no extra setup. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `recipe_bind_path` in the config.
 
 In the example below the config has been modified to include the infile directories for the bwa_mem recipe:
   ```Yml
-  singularity_recipe_bind_path:
+  recipe_bind_path:
     bwa_mem:
       - <path_to_directory_with_fastq_files>
   ```
