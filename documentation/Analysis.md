@@ -68,7 +68,7 @@ This will switch the mode for all downstream dependencies to run and all recipes
 ### Generate all supported standard recipes
 
 ```Bash
-$ mip analyse rd_dna [case_id] --config_file [mip_config_rd_dna] --pr
+$ mip analyse rd_dna [case_id] --config_file [mip_config_rd_dna] --print_recipe
 ```
 
 This will print a string with recipes in mode 2 (expect output) in chronological order (as far as possible, as some things are processed in parallel):
@@ -85,8 +85,8 @@ $ mip analyse rd_dna [case_id] --config_file [mip_config_rd_dna] --split_fastq_f
 
 You can of course start or skip any number of recipes as long as it is sane to do so (MIP will not check this but just execute)
 
-### You can also modulate the mode of '--pr' using --prm:
-```	  
-$ mip analyse rd_dna [case_id] --config_file [mip_config_rd_dna] --pr --prm 1
+### You can also modulate the mode of '--print_recipe' using --print_recipe_mode:
+```  
+$ mip analyse rd_dna [case_id] --config_file [mip_config_rd_dna] --print_recipe --print_recipe_mode 1
 $ --split_fastq_file 1 --gzip_fastq 1 --fastqc_ar 1 --bwa_mem 1 --samtools_merge 1 --markduplicates 1 --gatk_baserecalibration 1 --chanjo_sexcheck 1 --sambamba_depth 1 --picardtools_collectmultiplemetrics 1 --picardtools_collecthsmetrics 1 --cnvnator_ar 1 --delly_call 1 --delly_reformat 1 --manta 1 --tiddit 1 --sv_combinevariantcallsets 1 --sv_varianteffectpredictor 1 --sv_vcfparser 1 --sv_rankvariant 1 --sv_reformat 1 --bcftools_mpileup 1 --gatk_haplotypecaller 1 --gatk_genotypegvcfs 1 --gatk_variantrecalibration 1 --gatk_combinevariantcallsets 1 --prepareforvariantannotationblock 1 --rhocall_ar 1 --vt_ar 1 --frequency_filter 1 --gatk_variantevalall 1 --gatk_variantevalexome 1 --varianteffectpredictor 1 --vcfparser 1 --peddy_ar 1 --plink 1 --variant_integrity_ar 1 --rankvariant 1 --endvariantannotationblock 1 --qccollect_ar 1 --multiqc 1 --analysisrunstatus 1 --sacct 1
 ```

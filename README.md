@@ -231,10 +231,10 @@ MIP will create sbatch scripts \(.sh\) and submit them in proper order with atta
 MIP will place any generated data files in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each recipe is written in the recipe/info directory.
 
 [Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/mip_rd_dna_config.yaml
-[Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/aggregated_master.txt
+[Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/gene_panels.bed
 [Miniconda]: http://conda.pydata.org/miniconda.html
 [Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml
 [Perl]:https://www.perl.org/
-[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_cmms_-v1.28-.ini
-[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_cmms_-v1.8-.ini
-[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/qc_regexp_-v1.24-.yaml
+[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_-v1.31-.ini
+[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_-v1.8-.ini
+[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/qc_regexp_-v1.26-.yaml
