@@ -33,6 +33,7 @@ BEGIN {
       get_rg_header_line
       get_path_entries
       get_pedigree_sample_id_attributes
+      get_pedigree_sample_ids
       get_sample_info_case_recipe_attributes
       get_sample_info_sample_recipe_attributes
       reload_previous_pedigree_info
@@ -336,6 +337,32 @@ sub get_pedigree_sample_id_attributes {
         return $sample_info_href->{sample}{$sample_id}{$attribute};
     }
     return;
+}
+
+sub get_pedigree_sample_ids {
+
+## Function : Get pedigree sample ids
+## Returns  : @sample_ids
+## Arguments: $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return ( keys %{ $sample_info_href->{sample} } );
 }
 
 sub get_read_group {

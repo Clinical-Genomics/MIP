@@ -22,9 +22,11 @@ BEGIN {
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ define_analysis_files_to_store
+      define_qc_metrics_to_store
       parse_store_files
       set_analysis_files_to_store
-      store_files };
+      store_files
+      store_metrics};
 }
 
 sub define_analysis_files_to_store {
@@ -88,6 +90,23 @@ sub define_analysis_files_to_store {
         },
     );
     return %analysis_store_file;
+}
+
+sub define_qc_metrics_to_store {
+
+## Function : Define qc metrics to store
+## Returns  :
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    my %store_metrics = (
+        picardtools_collectmultiplemetrics => {
+            analysis_mode => q{sample},
+            metric_name   => q{AT_DROPOUT},
+        },
+    );
+    return %store_metrics;
 }
 
 sub parse_store_files {
@@ -241,4 +260,92 @@ sub store_files {
     return;
 }
 
+sub store_metrics {
+
+## Function : Store metrics from the analysis to file
+## Returns  :
+## Arguments: $qc_data_href          => Metric data hash {REF}
+##          : $sample_info_href      => Sample info hash {REF}
+##          : $store_metrics_outfile => Path to write store metrics to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $qc_data_href;
+    my $sample_info_href;
+    my $store_metrics_outfile;
+
+    my $tmpl = {
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        store_metrics_outfile => {
+            store       => \$store_metrics_outfile,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Io::Write qw{ write_to_file };
+    use MIP::Qc_data qw{ get_qc_metric };
+    use MIP::Sample_info qw{ get_pedigree_sample_ids };
+
+    return if ( not defined $store_metrics_outfile );
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my %metrics_deliverable;
+    my %store_metrics = define_qc_metrics_to_store();
+
+    ## Unpack
+    my @sample_ids = get_pedigree_sample_ids( { sample_info_href => $sample_info_href, } );
+
+  METRIC:
+    while ( my ( $recipe_name, $metric_href ) = each %store_metrics ) {
+
+        my @ids =
+          $metric_href->{analysis_mode} eq q{sample} ? @sample_ids : ( $sample_info_href->{case} );
+
+      ID:
+        foreach my $id (@ids) {
+
+            push @{ $metrics_deliverable{metrics} },
+              get_qc_metric(
+                {
+                    header       => $metric_href->{header},
+                    id           => $id,
+                    input        => $metric_href->{input},
+                    metric_name  => $metric_href->{metric_name},
+                    metric_value => $metric_href->{metric_value},
+                    qc_data_href => $qc_data_href,
+                    recipe_name  => $recipe_name,
+                }
+              );
+        }
+    }
+
+    ## Writes a YAML hash to file
+    write_to_file(
+        {
+            data_href => \%metrics_deliverable,
+            format    => q{yaml},
+            path      => $store_metrics_outfile,
+        }
+    );
+    $log->info( q{Wrote: } . $store_metrics_outfile );
+
+    return @{ $metrics_deliverable{metrics} };
+}
 1;
