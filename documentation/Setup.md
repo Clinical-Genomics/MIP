@@ -34,36 +34,36 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - Simple Linux Utility for Resource Management ([SLURM]) (version: 18.08.0)
 
 #### **Pipeline: Rare disease**
-- [Bcftools] (version: 1.9)
+- [Bcftools] (version: 1.10.2)
 - [BedTools] (version: 2.29.0)
 - [BWA] (version: 0.7.17)
 - [BWAKit] (version: 0.7.15)
-- [CADD] (version: 1.4)
+- [CADD] (version: 1.6)
 - [Chanjo] (version: 4.2.0)
-- [Cnvnator] (version: 0.3.3)
-- [Expansionhunter] (version 3.0.0)
+- [Cnvnator] (version: 0.4.1)
+- [Expansionhunter] (version 4.0.2)
 - [Delly] (version: 0.8.1)
-- [FastQC] (version: 0.11.8)
-- [GATK] (version: 3.8 and 4.1.3)
+- [FastQC] (version: 0.11.9)
+- [GATK] (version: 3.8 and 4.1.8)
 - [GENMOD] (version: 3.7.3)
-- [Htslib] (version: 1.9)
+- [Htslib] (version: 1.10.2)
 - [Manta] (version: 1.6.0)
-- [MultiQC] (version: 1.6)
-- [Peddy] (version: 0.4.2)
-- [PicardTools] (version: 2.20.7)
+- [MultiQC] (version: 1.9)
+- [Peddy] (version: 0.4.3)
+- [PicardTools] (version: 2.22.4)
 - [PLINK] (version: 1.90b3x35)
 - [Rhocall] (version: 0.5.1)
 - [rtg-tools] (version: 3.10.1)
 - [Sambamba] (version: 0.6.8)
-- [Samtools] (version: 1.9)
-- [Stranger] (version: 0.5.5)
+- [Samtools] (version: 1.10)
+- [Stranger] (version: 0.7)
 - [Svdb] (version: 2.2.0)
-- [Tiddit] (version: 2.7.1)
+- [Tiddit] (version: 2.8.0)
 - [Upd] (version: 0.1)
 - [Variant_integrity] (version: 0.0.4)
-- [Vcf2cytosure] (version: 0.4.3)
+- [Vcf2cytosure] (version: 0.5.1)
 - [Vcfanno] (version: 0.3.2)
-- [VEP] (version: 97) with plugin "ExACpLI", "MaxEntScan, LoFtool"
+- [VEP] (version: 100) with plugin "ExACpLI", "MaxEntScan, LoFtool, SpliceAI"
 - [VT] (version: 20151110)
 
 The version number after the software name are tested for compatibility with MIP.
@@ -163,7 +163,7 @@ Corresponding MIP references:
 [Manta]: https://github.com/Illumina/manta
 [MultiQC]: https://github.com/ewels/MultiQC
 [Peddy]: https://github.com/brentp/peddy
-[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml   
+[Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml  
 [PicardTools]: http://broadinstitute.github.io/picard/
 [PLINK]: https://www.cog-genomics.org/plink2
 [Rhocall]: https://github.com/dnil/rhocall

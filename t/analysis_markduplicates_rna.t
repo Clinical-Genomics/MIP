@@ -87,6 +87,8 @@ my %file_info = test_mip_hashes(
         mip_hash_name => q{io},
     }
 );
+$file_info{primary_contigs} = $file_info{contigs};
+
 CONTIG:
 
 foreach my $contig ( @{ $file_info{contigs} } ) {

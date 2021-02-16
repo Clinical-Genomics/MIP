@@ -198,7 +198,7 @@ recipe_core_number:
     gffcompare_ar: 1
     gzip_fastq: 0
     multiqc_ar: 1
-    markduplicates: 16
+    markduplicates: 13
     picardtools_collectrnaseqmetrics: 1
     picardtools_mergesamfiles: 13
     preseq_ar: 1
@@ -455,6 +455,12 @@ arriba_proteindomain_path:
     - arriba_ar
   data_type: SCALAR
   type: path
+arriba_use_sample_id_as_display_name:
+  associated_recipe:
+    - arriba_ar
+  data_type: SCALAR
+  default: 0
+  type: mip
 ## Merge bam files
 picardtools_mergesamfiles:
   analysis_mode: sample
@@ -609,7 +615,7 @@ rseqc_transcripts_file:
     - genebody_coverage
     - rseqc
   data_type: SCALAR
-  default: grch37_gencode_annotation_reformated_-v31-.bed
+  default: grch37_gencode_annotation_reformated_-v34-.bed
   exists_check: file
   is_reference: 1
   reference: reference_dir

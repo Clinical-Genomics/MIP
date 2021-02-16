@@ -18,8 +18,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -147,6 +146,7 @@ sub analysis_arriba {
     use MIP::Program::Sambamba qw{ sambamba_index sambamba_sort };
     use MIP::Program::Star qw{ star_aln };
     use MIP::Sample_info qw{
+      get_pedigree_sample_id_attributes
       get_rg_header_line
       set_file_path_to_store
       set_recipe_metafile_in_sample_info
@@ -211,6 +211,8 @@ sub analysis_arriba {
             recipe_name           => $recipe_name,
         }
     );
+    my $use_sample_id_as_display_name =
+      $active_parameter_href->{arriba_use_sample_id_as_display_name};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -321,11 +323,11 @@ sub analysis_arriba {
             out_sam_attr_rgline           => $out_sam_attr_rgline,
             out_sam_type                  => q{BAM Unsorted},
             out_sam_unmapped              => q{Within},
-            pe_overlap_nbases_min => $active_parameter_href->{pe_overlap_nbases_min},
-            quant_mode            => q{-},
-            stdout_data_type      => q{BAM_Unsorted},
-            thread_number         => $recipe_resource{core_number},
-            two_pass_mode         => q{None},
+            pe_overlap_nbases_min         => $active_parameter_href->{pe_overlap_nbases_min},
+            quant_mode                    => q{-},
+            stdout_data_type              => q{BAM_Unsorted},
+            thread_number                 => $recipe_resource{core_number},
+            two_pass_mode                 => q{None},
         },
     );
     push @arriba_commands, $PIPE;
@@ -397,17 +399,28 @@ sub analysis_arriba {
     say {$filehandle} $NEWLINE;
 
     ## Visualize the fusions
-    my $report_path = $outfile_path_prefix . $DOT . q{pdf};
+    my $report_path         = $outfile_path_prefix . $DOT . q{pdf};
+    my $sample_display_name = get_pedigree_sample_id_attributes(
+        {
+            attribute        => q{sample_display_name},
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+    if ( $sample_display_name and not $use_sample_id_as_display_name ) {
+
+        $report_path = catfile( $outsample_directory,
+            $sample_display_name . $UNDERSCORE . q{arriba_fusions.pdf} );
+    }
     draw_fusions(
         {
-            alignment_file_path  => $sorted_bam_file,
-            annotation_file_path => $active_parameter_href->{transcript_annotation},
-            cytoband_file_path   => $active_parameter_href->{arriba_cytoband_path},
-            filehandle           => $filehandle,
-            fusion_file_path     => $outfile_path,
-            outfile_path         => $report_path,
-            protein_domain_file_path =>
-              $active_parameter_href->{arriba_protein_domain_path},
+            alignment_file_path      => $sorted_bam_file,
+            annotation_file_path     => $active_parameter_href->{transcript_annotation},
+            cytoband_file_path       => $active_parameter_href->{arriba_cytoband_path},
+            filehandle               => $filehandle,
+            fusion_file_path         => $outfile_path,
+            outfile_path             => $report_path,
+            protein_domain_file_path => $active_parameter_href->{arriba_protein_domain_path},
         }
     );
     say {$filehandle} $NEWLINE;
@@ -460,13 +473,13 @@ sub analysis_arriba {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_island},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_island},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

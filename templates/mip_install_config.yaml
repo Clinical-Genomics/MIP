@@ -71,7 +71,7 @@ container:
   expansionhunter:
     executable:
       ExpansionHunter:
-    uri: docker.io/clinicalgenomics/expansionhunter:3.2.2
+    uri: docker.io/clinicalgenomics/expansionhunter:4.0.2
   fastqc:
     executable:
       fastqc:
@@ -179,7 +179,7 @@ container:
   stranger:
     executable:
       stranger:
-    uri: docker.io/clinicalgenomics/stranger:0.5.5
+    uri: docker.io/clinicalgenomics/stranger:0.7
   stringtie:
     executable:
       stringtie:

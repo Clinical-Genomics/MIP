@@ -145,7 +145,6 @@ sub analysis_markduplicates {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
@@ -755,7 +754,6 @@ sub analysis_markduplicates_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_parallel_processes update_memory_allocation };
     use MIP::Get::File qw{ get_merged_infile_prefix get_io_files };
     use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
@@ -803,8 +801,7 @@ sub analysis_markduplicates_rna {
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number       = $recipe_resource{core_number};
-    my $memory_allocation = $recipe_resource{memory};
+    my $core_number = $recipe_resource{core_number};
 
     ## Add merged infile name prefix after merging all BAM files per sample_id
     my $merged_infile_prefix = get_merged_infile_prefix(
@@ -845,34 +842,31 @@ sub analysis_markduplicates_rna {
     my %outfile_path        = %{ $io{out}{file_path_href} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
 
+    ## Update memory and parallel processes for markduplicates
+    my ( $recipe_memory, $contig_memory_href, $parallel_processes ) = _get_markdup_resources(
+        {
+            active_contigs_ref  => $file_info_href->{bam_contigs},
+            node_memory         => $active_parameter_href->{node_ram_memory},
+            primary_contigs_ref => $file_info_href->{primary_contigs},
+            recipe_core_number  => $core_number,
+        }
+    );
+
     ## Filehandles
     # Create anonymous filehandle
     my $filehandle      = IO::Handle->new();
     my $xargsfilehandle = IO::Handle->new();
 
-    ## Update recipe memory allocation for picard
-    ## Variables used downstream of if statment
-    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
-
-    ## Update the memory allocation
-    $memory_allocation = update_memory_allocation(
-        {
-            node_ram_memory           => $active_parameter_href->{node_ram_memory},
-            parallel_processes        => $core_number,
-            process_memory_allocation => $process_memory_allocation,
-        }
-    );
-
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
+            core_number                     => $parallel_processes,
             directory_id                    => $sample_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
             log                             => $log,
-            memory_allocation               => $memory_allocation,
+            memory_allocation               => $recipe_memory,
             process_time                    => $recipe_resource{time},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
@@ -885,14 +879,6 @@ sub analysis_markduplicates_rna {
 
     ## Marking Duplicates
     say {$filehandle} q{## Marking Duplicates};
-
-    my $parallel_processes = get_parallel_processes(
-        {
-            core_number               => $core_number,
-            process_memory_allocation => $process_memory_allocation,
-            recipe_memory_allocation  => $recipe_resource{memory},
-        }
-    );
 
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -918,7 +904,7 @@ sub analysis_markduplicates_rna {
                 infile_paths_ref => [ $infile_path{$contig} ],
                 java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages       => $active_parameter_href->{java_use_large_pages},
-                memory_allocation          => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+                memory_allocation          => q{Xmx} . $contig_memory_href->{$contig} . q{g},
                 metrics_file               => $metrics_file,
                 optical_duplicate_distance =>
                   $active_parameter_href->{markduplicates_picardtools_opt_dup_dist},

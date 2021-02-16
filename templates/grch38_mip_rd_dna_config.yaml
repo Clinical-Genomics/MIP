@@ -21,7 +21,7 @@ outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!
 outscript_dir: cluster_constant_path!/case_id!/analysis_constant_path!/scripts
 sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 ## References
-expansionhunter_variant_catalog_file_path: grch38_expansionhunter_variant_catalog_-3.1.2-.json
+expansionhunter_variant_catalog_file_path: grch38_expansionhunter_variant_catalog_-4.0.2-.json
 fqf_vcfanno_config: grch38_frequency_vcfanno_filter_config_-v1.3-.toml
 gatk_baserecalibration_known_sites:
   - grch38_dbsnp_-146-.vcf.gz
@@ -53,7 +53,7 @@ rank_model_file: grch38_rank_model_cmms_-v1.0-.ini
 rhocall_frequency_file: grch38_swegen_freq_fixploidy_-20190204-.tab.gz
 sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
 sv_genmod_models_reduced_penetrance_file: grch38_cust003-cmms-red-pen_-2017_FAKE-.tsv
-sv_rank_model_file: svrank_model_cmms_-v1.8-.ini
+sv_rank_model_file: svrank_model_-v1.8-.ini
 sv_svdb_query_db_files:
   # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
   grch37_gnomad.genomes_-r2.1.1_sv-.vcf: gnomad_sv|AF|AC|AF|AC|1

@@ -152,9 +152,8 @@ sub analysis_expansionhunter {
     my $max_cores_per_node = $active_parameter_href->{max_cores_per_node};
     my $modifier_core_number =
       scalar( @{ $active_parameter_href->{sample_ids} } );
-    my $human_genome_reference =
-      $arg_href->{active_parameter_href}{human_genome_reference};
-    my $job_id_chain = get_recipe_attributes(
+    my $human_genome_reference = $arg_href->{active_parameter_href}{human_genome_reference};
+    my $job_id_chain           = get_recipe_attributes(
         {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
@@ -184,7 +183,6 @@ sub analysis_expansionhunter {
         }
     );
 
-    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_suffix      = $io{out}{file_constant_suffix};
     my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
@@ -233,9 +231,7 @@ sub analysis_expansionhunter {
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
   SAMPLE_ID:
-    while ( my ( $sample_id_index, $sample_id ) =
-        each @{ $active_parameter_href->{sample_ids} } )
-    {
+    while ( my ( $sample_id_index, $sample_id ) = each @{ $active_parameter_href->{sample_ids} } ) {
 
         ## Get the io infiles per chain and id
         my %sample_io = get_io_files(
@@ -270,9 +266,7 @@ sub analysis_expansionhunter {
     my @vt_outfile_paths;
 
   SAMPLE_ID:
-    while ( my ( $sample_id_index, $sample_id ) =
-        each @{ $active_parameter_href->{sample_ids} } )
-    {
+    while ( my ( $sample_id_index, $sample_id ) = each @{ $active_parameter_href->{sample_ids} } ) {
 
         $process_batches_count = print_wait(
             {
@@ -314,11 +308,7 @@ sub analysis_expansionhunter {
         say {$filehandle} $AMPERSAND, $NEWLINE;
         push @vt_infile_paths, $sample_outfile_path_prefix . $outfile_suffix;
         push @vt_outfile_paths,
-            $outfile_path_prefix
-          . $UNDERSCORE . q{vt}
-          . $UNDERSCORE
-          . $sample_id
-          . $outfile_suffix;
+          $outfile_path_prefix . $UNDERSCORE . q{vt} . $UNDERSCORE . $sample_id . $outfile_suffix;
 
     }
     say {$filehandle} q{wait}, $NEWLINE;
@@ -344,8 +334,7 @@ sub analysis_expansionhunter {
 
     ## Get parameters
     ## Expansionhunter sample infiles needs to be lexiographically sorted for svdb merge
-    my $svdb_outfile_path =
-      $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge} . $outfile_suffix;
+    my $svdb_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge} . $outfile_suffix;
 
     svdb_merge(
         {
@@ -363,6 +352,7 @@ sub analysis_expansionhunter {
       $outfile_path_prefix . $UNDERSCORE . q{vt_svdbmerge_ann} . $outfile_suffix;
     stranger(
         {
+            case_id           => $case_id,
             filehandle        => $filehandle,
             infile_path       => $svdb_outfile_path,
             repeats_file_path => $variant_catalog_file_path,
@@ -412,13 +402,13 @@ sub analysis_expansionhunter {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $job_id_chain,
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

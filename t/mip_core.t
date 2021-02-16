@@ -189,14 +189,12 @@ sub test_modules {
     ok( defined $Bin, q{FindBin: Locate directory of script} );
 
     use File::Basename qw{ dirname };
-    ok( dirname($Bin),
-        q{File::Basename qw{ dirname }: Strip the last part of directory} );
+    ok( dirname($Bin), q{File::Basename qw{ dirname }: Strip the last part of directory} );
 
     use File::Spec::Functions qw{ catfile catdir devnull };
     ok( catdir( dirname($Bin), q{t} ),
         q{File::Spec::Functions qw{ catdir }: Concatenate directories} );
-    ok( catfile( $Bin, q{mip_core.t} ),
-        q{File::Spec::Functions qw{ catfile }: Concatenate files} );
+    ok( catfile( $Bin, q{mip_core.t} ), q{File::Spec::Functions qw{ catfile }: Concatenate files} );
     ok(
         catfile( dirname( devnull() ), q{stdout} ),
         q{File::Spec::Functions qw{ devnull }: Use devnull}
@@ -336,8 +334,8 @@ sub mip_scripts {
               mip_rd_rna_config.yaml
               program_test_cmds.yaml
               qc_regexp_-v1.26-.yaml
-              rank_model_-v1.29-.ini
-              svrank_model_cmms_-v1.8-.ini
+              rank_model_-v1.31-.ini
+              svrank_model_-v1.8-.ini
               }
         ],
     );
@@ -347,8 +345,7 @@ sub mip_scripts {
   DIRECTORY:
     foreach my $directory (@mip_directories) {
 
-        is( -e catfile( dirname($Bin), $directory ),
-            1, q{Found MIP sub dir: } . $directory );
+        is( -e catfile( dirname($Bin), $directory ), 1, q{Found MIP sub dir: } . $directory );
     }
   DIRECTORY:
     foreach my $directory ( keys %mip_sub_scripts ) {
