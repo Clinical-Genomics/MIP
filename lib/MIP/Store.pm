@@ -101,33 +101,33 @@ sub define_qc_metrics_to_store {
     my ($arg_href) = @_;
 
     my %store_metrics = (
-        bamstats => {
+        percentage_mapped_reads => {
             analysis_mode => q{sample},
-            metric_name   => q{percentage_mapped_reads},
+            recipe_name   => q{bamstats},
         },
-        bamstats => {
+        raw_total_sequences => {
             analysis_mode => q{sample},
-            metric_name   => q{raw_total_sequences},
+            recipe_name   => q{bamstats},
         },
-        bamstats => {
+        reads_mapped => {
             analysis_mode => q{sample},
-            metric_name   => q{reads_mapped},
+            recipe_name   => q{bamstats},
         },
-        chanjo_sexcheck => {
+        gender => {
             analysis_mode => q{sample},
-            metric_name   => q{gender},
+            recipe_name   => q{chanjo_sexcheck},
         },
-        markduplicates => {
+        fraction_duplicates => {
             analysis_mode => q{sample},
-            metric_name   => q{fraction_duplicates},
+            recipe_name   => q{markduplicates},
         },
-        picardtools_collectmultiplemetrics => {
+        AT_DROPOUT => {
             analysis_mode => q{sample},
-            metric_name   => q{AT_DROPOUT},
+            recipe_name   => q{picardtools_collectmultiplemetrics},
         },
-        collectmultiplemetricsinsertsize => {
+        MEAN_INSERT_SIZE => {
             analysis_mode => q{sample},
-            metric_name   => q{MEAN_INSERT_SIZE},
+            recipe_name   => q{collectmultiplemetricsinsertsize},
         },
     );
     return %store_metrics;
@@ -337,7 +337,7 @@ sub store_metrics {
     my @sample_ids = get_pedigree_sample_ids( { sample_info_href => $sample_info_href, } );
 
   METRIC:
-    while ( my ( $recipe_name, $metric_href ) = each %store_metrics ) {
+    while ( my ( $metric_name, $metric_href ) = each %store_metrics ) {
 
         my @ids =
           $metric_href->{analysis_mode} eq q{sample} ? @sample_ids : ( $sample_info_href->{case} );
@@ -351,10 +351,10 @@ sub store_metrics {
                     header       => $metric_href->{header},
                     id           => $id,
                     input        => $metric_href->{input},
-                    metric_name  => $metric_href->{metric_name},
+                    metric_name  => $metric_name,
                     metric_value => $metric_href->{metric_value},
                     qc_data_href => $qc_data_href,
-                    recipe_name  => $recipe_name,
+                    recipe_name  => $metric_href->{recipe_name},
                 }
               );
         }
