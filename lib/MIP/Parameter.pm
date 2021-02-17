@@ -909,6 +909,7 @@ sub set_custom_default_to_active_parameter {
       set_default_reference_dir
       set_default_reference_info_file
       set_default_store_file
+      set_default_qccollect_store_metrics_outfile
       set_default_temp_directory
       set_default_transcript_annotation
       set_default_uninitialized_parameter
@@ -916,7 +917,7 @@ sub set_custom_default_to_active_parameter {
     };
 
     ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
+    Log::Log4perl->get_logger($LOG_NAME);
 
     ## Set default value only to active_parameter
     my %set_default_parameter = (
@@ -1039,6 +1040,12 @@ sub set_custom_default_to_active_parameter {
                 active_parameter_href => $active_parameter_href,
             },
         },
+        qccollect_store_metrics_outfile => {
+            method   => \&set_default_qccollect_store_metrics_outfile,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+            },
+        },
         sv_vcfparser_select_file => {
             method   => \&set_default_vcfparser_select_file,
             arg_href => {
@@ -1070,7 +1077,7 @@ sub set_custom_default_to_active_parameter {
 
     if ( exists $set_default_parameter{$parameter_name} ) {
 
-        my %hash = $set_default_parameter{$parameter_name}{method}
+        $set_default_parameter{$parameter_name}{method}
           ->( { %{ $set_default_parameter{$parameter_name}{arg_href} } } );
 
     }

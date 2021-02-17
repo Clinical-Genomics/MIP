@@ -101,9 +101,33 @@ sub define_qc_metrics_to_store {
     my ($arg_href) = @_;
 
     my %store_metrics = (
+        bamstats => {
+            analysis_mode => q{sample},
+            metric_name   => q{percentage_mapped_reads},
+        },
+        bamstats => {
+            analysis_mode => q{sample},
+            metric_name   => q{raw_total_sequences},
+        },
+        bamstats => {
+            analysis_mode => q{sample},
+            metric_name   => q{reads_mapped},
+        },
+        chanjo_sexcheck => {
+            analysis_mode => q{sample},
+            metric_name   => q{gender},
+        },
+        markduplicates => {
+            analysis_mode => q{sample},
+            metric_name   => q{fraction_duplicates},
+        },
         picardtools_collectmultiplemetrics => {
             analysis_mode => q{sample},
             metric_name   => q{AT_DROPOUT},
+        },
+        collectmultiplemetricsinsertsize => {
+            analysis_mode => q{sample},
+            metric_name   => q{MEAN_INSERT_SIZE},
         },
     );
     return %store_metrics;

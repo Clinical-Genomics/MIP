@@ -98,9 +98,9 @@ my %sample_info = test_mip_hashes( { mip_hash_name => q{qc_sample_info} } );
 ## When getting metrics from hash
 my @metrics = store_metrics(
     {
-        qc_data_href               => \%qc_data,
-        sample_info_href           => \%sample_info,
-        store_metrics_outfile_path => $metrics_outfile_path,
+        qc_data_href          => \%qc_data,
+        sample_info_href      => \%sample_info,
+        store_metrics_outfile => $metrics_outfile_path,
     }
 );
 

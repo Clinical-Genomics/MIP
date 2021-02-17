@@ -13,6 +13,7 @@ custom_default_parameters:
     - install_config_file
     - pedigree_fam_file
     - picardtools_path
+    - qccollect_store_metrics_outfile
     - reference_dir
     - reference_info_file
     - rtg_vcfeval_reference_genome

@@ -177,13 +177,14 @@ sub analysis_mip_qccollect {
     my $log_file_path = $outfile_path_prefix . $UNDERSCORE . q{qccollect.log};
     mip_qccollect(
         {
-            eval_metric_file => $active_parameter_href->{qccollect_eval_metric_file},
-            filehandle       => $filehandle,
-            infile_path      => $infile_path,
-            log_file_path    => $log_file_path,
-            outfile_path     => $outfile_path,
-            regexp_file_path => $active_parameter_href->{qccollect_regexp_file},
-            skip_evaluation  => $active_parameter_href->{qccollect_skip_evaluation},
+            eval_metric_file      => $active_parameter_href->{qccollect_eval_metric_file},
+            filehandle            => $filehandle,
+            infile_path           => $infile_path,
+            log_file_path         => $log_file_path,
+            outfile_path          => $outfile_path,
+            regexp_file_path      => $active_parameter_href->{qccollect_regexp_file},
+            skip_evaluation       => $active_parameter_href->{qccollect_skip_evaluation},
+            store_metrics_outfile => $active_parameter_href->{qccollect_store_metrics_outfile},
         }
     );
     say {$filehandle} $NEWLINE;

@@ -59,6 +59,7 @@ BEGIN {
       set_default_reference_dir
       set_default_reference_info_file
       set_default_store_file
+      set_default_qccollect_store_metrics_outfile
       set_default_temp_directory
       set_default_transcript_annotation
       set_default_uninitialized_parameter
@@ -1748,6 +1749,36 @@ sub set_default_store_file {
     ## Set store file
     $active_parameter_href->{store_file} = catfile( $active_parameter_href->{outdata_dir},
         $active_parameter_href->{case_id} . $UNDERSCORE . q{deliverables.yaml} );
+    return;
+}
+
+sub set_default_qccollect_store_metrics_outfile {
+
+## Function : Set default qccollect_store_metrics_outfile to active parameters
+## Returns  :
+## Arguments: $active_parameter_href => Holds all set parameter for analysis {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Set store file
+    $active_parameter_href->{qccollect_store_metrics_outfile} =
+      catfile( $active_parameter_href->{outdata_dir},
+        $active_parameter_href->{case_id} . $UNDERSCORE . q{metrics_deliverables.yaml} );
     return;
 }
 

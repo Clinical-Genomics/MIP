@@ -103,10 +103,8 @@ sub mip_download {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = (
-        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
-        qw{ download }
-    );
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ download } );
 
     push @commands, $pipeline;
 
@@ -153,9 +151,10 @@ sub mip_qccollect {
 ##          : $outfile_path           => Outfile path
 ##          : $regexp_file_path       => Regular expression file
 ##          : $skip_evaluation        => Skip evaluation step
-##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+##          : $store_metrics_outfile  => Store metrics outfile
 
     my ($arg_href) = @_;
 
@@ -166,9 +165,10 @@ sub mip_qccollect {
     my $log_file_path;
     my $outfile_path;
     my $regexp_file_path;
-    my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdoutfile_path;
+    my $store_metrics_outfile;
 
     ## Default(s)
     my $skip_evaluation;
@@ -212,6 +212,10 @@ sub mip_qccollect {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        store_metrics_outfile => {
+            store       => \$store_metrics_outfile,
+            strict_type => 1,
+        },
         skip_evaluation => {
             allow       => [ 0, 1 ],
             default     => 0,
@@ -222,10 +226,8 @@ sub mip_qccollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = (
-        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
-        qw{ qccollect }
-    );
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ qccollect } );
 
     if ($eval_metric_file) {
 
@@ -246,6 +248,10 @@ sub mip_qccollect {
     if ($skip_evaluation) {
 
         push @commands, q{--skip_evaluation};
+    }
+    if ($store_metrics_outfile) {
+
+        push @commands, q{--store_metrics_outfile} . $SPACE . $store_metrics_outfile;
     }
 
     push @commands,
@@ -350,15 +356,13 @@ sub mip_vcfparser {
             store       => \$range_feature_annotation_columns_ref,
             strict_type => 1,
         },
-        range_feature_file_path =>
-          { store => \$range_feature_file_path, strict_type => 1, },
+        range_feature_file_path => { store => \$range_feature_file_path, strict_type => 1, },
         select_feature_annotation_columns_ref => {
             default     => [],
             store       => \$select_feature_annotation_columns_ref,
             strict_type => 1,
         },
-        select_feature_file_path =>
-          { store => \$select_feature_file_path, strict_type => 1, },
+        select_feature_file_path => { store => \$select_feature_file_path, strict_type => 1, },
         select_feature_matching_column => {
             allow       => [ undef, qr{ \A\d+\z }sxm, ],
             store       => \$select_feature_matching_column,
@@ -381,10 +385,8 @@ sub mip_vcfparser {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = (
-        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
-        qw{ vcfparser }
-    );
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ vcfparser } );
 
     ## Infile
     push @commands, $infile_path;
