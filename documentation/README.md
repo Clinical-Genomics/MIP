@@ -1,6 +1,6 @@
 # MIP - Mutation Identification Pipeline
 
-[![Build Status](https://travis-ci.org/Clinical-Genomics/MIP.svg?branch=master)](https://travis-ci.org/Clinical-Genomics/MIP)
+![MIP CI conda production install](https://github.com/Clinical-Genomics/MIP/workflows/MIP%20CI%20conda%20production%20install/badge.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/Clinical-Genomics/MIP/badge.svg?branch=master)](https://coveralls.io/github/Clinical-Genomics/MIP?branch=master)
 [![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/Clinical-Genomics/MIP/master/LICENSE)
 [![GitHub Releases](https://img.shields.io/github/release/Clinical-Genomics/MIP.svg)](https://github.com/Clinical-Genomics/MIP/releases)
@@ -182,12 +182,12 @@ $ mip analyse rd_dna case_3 --sample_ids 3-1-1A --sample_ids 3-2-1U --sample_ids
 
 This will analyse case 3 using 3 individuals from that case and begin the analysis with recipes after Bwa mem and use all parameter values as specified in the config file except those supplied on the command line, which has precedence.
 
-###### Running programs in singularity containers
-Aside from a conda environment, MIP uses containers to run programs. You can use either singularity or docker as your container manager. Containers that are downloaded using MIP's automated installer will need no extra setup. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `container_recipe_bind_path` in the config.
+###### Running programs in containers
+Aside from a conda environment, MIP uses containers to run programs. You can use either singularity or docker as your container manager. Containers that are downloaded using MIP's automated installer will need no extra setup. By default MIP will make the reference-, outdata- and temp directory available to the container. Extra directories can be made available to each recipe by adding the key `recipe_bind_path` in the config.
 
 In the example below the config has been modified to include the infile directories for the bwa_mem recipe:
   ```Yml
-  singularity_recipe_bind_path:
+  recipe_bind_path:
     bwa_mem:
       - <path_to_directory_with_fastq_files>
   ```
@@ -219,11 +219,10 @@ MIP will create sbatch scripts \(.sh\) and submit them in proper order with atta
 MIP will place any generated data files in the output data directory specified by `--outdata_dir`. All data files are regenerated for each analysis. STDOUT and STDERR for each recipe is written in the recipe/info directory.
 
 [Configuration file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/mip_rd_dna_config.yaml
-[Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/aggregated_master.txt
+[Gene panel file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/gene_panels.bed
 [Miniconda]: http://conda.pydata.org/miniconda.html
 [Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml
-[Perl]: https://www.perl.org/
-[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_cmms_-v1.28-.ini
-[Singularity]: https://sylabs.io/
-[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_cmms_-v1.8-.ini
-[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/qc_regexp_-v1.24-.yaml
+[Perl]:https://www.perl.org/
+[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_-v1.31-.ini
+[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_-v1.8-.ini
+[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/qc_regexp_-v1.26-.yaml

@@ -839,7 +839,7 @@ expansionhunter_variant_catalog_file_path:
   associated_recipe:
     - expansionhunter
   data_type: SCALAR
-  default: grch37_expansionhunter_variant_catalog_-3.1.2-.json
+  default: grch37_expansionhunter_variant_catalog_-4.0.2-.json
   exists_check: file
   is_reference: 1
   reference: reference_dir
