@@ -137,6 +137,7 @@ sub analysis_glnexus {
     );
     my $core_number = $recipe{core_number};
     my $time        = $recipe{time};
+    my $memory      = $recipe{memory};
 
     ## Get the io infiles per chain and id
     my @genotype_infile_paths;
@@ -209,7 +210,9 @@ sub analysis_glnexus {
                 dir              => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
                 filehandle       => $filehandle,
                 infile_paths_ref => \@genotype_infile_paths,
+                memory           => $memory,
                 stdoutfile_path  => $outfile_path,
+                threads          => $core_number,
             }
         );
         say {$filehandle} $NEWLINE;

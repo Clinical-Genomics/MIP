@@ -22,7 +22,6 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -59,6 +58,10 @@ my %base_argument = (
     infile_paths_ref => {
         inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
         expected_output => catfile(qw{ dir infile1.vcf }),
+    },
+    memory => {
+        input           => q{10},
+        expected_output => q{--mem-gbytes } . q{10},
     },
     threads => {
         input           => q{10},
@@ -99,6 +102,10 @@ my %specific_argument = (
     infile_paths_ref => {
         inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
         expected_output => catfile(qw{ dir infile1.vcf }),
+    },
+    memory => {
+        input           => q{10},
+        expected_output => q{--mem-gbytes } . q{10},
     },
     threads => {
         input           => q{10},

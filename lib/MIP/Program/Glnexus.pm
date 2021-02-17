@@ -32,7 +32,9 @@ sub glnexus_merge {
 ## Function : Perl wrapper for generic commands module
 ## Returns  : @commands
 ## Arguments: $config                 => Allows us to process vcf files from different variant callers.
+##          : $dir                    => Directory to write temporary files into
 ##          : $infile_paths_ref       => Space separated list of input vcf files
+##          : $memory                 => Memory limit
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -44,6 +46,7 @@ sub glnexus_merge {
     my $dir;
     my $filehandle;
     my $infile_paths_ref;
+    my $memory;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -74,6 +77,10 @@ sub glnexus_merge {
             store       => \$infile_paths_ref,
             strict_type => 1,
         },
+        memory => {
+            store       => \$memory,
+            strict_type => 1,
+        },
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -100,6 +107,10 @@ sub glnexus_merge {
     if ($threads) {
         push @commands, q{--threads} . $SPACE . $threads;
     }
+    if ($memory) {
+        push @commands, q{--mem-gbytes} . $SPACE . $memory;
+    }
+
     push @commands, q{--config} . $SPACE . $config;
     push @commands, q{--dir} . $SPACE . $dir;
     push @commands, join $SPACE, @{$infile_paths_ref};

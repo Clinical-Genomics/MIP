@@ -168,7 +168,7 @@ recipe_core_number:
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
     gatk_variantrecalibration: 1
-    glnexus_merge: 1
+    glnexus_merge: 16
     gzip_fastq: 0
     manta: 36
     markduplicates: 13
@@ -244,7 +244,7 @@ recipe_memory:
     gatk_gathervcfs: 7
     gatk_genotypegvcfs: 12
     gatk_variantrecalibration: 30
-    glnexus_merge: 150
+    glnexus_merge: 10
     markduplicates: 10
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
