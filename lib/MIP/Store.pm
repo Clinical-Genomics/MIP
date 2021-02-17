@@ -101,6 +101,22 @@ sub define_qc_metrics_to_store {
     my ($arg_href) = @_;
 
     my %store_metrics = (
+        AT_DROPOUT => {
+            analysis_mode => q{sample},
+            recipe_name   => q{picardtools_collectmultiplemetrics},
+        },
+        fraction_duplicates => {
+            analysis_mode => q{sample},
+            recipe_name   => q{markduplicates},
+        },
+        gender => {
+            analysis_mode => q{sample},
+            recipe_name   => q{chanjo_sexcheck},
+        },
+        MEAN_INSERT_SIZE => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collectmultiplemetricsinsertsize},
+        },
         percentage_mapped_reads => {
             analysis_mode => q{sample},
             recipe_name   => q{bamstats},
@@ -112,22 +128,6 @@ sub define_qc_metrics_to_store {
         reads_mapped => {
             analysis_mode => q{sample},
             recipe_name   => q{bamstats},
-        },
-        gender => {
-            analysis_mode => q{sample},
-            recipe_name   => q{chanjo_sexcheck},
-        },
-        fraction_duplicates => {
-            analysis_mode => q{sample},
-            recipe_name   => q{markduplicates},
-        },
-        AT_DROPOUT => {
-            analysis_mode => q{sample},
-            recipe_name   => q{picardtools_collectmultiplemetrics},
-        },
-        MEAN_INSERT_SIZE => {
-            analysis_mode => q{sample},
-            recipe_name   => q{collectmultiplemetricsinsertsize},
         },
     );
     return %store_metrics;
