@@ -221,5 +221,5 @@ sorted_select_file_contigs:
   - MT
 transcript_annotation_file_endings:
   - .bed
-  - .refFlat
+  - .refflat
   - .rrna.interval_list

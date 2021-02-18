@@ -262,11 +262,11 @@ sub build_transcript_annotation_prerequisites {
 
 sub _build_bed {
 
-    ## Function : Creates the transcript annotation bed file
-    ## Returns  :
-    ## Arguments: $annotation_file_path        => Annotation file path
-    ##          : $filehandle                  => Filehandle to write to
-    ##          : $temp_file_path              => Temp file
+## Function : Creates the transcript annotation bed file
+## Returns  :
+## Arguments: $annotation_file_path => Annotation file path
+##          : $filehandle           => Filehandle to write to
+##          : $temp_file_path       => Temp file
 
     my ($arg_href) = @_;
 
@@ -392,7 +392,8 @@ sub _build_rrna_interval_list {
 
 ## Function : Creates the transcript annotation ribomal RNA interval_list
 ## Returns  :
-## Arguments: $annotation_file_path        => Annotation file path
+## Arguments: $active_parameter_href       => Active parameter hash {REF}
+##          : $annotation_file_path        => Annotation file path
 ##          : $annotation_file_path_random => Annotation suffix
 ##          : $filehandle                  => Filehandle to write to
 ##          : $temp_file_path              => Temp file

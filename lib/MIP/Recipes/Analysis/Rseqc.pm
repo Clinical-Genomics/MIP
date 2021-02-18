@@ -141,6 +141,7 @@ sub analysis_rseqc {
     use MIP::Program::Rseqc
       qw{ rseqc_bam_stat rseqc_infer_experiment rseqc_inner_distance rseqc_junction_annotation rseqc_junction_saturation rseqc_read_distribution rseqc_read_duplication };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::Reference qw{ get_transcript_annotation_file_path };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING
@@ -159,12 +160,17 @@ sub analysis_rseqc {
             temp_directory => $temp_directory,
         }
     );
-    my $infile_path_prefix   = $io{in}{file_path_prefix};
-    my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
-    my $infile_suffix        = $io{in}{file_suffix};
-    my $infile_path          = $infile_path_prefix . $infile_suffix;
-    my $bed_file_path        = $active_parameter_href->{transcript_annotation}
-      . $file_info_href->{transcript_annotation_file_endings}[0];
+    my $infile_path_prefix        = $io{in}{file_path_prefix};
+    my @infile_name_prefixes      = @{ $io{in}{file_name_prefixes} };
+    my $infile_suffix             = $io{in}{file_suffix};
+    my $infile_path               = $infile_path_prefix . $infile_suffix;
+    my $transcript_annotation_bed = get_transcript_annotation_file_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_format           => q{bed},
+            file_info_href        => $file_info_href,
+        }
+    );
     my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
@@ -218,7 +224,7 @@ sub analysis_rseqc {
     say {$filehandle} q{## Rseq infer_experiment.py};
     rseqc_infer_experiment(
         {
-            bed_file_path   => $bed_file_path,
+            bed_file_path   => $transcript_annotation_bed,
             filehandle      => $filehandle,
             infile_path     => $infile_path,
             stdoutfile_path => $outfile_path_prefix
@@ -232,7 +238,7 @@ sub analysis_rseqc {
     say {$filehandle} q{## Rseq junction_annotation.py};
     rseqc_junction_annotation(
         {
-            bed_file_path        => $bed_file_path,
+            bed_file_path        => $transcript_annotation_bed,
             filehandle           => $filehandle,
             infile_path          => $infile_path,
             outfiles_path_prefix => $outfile_path_prefix . $UNDERSCORE . q{junction_annotation},
@@ -243,7 +249,7 @@ sub analysis_rseqc {
     say {$filehandle} q{## Rseq junction_saturation.py};
     rseqc_junction_saturation(
         {
-            bed_file_path        => $bed_file_path,
+            bed_file_path        => $transcript_annotation_bed,
             filehandle           => $filehandle,
             infile_path          => $infile_path,
             outfiles_path_prefix => $outfile_path_prefix . $UNDERSCORE . q{junction_saturation},
@@ -254,7 +260,7 @@ sub analysis_rseqc {
     say {$filehandle} q{## Rseq inner_distance.py};
     rseqc_inner_distance(
         {
-            bed_file_path        => $bed_file_path,
+            bed_file_path        => $transcript_annotation_bed,
             filehandle           => $filehandle,
             infile_path          => $infile_path,
             outfiles_path_prefix => $outfile_path_prefix . $UNDERSCORE . q{inner_distance},
@@ -275,7 +281,7 @@ sub analysis_rseqc {
     say {$filehandle} q{## Rseq read_distribution.py};
     rseqc_read_distribution(
         {
-            bed_file_path   => $bed_file_path,
+            bed_file_path   => $transcript_annotation_bed,
             filehandle      => $filehandle,
             infile_path     => $infile_path,
             stdoutfile_path => $outfile_path_prefix

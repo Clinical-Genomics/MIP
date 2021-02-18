@@ -133,6 +133,7 @@ sub analysis_picardtools_collectrnaseqmetrics {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_collectrnaseqmetrics };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::Reference qw{ get_transcript_annotation_file_path };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -184,9 +185,20 @@ sub analysis_picardtools_collectrnaseqmetrics {
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_path        = $io{out}{file_path};
 
-    my $transcript_annotation = $active_parameter_href->{transcript_annotation};
-    my $refflat_ending        = $file_info_href->{transcript_annotation_file_endings}[1];
-    my $rrna_ending           = $file_info_href->{transcript_annotation_file_endings}[2];
+    my $transcript_annotation_refflat = get_transcript_annotation_file_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_format           => q{refflat},
+            file_info_href        => $file_info_href,
+        }
+    );
+    my $transcript_annotation_rrna = get_transcript_annotation_file_path(
+        {
+            active_parameter_href => $active_parameter_href,
+            file_format           => q{rrna.interval_list},
+            file_info_href        => $file_info_href,
+        }
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -221,13 +233,13 @@ sub analysis_picardtools_collectrnaseqmetrics {
         {
             chart_outfile_path        => $outfile_path_prefix . q{.pdf},
             filehandle                => $filehandle,
-            gene_annotation_file_path => $transcript_annotation . $refflat_ending,
+            gene_annotation_file_path => $transcript_annotation_refflat,
             infile_path               => $infile_path,
             java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages     => $active_parameter_href->{java_use_large_pages},
             memory_allocation        => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path             => $outfile_path,
-            rrna_intervals_file_path => $transcript_annotation . $rrna_ending,
+            rrna_intervals_file_path => $transcript_annotation_rrna,
             strand_specificity       => $strandedness,
             temp_directory           => $temp_directory,
         }

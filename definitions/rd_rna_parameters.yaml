@@ -74,7 +74,9 @@ transcript_annotation:
   type: path
 transcript_annotation_file_endings:
   associated_recipe:
+    - genebody_coverage
     - picardtools_collectrnaseqmetrics
+    - rseqc
   build_file: 1
   data_type: SCALAR
   exists_check: file

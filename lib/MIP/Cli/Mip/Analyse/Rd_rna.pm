@@ -91,7 +91,7 @@ sub run {
         salmon_quant_reference_genome       => [qw{ _salmon_quant_genome_dir }],
         star_aln_reference_genome           => [qw{ _star_genome_dir }],
         star_fusion_reference_genome        => [qw{ _star_fusion_genome_dir }],
-        transcript_annotation_file_endings  => [qw{ .bed .refFlat .rrna.interval_list }],
+        transcript_annotation_file_endings  => [qw{ .bed .refflat .rrna.interval_list }],
     );
 
     mip_analyse(
