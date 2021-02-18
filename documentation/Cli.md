@@ -8,9 +8,7 @@ $ mip
 
 This will show the usage, global parameters and all available commands and subcommands.
 There is currently three main commands:
-- Installation  
-  - rd_dna
-  - rd_rna
+- Install
 - Analyse
   - rd_dna
   - rd_rna

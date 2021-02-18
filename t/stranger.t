@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Stranger} => [qw{ stranger }],
-);
+    my %perl_module = ( q{MIP::Program::Stranger} => [qw{ stranger }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -79,6 +76,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    case_id => {
+        input           => q{case_id},
+        expected_output => q{--family_id} . $SPACE . q{case_id},
+    },
     infile_path => {
         input           => catfile(qw{ a infile.vcf }),
         expected_output => catfile(qw{ a infile.vcf }),
