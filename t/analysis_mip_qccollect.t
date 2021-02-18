@@ -63,9 +63,10 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
-$active_parameter{qccollect_regexp_file}     = q{qc_regexp_file.txt};
-$active_parameter{qccollect_sampleinfo_file} = q{sample_info.yaml};
-$active_parameter{qccollect_skip_evaluation} = 1;
+$active_parameter{qccollect_regexp_file}           = q{qc_regexp_file.txt};
+$active_parameter{qccollect_sampleinfo_file}       = q{sample_info.yaml};
+$active_parameter{qccollect_skip_evaluation}       = 1;
+$active_parameter{qccollect_store_metrics_outfile} = q{case_metrics_deliverables.yaml};
 
 my %file_info = test_mip_hashes(
     {
@@ -84,11 +85,11 @@ my %parameter = test_mip_hashes(
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $case_id,
-        parameter_href    => \%parameter,
-        recipe_name       => $recipe_name,
-        step              => q{vcf},
+        file_info_href => \%file_info,
+        id             => $case_id,
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{vcf},
     }
 );
 

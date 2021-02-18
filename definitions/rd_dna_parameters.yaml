@@ -13,6 +13,7 @@ custom_default_parameters:
     - install_config_file
     - pedigree_fam_file
     - picardtools_path
+    - qccollect_store_metrics_outfile
     - reference_dir
     - reference_info_file
     - rtg_vcfeval_reference_genome
@@ -2061,6 +2062,11 @@ qccollect_eval_metric_file:
   is_reference: 1
   reference: reference_dir
   type: path
+qccollect_store_metrics_outfile:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  type: recipe_argument
 qccollect_regexp_file:
   associated_recipe:
     - qccollect_ar

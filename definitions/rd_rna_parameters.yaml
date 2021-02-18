@@ -10,6 +10,7 @@ custom_default_parameters:
     - install_config_file
     - pedigree_fam_file
     - picardtools_path
+    - qccollect_store_metrics_outfile
     - reference_dir
     - reference_info_file
     - salmon_quant_reference_genome
@@ -909,6 +910,11 @@ qccollect_skip_evaluation:
     - qccollect_ar
   data_type: SCALAR
   default: 0
+  type: recipe_argument
+qccollect_store_metrics_outfile:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
   type: recipe_argument
 ## MultiQC
 multiqc_ar:

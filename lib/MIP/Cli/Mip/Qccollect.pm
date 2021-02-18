@@ -42,11 +42,11 @@ sub run {
     my $evaluate_plink_gender = $arg_href->{evaluate_plink_gender};
     my $log_file              = $arg_href->{log_file};
     my $outfile               = $arg_href->{outfile};
-    my $print_regexp          = $arg_href->{print_regexp};
     my $print_regexp_outfile  = $arg_href->{print_regexp_outfile};
     my $regexp_file           = $arg_href->{regexp_file};
     my $sample_info_file      = $arg_href->{sample_info_file};
     my $skip_evaluation       = $arg_href->{skip_evaluation};
+    my $store_metrics_outfile = $arg_href->{store_metrics_outfile};
 
     use MIP::Log::MIP_log4perl qw{ initiate_logger };
     use MIP::Main::Qccollect qw{ mip_qccollect };
@@ -76,6 +76,7 @@ sub run {
             regexp_file           => $regexp_file,
             sample_info_file      => $sample_info_file,
             skip_evaluation       => $skip_evaluation,
+            store_metrics_outfile => $store_metrics_outfile,
         }
     );
     return;
@@ -165,6 +166,16 @@ sub _build_usage {
             isa           => Bool,
         )
     );
+
+    option(
+        q{store_metrics_outfile} => (
+            cmd_tags      => [q{YAML}],
+            documentation => q{Deliverables metric file path},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
     return;
 }
 
