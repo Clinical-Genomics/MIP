@@ -916,9 +916,6 @@ sub set_custom_default_to_active_parameter {
       set_default_vcfparser_select_file
     };
 
-    ## Retrieve logger object
-    Log::Log4perl->get_logger($LOG_NAME);
-
     ## Set default value only to active_parameter
     my %set_default_parameter = (
         analysis_type => {
