@@ -1,11 +1,11 @@
-package MIP::Parse::Gender;
+package MIP::Recipes::Analysis::Estimate_gender;
 
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
-use FindBin qw{ $Bin };
+use File::Path qw{ make_path };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use utf8;
@@ -17,40 +17,28 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $BACKWARD_SLASH
-  $COLON
-  $DASH
-  $DOT
-  $DOUBLE_QUOTE
-  $EQUALS
-  $LOG_NAME
-  $PIPE
-  $SPACE
-  $UNDERSCORE };
+use MIP::Constants qw{ $BACKWARD_SLASH $COLON $DASH $DOUBLE_QUOTE $EQUALS $LOG_NAME $PIPE $SPACE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{
-      get_number_of_male_reads
-      get_sampling_fastq_files
-      parse_fastq_for_gender
-      update_gender_info
-    };
+    our @EXPORT_OK = qw{ get_number_of_male_reads parse_fastq_for_gender update_gender_info };
 }
 
 sub get_number_of_male_reads {
 
 ## Function : Get the number of male reads by aligning fastq read chunk and counting "chrY" or "Y" aligned reads
 ## Returns  : $y_read_count
-## Arguments: $commands_ref => Command array for cat {REF}
+## Arguments: $commands_ref  => Command array for estimating number of male reads {REF}
+##          : $outscript_dir => Directory to write the bash script to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $commands_ref;
+    my $outscript_dir;
 
     my $tmpl = {
         commands_ref => {
@@ -60,30 +48,34 @@ sub get_number_of_male_reads {
             store       => \$commands_ref,
             strict_type => 1,
         },
+        outscript_dir => => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outscript_dir,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Child_process qw{ child_process };
-    use File::Path qw{ remove_tree };
 
-    ## Constants
-    Readonly my $MAX_RANDOM_NUMBER => 10_000;
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Generate a random integer between 0-10,000.
-    my $random_integer = int rand $MAX_RANDOM_NUMBER;
+    make_path($outscript_dir);
 
-    ## Temporary bash file for commands
-    my $bash_temp_file =
-      catfile( $Bin, q{estimate_gender_from_reads} . $UNDERSCORE . $random_integer . q{.sh} );
+    ## Recipe bash file for commands to estimate gender
+    my $bash_file = catfile( $outscript_dir, q{estimate_gender_from_reads} . q{.sh} );
 
-    open my $filehandle, q{>}, $bash_temp_file
-      or croak q{Cannot write to} . $SPACE . $bash_temp_file . $COLON . $SPACE . $OS_ERROR;
+    open my $filehandle, q{>}, $bash_file
+      or croak q{Cannot write to} . $SPACE . $bash_file . $COLON . $SPACE . $OS_ERROR;
+
+    $log->info(qq{Writing estimation of gender recipe to: $bash_file});
 
     ## Write to file
     say {$filehandle} join $SPACE, @{$commands_ref};
 
-    my $cmds_ref       = [ q{bash}, $bash_temp_file ];
+    my $cmds_ref       = [ q{bash}, $bash_file ];
     my %process_return = child_process(
         {
             commands_ref => $cmds_ref,
@@ -95,69 +87,8 @@ sub get_number_of_male_reads {
 
     ## Clean-up
     close $filehandle;
-    remove_tree($bash_temp_file);
 
     return $y_read_count;
-}
-
-sub get_sampling_fastq_files {
-
-## Function : Get fastq files to sample reads from
-## Returns  : $is_interleaved_fastq, @fastq_files
-## Arguments: $file_info_sample_href => File info sample hash
-##          : $infile_paths_ref      => Infile paths {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_info_sample_href;
-    my $infile_paths_ref;
-
-    my $tmpl = {
-        file_info_sample_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$file_info_sample_href,
-            strict_type => 1,
-        },
-        infile_paths_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_paths_ref,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    my @fastq_files;
-
-    ## Perform per single-end or read pair
-    my $paired_end_tracker = 0;
-
-  INFILE_PREFIX:
-    foreach my $infile_prefix ( @{ $file_info_sample_href->{no_direction_infile_prefixes} } ) {
-
-        push @fastq_files, $infile_paths_ref->[$paired_end_tracker];
-
-        my $sequence_run_type = $file_info_sample_href->{$infile_prefix}{sequence_run_type};
-
-        # If second read direction is present
-        if ( $sequence_run_type eq q{paired-end} ) {
-
-            # Increment to collect correct read 2
-            $paired_end_tracker = $paired_end_tracker + 1;
-            push @fastq_files, $infile_paths_ref->[$paired_end_tracker];
-        }
-
-        my $is_interleaved_fastq = $sequence_run_type eq q{interleaved} ? 1 : 0;
-
-        ## Only perform once per sample and fastq file(s)
-        return $is_interleaved_fastq, @fastq_files;
-    }
-    return;
 }
 
 sub parse_fastq_for_gender {
@@ -211,10 +142,11 @@ sub parse_fastq_for_gender {
 
     use MIP::Active_parameter qw{ get_active_parameter_attribute };
     use MIP::Fastq qw{ get_stream_fastq_file_cmd };
-    use MIP::File_info qw{ get_sample_file_attribute };
+    use MIP::File_info qw{ get_sample_file_attribute get_sampling_fastq_files };
     use MIP::Program::Gnu::Coreutils qw{ gnu_cut };
     use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Program::Bwa qw{ bwa_mem2_mem };
+    use MIP::Recipes::Analysis::Estimate_gender qw{ get_number_of_male_reads update_gender_info };
 
     my $other_gender_count = get_active_parameter_attribute(
         {
@@ -223,6 +155,7 @@ sub parse_fastq_for_gender {
             parameter_name        => q{gender},
         }
     );
+
     ## All sample ids have a gender - no need to continue
     return if ( not $other_gender_count );
 
@@ -230,11 +163,26 @@ sub parse_fastq_for_gender {
     my $log                = Log::Log4perl->get_logger($LOG_NAME);
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
 
-  SAMPLE_ID:
-    for my $sample_id ( @{ $active_parameter_href->{gender}{others} } ) {
+    my @other_gender_sample_ids = get_active_parameter_attribute(
+        {
+            active_parameter_href => $active_parameter_href,
+            attribute             => q{others},
+            parameter_name        => q{gender},
+        }
+    );
 
-        next SAMPLE_ID
-          if ( not $active_parameter_href->{analysis_type}{$sample_id} eq q{wgs} );
+  SAMPLE_ID:
+    for my $sample_id (@other_gender_sample_ids) {
+
+        my $sample_id_analysis_type = get_active_parameter_attribute(
+            {
+                active_parameter_href => $active_parameter_href,
+                attribute             => $sample_id,
+                parameter_name        => q{analysis_type},
+            }
+        );
+
+        next SAMPLE_ID if ( not $sample_id_analysis_type eq q{wgs} );
 
         $log->warn(qq{Detected gender "other/unknown" for sample_id: $sample_id});
         $log->warn(q{Sampling reads from fastq file to estimate gender});
@@ -248,17 +196,14 @@ sub parse_fastq_for_gender {
             }
         );
 
-        my $infiles_dir = $file_info_sample{mip_infiles_dir};
-
         my ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
             {
                 file_info_sample_href => \%file_info_sample,
-                infile_paths_ref      => $file_info_sample{mip_infiles},
             }
         );
 
-        ## Add infile dir to infiles
-        @fastq_files = map { catfile( $infiles_dir, $_ ) } @fastq_files;
+        ## Add infile dir to fastq files
+        @fastq_files = map { catfile( $file_info_sample{mip_infiles_dir}, $_ ) } @fastq_files;
 
         ## Build command for streaming of chunk from fastq file(s)
         my @bwa_infiles = get_stream_fastq_file_cmd( { fastq_files_ref => \@fastq_files, } );
@@ -300,7 +245,12 @@ sub parse_fastq_for_gender {
           );
 
         ## Get the number of male reads by aligning fastq read chunk and counting "chrY" or "Y" aligned reads
-        my $y_read_count = get_number_of_male_reads( { commands_ref => \@commands, } );
+        my $y_read_count = get_number_of_male_reads(
+            {
+                commands_ref  => \@commands,
+                outscript_dir => catdir( $active_parameter_href->{outscript_dir}, $sample_id ),
+            }
+        );
 
         ## Update gender info in active_parameter and update contigs depending on results
         update_gender_info(
@@ -392,14 +342,18 @@ sub update_gender_info {
 
     my $gender  = $y_read_count > $MALE_THRESHOLD ? q{male} : q{female};
     my $genders = $gender . q{s};
+
+    $log->info(qq{Requiring greater than $MALE_THRESHOLD reads from chromosome Y to set as male});
+    $log->info(qq{Number of reads from chromosome Y: $y_read_count});
     $log->info(qq{Found $gender according to fastq reads});
+    $log->info(qq{Updating sample: $sample_id to gender: $gender for analysis});
 
     ## Update in active parameter hash
     add_gender(
         {
             active_parameter_href => $active_parameter_href,
-            sample_id             => $sample_id,
             gender                => $genders,
+            sample_id             => $sample_id,
         }
     );
 

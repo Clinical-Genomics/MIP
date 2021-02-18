@@ -47,7 +47,7 @@ diag(   q{Test analysis_arriba from Arriba.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
+test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
 my $recipe_name    = q{arriba_ar};
@@ -113,6 +113,7 @@ my %sample_info = (
                     },
                 },
             },
+            sample_display_name => q{The_Rabbit_of_Caerbannog},
         },
     },
 );
