@@ -191,7 +191,7 @@ sub build_transcript_annotation_prerequisites {
             extra_arg_href => {},
             method         => \&_build_bed,
         },
-        q{.refFlat} => {
+        q{.refflat} => {
             extra_arg_href => {
                 annotation_file_path_random => $annotation_file_path_random,
             },
@@ -308,7 +308,7 @@ sub _build_bed {
 
 sub _build_refflat {
 
-## Function : Creates the transcript annotation refFlat file.
+## Function : Creates the transcript annotation refflat file.
 ## Returns  :
 ## Arguments: $annotation_file_path        => Annotation file path
 ##          : $annotation_file_path_random => Annotation suffix
