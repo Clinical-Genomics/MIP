@@ -18,6 +18,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 chanjo: 4.2.0 -> 4.6  
 deepvariant: 1.0.0  
 glnexus: v1.2.7
+stranger 0.7 -> 0.7.1
 
 ## [9.1.3]
 - Fix memory allocation for mip-rna markduplicates.
