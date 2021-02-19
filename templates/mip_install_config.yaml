@@ -189,7 +189,7 @@ container:
   stranger:
     executable:
       stranger:
-    uri: docker.io/clinicalgenomics/stranger:0.7
+    uri: docker.io/clinicalgenomics/stranger:0.7.1
   stringtie:
     executable:
       stringtie:
