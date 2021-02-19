@@ -579,9 +579,14 @@ reference_feature:
       20150801:
         file: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz
         file_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.md5
+        file_index: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.tbi
+        file_index_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.tbi.md5
         outfile: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz
         outfile_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.md5
         outfile_check_method: md5sum
+        outfile_index: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.tbi
+        outfile_index_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.tbi.md5
+        outfile_index_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/frequency/
   genomic_superdups:
     grch37:
