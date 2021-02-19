@@ -60,8 +60,10 @@ transcript_annotation:
   associated_recipe:
     - arriba_ar
     - blobfish
+    - genebody_coverage
     - gffcompare_ar
     - picardtools_collectrnaseqmetrics
+    - rseqc
     - salmon_quant
     - star_aln
     - star_fusion
@@ -73,7 +75,9 @@ transcript_annotation:
   type: path
 transcript_annotation_file_endings:
   associated_recipe:
+    - genebody_coverage
     - picardtools_collectrnaseqmetrics
+    - rseqc
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -124,7 +128,7 @@ recipe_time:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    arriba_ar: 1
+    arriba_ar: 3
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 2
@@ -151,7 +155,7 @@ recipe_time:
     star_fusion: 8
     stringtie_ar: 2
     trim_galore_ar: 6
-    varianteffectpredictor: 2
+    varianteffectpredictor: 4
     version_collect_ar: 1
   type: mip
 recipe_memory:
@@ -164,7 +168,7 @@ recipe_memory:
     dna_vcf_reformat: 2
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
-    genebody_coverage: 12
+    genebody_coverage: 16
     multiqc_ar: 10
     picardtools_collectrnaseqmetrics: 5
     picardtools_mergesamfiles: 5
@@ -612,16 +616,6 @@ rseqc:
     - read_duplication.py
   outfile_suffix: ".txt"
   type: recipe
-rseqc_transcripts_file:
-  associated_recipe:
-    - genebody_coverage
-    - rseqc
-  data_type: SCALAR
-  default: grch37_gencode_annotation_reformated_-v34-.bed
-  exists_check: file
-  is_reference: 1
-  reference: reference_dir
-  type: path
 genebody_coverage:
   analysis_mode: sample
   associated_recipe:
@@ -631,8 +625,8 @@ genebody_coverage:
   file_tag: _genecov
   program_executables:
     - bam2wig.py
-    - wigToBigWig
     - geneBody_coverage2.py
+    - wigToBigWig
   outfile_suffix: ".txt"
   type: recipe
 ## Preseq

@@ -187,13 +187,20 @@ sub build_transcript_annotation_prerequisites {
           . $recipe_name );
 
     my %build_transcript_annotation = (
-        q{.refFlat} => {
+        q{.bed} => {
             extra_arg_href => {},
-            method         => \&_build_refflat,
+            method         => \&_build_bed,
+        },
+        q{.refflat} => {
+            extra_arg_href => {
+                annotation_file_path_random => $annotation_file_path_random,
+            },
+            method => \&_build_refflat,
         },
         q{.rrna.interval_list} => {
             extra_arg_href => {
-                active_parameter_href => $active_parameter_href,
+                active_parameter_href       => $active_parameter_href,
+                annotation_file_path_random => $annotation_file_path_random,
             },
             method => \&_build_rrna_interval_list,
         },
@@ -209,10 +216,9 @@ sub build_transcript_annotation_prerequisites {
         $build_transcript_annotation{$annotation_suffix}{method}->(
             {
                 %{ $build_transcript_annotation{$annotation_suffix}{extra_arg_href} },
-                annotation_file_path        => $annotation_file_path,
-                annotation_file_path_random => $annotation_file_path_random,
-                filehandle                  => $filehandle,
-                temp_file_path              => $temp_file_path,
+                annotation_file_path => $annotation_file_path,
+                filehandle           => $filehandle,
+                temp_file_path       => $temp_file_path,
             }
         );
 
@@ -254,9 +260,55 @@ sub build_transcript_annotation_prerequisites {
     return 1;
 }
 
+sub _build_bed {
+
+## Function : Creates the transcript annotation bed file
+## Returns  :
+## Arguments: $annotation_file_path => Annotation file path
+##          : $filehandle           => Filehandle to write to
+##          : $temp_file_path       => Temp file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $annotation_file_path;
+    my $filehandle;
+    my $temp_file_path;
+
+    my $tmpl = {
+        annotation_file_path => {
+            required    => 1,
+            store       => \$annotation_file_path,
+            strict_type => 1,
+        },
+        filehandle     => { store => \$filehandle, },
+        temp_file_path => {
+            required    => 1,
+            store       => \$temp_file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Gtf2bed qw{ gtf2bed };
+
+    say {$filehandle} q{## Converting to bed format};
+    gtf2bed(
+        {
+            filehandle      => $filehandle,
+            infile_path     => $annotation_file_path,
+            stdoutfile_path => $temp_file_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    return;
+}
+
 sub _build_refflat {
 
-## Function : Creates the transcript annotation refFlat file.
+## Function : Creates the transcript annotation refflat file.
 ## Returns  :
 ## Arguments: $annotation_file_path        => Annotation file path
 ##          : $annotation_file_path_random => Annotation suffix
@@ -340,7 +392,8 @@ sub _build_rrna_interval_list {
 
 ## Function : Creates the transcript annotation ribomal RNA interval_list
 ## Returns  :
-## Arguments: $annotation_file_path        => Annotation file path
+## Arguments: $active_parameter_href       => Active parameter hash {REF}
+##          : $annotation_file_path        => Annotation file path
 ##          : $annotation_file_path_random => Annotation suffix
 ##          : $filehandle                  => Filehandle to write to
 ##          : $temp_file_path              => Temp file

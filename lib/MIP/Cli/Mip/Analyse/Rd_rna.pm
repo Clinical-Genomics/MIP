@@ -91,7 +91,7 @@ sub run {
         salmon_quant_reference_genome       => [qw{ _salmon_quant_genome_dir }],
         star_aln_reference_genome           => [qw{ _star_genome_dir }],
         star_fusion_reference_genome        => [qw{ _star_fusion_genome_dir }],
-        transcript_annotation_file_endings  => [qw{ .refFlat .rrna.interval_list }],
+        transcript_annotation_file_endings  => [qw{ .bed .refflat .rrna.interval_list }],
     );
 
     mip_analyse(
@@ -500,15 +500,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{Qc using rseqc},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{rseqc_transcripts_file} => (
-            cmd_tags      => [q{Rseqc transcripts file: Format: bed}],
-            documentation => q{Input for rseqc to build transcript bed format file},
-            is            => q{rw},
-            isa           => Str,
         )
     );
 
