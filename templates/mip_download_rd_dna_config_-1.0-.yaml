@@ -580,6 +580,7 @@ reference_feature:
         file: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz
         file_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.md5
         file_index: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.tbi
+        file_index_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.tbi.md5
         outfile: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz
         outfile_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.md5
         outfile_check_method: md5sum
