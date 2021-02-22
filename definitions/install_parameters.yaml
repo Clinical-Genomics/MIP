@@ -119,6 +119,7 @@ rd_rna:
     - gatk4
     - gffcompare
     - htslib
+    - megafusion
     - mip
     - mip_scripts
     - multiqc
