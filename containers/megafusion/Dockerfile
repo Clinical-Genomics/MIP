@@ -24,5 +24,5 @@ RUN git clone https://github.com/J35P312/MegaFusion.git /opt/conda/share/MegaFus
 
 WORKDIR /opt/conda/share/MegaFusion
 
-## Make shure we're on the right commit
+## Make sure we're on the right commit
 RUN git reset --hard 5828fbe
