@@ -13,6 +13,7 @@ CHAIN_ALL:
     - PARALLEL:
       - star_fusion
       - arriba_ar
+    - megafusion_ar
   - CHAIN_MAIN:
     - star_aln
     - picardtools_mergesamfiles

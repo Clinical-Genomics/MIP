@@ -575,6 +575,42 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
     );
 
     option(
+        q{megafusion_ar} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Merge fusion calls from different callers},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{megafusion_callers} => (
+            cmd_tags      => [q{Default: arriba_ar star_fusion}],
+            documentation => q{Fusion caller recipes to fuse into a vcf},
+            is            => q{rw},
+            isa           => ArrayRef,
+        )
+    );
+
+    option(
+        q{megafusion_arriba_config} => (
+            cmd_tags      => [q{Default: Path inside MegaFusion container}],
+            documentation => q{MegaFusion config for Arriba calls},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{megafusion_star_fusion_config} => (
+            cmd_tags      => [q{Default: Path inside MegaFusion container}],
+            documentation => q{MegaFusion config for Star Fusion calls},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{gatk_splitncigarrreads} => (
             cmd_flag      => q{gatk_splitncigarreads},
             cmd_tags      => [q{Analysis recipe switch}],

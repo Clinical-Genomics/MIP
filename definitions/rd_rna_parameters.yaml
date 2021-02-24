@@ -154,6 +154,7 @@ recipe_time:
     star_aln: 6
     star_fusion: 8
     stringtie_ar: 2
+    megafusion_ar: 1
     trim_galore_ar: 6
     varianteffectpredictor: 4
     version_collect_ar: 1
@@ -214,6 +215,7 @@ recipe_core_number:
     star_aln: 36
     star_fusion: 24
     stringtie_ar: 36
+    megafusion_ar: 1
     varianteffectpredictor: 1
     version_collect_ar: 1
   type: mip
@@ -467,6 +469,38 @@ arriba_use_sample_id_as_display_name:
   data_type: SCALAR
   default: 0
   type: mip
+megafusion_ar:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _fusion_comb
+  outfile_suffix: ".vcf"
+  program_executables:
+    - MegaFusion.py
+    - svdb
+  type: recipe
+megafusion_callers:
+  associated_recipe:
+    - megafusion_ar
+  data_type: ARRAY
+  default:
+    - arriba_ar
+    - star_fusion
+  type: mip
+megafusion_arriba_config:
+  associated_recipe:
+    - megafusion_ar
+  data_type: SCALAR
+  default: "/opt/conda/share/MegaFusion/json/Ariba.json"
+  type: path
+megafusion_star_fusion_config:
+  associated_recipe:
+    - megafusion_ar
+  data_type: SCALAR
+  default: "/opt/conda/share/MegaFusion/json/Star_Fusion.json"
+  type: path
 ## Merge bam files
 picardtools_mergesamfiles:
   analysis_mode: sample

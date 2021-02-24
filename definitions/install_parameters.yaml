@@ -119,6 +119,7 @@ rd_rna:
     - gatk4
     - gffcompare
     - htslib
+    - megafusion
     - mip
     - mip_scripts
     - multiqc
@@ -131,6 +132,7 @@ rd_rna:
     - star
     - star-fusion
     - stringtie
+    - svdb
     - trim-galore
     - ucsc
     - utilities

@@ -111,6 +111,10 @@ container:
       configManta.py:
       runWorkflow.py: "no_executable_in_image"
     uri: docker.io/clinicalgenomics/manta:1.6.0
+  megafusion:
+    executable:
+      MegaFusion.py: "python /opt/conda/share/MegaFusion/MegaFusion.py"
+    uri: docker.io/clinicalgenomics/megafusion:5828fbe
   multiqc:
     executable:
       multiqc:

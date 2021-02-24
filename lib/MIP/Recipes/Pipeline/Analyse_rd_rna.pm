@@ -385,6 +385,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+    use MIP::Recipes::Analysis::Megafusion qw{ analysis_megafusion };
     use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
@@ -445,6 +446,7 @@ sub pipeline_analyse_rd_rna {
         genebody_coverage                => \&analysis_genebody_coverage,
         gffcompare_ar                    => \&analysis_gffcompare,
         markduplicates                   => \&analysis_markduplicates,
+        megafusion_ar                    => \&analysis_megafusion,
         multiqc_ar                       => \&analysis_multiqc,
         picardtools_collectrnaseqmetrics => \&analysis_picardtools_collectrnaseqmetrics,
         picardtools_mergesamfiles        => \&analysis_picardtools_mergesamfiles,
