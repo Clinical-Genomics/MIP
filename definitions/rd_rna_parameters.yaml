@@ -395,7 +395,7 @@ star_fusion:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: _fusion
+  file_tag: _starfusion
   outfile_suffix: ".tsv"
   program_executables:
     - gtf_file_to_feature_seqs.pl

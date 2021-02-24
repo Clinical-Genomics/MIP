@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $EMPTY_STR $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -128,7 +128,7 @@ sub analysis_star_fusion {
 
     use MIP::File::Format::Star_fusion qw{ create_star_fusion_sample_file };
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv gnu_rm };
     use MIP::Program::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
@@ -165,9 +165,14 @@ sub analysis_star_fusion {
             recipe_name           => $recipe_name,
         }
     );
-    my $outdir_path    = catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
-    my $outsample_name = $STAR_FUSION_PREFIX . $recipe{outfile_suffix};
-    my @file_paths     = catfile( $outdir_path, $outsample_name );
+
+    ## Build outfile_paths
+    my $outdir_path = catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
+    my $lanes_id    = join $EMPTY_STR, @{ $file_info_href->{$sample_id}{lanes} };
+    my $outfile_tag         = $file_info_href->{$sample_id}{$recipe_name}{file_tag};
+    my $outfile_suffix      = $recipe{outfile_suffix};
+    my $outfile_path_prefix = catfile( $outdir_path,
+        $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id . $outfile_tag );
 
     %io = (
         %io,
@@ -176,12 +181,13 @@ sub analysis_star_fusion {
                 chain_id       => $recipe{job_id_chain},
                 id             => $sample_id,
                 file_info_href => $file_info_href,
-                file_paths_ref => \@file_paths,
+                file_paths_ref => [ $outfile_path_prefix . $outfile_suffix ],
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
             }
         )
     );
+    my $outfile_path = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -236,14 +242,41 @@ sub analysis_star_fusion {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Close filehandleS
+    say {$filehandle} q{## Rename outfile};
+    my $star_fusion_outfile_path =
+      catfile( $outdir_path, $STAR_FUSION_PREFIX . $recipe{outfile_suffix} );
+    gnu_mv(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $star_fusion_outfile_path,
+            outfile_path => $outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    say {$filehandle} q{## Remove intermediary files};
+  FILE_TAG:
+    foreach my $file_tag (qw{ _STARgenome _STARpass1 }) {
+
+        gnu_rm(
+            {
+                filehandle  => $filehandle,
+                force       => 1,
+                infile_path => catdir( $outdir_path, $file_tag ),
+                recursive   => 1,
+            }
+        );
+        print {$filehandle} $NEWLINE;
+    }
+
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                path             => $file_paths[0],
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
@@ -254,7 +287,7 @@ sub analysis_star_fusion {
             {
                 format           => q{meta},
                 id               => $sample_id,
-                path             => $file_paths[0],
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }

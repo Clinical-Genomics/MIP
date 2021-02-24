@@ -165,7 +165,6 @@ sub analysis_arriba {
     );
     my @infile_paths = @{ $io{in}{file_paths} };
 
-## Build outfile_paths
     my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
@@ -174,6 +173,7 @@ sub analysis_arriba {
         }
     );
 
+    ## Build outfile_paths
     my $outsample_directory =
       catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
     my $lanes_id            = join $EMPTY_STR, @{ $file_info_href->{$sample_id}{lanes} };
