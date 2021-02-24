@@ -113,7 +113,7 @@ sub _build_usage {
 ## Arguments:
 
     option(
-        q{arriba_ar} => (
+        q{star_fusion_ar} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Detect and visualize fusions using Arriba},
             is            => q{rw},
@@ -122,36 +122,36 @@ sub _build_usage {
     );
 
     option(
-        q{arriba_blacklist_path} => (
+        q{star_fusion_blacklist_path} => (
             cmd_tags      => [q{Recipe argument}],
-            documentation => q{Path to arriba blacklist file},
+            documentation => q{Path to star_fusion blacklist file},
             is            => q{rw},
             isa           => Str,
         )
     );
 
     option(
-        q{arriba_cytoband_path} => (
+        q{star_fusion_cytoband_path} => (
             cmd_tags      => [q{Recipe argument}],
-            documentation => q{Path to arriba cytoband file},
+            documentation => q{Path to star_fusion cytoband file},
             is            => q{rw},
             isa           => Str,
         )
     );
 
     option(
-        q{arriba_proteindomain_path} => (
+        q{star_fusion_proteindomain_path} => (
             cmd_tags      => [q{Recipe argument}],
-            documentation => q{Path to arriba protein domain file},
+            documentation => q{Path to star_fusion protein domain file},
             is            => q{rw},
             isa           => Str,
         )
     );
 
     option(
-        q{arriba_use_sample_id_as_display_name} => (
+        q{star_fusion_use_sample_id_as_display_name} => (
             cmd_tags      => [q{Default: 0}],
-            documentation => q{Use sample id as display name for arriba fusion report},
+            documentation => q{Use sample id as display name for star_fusion fusion report},
             is            => q{rw},
             isa           => Bool,
         )
@@ -571,6 +571,42 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             documentation => q{Picardtools markduplicates optical duplicate distance},
             is            => q{rw},
             isa           => Int,
+        )
+    );
+
+    option(
+        q{megafusion_ar} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Merge fusion calls from different callers},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{megafusion_callers} => (
+            cmd_tags      => [q{Default: star_fusion_ar star_fusion}],
+            documentation => q{Fusion caller recipes to fuse into a vcf},
+            is            => q{rw},
+            isa           => ArrayRef,
+        )
+    );
+
+    option(
+        q{megafusion_star_fusion_config} => (
+            cmd_tags      => [q{Default: Path inside MegaFusion container}],
+            documentation => q{MegaFusion config for Arriba calls},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{megafusion_star_fusion_config} => (
+            cmd_tags      => [q{Default: Path inside MegaFusion container}],
+            documentation => q{MegaFusion config for Star Fusion calls},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 

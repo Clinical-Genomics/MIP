@@ -13,6 +13,7 @@ CHAIN_ALL:
     - PARALLEL:
       - star_fusion
       - arriba_ar
+    - megafusion_ar
     - svdb_merge
     - svdb_annotate
   - CHAIN_MAIN:
