@@ -34,7 +34,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - Simple Linux Utility for Resource Management ([SLURM]) (version: 18.08.0)
 
 #### **Pipeline: Rare disease**
-- [Bcftools] (version: 1.10.2)
+- [Bcftools] (version: 1.11)
 - [BedTools] (version: 2.2.29)
 - [BWA] (version: 0.7.17)
 - [BWAKit] (version: 0.7.17)
@@ -49,7 +49,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [GATK] (version: 3.8.1 and 4.1.8)
 - [GENMOD] (version: 3.7.3)
 - [Glnexus] (version: 1.2.7)
-- [Htslib] (version: 1.10.2)
+- [Htslib] (version: 1.11)
 - [Manta] (version: 1.6.0)
 - [MultiQC] (version: 1.9)
 - [Peddy] (version: 0.4.3)
@@ -58,7 +58,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Rhocall] (version: 0.5.1)
 - [rtg-tools] (version: 3.10.1)
 - [Sambamba] (version: 0.6.8)
-- [Samtools] (version: 1.10.2)
+- [Samtools] (version: 1.11)
 - [SMNCopyNumberCaller] (version: 4b2c1ad)
 - [Stranger] (version: 0.7)
 - [Svdb] (version: 2.2.0)
