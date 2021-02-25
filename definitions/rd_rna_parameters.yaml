@@ -143,6 +143,7 @@ recipe_time:
     gffcompare_ar: 1
     gzip_fastq: 2
     markduplicates: 8
+    megafusion_ar: 1
     multiqc_ar: 1
     picardtools_collectrnaseqmetrics: 2
     picardtools_mergesamfiles: 2
@@ -154,7 +155,7 @@ recipe_time:
     star_aln: 6
     star_fusion: 8
     stringtie_ar: 2
-    megafusion_ar: 1
+    svdb_merge_fusion: 1
     trim_galore_ar: 6
     varianteffectpredictor: 4
     version_collect_ar: 1
@@ -215,6 +216,7 @@ recipe_core_number:
     star_aln: 36
     star_fusion: 24
     stringtie_ar: 36
+    svdb_merge_fusion: 1
     megafusion_ar: 1
     varianteffectpredictor: 1
     version_collect_ar: 1
@@ -501,6 +503,18 @@ megafusion_star_fusion_config:
   data_type: SCALAR
   default: "/opt/conda/share/MegaFusion/json/Star_Fusion.json"
   type: path
+svdb_merge_fusion:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _fusion
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - bcftools
+    - svdb
+  type: recipe
 ## Merge bam files
 picardtools_mergesamfiles:
   analysis_mode: sample
