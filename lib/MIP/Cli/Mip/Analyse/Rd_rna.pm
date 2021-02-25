@@ -872,6 +872,15 @@ q{Regular expression file containing the regular expression to be used for each 
     );
 
     option(
+        q{svdb_merge_fusion} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Merge sample fusion vcfs to a case vcf},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{transcript_annotation} => (
             cmd_tags      => [q{Transcripts file: Format: GTF}],
             documentation => q{Transcript file for the rd_rna pipeline},

@@ -1,10 +1,11 @@
-package MIP::Recipes::Analysis::Megafusion;
+package MIP::Recipes::Analysis::Svdb_merge_fusion;
 
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use utf8;
@@ -13,9 +14,10 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -24,23 +26,22 @@ BEGIN {
 
     # Set the version for version checking
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_megafusion };
+    our @EXPORT_OK = qw{ analysis_svdb_merge_fusion };
 
 }
 
-sub analysis_megafusion {
+sub analysis_svdb_merge_fusion {
 
-## Function : Convert tsv files from fusion callers to vcf format and combine into one
+## Function : Merge sample fusion calls to a case vcf
 ## Returns  :
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $case_id               => Family id
-##          : $file_info_href        => File_info hash {REF}
-##          : $job_id_href           => Job id hash {REF}
-##          : $parameter_href        => Parameter hash {REF}
-##          : $profile_base_command  => Submission profile base command
-##          : $recipe_name           => Recipe name
-##          : $sample_id             => Sample id
-##          : $sample_info_href      => Info on samples and case hash {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $case_id                 => Family id
+##          : $file_info_href          => File_info hash {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Recipe name
+##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -50,7 +51,6 @@ sub analysis_megafusion {
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
-    my $sample_id;
     my $sample_info_href;
 
     ## Default(s)
@@ -102,12 +102,6 @@ sub analysis_megafusion {
             store       => \$recipe_name,
             strict_type => 1,
         },
-        sample_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$sample_id,
-            strict_type => 1,
-        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -120,13 +114,12 @@ sub analysis_megafusion {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
-    use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Bcftools qw{bcftools_view_and_index_vcf };
-    use MIP::Program::Megafusion qw{ megafusion };
+    use MIP::Program::Bcftools qw{ bcftools_view bcftools_index };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
     use MIP::Program::Svdb qw{ svdb_merge };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Sample_info
-      qw{ set_file_path_to_store set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -134,25 +127,23 @@ sub analysis_megafusion {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my %fusion_file_path;
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my @infile_paths;
+  SAMPLE_ID:
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-  FUSION_CALLER_RECIPE:
-    foreach my $fusion_caller_recipe ( @{ $active_parameter_href->{megafusion_callers} } ) {
-
-        next FUSION_CALLER_RECIPE if not $active_parameter_href->{$fusion_caller_recipe};
-
+        ## Get the io infiles per chain and id
         my %io = get_io_files(
             {
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 parameter_href => $parameter_href,
-                recipe_name    => $fusion_caller_recipe,
-                stream         => q{out},
+                recipe_name    => $recipe_name,
+                stream         => q{in},
             }
         );
-        $fusion_file_path{$fusion_caller_recipe}{infile_path} = $io{out}{file_path};
-        $fusion_file_path{$fusion_caller_recipe}{file_name_prefix} =
-          $io{out}{file_name_prefixes}[0];
+        push @infile_paths, $io{in}{file_path};
     }
 
     my %recipe = parse_recipe_prerequisites(
@@ -163,25 +154,21 @@ sub analysis_megafusion {
         }
     );
 
+    ## Set and get the io files per chain, id and stream
     my %io = (
         parse_io_outfiles(
             {
                 chain_id               => $recipe{job_id_chain},
-                id                     => $sample_id,
+                id                     => $case_id,
                 file_info_href         => $file_info_href,
-                file_name_prefixes_ref => [$sample_id],
+                file_name_prefixes_ref => [$case_id],
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
             }
         )
     );
-
-    my $outfile_name_prefix = $io{out}{file_name_prefix};
-    my $outfile_path        = $io{out}{file_path};
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outdir_path         = $io{out}{dir_path};
-    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -192,7 +179,7 @@ sub analysis_megafusion {
         {
             active_parameter_href => $active_parameter_href,
             core_number           => $recipe{core_number},
-            directory_id          => $sample_id,
+            directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $recipe{memory},
@@ -202,59 +189,49 @@ sub analysis_megafusion {
         }
     );
 
-    my %config_path = (
-        arriba_ar   => $active_parameter_href->{megafusion_arriba_config},
-        star_fusion => $active_parameter_href->{megafusion_star_fusion_config},
-    );
-
-    my @fusion_vcfs;
-
     ### SHELL:
-    say {$filehandle} q{## } . $recipe_name;
 
-  FUSION_RECIPE:
-    foreach my $fusion_recipe ( keys %fusion_file_path ) {
+    my $bcftools_infile_path;
 
-        my $megafusion_outfile_path =
-          $outdir_path . $fusion_file_path{$fusion_recipe}{file_name_prefix} . $outfile_suffix;
-        megafusion(
+    if ( @infile_paths > 1 ) {
+
+        say {$filehandle} q{## Merge sample fusion files};
+        svdb_merge(
             {
-                config_file_path => $config_path{$fusion_recipe},
                 filehandle       => $filehandle,
-                infile_path      => $fusion_file_path{$fusion_recipe}{infile_path},
-                sample_id        => $sample_id,
-                stdoutfile_path  => $megafusion_outfile_path,
+                infile_paths_ref => \@infile_paths,
+                notag            => 1,
             }
         );
-        say {$filehandle} $NEWLINE;
+        print {$filehandle} $PIPE . $SPACE;
+        $bcftools_infile_path = catfile( dirname( devnull() ), q{stdin} );
+    }
+    else {
 
-        push @fusion_vcfs, $megafusion_outfile_path;
+        say {$filehandle} q{## Rename file for single sample cases};
+        $bcftools_infile_path = $infile_paths[0];
     }
 
-    say {$filehandle} q{## Merge fusion calls};
-    svdb_merge(
+    bcftools_view(
         {
-            filehandle       => $filehandle,
-            infile_paths_ref => \@fusion_vcfs,
-            stdoutfile_path  => $outfile_path,
+            filehandle   => $filehandle,
+            infile_path  => $bcftools_infile_path,
+            output_type  => q{z},
+            threads      => $recipe{core_number},
+            outfile_path => $outfile_path,
         }
     );
     say {$filehandle} $NEWLINE;
 
-    say {$filehandle} q{## Compress vcf for storing};
-    bcftools_view_and_index_vcf(
+    bcftools_index(
         {
-            filehandle          => $filehandle,
-            index               => 1,
-            index_type          => q{tbi},
-            infile_path         => $outfile_path,
-            outfile_path_prefix => $outfile_path_prefix,
-            output_type         => q{z},
-            threads             => $recipe{core_number},
+            filehandle  => $filehandle,
+            infile_path => $outfile_path,
+            output_type => q{tbi},
         }
     );
 
-    ## Close filehandles
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
@@ -262,10 +239,8 @@ sub analysis_megafusion {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                infile           => $outfile_name_prefix,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
-                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
@@ -273,9 +248,9 @@ sub analysis_megafusion {
         set_file_path_to_store(
             {
                 format           => q{vcf},
-                id               => $sample_id,
-                path             => $outfile_path_prefix . $DOT . q{vcf.gz},
-                path_index       => $outfile_path_prefix . $DOT . q{vcf.gz.tbi},
+                id               => $case_id,
+                path             => $outfile_path,
+                path_index       => $outfile_path . $DOT . q{tbi},
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
@@ -285,7 +260,7 @@ sub analysis_megafusion {
             {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
-                dependency_method                 => q{sample_to_sample},
+                dependency_method                 => q{sample_to_case},
                 job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
@@ -293,7 +268,7 @@ sub analysis_megafusion {
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
-                sample_id          => $sample_id,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile => $active_parameter_href->{submission_profile},
             }
         );
