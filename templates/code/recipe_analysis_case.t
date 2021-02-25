@@ -47,7 +47,7 @@ diag(   q{Test analysis_RECIPE from MODULE.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
+test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
 my $recipe_name    = q{RECIPE_NAME};

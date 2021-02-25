@@ -204,7 +204,7 @@ sub analysis_RECIPE_NAME {
 ###RECIPE TOOL COMMANDS HERE###
 ###############################
 
-    ## Close filehandleS
+    ## Close filehandles
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
