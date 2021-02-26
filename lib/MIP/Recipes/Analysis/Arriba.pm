@@ -132,7 +132,8 @@ sub analysis_arriba {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_io_files get_sample_file_attribute parse_io_outfiles };
+    use MIP::File_info
+      qw{ get_io_files get_sample_fastq_file_lanes get_sample_file_attribute parse_io_outfiles };
     use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_tee };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Arriba qw{ arriba draw_fusions };
@@ -173,30 +174,34 @@ sub analysis_arriba {
         }
     );
 
-    ## Build outfile_paths
-    my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
-    my $lanes_id            = join $EMPTY_STR, @{ $file_info_href->{$sample_id}{lanes} };
-    my $outfile_tag         = $file_info_href->{$sample_id}{$recipe_name}{file_tag};
-    my $outfile_suffix      = $recipe{outfile_suffix};
-    my $outfile_path_prefix = catfile( $outsample_directory,
-        $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id . $outfile_tag );
-
+    ## Join infile lanes
+    my $lanes_id = join $EMPTY_STR,
+      get_sample_fastq_file_lanes(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+      );
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $recipe{job_id_chain},
+                chain_id               => $recipe{job_id_chain},
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref =>
+                  [ $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id ],
                 id             => $sample_id,
-                file_info_href => $file_info_href,
-                file_paths_ref => [ $outfile_path_prefix . $outfile_suffix ],
+                outdata_dir    => $active_parameter_href->{outdata_dir},
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
             }
         )
     );
-    my $outfile_name = ${ $io{out}{file_names} }[0];
-    my $outfile_path = $io{out}{file_path};
+    my $outdir_path         = $io{out}{dir_path};
+    my $outfile_name        = ${ $io{out}{file_names} }[0];
+    my $outfile_path        = $io{out}{file_path};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
 
     my $use_sample_id_as_display_name =
       $active_parameter_href->{arriba_use_sample_id_as_display_name};
@@ -394,8 +399,8 @@ sub analysis_arriba {
     );
     if ( $sample_display_name and not $use_sample_id_as_display_name ) {
 
-        $report_path = catfile( $outsample_directory,
-            $sample_display_name . $UNDERSCORE . q{arriba_fusions.pdf} );
+        $report_path =
+          catfile( $outdir_path, $sample_display_name . $UNDERSCORE . q{arriba_fusions.pdf} );
     }
     draw_fusions(
         {
