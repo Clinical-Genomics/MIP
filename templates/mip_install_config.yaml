@@ -133,7 +133,7 @@ container:
   picard:
     executable:
       picard: "no_executable_in_image"
-    uri: docker.io/broadinstitute/picard:2.23.4
+    uri: docker.io/broadinstitute/picard:2.25.0
   plink:
     executable:
       plink2:
