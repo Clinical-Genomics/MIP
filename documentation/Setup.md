@@ -53,7 +53,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Manta] (version: 1.6.0)
 - [MultiQC] (version: 1.9)
 - [Peddy] (version: 0.4.3)
-- [PicardTools] (version: 2.23.4)
+- [PicardTools] (version: 2.25.0)
 - [PLINK] (version: 1.90b3x35)
 - [Rhocall] (version: 0.5.1)
 - [rtg-tools] (version: 3.10.1)
