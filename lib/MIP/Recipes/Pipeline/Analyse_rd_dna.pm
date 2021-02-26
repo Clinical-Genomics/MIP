@@ -491,12 +491,10 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge };
     use MIP::Recipes::Analysis::Samtools_subsample_mt qw{ analysis_samtools_subsample_mt };
     use MIP::Recipes::Analysis::Smncopynumbercaller qw{ analysis_smncopynumbercaller };
-    use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
     use MIP::Recipes::Analysis::Star_caller qw{ analysis_star_caller };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets qw{ analysis_sv_combinevariantcallsets };
-    use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
     use MIP::Recipes::Analysis::Telomerecat qw{ analysis_telomerecat };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
     use MIP::Recipes::Analysis::Tiddit_coverage qw{ analysis_tiddit_coverage };
@@ -594,7 +592,6 @@ sub pipeline_analyse_rd_dna {
         samtools_merge            => \&analysis_samtools_merge,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
         smncopynumbercaller       => \&analysis_smncopynumbercaller,
-        split_fastq_file          => \&analysis_split_fastq_file,
         star_caller               => \&analysis_star_caller,
         sv_annotate               => \&analysis_sv_annotate,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
@@ -715,9 +712,6 @@ sub pipeline_analyse_rd_dna {
                 }
             );
         }
-
-        ## Special case
-        exit if ( $recipe eq q{split_fastq_file} );
     }
     return;
 }
