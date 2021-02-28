@@ -105,12 +105,16 @@ container:
       bgzip:
       samtools:
       tabix:
-    uri: docker.io/clinicalgenomics/htslib:1.10.2
+    uri: docker.io/clinicalgenomics/htslib:1.11
   manta:
     executable:
       configManta.py:
       runWorkflow.py: "no_executable_in_image"
     uri: docker.io/clinicalgenomics/manta:1.6.0
+  megafusion:
+    executable:
+      MegaFusion.py: "python /opt/conda/share/MegaFusion/MegaFusion.py"
+    uri: docker.io/clinicalgenomics/megafusion:5828fbe
   multiqc:
     executable:
       multiqc:
@@ -126,7 +130,7 @@ container:
   picard:
     executable:
       picard: "no_executable_in_image"
-    uri: docker.io/broadinstitute/picard:2.23.4
+    uri: docker.io/broadinstitute/picard:2.25.0
   plink:
     executable:
       plink2:

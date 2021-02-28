@@ -14,13 +14,28 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Removed support to run variant_integrity
 - Added deepvariant as variant caller and glnexus to merge samples to case vcf
 
-**Tools**  
-chanjo: 4.2.0 -> 4.6  
+**Tools**
+bcftools: 1.10.2-hd2cd319_0 -> 1.11=h7c999a4_0
+chanjo: 4.2.0 -> 4.6
 deepvariant: 1.0.0  
 glnexus: v1.2.7
+htslib: 1.10.2=h78d89cc_0 -> 1.11=hd3b49d5_2
+picardtools: 2.23.4 -> 2.25.0
+samtools: 1.10=h9402c20_2 -> 1.11=h6270b1f_0
+stranger 0.7 -> 0.7.1
+
+## [9.1.3]
+- Fix memory allocation for mip-rna markduplicates.
+- Update to repeat expansion calling
+- Adds possibility to rename arriba fusion report from with sample display name
+- Updates documentation
+
+**Tools**  
+expansionhunter 3.1.2 -> 4.0.2  
+stranger 0.5.5 -> 0.7
 
 ## [9.1.2]
-- Increase markduplicates java memory allocation for chromosme 2.
+- Increase markduplicates java memory allocation for chromosome 2.
 - Turn off chromograph_viz for wes analysis
 - Chromograph exits gracefully on empty infile
 - Use median coverage instead of expected coverage when evaluating whether expected coverage has been reached or not [#1719](https://github.com/Clinical-Genomics/MIP/issues/1719)

@@ -385,6 +385,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+    use MIP::Recipes::Analysis::Megafusion qw{ analysis_megafusion };
     use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
@@ -397,6 +398,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
     use MIP::Recipes::Analysis::Stringtie qw{ analysis_stringtie };
+    use MIP::Recipes::Analysis::Svdb_merge_fusion qw{ analysis_svdb_merge_fusion };
     use MIP::Recipes::Analysis::Trim_galore qw{ analysis_trim_galore };
     use MIP::Recipes::Analysis::Vcf_ase_reformat qw{ analysis_vcf_ase_reformat};
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
@@ -445,6 +447,7 @@ sub pipeline_analyse_rd_rna {
         genebody_coverage                => \&analysis_genebody_coverage,
         gffcompare_ar                    => \&analysis_gffcompare,
         markduplicates                   => \&analysis_markduplicates,
+        megafusion_ar                    => \&analysis_megafusion,
         multiqc_ar                       => \&analysis_multiqc,
         picardtools_collectrnaseqmetrics => \&analysis_picardtools_collectrnaseqmetrics,
         picardtools_mergesamfiles        => \&analysis_picardtools_mergesamfiles,
@@ -456,6 +459,7 @@ sub pipeline_analyse_rd_rna {
         star_aln                         => undef,
         star_fusion                      => \&analysis_star_fusion,
         stringtie_ar                     => \&analysis_stringtie,
+        svdb_merge_fusion                => \&analysis_svdb_merge_fusion,
         trim_galore_ar                   => \&analysis_trim_galore,
         varianteffectpredictor           => \&analysis_vep,
         version_collect_ar               => \&analysis_mip_vercollect,

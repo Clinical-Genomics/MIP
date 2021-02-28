@@ -319,6 +319,18 @@ sub analysis_gatk_genotypegvcfs {
         );
         say {$filehandle} $NEWLINE;
 
+        ## Clean up
+        say {$filehandle} q{## Remove GenomicsDB};
+        gnu_rm(
+            {
+                filehandle  => $filehandle,
+                force       => 1,
+                infile_path => $genomicsdb_file_path,
+                recursive   => 1,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+
         close $filehandle;
 
         if ( $recipe{mode} == 1 ) {

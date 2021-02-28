@@ -56,7 +56,7 @@ container:
   expansionhunter:
     executable:
       ExpansionHunter:
-    uri: docker.io/clinicalgenomics/expansionhunter:3.2.2
+    uri: docker.io/clinicalgenomics/expansionhunter:4.0.2
   fastqc:
     executable:
       fastqc:
@@ -104,12 +104,16 @@ container:
       bgzip:
       samtools:
       tabix:
-    uri: docker.io/clinicalgenomics/htslib:1.10.2
+    uri: docker.io/clinicalgenomics/htslib:1.11
   manta:
     executable:
       configManta.py:
       runWorkflow.py: "no_executable_in_image"
     uri: docker.io/clinicalgenomics/manta:1.6.0
+  megafusion:
+    executable:
+      MegaFusion.py: "python /opt/conda/share/MegaFusion/MegaFusion.py"
+    uri: docker.io/clinicalgenomics/megafusion:5112def
   mip:
     executable:
       mip:
@@ -129,7 +133,7 @@ container:
   picard:
     executable:
       picard: "no_executable_in_image"
-    uri: docker.io/broadinstitute/picard:2.23.4
+    uri: docker.io/broadinstitute/picard:2.25.0
   plink:
     executable:
       plink2:
@@ -189,7 +193,7 @@ container:
   stranger:
     executable:
       stranger:
-    uri: docker.io/clinicalgenomics/stranger:0.5.5
+    uri: docker.io/clinicalgenomics/stranger:0.7.1
   stringtie:
     executable:
       stringtie:

@@ -138,7 +138,7 @@ sub analysis_star_fusion {
     ## PREPROCESSING:
 
     ## Star fusion has a fixed sample_prefix
-    Readonly my $STAR_FUSION_PREFIX => q{star-fusion.fusion_predictions.abridged};
+    Readonly my $STAR_FUSION_PREFIX => q{star-fusion.fusion_predictions};
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -264,7 +264,7 @@ sub analysis_star_fusion {
             {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
-                dependency_method                 => q{sample_to_island},
+                dependency_method                 => q{sample_to_sample},
                 job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},

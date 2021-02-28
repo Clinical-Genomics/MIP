@@ -172,7 +172,6 @@ sub analysis_expansionhunter {
         }
     );
 
-    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_suffix      = $io{out}{file_constant_suffix};
     my $outfile_path        = $outfile_path_prefix . $outfile_suffix;
@@ -304,7 +303,6 @@ sub analysis_expansionhunter {
           . $UNDERSCORE
           . $sample_id
           . $outfile_suffix;
-
     }
     say {$filehandle} q{wait}, $NEWLINE;
 
@@ -369,6 +367,7 @@ sub analysis_expansionhunter {
       $outfile_path_prefix . $UNDERSCORE . q{decompose_svdbmerge_ann} . $outfile_suffix;
     stranger(
         {
+            case_id           => $case_id,
             filehandle        => $filehandle,
             infile_path       => $svdb_outfile_path,
             repeats_file_path => $variant_catalog_file_path,

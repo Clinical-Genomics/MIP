@@ -1935,6 +1935,15 @@ q{Regular expression file containing the regular expression to be used for each 
     );
 
     option(
+        q{qccollect_store_metrics_outfile} => (
+            cmd_tags      => [q{Default: {outdata_dir}/{case_id}_metrics_deliverables.yaml}],
+            documentation => q{File containing metrics from this analysis run},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{multiqc_ar} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Create aggregate bioinformatics analysis report across many samples},

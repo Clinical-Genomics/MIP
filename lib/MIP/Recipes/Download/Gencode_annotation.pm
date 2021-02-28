@@ -119,7 +119,6 @@ sub download_gencode_annotation {
 
     use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Program::Gtf2bed qw{ gtf2bed };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -178,13 +177,16 @@ sub download_gencode_annotation {
 
     ### POST PROCESSING
     my $outfile_name = join $UNDERSCORE,
-      ( $genome_version, $recipe_name, q{-} . $reference_version . q{-.gtf} );
+      ( $genome_version, $recipe_name, $DASH . $reference_version . $DASH . q{.gtf} );
     my $outfile_path = catfile( $reference_dir, $outfile_name );
 
     if ( $genome_version eq q{grch37} ) {
         ## Build reformated outfile
         my $reformated_outfile = join $UNDERSCORE,
-          ( $genome_version, $recipe_name, q{reformated}, q{-} . $reference_version . q{-.gtf} );
+          (
+            $genome_version, $recipe_name, q{reformated},
+            $DASH . $reference_version . $DASH . q{.gtf}
+          );
         my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
 
         _remove_chr_prefix_rename_chrm(
@@ -205,17 +207,6 @@ sub download_gencode_annotation {
 
         $outfile_path = $reformated_outfile_path;
     }
-
-    ## Reformat gtf to bed
-    my $bed_outfile_path = $outfile_path =~ s/gtf$/bed/rxms;
-    gtf2bed(
-        {
-            filehandle      => $filehandle,
-            infile_path     => $outfile_path,
-            stdoutfile_path => $bed_outfile_path,
-        }
-    );
-    say {$filehandle} $NEWLINE;
 
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});

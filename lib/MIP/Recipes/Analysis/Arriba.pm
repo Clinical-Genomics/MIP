@@ -140,6 +140,7 @@ sub analysis_arriba {
     use MIP::Program::Star qw{ star_aln };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{
+      get_pedigree_sample_id_attributes
       get_rg_header_line
       set_file_path_to_store
       set_recipe_metafile_in_sample_info
@@ -196,6 +197,9 @@ sub analysis_arriba {
     );
     my $outfile_name = ${ $io{out}{file_names} }[0];
     my $outfile_path = $io{out}{file_path};
+
+    my $use_sample_id_as_display_name =
+      $active_parameter_href->{arriba_use_sample_id_as_display_name};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -380,7 +384,19 @@ sub analysis_arriba {
     say {$filehandle} $NEWLINE;
 
     ## Visualize the fusions
-    my $report_path = $outfile_path_prefix . $DOT . q{pdf};
+    my $report_path         = $outfile_path_prefix . $DOT . q{pdf};
+    my $sample_display_name = get_pedigree_sample_id_attributes(
+        {
+            attribute        => q{sample_display_name},
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+    if ( $sample_display_name and not $use_sample_id_as_display_name ) {
+
+        $report_path = catfile( $outsample_directory,
+            $sample_display_name . $UNDERSCORE . q{arriba_fusions.pdf} );
+    }
     draw_fusions(
         {
             alignment_file_path      => $sorted_bam_file,
@@ -444,7 +460,7 @@ sub analysis_arriba {
             {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
-                dependency_method                 => q{sample_to_island},
+                dependency_method                 => q{sample_to_sample},
                 job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},

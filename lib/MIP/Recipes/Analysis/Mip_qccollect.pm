@@ -177,13 +177,14 @@ sub analysis_mip_qccollect {
     my $log_file_path = $outfile_path_prefix . $UNDERSCORE . q{qccollect.log};
     mip_qccollect(
         {
-            eval_metric_file => $active_parameter_href->{qccollect_eval_metric_file},
-            filehandle       => $filehandle,
-            infile_path      => $infile_path,
-            log_file_path    => $log_file_path,
-            outfile_path     => $outfile_path,
-            regexp_file_path => $active_parameter_href->{qccollect_regexp_file},
-            skip_evaluation  => $active_parameter_href->{qccollect_skip_evaluation},
+            eval_metric_file      => $active_parameter_href->{qccollect_eval_metric_file},
+            filehandle            => $filehandle,
+            infile_path           => $infile_path,
+            log_file_path         => $log_file_path,
+            outfile_path          => $outfile_path,
+            regexp_file_path      => $active_parameter_href->{qccollect_regexp_file},
+            skip_evaluation       => $active_parameter_href->{qccollect_skip_evaluation},
+            store_metrics_outfile => $active_parameter_href->{qccollect_store_metrics_outfile},
         }
     );
     say {$filehandle} $NEWLINE;
@@ -210,6 +211,19 @@ sub analysis_mip_qccollect {
             }
         );
 
+        if ( defined $active_parameter_href->{qccollect_store_metrics_outfile} ) {
+
+            set_file_path_to_store(
+                {
+                    format           => q{meta},
+                    id               => $case_id,
+                    path             => $active_parameter_href->{qccollect_store_metrics_outfile},
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+
+        }
         submit_recipe(
             {
                 base_command         => $profile_base_command,
