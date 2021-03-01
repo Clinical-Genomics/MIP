@@ -33,6 +33,7 @@ BEGIN {
       get_io_files
       get_is_sample_files_compressed
       get_merged_infile_prefix
+      get_sample_fastq_file_lanes
       get_sample_file_attribute
       get_sampling_fastq_files
       parse_file_compression_features
@@ -683,6 +684,40 @@ sub get_sample_file_attribute {
 
     ## Return requested attribute
     return $stored_attribute;
+}
+
+sub get_sample_fastq_file_lanes {
+
+## Function : Get sample fastq file lanes
+## Returns  :
+## Arguments: $file_info_href => File info hash {REF}
+##          : $sample_id      => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return @{ $file_info_href->{$sample_id}{lanes} };
 }
 
 sub get_sampling_fastq_files {

@@ -62,9 +62,9 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
+$active_parameter{star_fusion_genome_lib_dir}       = q{a_dir};
+$active_parameter{star_fusion_reference_genome}     = q{a_reference_genome};
 my $sample_id = $active_parameter{sample_ids}[0];
-$active_parameter{star_fusion_genome_lib_dir}   = q{a_dir};
-$active_parameter{star_fusion_reference_genome} = q{a_reference_genome};
 
 my %file_info = test_mip_hashes(
     {
@@ -72,8 +72,10 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-
 $file_info{star_fusion_reference_genome} = [qw{ _star_fusion_genome_dir }];
+@{ $file_info{$sample_id}{lanes} } = ( 1, 2 );
+$file_info{$sample_id}{$recipe_name}{file_tag} = q{starfusion};
+
 my %job_id;
 my %parameter = test_mip_hashes(
     {
@@ -84,11 +86,11 @@ my %parameter = test_mip_hashes(
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $sample_id,
-        parameter_href    => \%parameter,
-        recipe_name       => $recipe_name,
-        step              => q{bam},
+        file_info_href => \%file_info,
+        id             => $sample_id,
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{bam},
     }
 );
 
