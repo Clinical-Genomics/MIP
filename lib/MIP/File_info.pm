@@ -33,8 +33,8 @@ BEGIN {
       get_io_files
       get_is_sample_files_compressed
       get_merged_infile_prefix
-      get_sample_file_attribute
       get_sample_fastq_file_lanes
+      get_sample_file_attribute
       get_sampling_fastq_files
       parse_file_compression_features
       parse_files_compression_status
@@ -688,7 +688,7 @@ sub get_sample_file_attribute {
 
 sub get_sample_fastq_file_lanes {
 
-## Function : Get sample fastq filelanes
+## Function : Get sample fastq file lanes
 ## Returns  :
 ## Arguments: $file_info_href => File info hash {REF}
 ##          : $sample_id      => Sample id
