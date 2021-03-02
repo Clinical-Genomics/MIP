@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [10.0.0]
+- Remove unused recipe split_fastq_file
 - Align with the same bwa mem options as used by Broad
     - Fixed number of bases in each batch
     - Use bwa mem instead of run-bwamem for alignment to grch38

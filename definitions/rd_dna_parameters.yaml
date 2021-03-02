@@ -188,7 +188,6 @@ recipe_core_number:
     samtools_subsample_mt: 1
     smncopynumbercaller: 4
     star_caller: 4
-    split_fastq_file: 4
     sv_annotate: 1
     sv_combinevariantcallsets: 1
     sv_rankvariant: 16
@@ -254,7 +253,6 @@ recipe_memory:
     rhocall_viz: 5
     sambamba_depth: 10
     samtools_subsample_mt: 4
-    split_fastq_file: 2
     sv_annotate: 7
     sv_reformat: 24
     sv_varianteffectpredictor: 9
@@ -320,7 +318,6 @@ recipe_time:
     samtools_merge: 10
     samtools_subsample_mt: 1
     smncopynumbercaller: 1
-    split_fastq_file: 10
     star_caller: 1
     sv_annotate: 2
     sv_combinevariantcallsets: 2
@@ -365,24 +362,6 @@ picardtools_path:
   data_type: SCALAR
   type: path
 ### Programs
-split_fastq_file:
-  analysis_mode: sample
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  outfile_suffix: ".fastq.gz"
-  program_executables:
-    - pigz
-    - split
-  type: recipe
-split_fastq_file_read_batch:
-  associated_recipe:
-    - split_fastq_file
-  data_type: SCALAR
-  default: 25000000
-  type: recipe_argument
 ## Gzip
 gzip_fastq:
   analysis_mode: sample
