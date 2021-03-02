@@ -1299,7 +1299,6 @@ sub _add_percentage_mapped_reads_from_samtools {
 
     use MIP::Language::Perl qw{ perl_nae_oneliners};
 
-    say {$filehandle} $NEWLINE;
     perl_nae_oneliners(
         {
             autosplit       => 0,
