@@ -344,7 +344,8 @@ sub get_io_files {
 
 ## Function : Get the io files per chain, id and stream
 ## Returns  : %io
-## Arguments: $file_info_href => File info hash {REF}
+## Arguments: $chain_id       => Chain id
+##          : $file_info_href => File info hash {REF}
 ##          : $id             => Id (sample or case)
 ##          : $parameter_href => Parameter hash {REF}
 ##          : $recipe_name    => Recipe name
@@ -354,6 +355,7 @@ sub get_io_files {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $chain_id;
     my $file_info_href;
     my $id;
     my $parameter_href;
@@ -362,6 +364,10 @@ sub get_io_files {
     my $temp_directory;
 
     my $tmpl = {
+        chain_id => {
+            store       => \$chain_id,
+            strict_type => 1,
+        },
         file_info_href => {
             default     => {},
             defined     => 1,
@@ -413,7 +419,7 @@ sub get_io_files {
     Readonly my $UPSTREAM_DIRECTION => q{out};
 
     ## Unpack
-    my $chain_id = get_parameter_attribute(
+    $chain_id = $chain_id // get_parameter_attribute(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,

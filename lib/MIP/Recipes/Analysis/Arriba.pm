@@ -154,16 +154,19 @@ sub analysis_arriba {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Get the io infiles per chain and id
-    my %io = get_io_files(
+    my $upstrem_recipe =
+
+      ## Get the io infiles per chain and id
+      my %io = get_io_files(
         {
+            chain_id       => q{MAIN},
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
         }
-    );
+      );
     my @infile_paths = @{ $io{in}{file_paths} };
 
     my %recipe = parse_recipe_prerequisites(

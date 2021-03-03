@@ -10,9 +10,8 @@ CHAIN_ALL:
     - salmon_quant
     - blobfish
   - CHAIN_FUSION:
-    - PARALLEL:
-      - star_fusion
-      - arriba_ar
+    - star_fusion
+    - arriba_ar
     - megafusion_ar
     - svdb_merge_fusion
   - CHAIN_MAIN:
