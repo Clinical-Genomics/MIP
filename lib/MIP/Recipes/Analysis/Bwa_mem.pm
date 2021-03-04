@@ -1297,53 +1297,17 @@ sub _add_percentage_mapped_reads_from_samtools {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Environment::Executable qw{ get_executable_base_command };
+    use MIP::Language::Perl qw{ perl_nae_oneliners};
 
-    ## Add percentage mapped reads to samtools stats output
-
-    my @commands = ( get_executable_base_command( { base_command => q{perl}, } ), );
-
-    # Execute perl
-    print {$filehandle} join $SPACE, @commands;
-    print {$filehandle} q? -ne '?;
-
-    # Initiate variables
-    print {$filehandle} q?$raw; $map; ?;
-
-    # Remove newline
-    print {$filehandle} q?chomp $_; ?;
-
-    # Always relay incoming line to stdout
-    print {$filehandle} q?print $_, qq{\n}; ?;
-
-    # Find raw total sequences
-    print {$filehandle} q?if ($_=~/raw total sequences:\s+(\d+)/) { ?;
-
-    # Assign raw total sequence
-    print {$filehandle} q?$raw = $1; ?;
-
-    # End if
-    print {$filehandle} q?} ?;
-
-    # Find reads mapped
-    print {$filehandle} q?elsif ($_=~/reads mapped:\s+(\d+)/) { ?;
-
-    # Assign reads mapped
-    print {$filehandle} q?$map = $1; ?;
-
-    # Calculate percentage
-    print {$filehandle} q?my $percentage = ($map / $raw ) * 100; ?;
-
-    # Write calculation to stdout
-    print {$filehandle} q?print qq{percentage mapped reads:\t} . $percentage . qq{\n}?;
-
-    # End elsif
-    print {$filehandle} q?} ?;
-
-    # End oneliner
-    print {$filehandle} q?' ?;
-    print {$filehandle} q{>} . $SPACE . $outfile_path . $SPACE;
-
+    perl_nae_oneliners(
+        {
+            autosplit       => 0,
+            filehandle      => $filehandle,
+            oneliner_name   => q{add_pct_mapped_reads_from_samtools},
+            stdoutfile_path => $outfile_path,
+            use_container   => 1,
+        }
+    );
     return;
 }
 
