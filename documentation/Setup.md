@@ -63,7 +63,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Stranger] (version: 0.7)
 - [Svdb] (version: 2.2.0)
 - [Telomerecat] (version: 3.4.0)
-- [Tiddit] (version: 2.8.0)
+- [Tiddit] (version: 2.12.1)
 - [Upd] (version: 0.1)
 - [Varg] (version: 1.2.0)
 - [Vcf2cytosure] (version: 0.5.1)

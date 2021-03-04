@@ -23,7 +23,8 @@ glnexus: v1.2.7
 htslib: 1.10.2=h78d89cc_0 -> 1.11=hd3b49d5_2
 picardtools: 2.23.4 -> 2.25.0
 samtools: 1.10=h9402c20_2 -> 1.11=h6270b1f_0
-stranger 0.7 -> 0.7.1
+stranger: 0.7 -> 0.7.1
+tiddit: 2.8.1 -> 2.12.1
 
 ## [9.1.3]
 - Fix memory allocation for mip-rna markduplicates.
