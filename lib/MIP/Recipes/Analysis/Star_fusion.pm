@@ -147,6 +147,7 @@ sub analysis_star_fusion {
     ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
+            chain_id       => q{MAIN},
             file_info_href => $file_info_href,
             id             => $sample_id,
             parameter_href => $parameter_href,

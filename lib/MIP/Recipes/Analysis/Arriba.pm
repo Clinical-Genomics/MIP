@@ -157,6 +157,7 @@ sub analysis_arriba {
     ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
+            chain_id       => q{MAIN},
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
