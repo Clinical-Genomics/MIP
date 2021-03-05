@@ -206,7 +206,7 @@ container:
   tiddit:
     executable:
       TIDDIT.py:
-    uri: docker.io/jemten/tiddit:2.8.0
+    uri: docker.io/jemten/tiddit:2.12.1
   trim-galore:
     executable:
       trim_galore:
