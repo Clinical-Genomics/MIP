@@ -57,7 +57,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [PLINK] (version: 1.90b3x35)
 - [Rhocall] (version: 0.5.1)
 - [rtg-tools] (version: 3.10.1)
-- [Sambamba] (version: 0.6.8)
+- [Sambamba] (version: 0.8.0)
 - [Samtools] (version: 1.11)
 - [SMNCopyNumberCaller] (version: 4b2c1ad)
 - [Stranger] (version: 0.7)

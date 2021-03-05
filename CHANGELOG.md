@@ -16,13 +16,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added deepvariant as variant caller and glnexus to merge samples to case vcf
 
 **Tools**
-bcftools: 1.10.2-hd2cd319_0 -> 1.11=h7c999a4_0
+bcftools: 1.10.2-hd2cd319_0 -> 1.11-h7c999a4_0
 chanjo: 4.2.0 -> 4.6
 deepvariant: 1.0.0  
 glnexus: v1.2.7
-htslib: 1.10.2=h78d89cc_0 -> 1.11=hd3b49d5_2
+htslib: 1.10.2-h78d89cc_0 -> 1.11-hd3b49d5_2
 picardtools: 2.23.4 -> 2.25.0
-samtools: 1.10=h9402c20_2 -> 1.11=h6270b1f_0
+sambamba: 0.6.8-h682856c_0 -> 0.8.0-h984e79f_0
+samtools: 1.10-h9402c20_2 -> 1.11-h6270b1f_0
 stranger: 0.7 -> 0.7.1
 tiddit: 2.8.1 -> 2.12.1
 
