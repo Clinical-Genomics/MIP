@@ -363,7 +363,7 @@ sub _reformat_arriba_file {
     Readonly my $GENOME_VERSION_38 => 38;
 
     return $infile_href->{infile_path}
-      if ( ( $GENOME_VERSION eq $GENOME_VERSION_38 ) or ( $fusion_recipe ne q{arriba_ar} ) );
+      if ( ( $GENOME_VERSION ne $GENOME_VERSION_38 ) or ( $fusion_recipe ne q{arriba_ar} ) );
 
     say {$filehandle} q{## Reformat Arriba contig names before merging};
     my $megafusion_infile_path = catfile( $temp_directory, $infile_href->{infile_name} );
