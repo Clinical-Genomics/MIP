@@ -169,7 +169,7 @@ container:
   sambamba:
     executable:
       sambamba:
-    uri: docker.io/clinicalgenomics/sambamba:0.6.8
+    uri: docker.io/clinicalgenomics/sambamba:0.8.0
   smncopynumbercaller:
     executable:
       smn_caller.py:
