@@ -119,6 +119,10 @@ container:
     executable:
       multiqc:
     uri: docker.io/ewels/multiqc:1.9
+  pdfmerger:
+    executable:
+      pdfmerger:
+    uri: docker.io/clinicalgenomics/pdfmerger:c339d29
   perl:
     executable:
       perl:

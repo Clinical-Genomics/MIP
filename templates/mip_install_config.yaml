@@ -130,6 +130,10 @@ container:
     executable:
       peddy: "python -m peddy"
     uri: docker.io/clinicalgenomics/peddy:0.4.3
+  pdfmerger:
+    executable:
+      pdfmerger:
+    uri: docker.io/clinicalgenomics/pdfmerger:c339d29
   picard:
     executable:
       picard: "no_executable_in_image"
