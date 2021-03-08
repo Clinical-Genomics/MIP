@@ -546,7 +546,7 @@ sub pipeline_analyse_rd_dna {
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus  => \&analysis_analysisrunstatus,
-        bcftools_norm_ar   => \&analysis_bcftools_norm,
+        bcftools_norm      => \&analysis_bcftools_norm,
         bwa_mem            => undef,                           # Depends on genome build
         bwa_mem2           => \&analysis_bwa_mem2,
         cadd_ar            => \&analysis_cadd,

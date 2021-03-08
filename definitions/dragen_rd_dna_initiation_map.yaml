@@ -12,7 +12,7 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     - prepareforvariantannotationblock
     - rhocall_ar
-    - bcftools_norm_ar
+    - bcftools_norm
     - variant_annotation
     - frequency_filter
     - cadd_ar

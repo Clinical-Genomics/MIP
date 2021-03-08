@@ -45,7 +45,7 @@ gatk_path:
 human_genome_reference:
   associated_recipe:
     - mip
-    - bcftools_norm_ar
+    - bcftools_norm
   data_type: SCALAR
   default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
@@ -54,7 +54,7 @@ human_genome_reference:
   type: path
 human_genome_reference_file_endings:
   associated_recipe:
-    - bcftools_norm_ar
+    - bcftools_norm
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -80,7 +80,7 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    bcftools_norm_ar: 13
+    bcftools_norm: 13
     bcftools_core: 1
     cadd_ar: 13
     dragen_dna_align_vc: 1
@@ -117,7 +117,7 @@ recipe_time:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    bcftools_norm_ar: 10
+    bcftools_norm: 10
     bcftools_core: 10
     cadd_ar: 10
     dragen_dna_align_vc: 5
@@ -445,7 +445,7 @@ rhocall_frequency_file:
   reference: reference_dir
   type: path
 ## Bcftools norm
-bcftools_norm_ar:
+bcftools_norm:
   analysis_mode: case
   associated_recipe:
     - mip
@@ -460,14 +460,14 @@ bcftools_norm_ar:
   type: recipe
 bcftools_normalize:
   associated_recipe:
-    - bcftools_norm_ar
+    - bcftools_norm
     - bcftools_core
   data_type: SCALAR
   default: 1
   type: recipe_argument
 bcftools_missing_alt_allele:
   associated_recipe:
-    - bcftools_norm_ar
+    - bcftools_norm
   data_type: SCALAR
   default: 1
   type: recipe_argument

@@ -883,7 +883,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
     );
 
     option(
-        q{bcftools_norm_ar} => (
+        q{bcftools_norm} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Decompose and normalize},
             is            => q{rw},

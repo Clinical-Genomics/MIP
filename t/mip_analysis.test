@@ -426,7 +426,7 @@ sub read_infile_vcf {
             _test_bcftools_in_vcf_header(
                 {
                     vcf_header_href         => \%vcf_header,
-                    bcftools_mode           => $active_parameter_href->{bcftools_norm_ar},
+                    bcftools_mode           => $active_parameter_href->{bcftools_norm},
                     bcftools_normalize_mode => $active_parameter_href->{bcftools_normalize},
                 }
             );

@@ -106,7 +106,7 @@ human_genome_reference:
     - picardtools_collecthsmetrics
     - picardtools_collectmultiplemetrics
     - tiddit
-    - bcftools_norm_ar
+    - bcftools_norm
   data_type: SCALAR
   default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
@@ -130,7 +130,7 @@ human_genome_reference_file_endings:
     - picardtools_collecthsmetrics
     - picardtools_collectmultiplemetrics
     - tiddit
-    - bcftools_norm_ar
+    - bcftools_norm
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -144,7 +144,7 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    bcftools_norm_ar: 13
+    bcftools_norm: 13
     bcftools_core: 1
     bwa_mem: 36
     bwa_mem2: 36
@@ -273,7 +273,7 @@ recipe_time:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    bcftools_norm_ar: 10
+    bcftools_norm: 10
     bcftools_core: 10
     bwa_mem: 30
     bwa_mem2: 10
@@ -1502,7 +1502,7 @@ rhocall_frequency_file:
   reference: reference_dir
   type: path
 ## Bcftools norm
-bcftools_norm_ar:
+bcftools_norm:
   analysis_mode: case
   associated_recipe:
     - mip
@@ -1523,7 +1523,7 @@ bcftools_normalize:
   type: recipe_argument
 bcftools_missing_alt_allele:
   associated_recipe:
-    - bcftools_norm_ar
+    - bcftools_norm
   data_type: SCALAR
   default: 1
   type: recipe_argument

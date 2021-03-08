@@ -428,7 +428,7 @@ sub pipeline_analyse_dragen_rd_dna {
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus                => \&analysis_analysisrunstatus,
-        bcftools_norm_ar                 => \&analysis_bcftools_norm,
+        bcftools_norm                    => \&analysis_bcftools_norm,
         cadd_ar                          => \&analysis_cadd,
         dragen_dna_align_vc              => \&analysis_dragen_dna_align_vc,
         dragen_dna_joint_calling         => \&analysis_dragen_dna_joint_calling,

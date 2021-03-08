@@ -397,7 +397,7 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus                => \&analysis_analysisrunstatus,
-        bcftools_norm_ar                 => \&analysis_bcftools_norm,
+        bcftools_norm                    => \&analysis_bcftools_norm,
         cadd_ar                          => \&analysis_cadd,
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
         frequency_filter                 => \&analysis_frequency_filter,
