@@ -33,6 +33,7 @@ BEGIN {
       get_io_files
       get_is_sample_files_compressed
       get_merged_infile_prefix
+      get_sample_fastq_file_lanes
       get_sample_file_attribute
       get_sampling_fastq_files
       parse_file_compression_features
@@ -343,7 +344,8 @@ sub get_io_files {
 
 ## Function : Get the io files per chain, id and stream
 ## Returns  : %io
-## Arguments: $file_info_href => File info hash {REF}
+## Arguments: $chain_id       => Chain id
+##          : $file_info_href => File info hash {REF}
 ##          : $id             => Id (sample or case)
 ##          : $parameter_href => Parameter hash {REF}
 ##          : $recipe_name    => Recipe name
@@ -353,6 +355,7 @@ sub get_io_files {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $chain_id;
     my $file_info_href;
     my $id;
     my $parameter_href;
@@ -361,6 +364,10 @@ sub get_io_files {
     my $temp_directory;
 
     my $tmpl = {
+        chain_id => {
+            store       => \$chain_id,
+            strict_type => 1,
+        },
         file_info_href => {
             default     => {},
             defined     => 1,
@@ -412,7 +419,7 @@ sub get_io_files {
     Readonly my $UPSTREAM_DIRECTION => q{out};
 
     ## Unpack
-    my $chain_id = get_parameter_attribute(
+    $chain_id = $chain_id // get_parameter_attribute(
         {
             attribute      => q{chain},
             parameter_href => $parameter_href,
@@ -683,6 +690,40 @@ sub get_sample_file_attribute {
 
     ## Return requested attribute
     return $stored_attribute;
+}
+
+sub get_sample_fastq_file_lanes {
+
+## Function : Get sample fastq file lanes
+## Returns  :
+## Arguments: $file_info_href => File info hash {REF}
+##          : $sample_id      => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return @{ $file_info_href->{$sample_id}{lanes} };
 }
 
 sub get_sampling_fastq_files {

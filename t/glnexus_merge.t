@@ -16,12 +16,12 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Modern::Perl qw{ 2018 };
+use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-
 
 BEGIN {
 
@@ -47,6 +47,10 @@ diag(   q{Test glnexus_merge from Glnexus.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Constants
+Readonly my $MEMORY  => 10;
+Readonly my $THREADS => 10;
+
 ## Base arguments
 
 my @function_base_commands = qw{ glnexus_cli };
@@ -60,9 +64,13 @@ my %base_argument = (
         inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
         expected_output => catfile(qw{ dir infile1.vcf }),
     },
+    memory => {
+        input           => $MEMORY,
+        expected_output => q{--mem-gbytes } . $MEMORY,
+    },
     threads => {
-        input           => q{10},
-        expected_output => q{--threads } . q{10},
+        input           => $THREADS,
+        expected_output => q{--threads } . $THREADS,
     },
 );
 
@@ -82,8 +90,8 @@ my %required_argument = (
         expected_output => catfile(qw{ dir infile1.vcf }),
     },
     threads => {
-        input           => q{10},
-        expected_output => q{--threads } . q{10},
+        input           => $THREADS,
+        expected_output => q{--threads } . $THREADS,
     },
 );
 
@@ -100,9 +108,13 @@ my %specific_argument = (
         inputs_ref      => [ catfile(qw{ dir infile1.vcf }) ],
         expected_output => catfile(qw{ dir infile1.vcf }),
     },
+    memory => {
+        input           => $MEMORY,
+        expected_output => q{--mem-gbytes } . $MEMORY,
+    },
     threads => {
-        input           => q{10},
-        expected_output => q{--threads } . q{10},
+        input           => $THREADS,
+        expected_output => q{--threads } . $THREADS,
     },
 );
 ## Coderef - enables generalized use of generate call

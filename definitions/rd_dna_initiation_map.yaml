@@ -3,8 +3,6 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     - gzip_fastq
   # Parallel chain (branch)
-  - CHAIN_SPLITFASTQ:
-    - split_fastq_file
   - CHAIN_FASTQ:
     - fastqc_ar
   - CHAIN_MAIN:

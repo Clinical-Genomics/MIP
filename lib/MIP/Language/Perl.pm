@@ -324,6 +324,7 @@ sub perl_nae_oneliners {
     ## Oneliner dispatch table
     my %oneliner = (
         add_binary                           => \&_add_binary,
+        add_pct_mapped_reads_from_samtools   => \&_add_pct_mapped_reads_from_samtools,
         bcftools_norm_check                  => \&_bcftools_norm_check,
         build_md5sum_check                   => \&_build_md5sum_check,
         genepred_to_refflat                  => \&_genepred_to_refflat,
@@ -448,6 +449,54 @@ sub _add_binary {
     my $add_binary = q?'say STDOUT qq{? . $binary . $COLON . $SPACE . q?$_}'?;
 
     return $add_binary;
+}
+
+sub _add_pct_mapped_reads_from_samtools {
+
+## Function : Calculate the percentage of raw total sequences and reads mapped from samtools stats
+## Returns  : $add_pct_mapped_reads_from_samtools
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    # Initiate variables
+    my $add_pct_mapped_reads_from_samtools = q?'$raw; $map; ?;
+
+    # Remove newline
+    $add_pct_mapped_reads_from_samtools .= q?chomp $_; ?;
+
+    # Always relay incoming line to stdout
+    $add_pct_mapped_reads_from_samtools .= q?print $_, qq{\n}; ?;
+
+    # Find raw total sequences
+    $add_pct_mapped_reads_from_samtools .= q?if ($_=~/raw total sequences:\s+(\d+)/) { ?;
+
+    # Assign raw total sequence
+    $add_pct_mapped_reads_from_samtools .= q?$raw = $1; ?;
+
+    # End if
+    $add_pct_mapped_reads_from_samtools .= q?} ?;
+
+    # Find reads mapped
+    $add_pct_mapped_reads_from_samtools .= q?elsif ($_=~/reads mapped:\s+(\d+)/) { ?;
+
+    # Assign reads mapped
+    $add_pct_mapped_reads_from_samtools .= q?$map = $1; ?;
+
+    # Calculate percentage
+    $add_pct_mapped_reads_from_samtools .= q?my $percentage = ($map / $raw ) * 100; ?;
+
+    # Write calculation to stdout
+    $add_pct_mapped_reads_from_samtools .=
+      q?print qq{percentage mapped reads:\t} . $percentage . qq{\n}?;
+
+    # End elsif
+    $add_pct_mapped_reads_from_samtools .= q?}?;
+
+    # End oneliner
+    $add_pct_mapped_reads_from_samtools .= q?'?;
+
+    return $add_pct_mapped_reads_from_samtools;
 }
 
 sub _bcftools_norm_check {

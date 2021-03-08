@@ -248,25 +248,6 @@ sub _build_usage {
     );
 
     option(
-        q{split_fastq_file} => (
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Split fastq files in batches of X reads and exits},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{split_fastq_file_read_batch} => (
-            cmd_flag      => q{spt_fsq_rd_bt},
-            cmd_tags      => [q{Default: 25,000,000}],
-            documentation => q{Number of sequence reads to place in each batch},
-            is            => q{rw},
-            isa           => Int,
-        )
-    );
-
-    option(
         q{gzip_fastq} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Gzip fastq files},
