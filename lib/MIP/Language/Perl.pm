@@ -129,7 +129,8 @@ sub perl_base {
 ##          : $command_line  => Enter one line of program
 ##          : $inplace       => In place edit
 ##          : $n             => Iterate over filename arguments
-##          : $p             => Print line
+##          : $print         => Print line
+##          : $print_newline => Print newline at the end of line
 ##          : $use_container => Use container perl instead of main (this) process perl
 
     my ($arg_href) = @_;
@@ -142,6 +143,7 @@ sub perl_base {
     my $inplace;
     my $n;
     my $print;
+    my $print_newline;
     my $use_container;
 
     my $tmpl = {
@@ -173,6 +175,12 @@ sub perl_base {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$print,
+            strict_type => 1,
+        },
+        print_newline => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$print_newline,
             strict_type => 1,
         },
         use_container => => {
@@ -208,6 +216,10 @@ sub perl_base {
 
         push @commands, q{-p};
     }
+    if ($print_newline) {
+
+        push @commands, q{-l};
+    }
     if ($command_line) {
 
         push @commands, q{-e};
@@ -228,6 +240,7 @@ sub perl_nae_oneliners {
 ##          : $oneliner_cmd           => Command to execute
 ##          : $oneliner_name          => Perl oneliner name
 ##          : $oneliner_parameter     => Feed a parameter to the oneliner program
+##          : $print_newline          => Print newline at end of line
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdinfile_path         => Stdinfile path
@@ -243,6 +256,7 @@ sub perl_nae_oneliners {
     my $oneliner_cmd;
     my $oneliner_name;
     my $oneliner_parameter;
+    my $print_newline;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -294,6 +308,11 @@ sub perl_nae_oneliners {
             store       => \$oneliner_parameter,
             strict_type => 1,
         },
+        print_newline => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$print_newline,
+            strict_type => 1,
+        },
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -339,6 +358,7 @@ sub perl_nae_oneliners {
         get_vcf_header_id_line               => \&_get_vcf_header_id_line,
         get_vcf_loqusdb_headers              => \&_get_vcf_loqusdb_headers,
         get_vcf_sample_ids                   => \&_get_vcf_sample_ids,
+        reformat_arriba_contig_name          => \&_reformat_arriba_contig_name,
         reformat_sacct_headers               => \&_reformat_sacct_headers,
         remove_decomposed_asterisk_records   => \&_remove_decomposed_asterisk_records,
         synonyms_grch37_to_grch38            => \&_synonyms_grch37_to_grch38,
@@ -369,6 +389,7 @@ sub perl_nae_oneliners {
             autosplit     => $autosplit,
             command_line  => $command_line,
             n             => $n,
+            print_newline => $print_newline,
             use_container => $use_container,
         }
     );
@@ -989,6 +1010,25 @@ sub _write_contigs_size_file {
     my $write_contigs_size = q?'say STDOUT $F[0] . "\t" . $F[1] '?;
 
     return $write_contigs_size;
+}
+
+sub _reformat_arriba_contig_name {
+
+## Function : Prepend chr prefix to contig names
+## Returns  : $reformat_arriba_contig_name
+
+    my ($arg_href) = @_;
+
+    ## For each column with contig info
+    my $reformat_arriba_contig_name = q?'foreach my $contig (@F[4,5]) ?;
+
+    ## Prepend chr prefix
+    $reformat_arriba_contig_name .= q?{ $contig=~s/(^\d+:\d+)/chr$1/g; } ?;
+
+    ## Write to STDOUT
+    $reformat_arriba_contig_name .= q?print join qq{\t}, @F;'?;
+
+    return $reformat_arriba_contig_name;
 }
 
 1;
