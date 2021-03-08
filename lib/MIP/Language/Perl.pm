@@ -324,6 +324,7 @@ sub perl_nae_oneliners {
     ## Oneliner dispatch table
     my %oneliner = (
         add_binary                           => \&_add_binary,
+        bcftools_norm_check                  => \&_bcftools_norm_check,
         build_md5sum_check                   => \&_build_md5sum_check,
         genepred_to_refflat                  => \&_genepred_to_refflat,
         get_dict_contigs                     => \&_get_dict_contigs,
@@ -349,6 +350,9 @@ sub perl_nae_oneliners {
     my %oneliner_option = (
         add_binary => {
             binary => $oneliner_parameter,
+        },
+        bcftools_norm_check => {
+            id => $oneliner_parameter,
         },
         build_md5sum_check => {
             file_path => $oneliner_parameter,
@@ -444,6 +448,40 @@ sub _add_binary {
     my $add_binary = q?'say STDOUT qq{? . $binary . $COLON . $SPACE . q?$_}'?;
 
     return $add_binary;
+}
+
+sub _bcftools_norm_check {
+
+## Function : Return vcf header line matching bcftools norm command
+## Returns  : $bcftools_norm_line
+## Arguments: $id => bcftools norm id string
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $id;
+
+    my $tmpl = {
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Find vcf_key
+    my $bcftools_norm_line = q?'if($_=~/\A[#]{2}? . $id . q?/) { ?;
+
+    ## Write to stdout
+    $bcftools_norm_line .= q?print $_} ?;
+
+    ## If header is finished quit
+    $bcftools_norm_line .= q?if($_=~ /\A#CHROM/) {last}'?;
+
+    return $bcftools_norm_line;
 }
 
 sub _build_md5sum_check {

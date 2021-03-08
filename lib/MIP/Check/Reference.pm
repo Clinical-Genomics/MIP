@@ -22,18 +22,16 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
-      check_if_processed_by_vt
-      check_references_for_vt
+      check_if_processed_by_bcftools
+      check_references_for_bcftools
     };
 }
 
-sub check_if_processed_by_vt {
+sub check_if_processed_by_bcftools {
 
-## Function : Check if vt has processed references using regexp
+## Function : Check if bcftools has processed references using regexp
 ## Returns  : @process_references
 ## Arguments: $bcftools_binary_path => Path to bcftools binary
 ##          : $reference_file_path  => The reference file path
@@ -61,17 +59,16 @@ sub check_if_processed_by_vt {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Format::Vcf qw{ get_vcf_header_line_by_id };
+    use MIP::File::Format::Vcf qw{ get_bcftools_norm_command_from_vcf_header };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my %vt_regexp;
-    $vt_regexp{vt_decompose}{vcf_key} = q{OLD_MULTIALLELIC};
-    $vt_regexp{vt_normalize}{vcf_key} = q{OLD_VARIANT};
+    my %bcftools_regexp;
+    $bcftools_regexp{bcftools_normalize}{vcf_key} = q{bcftools_norm};
 
     my @to_process_references;
-    ## Downloaded and vt later (for downloadable references otherwise
+    ## Downloaded and check bcftools header later (for downloadable references otherwise
     ## file existens error is thrown downstream)
     if ( not -e $reference_file_path ) {
 
@@ -79,37 +76,35 @@ sub check_if_processed_by_vt {
         return;
     }
 
-  VT_PARAMETER_NAME:
-    foreach my $vt_parameter_name ( keys %vt_regexp ) {
+  BCFTOOLS_PARAMETER_NAME:
+    foreach my $bcftools_parameter_name ( keys %bcftools_regexp ) {
 
-        my $header_id_line = get_vcf_header_line_by_id(
+        my $header_id_line = get_bcftools_norm_command_from_vcf_header(
             {
                 bcftools_binary_path => $bcftools_binary_path,
-                header_id            => $vt_regexp{$vt_parameter_name}{vcf_key},
+                header_id            => $bcftools_regexp{$bcftools_parameter_name}{vcf_key},
                 vcf_file_path        => $reference_file_path,
             }
         );
 
-        ## No trace of vt processing found
+        ## No trace of bcftools processing found
         if ( not $header_id_line ) {
 
             ## Add reference for downstream processing
             push @to_process_references, $reference_file_path;
             $log->warn( $TAB
-                  . q{Cannot detect that }
-                  . $vt_parameter_name
+                  . q{Cannot detect that bcftools norm}
                   . q{ has processed reference: }
                   . $reference_file_path
                   . $NEWLINE );
         }
         else {
 
-            ## Found vt processing trace
+            ## Found bcftools processing trace
             $log->info( $TAB
                   . q{Reference check: }
                   . $reference_file_path
-                  . q{ vt: }
-                  . $vt_parameter_name
+                  . q{ bcftools norm: }
                   . q{ - PASS}
                   . $NEWLINE );
         }
@@ -117,20 +112,20 @@ sub check_if_processed_by_vt {
     return uniq(@to_process_references);
 }
 
-sub check_references_for_vt {
+sub check_references_for_bcftools {
 
-## Function : Check if vt has processed references
+## Function : Check if bcftools has processed references
 ## Returns  : @to_process_references
-## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
-##          : $parameter_href        => Parameter hash {REF}
-##          : $vt_references_ref     => The references to check with vt {REF}
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $bcftools_references_ref => The references to check with bcftools {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
     my $parameter_href;
-    my $vt_references_ref;
+    my $bcftools_references_ref;
 
     my $tmpl = {
         active_parameter_href => {
@@ -147,11 +142,11 @@ sub check_references_for_vt {
             store       => \$parameter_href,
             strict_type => 1,
         },
-        vt_references_ref => {
+        bcftools_references_ref => {
             default     => [],
             defined     => 1,
             required    => 1,
-            store       => \$vt_references_ref,
+            store       => \$bcftools_references_ref,
             strict_type => 1,
         },
     };
@@ -169,7 +164,7 @@ sub check_references_for_vt {
     ## Avoid checking the same reference multiple times
     my %seen;
 
-     my $bcftools_binary_path = get_executable_base_command( { base_command => q{bcftools}, } );
+    my $bcftools_binary_path = get_executable_base_command( { base_command => q{bcftools}, } );
 
     ## TOML parameters
     my %toml = (
@@ -178,11 +173,10 @@ sub check_references_for_vt {
     );
 
   PARAMETER_NAME:
-    foreach my $parameter_name ( @{$vt_references_ref} ) {
+    foreach my $parameter_name ( @{$bcftools_references_ref} ) {
 
       ASSOCIATED_RECIPE:
-        foreach my $associated_recipe (
-            @{ $parameter_href->{$parameter_name}{associated_recipe} } )
+        foreach my $associated_recipe ( @{ $parameter_href->{$parameter_name}{associated_recipe} } )
         {
 
             ## Alias
@@ -209,8 +203,8 @@ sub check_references_for_vt {
                 }
                 if ( not exists $seen{$annotation_file} ) {
 
-                    ## Check if vt has processed references using regexp
-                    @checked_references = check_if_processed_by_vt(
+                    ## Check if bcftools has processed references using regexp
+                    @checked_references = check_if_processed_by_bcftools(
                         {
                             bcftools_binary_path => $bcftools_binary_path,
                             reference_file_path  => $annotation_file,
@@ -224,14 +218,12 @@ sub check_references_for_vt {
                 ## ARRAY reference
 
               ANNOTION_FILE:
-                foreach
-                  my $annotation_file ( @{ $active_parameter_href->{$parameter_name} } )
-                {
+                foreach my $annotation_file ( @{ $active_parameter_href->{$parameter_name} } ) {
 
                     if ( not exists $seen{$annotation_file} ) {
 
-                        ## Check if vt has processed references using regexp
-                        @checked_references = check_if_processed_by_vt(
+                        ## Check if bcftools has processed references using regexp
+                        @checked_references = check_if_processed_by_bcftools(
                             {
                                 bcftools_binary_path => $bcftools_binary_path,
                                 reference_file_path  => $annotation_file,
@@ -246,14 +238,12 @@ sub check_references_for_vt {
                 ## Hash reference
 
               ANNOTATION_FILE:
-                for my $annotation_file (
-                    keys %{ $active_parameter_href->{$parameter_name} } )
-                {
+                for my $annotation_file ( keys %{ $active_parameter_href->{$parameter_name} } ) {
 
                     if ( not exists $seen{$annotation_file} ) {
 
-                        ## Check if vt has processed references using regexp
-                        @checked_references = check_if_processed_by_vt(
+                        ## Check if bcftools has processed references using regexp
+                        @checked_references = check_if_processed_by_bcftools(
                             {
                                 bcftools_binary_path => $bcftools_binary_path,
                                 reference_file_path  => $annotation_file,
@@ -271,7 +261,7 @@ sub check_references_for_vt {
 
 sub _parse_vcfanno_toml_path {
 
-## Function : Parse TOML config for path to check with vt
+## Function : Parse TOML config for path to check with bcftools
 ## Returns  :
 ## Arguments: $bcftools_binary_path      => Path to bcftools binary
 ##          : $seen_href                 => Avoid checking the same reference multiple times
@@ -325,7 +315,7 @@ sub _parse_vcfanno_toml_path {
         }
     );
 
-    ## Add config parameter to avoid vt check of toml config path
+    ## Add config parameter to avoid bcftools check of toml config path
     $seen_href->{$toml_file_path} = undef;
 
   ANNOTATION:
@@ -342,8 +332,8 @@ sub _parse_vcfanno_toml_path {
 
         if ( not exists $seen_href->{$annotation_file_path} ) {
 
-            ## Check if vt has processed references using regexp
-            my @checked_references = check_if_processed_by_vt(
+            ## Check if bcftools has processed references using regexp
+            my @checked_references = check_if_processed_by_bcftools(
                 {
                     bcftools_binary_path => $bcftools_binary_path,
                     reference_file_path  => $annotation_file_path,

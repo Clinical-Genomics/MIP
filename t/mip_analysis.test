@@ -394,7 +394,7 @@ sub read_infile_vcf {
                 }
             );
 
-            if (/ INFO\=\<ID\=([^,]+) /sxm) {
+            if (/ (bcftools_norm) /sxm) {
 
                 $vcf_header{INFO}{$1} = $1;
             }
@@ -422,13 +422,12 @@ sub read_infile_vcf {
 
             ### Check Header now that we read all
 
-            ## Test Vt
-            _test_vt_in_vcf_header(
+            ## Test bcftools
+            _test_bcftools_in_vcf_header(
                 {
-                    vcf_header_href   => \%vcf_header,
-                    vt_mode           => $active_parameter_href->{vt_ar},
-                    vt_decompose_mode => $active_parameter_href->{vt_decompose},
-                    vt_normalize_mode => $active_parameter_href->{vt_normalize},
+                    vcf_header_href         => \%vcf_header,
+                    bcftools_mode           => $active_parameter_href->{bcftools_norm_ar},
+                    bcftools_normalize_mode => $active_parameter_href->{bcftools_normalize},
                 }
             );
 
@@ -678,13 +677,13 @@ sub read_sv_infile_vcf {
 
             ### Check Header now that we read all
 
-            ## Test vt
+            ## Test bcftools
             _test_sv_combinevariantcallsets_in_vcf_header(
                 {
                     sv_combinevariantcallsets_mode =>
                       $active_parameter_href->{sv_combinevariantcallsets},
-                    sv_vt_decompose_mode => $active_parameter_href->{sv_vt_decompose},
-                    vcf_header_href      => \%vcf_header,
+                    sv_decompose_mode => $active_parameter_href->{sv_decompose},
+                    vcf_header_href   => \%vcf_header,
                 }
             );
 
@@ -1140,12 +1139,12 @@ sub _test_sv_combinevariantcallsets_in_vcf_header {
 ## Returns  :
 ## Arguments: $sv_combinevariantcallsets_mode => sv_combinevariantcallsets has been used or not
 ##          : $vcf_header_href                => Vcf header info
-##          : $sv_vt_decompose_mode           => Vt decompose has been used or not
+##          : $sv_decompose_mode              => Bcftools decompose has been used or not
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $sv_vt_decompose_mode;
+    my $sv_decompose_mode;
     my $vcf_header_href;
     my $sv_combinevariantcallsets_mode;
 
@@ -1163,10 +1162,10 @@ sub _test_sv_combinevariantcallsets_in_vcf_header {
             store       => \$sv_combinevariantcallsets_mode,
             strict_type => 1,
         },
-        sv_vt_decompose_mode => {
+        sv_decompose_mode => {
             allow       => [ undef, qr{ \A\d+\z }sxm, ],
             required    => 1,
-            store       => \$sv_vt_decompose_mode,
+            store       => \$sv_decompose_mode,
             strict_type => 1,
         },
     };
@@ -1176,31 +1175,46 @@ sub _test_sv_combinevariantcallsets_in_vcf_header {
     ## sv_combinevariantcallset has been used
     return if ( not $sv_combinevariantcallsets_mode );
 
-    return if ( not $sv_vt_decompose_mode );
+    return if ( not $sv_decompose_mode );
 
-    ok( exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC}, q{VTDecompose key: OLD_MULTIALLELIC} );
+    ok(
+        exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC},
+        q{bcftools_normalize key: bcftools_norm}
+    );
 
     return;
 }
 
-sub _test_vt_in_vcf_header {
+sub _test_bcftools_in_vcf_header {
 
-## Function : Test if vt info keys are present in vcf header
+## Function : Test if bcftools norm command is present in vcf header
 ## Returns  :
-## Arguments: $vt_decompose_mode => Vt decompose has been used or not
-##          : $vcf_header_href   => Vcf header info
-##          : $vt_mode           => Vt has been used or not
-##          : $vt_normalize_mode => Vt normalize has been used or not
+## Arguments: $bcftools_mode           => Bcftools has been used or not
+##          : $bcftools_normalize_mode => Bcftools norm has been used or not
+##          : $vcf_header_href         => Vcf header info
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $vt_decompose_mode;
+    my $bcftools_mode;
+    my $bcftools_normalize_mode;
     my $vcf_header_href;
-    my $vt_mode;
-    my $vt_normalize_mode;
 
     my $tmpl = {
+        bcftools_mode => {
+            allow       => qr{ \A\d+\z }sxm,
+            defined     => 1,
+            required    => 1,
+            store       => \$bcftools_mode,
+            strict_type => 1,
+        },
+        bcftools_normalize_mode => {
+            allow       => qr{ \A\d+\z }sxm,
+            defined     => 1,
+            required    => 1,
+            store       => \$bcftools_normalize_mode,
+            strict_type => 1,
+        },
         vcf_header_href => {
             default     => {},
             defined     => 1,
@@ -1208,42 +1222,19 @@ sub _test_vt_in_vcf_header {
             store       => \$vcf_header_href,
             strict_type => 1,
         },
-        vt_mode => {
-            allow       => qr{ \A\d+\z }sxm,
-            defined     => 1,
-            required    => 1,
-            store       => \$vt_mode,
-            strict_type => 1,
-        },
-        vt_decompose_mode => {
-            allow       => qr{ \A\d+\z }sxm,
-            defined     => 1,
-            required    => 1,
-            store       => \$vt_decompose_mode,
-            strict_type => 1,
-        },
-        vt_normalize_mode => {
-            allow       => qr{ \A\d+\z }sxm,
-            defined     => 1,
-            required    => 1,
-            store       => \$vt_normalize_mode,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## VT has been used
-    return if ( not $vt_mode );
+    ## bcftools has been used
+    return if ( not $bcftools_mode );
 
-    if ($vt_decompose_mode) {
+    if ($bcftools_normalize_mode) {
 
-        ok( exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC},
-            q{VTDecompose key: OLD_MULTIALLELIC} );
-    }
-    if ($vt_normalize_mode) {
-
-        ok( exists $vcf_header_href->{INFO}{OLD_VARIANT}, q{VTNormalize key: OLD_VARIANT} );
+        ok(
+            exists $vcf_header_href->{INFO}{bcftools_norm},
+            q{bcftools_normalize key: bcftools_norm}
+        );
     }
     return;
 }

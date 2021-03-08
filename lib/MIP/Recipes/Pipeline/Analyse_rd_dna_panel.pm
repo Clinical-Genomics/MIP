@@ -374,6 +374,7 @@ sub pipeline_analyse_rd_dna_panel {
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Bcftools_norm qw{ analysis_bcftools_norm_panel };
     use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem2 };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd_panel };
     use MIP::Recipes::Analysis::Endvariantannotationblock
@@ -405,7 +406,6 @@ sub pipeline_analyse_rd_dna_panel {
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge_panel };
     use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation_panel };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
-    use MIP::Recipes::Analysis::Vt qw{ analysis_vt_panel };
     use MIP::Recipes::Build::Rd_dna qw{ build_rd_dna_meta_files };
 
     ### Pipeline specific checks
@@ -448,6 +448,7 @@ sub pipeline_analyse_rd_dna_panel {
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus                  => \&analysis_analysisrunstatus,
+        bcftools_norm_ar                   => \&analysis_bcftools_norm_panel,
         bwa_mem                            => undef,
         bwa_mem2                           => \&analysis_bwa_mem2,
         cadd_ar                            => \&analysis_cadd_panel,
@@ -475,7 +476,6 @@ sub pipeline_analyse_rd_dna_panel {
         varianteffectpredictor             => \&analysis_vep,
         vcfparser_ar                       => \&analysis_mip_vcfparser_panel,
         version_collect_ar                 => \&analysis_mip_vercollect,
-        vt_ar                              => \&analysis_vt_panel,
     );
 
     ## Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)

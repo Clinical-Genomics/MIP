@@ -104,7 +104,6 @@ rd_dna:
     - vcf2cytosure
     - vcfanno
     - vep
-    - vt
   mandatory: no
   type: mip
 rd_rna:

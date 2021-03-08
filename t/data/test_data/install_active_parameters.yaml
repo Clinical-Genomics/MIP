@@ -235,10 +235,6 @@ container:
     executable:
       vep: ~
     uri: docker.io/ensemblorg/ensembl-vep:release_100.2
-  vt:
-    executable:
-      vt: ~
-    uri: docker.io/clinicalgenomics/vt:2015.11.10
 container_manager: singularity
 custom_default_parameters:
   - program_test_file
@@ -291,7 +287,6 @@ rd_dna:
   - vcf2cytosure
   - vcfanno
   - vep
-  - vt
 rd_rna:
   - arriba
   - blobfish
@@ -357,7 +352,6 @@ select_programs:
   - vcf2cytosure
   - vcfanno
   - vep
-  - vt
   - arriba
   - blobfish
   - bootstrapann

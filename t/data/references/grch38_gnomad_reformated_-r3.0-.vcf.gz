@@ -3385,5 +3385,5 @@
 ##bcftools_viewCommand=view --output-type v /home/proj/development/rare-disease/references_9.0/grch38_gnomad_reformated_-r3.0-.vcf.gz; Date=Tue Sep 22 15:43:13 2020
 ##INFO=<ID=OLD_MULTIALLELIC,Number=1,Type=String,Description="Original chr:pos:ref:alt encoding">
 ##INFO=<ID=OLD_VARIANT,Number=.,Type=String,Description="Original chr:pos:ref:alt encoding">
-##bcftools_viewCommand=view -h /home/proj/development/rare-disease/references_9.0/grch38_gnomad_reformated_-r3.0-.vcf.gz; Date=Tue Oct 20 16:24:45 2020
+##bcftools_normCommand=view -h /home/proj/development/rare-disease/references_9.0/grch38_gnomad_reformated_-r3.0-.vcf.gz; Date=Tue Oct 20 16:24:45 2020
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO

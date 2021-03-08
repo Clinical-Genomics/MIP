@@ -32,7 +32,7 @@ CHAIN_ALL:
     - CHAIN_GATKEVALALL:
       - gatk_variantevalall
   - CHAIN_MAIN:
-    - vt_ar
+    - bcftools_norm_ar
     - variant_annotation
     - frequency_filter
     - cadd_ar
