@@ -204,9 +204,6 @@ sub analysis_arriba {
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_suffix      = $io{out}{file_suffix};
 
-    my $use_sample_id_as_display_name =
-      $active_parameter_href->{arriba_use_sample_id_as_display_name};
-
     ## Filehandles
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
@@ -323,7 +320,7 @@ sub analysis_arriba {
     );
     push @arriba_commands, $PIPE;
 
-    my $star_outfile_path = $outfile_path_prefix . $DOT . q{bam};
+    my $star_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{unsorted} . $DOT . q{bam};
     push @arriba_commands,
       gnu_tee(
         {
@@ -360,7 +357,7 @@ sub analysis_arriba {
     say {$filehandle} $NEWLINE;
 
     ## Sort BAM before visualization
-    my $sorted_bam_file = $outfile_path_prefix . $UNDERSCORE . q{sorted} . $DOT . q{bam};
+    my $sorted_bam_file = $outfile_path_prefix . $DOT . q{bam};
     sambamba_sort(
         {
             filehandle     => $filehandle,
@@ -389,33 +386,6 @@ sub analysis_arriba {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Visualize the fusions
-    my $report_path         = $outfile_path_prefix . $DOT . q{pdf};
-    my $sample_display_name = get_pedigree_sample_id_attributes(
-        {
-            attribute        => q{sample_display_name},
-            sample_id        => $sample_id,
-            sample_info_href => $sample_info_href,
-        }
-    );
-    if ( $sample_display_name and not $use_sample_id_as_display_name ) {
-
-        $report_path =
-          catfile( $outdir_path, $sample_display_name . $UNDERSCORE . q{arriba_fusions.pdf} );
-    }
-    draw_fusions(
-        {
-            alignment_file_path      => $sorted_bam_file,
-            annotation_file_path     => $active_parameter_href->{transcript_annotation},
-            cytoband_file_path       => $active_parameter_href->{arriba_cytoband_path},
-            filehandle               => $filehandle,
-            fusion_file_path         => $outfile_path,
-            outfile_path             => $report_path,
-            protein_domain_file_path => $active_parameter_href->{arriba_protein_domain_path},
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
@@ -431,36 +401,16 @@ sub analysis_arriba {
                 sample_info_href => $sample_info_href,
             }
         );
-        set_recipe_metafile_in_sample_info(
+
+        set_file_path_to_store(
             {
-                infile           => $outfile_name,
-                metafile_tag     => q{report},
-                path             => $report_path,
+                format           => q{meta},
+                id               => $sample_id,
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
-                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
-
-        my %arriba_store = (
-            $recipe_name  => $outfile_path,
-            arriba_report => $report_path,
-        );
-
-      TAG:
-        while ( my ( $tag, $path ) = each %arriba_store ) {
-
-            set_file_path_to_store(
-                {
-                    format           => q{meta},
-                    id               => $sample_id,
-                    path             => $path,
-                    recipe_name      => $recipe_name,
-                    sample_info_href => $sample_info_href,
-                    tag              => $tag,
-                }
-            );
-        }
 
         submit_recipe(
             {

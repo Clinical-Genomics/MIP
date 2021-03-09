@@ -131,27 +131,9 @@ sub _build_usage {
     );
 
     option(
-        q{arriba_cytoband_path} => (
-            cmd_tags      => [q{Recipe argument}],
-            documentation => q{Path to arriba cytoband file},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{arriba_proteindomain_path} => (
-            cmd_tags      => [q{Recipe argument}],
-            documentation => q{Path to arriba protein domain file},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{arriba_use_sample_id_as_display_name} => (
+        q{fusion_use_sample_id_as_display_name} => (
             cmd_tags      => [q{Default: 0}],
-            documentation => q{Use sample id as display name for arriba fusion report},
+            documentation => q{Use sample id as display name for fusion report},
             is            => q{rw},
             isa           => Bool,
         )
@@ -197,6 +179,42 @@ sub _build_usage {
     option(
         q{force_dna_ase} => (
             documentation => q{Force ASE analysis on partially matching dna-rna samples},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{fusion_report} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Generate fusion report from Arriba calls},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{fusion_cytoband_path} => (
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to cytoband file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{fusion_proteindomain_path} => (
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to protein domain file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{fusion_use_sample_id_as_display_name} => (
+            cmd_tags      => [q{Default: 0}],
+            documentation => q{Use sample id as display name for fusion report},
             is            => q{rw},
             isa           => Bool,
         )
