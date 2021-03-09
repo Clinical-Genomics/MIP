@@ -129,7 +129,6 @@ rd_rna:
     - python
     - rseqc
     - salmon
-    - sambamba
     - star
     - star-fusion
     - stringtie

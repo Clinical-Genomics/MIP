@@ -136,8 +136,8 @@ sub analysis_arriba {
       qw{ get_io_files get_sample_fastq_file_lanes get_sample_file_attribute parse_io_outfiles };
     use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_tee };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Arriba qw{ arriba draw_fusions };
-    use MIP::Program::Sambamba qw{ sambamba_index sambamba_sort };
+    use MIP::Program::Arriba qw{ arriba };
+    use MIP::Program::Samtools qw{ samtools_sort };
     use MIP::Program::Star qw{ star_aln };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{
@@ -198,7 +198,6 @@ sub analysis_arriba {
             }
         )
     );
-    my $outdir_path         = $io{out}{dir_path};
     my $outfile_name        = ${ $io{out}{file_names} }[0];
     my $outfile_path        = $io{out}{file_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
@@ -358,21 +357,16 @@ sub analysis_arriba {
 
     ## Sort BAM before visualization
     my $sorted_bam_file = $outfile_path_prefix . $DOT . q{bam};
-    sambamba_sort(
+    my $thread_memory   = int( $recipe{memory} / $recipe{core_number} );
+    samtools_sort(
         {
-            filehandle     => $filehandle,
-            infile_path    => $star_outfile_path,
-            memory_limit   => $recipe{memory} . q{G},
-            outfile_path   => $sorted_bam_file,
-            temp_directory => $temp_directory,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    sambamba_index(
-        {
-            filehandle  => $filehandle,
-            infile_path => $sorted_bam_file,
+            filehandle            => $filehandle,
+            infile_path           => $star_outfile_path,
+            max_memory_per_thread => $thread_memory . q{G},
+            outfile_path          => $sorted_bam_file,
+            temp_file_path_prefix => $temp_directory,
+            thread_number         => $recipe{core_number},
+            write_index           => 1,
         }
     );
     say {$filehandle} $NEWLINE;

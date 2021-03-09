@@ -449,7 +449,7 @@ arriba_ar:
   outfile_suffix: ".tsv"
   program_executables:
     - arriba
-    - sambamba
+    - samtools
   type: recipe
 arriba_blacklist_path:
   associated_recipe:
