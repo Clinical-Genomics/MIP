@@ -113,7 +113,7 @@ sub singularity_exec {
     }
 
     ## Split singularity
-    push @commands, $SPACE . $BACKWARD_SLASH . $NEWLINE;
+    push @commands, $BACKWARD_SLASH . $NEWLINE;
 
     push @commands,
       unix_standard_streams(
