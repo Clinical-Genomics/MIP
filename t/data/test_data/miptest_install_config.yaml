@@ -122,7 +122,7 @@ container:
   pdfmerger:
     executable:
       pdfmerger:
-    uri: docker.io/clinicalgenomics/pdfmerger:c339d29
+    uri: docker.io/northwestwitch/pdfmerger:v1.0
   perl:
     executable:
       perl:
