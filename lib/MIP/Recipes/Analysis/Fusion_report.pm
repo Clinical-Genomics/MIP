@@ -247,7 +247,7 @@ sub analysis_fusion_report {
         }
     );
 
-    ## Close filehandleS
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
