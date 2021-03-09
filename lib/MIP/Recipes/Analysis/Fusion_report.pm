@@ -139,13 +139,13 @@ sub analysis_fusion_report {
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 parameter_href => $parameter_href,
-                recipe_name    => $recipe_name,
-                stream         => q{in},
+                recipe_name    => q{arriba_ar},
+                stream         => q{out},
             }
         );
-        $infile{$sample_id}{file_name_prefix} = $sample_io{in}{file_name_prefixes}[0];
-        $infile{$sample_id}{file_path}        = ${ $sample_io{in}{file_paths} }[0];
-        $infile{$sample_id}{file_path_prefix} = ${ $sample_io{in}{file_path_prefixes} }[0];
+        $infile{$sample_id}{file_name_prefix} = $sample_io{out}{file_name_prefixes}[0];
+        $infile{$sample_id}{file_path}        = ${ $sample_io{out}{file_paths} }[0];
+        $infile{$sample_id}{file_path_prefix} = ${ $sample_io{out}{file_path_prefixes} }[0];
     }
 
     my %recipe = parse_recipe_prerequisites(

@@ -12,10 +12,9 @@ CHAIN_ALL:
   - CHAIN_FUSION:
     - star_fusion
     - arriba_ar
-    - CHAIN_FUSION_REPORT:
-      - fusion_report
     - megafusion_ar
     - svdb_merge_fusion
+    - fusion_report
   - CHAIN_MAIN:
     - star_aln
     - picardtools_mergesamfiles
