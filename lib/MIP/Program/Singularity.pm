@@ -15,7 +15,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $BACKWARD_SLASH $COMMA $NEWLINE $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -111,6 +111,9 @@ sub singularity_exec {
     if ( @{$container_cmds_ref} ) {
         push @commands, @{$container_cmds_ref};
     }
+
+    ## Split singularity
+    push @commands, $SPACE . $BACKWARD_SLASH . $NEWLINE;
 
     push @commands,
       unix_standard_streams(
