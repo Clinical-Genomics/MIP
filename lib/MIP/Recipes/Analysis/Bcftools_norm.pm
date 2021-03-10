@@ -246,10 +246,7 @@ sub analysis_bcftools_norm {
                 cmd_break              => $SEMICOLON,
                 contig                 => $contig,
                 filehandle             => $xargsfilehandle,
-                gnu_sed                => 1,
                 infile_path            => $infile_path{$contig},
-                instream               => 0,
-                normalize              => $active_parameter_href->{bcftools_normalize},
                 outfile_path           => $outfile_path{$contig},
                 xargs_file_path_prefix => $xargs_file_path_prefix,
             }

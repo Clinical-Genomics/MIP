@@ -153,7 +153,6 @@ sub analysis_bcftools_core {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
-    use MIP::Program::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_indexfeaturefile };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
