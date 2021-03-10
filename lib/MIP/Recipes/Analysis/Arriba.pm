@@ -137,7 +137,7 @@ sub analysis_arriba {
     use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_tee };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Arriba qw{ arriba };
-    use MIP::Program::Samtools qw{ samtools_sort };
+    use MIP::Program::Samtools qw{ samtools_index samtools_sort };
     use MIP::Program::Star qw{ star_aln };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{
@@ -366,7 +366,15 @@ sub analysis_arriba {
             outfile_path          => $sorted_bam_file,
             temp_file_path_prefix => $temp_directory,
             thread_number         => $recipe{core_number},
-            write_index           => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    samtools_index(
+        {
+            bai_format  => 1,
+            filehandle  => $filehandle,
+            infile_path => $sorted_bam_file,
         }
     );
     say {$filehandle} $NEWLINE;
