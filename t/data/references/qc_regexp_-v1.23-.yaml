@@ -129,4 +129,6 @@ vcf2cytosure_version:
   version: "perl -nae 'if($_=~/cytosure\\s+(\\d+[.]\\d+[.]\\d+)/xsm) { print $1;last; }' "
 vcfparser:
   version: "perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\\d+.\\d+.\\d+)/) {print $1;last;}' "
+vt:
+  version: "perl -nae 'if($_=~/decompose\\sv(\\S+)/) {print $1;last;}' "
 

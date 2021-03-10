@@ -33,22 +33,14 @@ sub check_if_processed_by_bcftools {
 
 ## Function : Check if bcftools has processed references using regexp
 ## Returns  : @process_references
-## Arguments: $bcftools_binary_path => Path to bcftools binary
-##          : $reference_file_path  => The reference file path
+## Arguments: $reference_file_path  => The reference file path
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $bcftools_binary_path;
     my $reference_file_path;
 
     my $tmpl = {
-        bcftools_binary_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$bcftools_binary_path,
-            strict_type => 1,
-        },
         reference_file_path => {
             defined     => 1,
             required    => 1,
@@ -64,51 +56,39 @@ sub check_if_processed_by_bcftools {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my %bcftools_regexp;
-    $bcftools_regexp{bcftools_normalize}{vcf_key} = q{bcftools_norm};
-
     my @to_process_references;
     ## Downloaded and check bcftools header later (for downloadable references otherwise
     ## file existens error is thrown downstream)
-    if ( not -e $reference_file_path ) {
+    return if ( not -e $reference_file_path );
 
-        ## Do nothing since there is not ref file to check
-        return;
+    my $header_id_line = get_bcftools_norm_command_from_vcf_header(
+        {
+            vcf_file_path => $reference_file_path,
+        }
+    );
+
+    ## No trace of bcftools processing found
+    if ( not $header_id_line ) {
+
+        ## Add reference for downstream processing
+        push @to_process_references, $reference_file_path;
+        $log->warn( $TAB
+              . q{Cannot detect that bcftools norm}
+              . q{ has processed reference: }
+              . $reference_file_path
+              . $NEWLINE );
+    }
+    else {
+
+        ## Found bcftools processing trace
+        $log->info( $TAB
+              . q{Reference check: }
+              . $reference_file_path
+              . q{ bcftools norm: }
+              . q{ - PASS}
+              . $NEWLINE );
     }
 
-  BCFTOOLS_PARAMETER_NAME:
-    foreach my $bcftools_parameter_name ( keys %bcftools_regexp ) {
-
-        my $header_id_line = get_bcftools_norm_command_from_vcf_header(
-            {
-                bcftools_binary_path => $bcftools_binary_path,
-                header_id            => $bcftools_regexp{$bcftools_parameter_name}{vcf_key},
-                vcf_file_path        => $reference_file_path,
-            }
-        );
-
-        ## No trace of bcftools processing found
-        if ( not $header_id_line ) {
-
-            ## Add reference for downstream processing
-            push @to_process_references, $reference_file_path;
-            $log->warn( $TAB
-                  . q{Cannot detect that bcftools norm}
-                  . q{ has processed reference: }
-                  . $reference_file_path
-                  . $NEWLINE );
-        }
-        else {
-
-            ## Found bcftools processing trace
-            $log->info( $TAB
-                  . q{Reference check: }
-                  . $reference_file_path
-                  . q{ bcftools norm: }
-                  . q{ - PASS}
-                  . $NEWLINE );
-        }
-    }
     return uniq(@to_process_references);
 }
 
@@ -153,7 +133,7 @@ sub check_references_for_bcftools {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Environment::Executable qw{ get_executable_base_command };
+    use MIP::Parameter qw{ get_parameter_attribute };
 
     ## Checked references
     my @checked_references;
@@ -164,20 +144,25 @@ sub check_references_for_bcftools {
     ## Avoid checking the same reference multiple times
     my %seen;
 
-    my $bcftools_binary_path = get_executable_base_command( { base_command => q{bcftools}, } );
-
     ## TOML parameters
     my %toml = (
         sv_vcfanno_config => 1,
         vcfanno_config    => 1,
     );
-
+    use Data::Printer;
   PARAMETER_NAME:
     foreach my $parameter_name ( @{$bcftools_references_ref} ) {
 
+        my @attributes = get_parameter_attribute(
+            {
+                attribute      => q{associated_recipe},
+                parameter_href => $parameter_href,
+                parameter_name => $parameter_name,
+            }
+        );
+
       ASSOCIATED_RECIPE:
-        foreach my $associated_recipe ( @{ $parameter_href->{$parameter_name}{associated_recipe} } )
-        {
+        foreach my $associated_recipe (@attributes) {
 
             ## Alias
             my $active_associated_recipe = $active_parameter_href->{$associated_recipe};
@@ -194,7 +179,6 @@ sub check_references_for_bcftools {
 
                     _parse_vcfanno_toml_path(
                         {
-                            bcftools_binary_path      => $bcftools_binary_path,
                             seen_href                 => \%seen,
                             toml_file_path            => $annotation_file,
                             to_process_references_ref => \@to_process_references,
@@ -206,8 +190,7 @@ sub check_references_for_bcftools {
                     ## Check if bcftools has processed references using regexp
                     @checked_references = check_if_processed_by_bcftools(
                         {
-                            bcftools_binary_path => $bcftools_binary_path,
-                            reference_file_path  => $annotation_file,
+                            reference_file_path => $annotation_file,
                         }
                     );
                     push @to_process_references, @checked_references;
@@ -225,8 +208,7 @@ sub check_references_for_bcftools {
                         ## Check if bcftools has processed references using regexp
                         @checked_references = check_if_processed_by_bcftools(
                             {
-                                bcftools_binary_path => $bcftools_binary_path,
-                                reference_file_path  => $annotation_file,
+                                reference_file_path => $annotation_file,
                             }
                         );
                     }
@@ -245,8 +227,7 @@ sub check_references_for_bcftools {
                         ## Check if bcftools has processed references using regexp
                         @checked_references = check_if_processed_by_bcftools(
                             {
-                                bcftools_binary_path => $bcftools_binary_path,
-                                reference_file_path  => $annotation_file,
+                                reference_file_path => $annotation_file,
                             }
                         );
                     }
@@ -263,26 +244,18 @@ sub _parse_vcfanno_toml_path {
 
 ## Function : Parse TOML config for path to check with bcftools
 ## Returns  :
-## Arguments: $bcftools_binary_path      => Path to bcftools binary
-##          : $seen_href                 => Avoid checking the same reference multiple times
+## Arguments: $seen_href                 => Avoid checking the same reference multiple times
 ##          : $toml_file_path            => Toml config file path
 ##          : $to_process_references_ref => Store references to process later
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $bcftools_binary_path;
     my $seen_href;
     my $toml_file_path;
     my $to_process_references_ref;
 
     my $tmpl = {
-        bcftools_binary_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$bcftools_binary_path,
-            strict_type => 1,
-        },
         seen_href => {
             default     => {},
             defined     => 1,
@@ -335,8 +308,7 @@ sub _parse_vcfanno_toml_path {
             ## Check if bcftools has processed references using regexp
             my @checked_references = check_if_processed_by_bcftools(
                 {
-                    bcftools_binary_path => $bcftools_binary_path,
-                    reference_file_path  => $annotation_file_path,
+                    reference_file_path => $annotation_file_path,
                 }
             );
             push @{$to_process_references_ref}, @checked_references;

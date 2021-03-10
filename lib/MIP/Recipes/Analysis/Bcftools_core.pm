@@ -39,12 +39,9 @@ sub analysis_bcftools_core {
 ##          : $core_number             => The number of cores to allocate
 ##          : $case_id                 => The case ID
 ##          : $filehandle              => Filehandle to write to
+##          : $human_genome_reference  => Human genome reference
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $infile_path             => Infile path
-##          : $instream                => Data to bcftools is supplied as a unix pipe
-##          : $gnu_sed                 => Sed program for changing vcf #FORMAT field in variant vcfs
-##          : $human_genome_reference  => Human genome reference
-##          : $normalize               => bcftools program normalize for normalizing to reference used in analysis
 ##          : $outfile_path            => Outfile path
 ##          : $parameter_href          => Hash with paremters from yaml file {REF}
 ##          : $profile_base_command    => Submission profile base command
@@ -71,10 +68,7 @@ sub analysis_bcftools_core {
     my $cmd_break;
     my $core_number;
     my $case_id;
-    my $gnu_sed;
     my $human_genome_reference;
-    my $instream;
-    my $normalize;
     my $outfile_path;
     my $profile_base_command;
     my $recipe_directory;
@@ -120,13 +114,7 @@ sub analysis_bcftools_core {
             store       => \$case_id,
             strict_type => 1,
         },
-        filehandle => { store => \$filehandle, },
-        gnu_sed    => {
-            allow       => [ undef, 0, 1 ],
-            default     => 0,
-            store       => \$gnu_sed,
-            strict_type => 1,
-        },
+        filehandle             => { store => \$filehandle, },
         human_genome_reference => {
             default     => $arg_href->{active_parameter_href}{human_genome_reference},
             store       => \$human_genome_reference,
@@ -138,19 +126,7 @@ sub analysis_bcftools_core {
             store       => \$infile_path,
             strict_type => 1,
         },
-        instream => {
-            allow       => [ undef, 0, 1 ],
-            default     => 0,
-            store       => \$instream,
-            strict_type => 1,
-        },
-        job_id_href => { default => {}, store => \$job_id_href, strict_type => 1, },
-        normalize   => {
-            allow       => [ undef, 0, 1 ],
-            default     => 0,
-            store       => \$normalize,
-            strict_type => 1,
-        },
+        job_id_href  => { default => {}, store => \$job_id_href, strict_type => 1, },
         outfile_path => {
             default     => $arg_href->{infile_path},
             store       => \$outfile_path,
@@ -236,54 +212,37 @@ sub analysis_bcftools_core {
     }
 
     ## Initate processing
-    if ( not $instream ) {
+    bcftools_view(
+        {
+            filehandle  => $filehandle,
+            infile_path => $infile_path,
+            output_type => $bcftools_output_type,
+        }
+    );
 
-        bcftools_view(
-            {
-                filehandle  => $filehandle,
-                infile_path => $infile_path,
-                output_type => $bcftools_output_type,
-            }
-        );
-    }
-    ## Replace #FORMAT field prior to smart decomposition (variant vcfs)
-    if ($gnu_sed) {
+    ## Pipe
+    print {$filehandle} $PIPE . $SPACE;
 
-        ## Pipe
-        print {$filehandle} $PIPE . $SPACE;
+    bcftools_norm(
+        {
+            filehandle     => $filehandle,
+            infile_path    => q{-},
+            multiallelic   => q{-},
+            reference_path => $human_genome_reference,
+        }
+    );
 
-        gnu_sed(
-            {
-                filehandle => $filehandle,
-                script     => q{'s/ID=AD,Number=./ID=AD,Number=R/'},
-            }
-        );
-    }
-    if ($normalize) {
+    ## Pipe
+    print {$filehandle} $PIPE . $SPACE;
 
-        ## Pipe
-        print {$filehandle} $PIPE . $SPACE;
+    bcftools_norm(
+        {
 
-        bcftools_norm(
-            {
-                filehandle   => $filehandle,
-                infile_path  => q{-},
-                multiallelic => q{-},
-            }
-        );
-
-        ## Pipe
-        print {$filehandle} $PIPE . $SPACE;
-
-        bcftools_norm(
-            {
-                filehandle        => $filehandle,
-                infile_path       => q{-},
-                remove_duplicates => 1,
-            }
-        );
-
-    }
+            filehandle        => $filehandle,
+            infile_path       => q{-},
+            remove_duplicates => 1,
+        }
+    );
 
     ## Tabix has been/will be used on file, compress again
     my $tabix_suffix    = $DOT . q{tbi};

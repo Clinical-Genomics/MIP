@@ -394,9 +394,16 @@ sub read_infile_vcf {
                 }
             );
 
-            if (/ (bcftools_norm) /sxm) {
+            if (/ INFO\=\<ID\=([^,]+) /sxm) {
 
                 $vcf_header{INFO}{$1} = $1;
+
+            }
+
+            if (/ (bcftools_norm) /sxm) {
+
+                $vcf_header{$1} = $1;
+
             }
 
             $is_csq_found = check_if_vep_csq_in_line(
@@ -425,9 +432,9 @@ sub read_infile_vcf {
             ## Test bcftools
             _test_bcftools_in_vcf_header(
                 {
-                    vcf_header_href         => \%vcf_header,
                     bcftools_mode           => $active_parameter_href->{bcftools_norm},
                     bcftools_normalize_mode => $active_parameter_href->{bcftools_normalize},
+                    vcf_header_href         => \%vcf_header,
                 }
             );
 
@@ -652,6 +659,11 @@ sub read_sv_infile_vcf {
             if (/ INFO\=\<ID\=([^,]+) /sxm) {
 
                 $vcf_header{INFO}{$1} = $1;
+            }
+
+            if (/ (bcftools_norm) /sxm) {
+
+                $vcf_header{$1} = $1;
             }
 
             $is_csq_found = check_if_vep_csq_in_line(
@@ -1177,10 +1189,7 @@ sub _test_sv_combinevariantcallsets_in_vcf_header {
 
     return if ( not $sv_decompose_mode );
 
-    ok(
-        exists $vcf_header_href->{INFO}{OLD_MULTIALLELIC},
-        q{bcftools_normalize key: bcftools_norm}
-    );
+    ok( exists $vcf_header_href->{bcftools_norm}, q{bcftools_normalize key: bcftools_norm} );
 
     return;
 }
@@ -1231,10 +1240,7 @@ sub _test_bcftools_in_vcf_header {
 
     if ($bcftools_normalize_mode) {
 
-        ok(
-            exists $vcf_header_href->{INFO}{bcftools_norm},
-            q{bcftools_normalize key: bcftools_norm}
-        );
+        ok( exists $vcf_header_href->{bcftools_norm}, q{bcftools_normalize key: bcftools_norm} );
     }
     return;
 }

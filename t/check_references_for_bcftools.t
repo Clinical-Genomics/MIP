@@ -50,6 +50,7 @@ diag(   q{Test check_references_for_bcftools from Reference.pm}
 # Create log object
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
+## Given reference vcf files associated with different recipes, check if the files need bcftools processing
 my %active_parameter_test = (
     binary_path                        => { bcftools => q{bcftools}, },
     gatk_baserecalibration             => 1,

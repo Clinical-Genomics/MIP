@@ -42,30 +42,14 @@ sub get_bcftools_norm_command_from_vcf_header {
 
 ## Function : Get vcf header line matching bcftools norm command
 ## Returns  :
-## Arguments: $bcftools_binary_path => Path to bcftools
-##          : $header_id            => Bcftools norm string
-##          : $vcf_file_path        => Path to vcf file
+## Arguments: $vcf_file_path        => Path to vcf file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $bcftools_binary_path;
-    my $header_id;
     my $vcf_file_path;
 
     my $tmpl = {
-        bcftools_binary_path => {
-            defined     => 1,
-            required    => 1,
-            store       => \$bcftools_binary_path,
-            strict_type => 1,
-        },
-        header_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$header_id,
-            strict_type => 1,
-        },
         vcf_file_path => {
             defined     => 1,
             required    => 1,
@@ -77,9 +61,11 @@ sub get_bcftools_norm_command_from_vcf_header {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Child_process qw{ child_process };
+    use MIP::Environment::Executable qw{ get_executable_base_command };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
 
     my @check_header_cmds;
+    my $bcftools_binary_path = get_executable_base_command( { base_command => q{bcftools}, } );
 
     ## Stream vcf using bcftools
     push @check_header_cmds, $bcftools_binary_path . $SPACE . q{view} . $SPACE . $vcf_file_path;
@@ -90,7 +76,7 @@ sub get_bcftools_norm_command_from_vcf_header {
       perl_nae_oneliners(
         {
             oneliner_name      => q{bcftools_norm_check},
-            oneliner_parameter => $header_id,
+            oneliner_parameter => q{bcftools_norm},
         }
       );
     push @check_header_cmds, $SEMICOLON;
