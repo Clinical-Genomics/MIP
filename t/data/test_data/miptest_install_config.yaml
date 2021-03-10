@@ -119,6 +119,10 @@ container:
     executable:
       multiqc:
     uri: docker.io/ewels/multiqc:1.9
+  pdfmerger:
+    executable:
+      pdfmerger:
+    uri: docker.io/northwestwitch/pdfmerger:v1.0
   perl:
     executable:
       perl:

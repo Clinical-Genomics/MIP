@@ -7,12 +7,12 @@ samples:
     capture_kit: agilent_sureselect.v5
     expected_coverage: 150
     father: 118-2-1U
+    dna_sample_id: ADM1059A2
     mother: 118-2-2U
     phenotype: affected
+    sample_display_name: 118-1-2A
     sample_id: 118-1-2A
-    sample_name: 118-1-2A
     sex: unknown
-    dna_sample_id: ADM1059A2
   - analysis_type: wts
     capture_kit: agilent_sureselect.v5
     dna_sample_id: ADM1059A1
@@ -20,8 +20,8 @@ samples:
     father: '0'
     mother: '0'
     phenotype: unaffected
+    sample_display_name: 118-2-1U
     sample_id: 118-2-1U
-    sample_name: 118-2-1U
     sex: unknown
   - analysis_type: wts
     capture_kit: agilent_sureselect.v5
@@ -30,6 +30,6 @@ samples:
     father: '0'
     mother: '0'
     phenotype: unaffected
+    sample_display_name: 118-2-2U
     sample_id: 118-2-2U
-    sample_name: 118-2-2U
     sex: unknown

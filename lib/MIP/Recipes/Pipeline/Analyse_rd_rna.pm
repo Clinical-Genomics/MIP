@@ -389,6 +389,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
+    use MIP::Recipes::Analysis::Fusion_report qw{ analysis_fusion_report };
     use MIP::Recipes::Analysis::Picardtools_collectrnaseqmetrics
       qw{ analysis_picardtools_collectrnaseqmetrics };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles qw{ analysis_picardtools_mergesamfiles };
@@ -439,6 +440,7 @@ sub pipeline_analyse_rd_rna {
         bootstrapann                     => \&analysis_bootstrapann,
         dna_vcf_reformat                 => \&analysis_vcf_ase_reformat,
         fastqc_ar                        => \&analysis_fastqc,
+        fusion_report                    => \&analysis_fusion_report,
         gatk_asereadcounter              => \&analysis_gatk_asereadcounter,
         gatk_baserecalibration           => \&analysis_gatk_baserecalibration_rna,
         gatk_haplotypecaller             => \&analysis_gatk_haplotypecaller,
