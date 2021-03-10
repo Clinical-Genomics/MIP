@@ -513,10 +513,7 @@ sub analysis_bcftools_norm_panel {
             active_parameter_href => $active_parameter_href,
             cmd_break             => $SEMICOLON,
             filehandle            => $filehandle,
-            gnu_sed               => 1,
             infile_path           => $infile_path,
-            instream              => 0,
-            normalize             => $active_parameter_href->{bcftools_normalize},
             outfile_path          => $outfile_path,
         }
     );
