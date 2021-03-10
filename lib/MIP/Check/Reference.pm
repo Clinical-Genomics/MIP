@@ -149,7 +149,7 @@ sub check_references_for_bcftools {
         sv_vcfanno_config => 1,
         vcfanno_config    => 1,
     );
-    use Data::Printer;
+
   PARAMETER_NAME:
     foreach my $parameter_name ( @{$bcftools_references_ref} ) {
 
