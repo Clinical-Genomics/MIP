@@ -134,6 +134,7 @@ recipe_time:
     bootstrapann: 2
     dna_vcf_reformat: 1
     fastqc_ar: 1
+    fusion_report: 1
     gatk_asereadcounter: 2
     gatk_baserecalibration: 5
     gatk_haplotypecaller: 6
@@ -196,6 +197,7 @@ recipe_core_number:
     bootstrapann: 1
     dna_vcf_reformat: 1
     fastqc_ar: 0
+    fusion_report: 1
     gatk_asereadcounter: 1
     gatk_baserecalibration: 13
     gatk_haplotypecaller: 13
@@ -447,25 +449,36 @@ arriba_ar:
   outfile_suffix: ".tsv"
   program_executables:
     - arriba
-    - draw_fusions.R
-    - sambamba
+    - samtools
   type: recipe
 arriba_blacklist_path:
   associated_recipe:
-    - arriba_ar
+    - fusion_report
   data_type: SCALAR
   type: path
-arriba_cytoband_path:
+fusion_report:
+  analysis_mode: case
   associated_recipe:
-    - arriba_ar
+    - mip
   data_type: SCALAR
-  type: path
-arriba_proteindomain_path:
+  default: 1
+  file_tag: _report
+  outfile_suffix: ".pdf"
+  program_executables:
+    - draw_fusions.R
+    - pdfmerger
+  type: recipe
+fusion_cytoband_path:
   associated_recipe:
-    - arriba_ar
+    - fusion_report
   data_type: SCALAR
   type: path
-arriba_use_sample_id_as_display_name:
+fusion_proteindomain_path:
+  associated_recipe:
+    - fusion_report
+  data_type: SCALAR
+  type: path
+fusion_use_sample_id_as_display_name:
   associated_recipe:
     - arriba_ar
   data_type: SCALAR

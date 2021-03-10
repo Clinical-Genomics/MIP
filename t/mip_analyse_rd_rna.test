@@ -33,12 +33,13 @@ my $VERBOSE = 1;
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data } );
-my $config_file           = catfile( dirname($Bin), qw{ templates mip_rd_rna_config.yaml } );
 my $mip_install_config =
   catfile( dirname($Bin), qw{ t data test_data miptest_install_config.yaml } );
 my $mip_path = catfile( dirname($Bin), q{mip} );
 my $dna_vcf_file =
   catfile( dirname($Bin), qw{ t data test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf } );
+
+my $config_file;
 
 ### User Options
 GetOptions(
@@ -78,8 +79,6 @@ my @base_cmds = (
     q{perl},
     $mip_path,
     qw{ analyse rd_rna 118-rnatest },
-    q{--config},
-    $config_file,
     q{--install_config},
     $mip_install_config,
     q{--conda_path},
@@ -95,14 +94,24 @@ my @base_cmds = (
     qw{--dra --vb },
 );
 
-my %process_return = child_process(
-    {
-        commands_ref => \@base_cmds,
-        process_type => q{ipc_cmd_run},
-        verbose      => $VERBOSE,
-    }
+my %genome_build_config = (
+    grch37 => catfile( dirname($Bin), qw{templates mip_rd_rna_config.yaml} ),
+    grch38 => catfile( dirname($Bin), qw{templates grch38_mip_rd_rna_config.yaml} )
 );
-ok( $process_return{success}, q{Executed mip rd_rna} );
+
+GENOME_BUILD:
+foreach my $genome_build (qw{ grch37 grch38 }) {
+
+    my @mip_cmds       = ( @base_cmds, q{--config}, $genome_build_config{$genome_build} );
+    my %process_return = child_process(
+        {
+            commands_ref => \@mip_cmds,
+            process_type => q{ipc_cmd_run},
+            verbose      => $VERBOSE,
+        }
+    );
+    ok( $process_return{success}, qq{Executed mip rd_rna $genome_build} );
+}
 
 my $qc_sample_info_file =
   catfile( $cluster_constant_path, qw{ 118-rnatest analysis 118-rnatest_qc_sample_info.yaml } );

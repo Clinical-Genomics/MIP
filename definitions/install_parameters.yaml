@@ -122,12 +122,12 @@ rd_rna:
     - mip
     - mip_scripts
     - multiqc
+    - pdfmerger
     - picard
     - preseq
     - python
     - rseqc
     - salmon
-    - sambamba
     - star
     - star-fusion
     - stringtie

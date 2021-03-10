@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Language::Perl} => [qw{ perl_base }],
-);
+    my %perl_module = ( q{MIP::Language::Perl} => [qw{ perl_base }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -54,25 +51,29 @@ my @function_base_commands = qw{ perl };
 ## to enable testing of each individual argument
 
 my %specific_argument = (
-    autosplit     => {
+    autosplit => {
         input           => 1,
         expected_output => q{-a},
     },
-    n             => {
-        input           => 1,
-        expected_output => q{-n},
-    },
-    command_line  => {
+    command_line => {
         input           => 1,
         expected_output => q{-e},
     },
-    inplace       => {
+    inplace => {
         input           => 1,
         expected_output => q{-i},
     },
-    print         => {
+    n => {
+        input           => 1,
+        expected_output => q{-n},
+    },
+    print => {
         input           => 1,
         expected_output => q{-p},
+    },
+    print_newline => {
+        input           => 1,
+        expected_output => q{-l},
     },
     use_container => => {
         input           => 1,
