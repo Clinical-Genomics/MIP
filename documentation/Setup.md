@@ -59,7 +59,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [rtg-tools] (version: 3.10.1)
 - [Sambamba] (version: 0.8.0)
 - [Samtools] (version: 1.11)
-- [SMNCopyNumberCaller] (version: 4b2c1ad)
+- [SMNCopyNumberCaller] (version: v1.1.1)
 - [Stranger] (version: 0.7)
 - [Svdb] (version: 2.2.0)
 - [Telomerecat] (version: 3.4.0)

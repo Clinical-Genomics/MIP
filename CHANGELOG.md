@@ -25,6 +25,7 @@ pdfmerger: v1.0
 picardtools: 2.23.4 -> 2.25.0
 sambamba: 0.6.8-h682856c_0 -> 0.8.0-h984e79f_0
 samtools: 1.10-h9402c20_2 -> 1.11-h6270b1f_0
+smncopynumbercaller: 4b2c1ad -> v1.1.1
 stranger: 0.7 -> 0.7.1
 tiddit: 2.8.1 -> 2.12.1
 
