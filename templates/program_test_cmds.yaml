@@ -82,6 +82,8 @@ sambamba:
   execution: 'sambamba --version'
 samtools:
   execution: 'samtools --version'
+smncopynumbercaller:
+  execution: 'smn_caller.py'
 star:
   execution: 'STAR'
 star-fusion:
