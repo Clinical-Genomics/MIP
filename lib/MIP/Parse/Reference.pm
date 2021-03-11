@@ -161,7 +161,6 @@ sub parse_reference_for_bcftools {
                 build_gatk_index      => 1,
                 infile_path           => $reference_file_path,
                 job_id_href           => $job_id_href,
-                normalize             => 1,
                 parameter_href        => $parameter_href,
             }
         );

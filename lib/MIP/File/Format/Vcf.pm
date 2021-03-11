@@ -76,7 +76,6 @@ sub get_bcftools_norm_command_from_vcf_header {
       perl_nae_oneliners(
         {
             oneliner_name      => q{bcftools_norm_check},
-            oneliner_parameter => q{bcftools_norm},
         }
       );
     push @check_header_cmds, $SEMICOLON;

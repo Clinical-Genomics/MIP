@@ -372,9 +372,6 @@ sub perl_nae_oneliners {
         add_binary => {
             binary => $oneliner_parameter,
         },
-        bcftools_norm_check => {
-            id => $oneliner_parameter,
-        },
         build_md5sum_check => {
             file_path => $oneliner_parameter,
         },
@@ -524,26 +521,12 @@ sub _bcftools_norm_check {
 
 ## Function : Return vcf header line matching bcftools norm command
 ## Returns  : $bcftools_norm_line
-## Arguments: $id => bcftools norm id string
+## Arguments:
 
     my ($arg_href) = @_;
 
-    ## Flatten argument(s)
-    my $id;
-
-    my $tmpl = {
-        id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$id,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
     ## Find vcf_key
-    my $bcftools_norm_line = q?'if($_=~/\A[#]{2}? . $id . q?/) { ?;
+    my $bcftools_norm_line = q?'if($_=~/\A[#]{2}? . q{bcftools_norm} . q?/) { ?;
 
     ## Write to stdout
     $bcftools_norm_line .= q?print $_} ?;

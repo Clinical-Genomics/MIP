@@ -89,7 +89,7 @@ sub check_if_processed_by_bcftools {
               . $NEWLINE );
     }
 
-    return uniq(@to_process_references);
+    return @to_process_references;
 }
 
 sub check_references_for_bcftools {
