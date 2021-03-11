@@ -52,7 +52,7 @@ container:
   cyrius:
     executable:
       star_caller.py:
-    uri: docker.io/clinicalgenomics/cyrius:1.0
+    uri: docker.io/clinicalgenomics/cyrius:v1.1
   expansionhunter:
     executable:
       ExpansionHunter:

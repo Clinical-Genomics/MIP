@@ -18,6 +18,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 **Tools**
 bcftools: 1.10.2-hd2cd319_0 -> 1.11-h7c999a4_0
 chanjo: 4.2.0 -> 4.6
+cyrius: v1.0 -> v1.1
 deepvariant: 1.0.0  
 glnexus: v1.2.7
 htslib: 1.10.2-h78d89cc_0 -> 1.11-hd3b49d5_2
