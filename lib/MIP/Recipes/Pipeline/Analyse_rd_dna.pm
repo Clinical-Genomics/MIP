@@ -444,6 +444,7 @@ sub pipeline_analyse_rd_dna {
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Bcftools_norm qw{ analysis_bcftools_norm };
     use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem2 };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
@@ -503,7 +504,6 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation };
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs };
-    use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
 
     ### Pipeline specific checks
@@ -546,6 +546,7 @@ sub pipeline_analyse_rd_dna {
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus  => \&analysis_analysisrunstatus,
+        bcftools_norm      => \&analysis_bcftools_norm,
         bwa_mem            => undef,                           # Depends on genome build
         bwa_mem2           => \&analysis_bwa_mem2,
         cadd_ar            => \&analysis_cadd,
@@ -609,7 +610,6 @@ sub pipeline_analyse_rd_dna {
         version_collect_ar        => \&analysis_mip_vercollect,
         vcfparser_ar              => \&analysis_mip_vcfparser,
         vcf2cytosure_ar           => \&analysis_vcf2cytosure,
-        vt_ar                     => \&analysis_vt,
     );
 
     ## Special case for rankvariants recipe

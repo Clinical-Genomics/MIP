@@ -62,7 +62,7 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     - prepareforvariantannotationblock
     - rhocall_ar
-    - vt_ar
+    - bcftools_norm
     - frequency_filter
     - cadd_ar
     - varianteffectpredictor

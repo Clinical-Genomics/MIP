@@ -22,7 +22,8 @@ BEGIN {
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ parse_references parse_reference_for_vt parse_toml_config_for_vcf_tags };
+    our @EXPORT_OK =
+      qw{ parse_references parse_reference_for_bcftools parse_toml_config_for_vcf_tags };
 }
 
 sub parse_references {
@@ -78,8 +79,8 @@ sub parse_references {
         }
     );
 
-    $log->info(q{[Reference check - Reference processed by VT]});
-    parse_reference_for_vt(
+    $log->info(q{[Reference check - Reference processed by bcftools]});
+    parse_reference_for_bcftools(
         {
             active_parameter_href => $active_parameter_href,
             job_id_href           => $job_id_href,
@@ -90,7 +91,7 @@ sub parse_references {
     return;
 }
 
-sub parse_reference_for_vt {
+sub parse_reference_for_bcftools {
 
 ## Function : Parse reference to make sure that they have been decomposed and normalised
 ## Returns  :
@@ -131,38 +132,35 @@ sub parse_reference_for_vt {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::Reference qw{ check_references_for_vt };
-    use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
+    use MIP::Check::Reference qw{ check_references_for_bcftools };
+    use MIP::Recipes::Analysis::Bcftools_core qw{ analysis_bcftools_core };
 
-    return if ( not $active_parameter_href->{vt_decompose} );
-
-    return if ( not $active_parameter_href->{vt_normalize} );
+    return if ( not $active_parameter_href->{bcftools_normalize} );
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my @to_process_references = check_references_for_vt(
+    my @to_process_references = check_references_for_bcftools(
         {
-            active_parameter_href => $active_parameter_href,
-            parameter_href        => $parameter_href,
-            vt_references_ref     => \@{ $active_parameter_href->{decompose_normalize_references} },
+            active_parameter_href   => $active_parameter_href,
+            parameter_href          => $parameter_href,
+            bcftools_references_ref =>
+              \@{ $active_parameter_href->{decompose_normalize_references} },
         }
     );
 
   REFERENCE:
     foreach my $reference_file_path (@to_process_references) {
 
-        $log->info(q{[VT - Normalize and decompose]});
+        $log->info(q{[Bcftools - Normalize and decompose]});
         $log->info( $TAB . q{File: } . $reference_file_path );
 
         ## Split multi allelic records into single records and normalize
-        analysis_vt_core(
+        analysis_bcftools_core(
             {
                 active_parameter_href => $active_parameter_href,
                 build_gatk_index      => 1,
-                decompose             => 1,
                 infile_path           => $reference_file_path,
                 job_id_href           => $job_id_href,
-                normalize             => 1,
                 parameter_href        => $parameter_href,
             }
         );

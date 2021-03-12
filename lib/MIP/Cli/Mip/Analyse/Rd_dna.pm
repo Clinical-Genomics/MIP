@@ -783,7 +783,7 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
-        q{sv_vt_decompose} => (
+        q{sv_decompose} => (
             documentation => q{Split multi allelic records into single records},
             is            => q{rw},
             isa           => Bool,
@@ -1469,7 +1469,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
     );
 
     option(
-        q{vt_ar} => (
+        q{bcftools_norm} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Decompose and normalize},
             is            => q{rw},
@@ -1478,15 +1478,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
     );
 
     option(
-        q{vt_decompose} => (
-            documentation => q{Split multi allelic records into single records},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{vt_missing_alt_allele} => (
+        q{bcftools_missing_alt_allele} => (
             documentation => q{Remove missing alternative alleles '*'},
             is            => q{rw},
             isa           => Bool,
@@ -1494,16 +1486,8 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
     );
 
     option(
-        q{vt_normalize} => (
+        q{bcftools_normalize} => (
             documentation => q{Normalize variants},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{vt_uniq} => (
-            documentation => q{Remove variant duplicates},
             is            => q{rw},
             isa           => Bool,
         )

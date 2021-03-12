@@ -27,6 +27,7 @@ BEGIN {
       convert_to_range
       get_transcript_effects
       parse_vcf_header
+      get_bcftools_norm_command_from_vcf_header
       get_vcf_header_line_by_id
       set_in_consequence_hash
       set_info_key_pairs_in_vcf_record
@@ -36,6 +37,58 @@ BEGIN {
 
 ## Constants
 Readonly my $INFO_COL_NR => 7;
+
+sub get_bcftools_norm_command_from_vcf_header {
+
+## Function : Get vcf header line matching bcftools norm command
+## Returns  :
+## Arguments: $vcf_file_path        => Path to vcf file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $vcf_file_path;
+
+    my $tmpl = {
+        vcf_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Child_process qw{ child_process };
+    use MIP::Environment::Executable qw{ get_executable_base_command };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+
+    my @check_header_cmds;
+    my $bcftools_binary_path = get_executable_base_command( { base_command => q{bcftools}, } );
+
+    ## Stream vcf using bcftools
+    push @check_header_cmds, $bcftools_binary_path . $SPACE . q{view} . $SPACE . $vcf_file_path;
+    push @check_header_cmds, $PIPE;
+
+    ## Assemble perl regexp for detecting keys in vcf
+    push @check_header_cmds,
+      perl_nae_oneliners(
+        {
+            oneliner_name      => q{bcftools_norm_check},
+        }
+      );
+    push @check_header_cmds, $SEMICOLON;
+
+    my %process_return = child_process(
+        {
+            commands_ref => \@check_header_cmds,
+            process_type => q{open3},
+        }
+    );
+
+    return $process_return{stdouts_ref}[0];
+}
 
 sub get_vcf_header_line_by_id {
 

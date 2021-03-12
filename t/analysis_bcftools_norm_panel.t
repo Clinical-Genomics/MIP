@@ -30,16 +30,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Vt_core} => [qw{ analysis_vt_core }],
+        q{MIP::Recipes::Analysis::Bcftools_norm} => [qw{ analysis_bcftools_norm_panel }],
         q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core };
+use MIP::Recipes::Analysis::Bcftools_norm qw{ analysis_bcftools_norm_panel };
 
-diag(   q{Test analysis_vt_core from Vt_core.pm}
+diag(   q{Test analysis_bcftools_norm_panel from Bcftools_norm.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -50,7 +50,7 @@ diag(   q{Test analysis_vt_core from Vt_core.pm}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{vt_core};
+my $recipe_name    = q{bcftools_core};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -63,6 +63,9 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
+$active_parameter{bcftools_normalize} = 1;
+
+$active_parameter{bcftools_core} = 0;
 
 my %file_info = test_mip_hashes(
     {
@@ -81,33 +84,26 @@ my %parameter = test_mip_hashes(
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $case_id,
-        parameter_href    => \%parameter,
-        recipe_name       => $recipe_name,
-        step              => q{vcf},
+        file_info_href => \%file_info,
+        id             => $case_id,
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{vcf},
     }
 );
 
-my $is_ok = analysis_vt_core(
+my %sample_info;
+
+my $is_ok = analysis_bcftools_norm_panel(
     {
-        active_parameter_href  => \%active_parameter,
-        bgzip                  => 1,
-        build_gatk_index       => 1,
-        case_id                => $case_id,
-        contig                 => 1,
-        gnu_sed                => 1,
-        decompose              => 1,
-        normalize              => 1,
-        uniq                   => 1,
-        infile_path            => q{an_infile_path.vcf},
-        instream               => 0,
-        job_id_href            => \%job_id,
-        parameter_href         => \%parameter,
-        profile_base_command   => $slurm_mock_cmd,
-        recipe_name            => $recipe_name,
-        tabix                  => 1,
-        xargs_file_path_prefix => q{a_file_prefix},
+        active_parameter_href => \%active_parameter,
+        case_id               => $case_id,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_info_href      => \%sample_info,
     }
 );
 

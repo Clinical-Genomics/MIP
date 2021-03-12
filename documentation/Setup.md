@@ -69,7 +69,6 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Vcf2cytosure] (version: 0.5.1)
 - [Vcfanno] (version: 0.3.2)
 - [VEP] (version: 100) with plugin "ExACpLI", "MaxEntScan, LoFtool", "SpliceAI"
-- [VT] (version: 20151110)
 
 The version number after the software name are tested for compatibility with MIP.
 
@@ -190,4 +189,4 @@ Corresponding MIP references:
 [Vcf2cytosure]: https://github.com/NBISweden/vcf2cytosure
 [Vcfanno]: https://github.com/brentp/vcfanno
 [VEP]: https://github.com/Ensembl/ensembl-vep
-[VT]: https://github.com/atks/vt
+

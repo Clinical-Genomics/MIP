@@ -22,8 +22,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures
-  qw{ test_add_io_for_recipe test_constants test_log test_mip_hashes };
+use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_constants test_log test_mip_hashes };
 
 BEGIN {
 
@@ -32,16 +31,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Reference} => [qw{ parse_reference_for_vt }],
+        q{MIP::Parse::Reference} => [qw{ parse_reference_for_bcftools }],
 
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::Reference qw{ parse_reference_for_vt };
+use MIP::Parse::Reference qw{ parse_reference_for_bcftools };
 
-diag(   q{Test parse_reference_for_vt from Reference.pm}
+diag(   q{Test parse_reference_for_bcftools from Reference.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -52,7 +51,7 @@ diag(   q{Test parse_reference_for_vt from Reference.pm}
 test_log( {} );
 
 ## Given analysis parameters
-my $recipe_name      = q{vt_core};
+my $recipe_name      = q{bcftools_core};
 my %active_parameter = test_mip_hashes(
     {
         mip_hash_name => q{active_parameter},
@@ -62,12 +61,11 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 2;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-$active_parameter{outscript_dir} = catdir( $Bin, q{test_vt-core} );
-$active_parameter{outdata_dir}   = catdir( $Bin, q{test_vt-core} );
-$active_parameter{vt_decompose}  = 1;
-$active_parameter{vt_normalize}  = 1;
-$active_parameter{decompose_normalize_references} = [q{gatk_varianteval_dbsnp}];
-$active_parameter{gatk_variantevalall}            = 1;
+$active_parameter{outscript_dir}                    = catdir( $Bin, q{test_bcftools-core} );
+$active_parameter{outdata_dir}                      = catdir( $Bin, q{test_bcftools-core} );
+$active_parameter{bcftools_normalize}               = 1;
+$active_parameter{decompose_normalize_references}   = [q{gatk_varianteval_dbsnp}];
+$active_parameter{gatk_variantevalall}              = 1;
 $active_parameter{gatk_varianteval_dbsnp} =
   catfile( $Bin, qw{ data references grch37_mills_and_1000g_-gold_standard_indels-.vcf} );
 
@@ -109,7 +107,7 @@ test_add_io_for_recipe(
 
 ## Then run sub and process references
 trap {
-    parse_reference_for_vt(
+    parse_reference_for_bcftools(
         {
             active_parameter_href => \%active_parameter,
             job_id_href           => {},
@@ -119,7 +117,7 @@ trap {
 };
 
 is( $trap->leaveby, q{return}, q{Run sub} );
-like( $trap->stderr, qr/Cannot \s+ detect \s+ /xms, q{Log Vt fail} );
-remove_tree( catdir( $Bin, q{test_vt-core} ) );
+like( $trap->stderr, qr/Cannot \s+ detect \s+ /xms, q{Log Bcftools fail} );
+remove_tree( catdir( $Bin, q{test_bcftools-core} ) );
 
 done_testing();

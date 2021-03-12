@@ -73,7 +73,7 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     - prepareforvariantannotationblock
     - rhocall_ar
-    - vt_ar
+    - bcftools_norm
     - variant_annotation
     - CHAIN_RHOVIZ:
       - rhocall_viz

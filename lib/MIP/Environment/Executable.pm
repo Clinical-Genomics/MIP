@@ -138,9 +138,8 @@ sub get_binary_version_cmd {
             store       => \$binary_cmd,
             strict_type => 1,
         },
-        stdoutfile_path_append =>
-          { store => \$stdoutfile_path_append, strict_type => 1, },
-        use_container => => {
+        stdoutfile_path_append => { store => \$stdoutfile_path_append, strict_type => 1, },
+        use_container          => => {
             allow       => [ undef, 0, 1 ],
             default     => 0,
             store       => \$use_container,
@@ -292,257 +291,247 @@ sub get_executable {
 
     my %executable = (
         arriba => {
-            version_cmd => q{-h},
+            version_cmd    => q{-h},
             version_regexp =>
-q?'my ($version) = /\AVersion:\s(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /\AVersion:\s(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{bam2wig.py} => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /bam2wig.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /bam2wig.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{bam_stat.py} => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /bam_stat.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /bam_stat.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         bcftools => {
-            version_cmd => q{2>&1 >/dev/null},
+            version_cmd    => q{2>&1 >/dev/null},
             version_regexp =>
 q?'my ($version) = /Version:\s+(.*)/xms; if($version) {chomp $version;print $version;last;}'?,
         },
         bedtools => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /bedtools\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /bedtools\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         bgzip => {
-            version_cmd => q{-h 2>&1 },
+            version_cmd    => q{-h 2>&1 },
             version_regexp =>
-q?'my ($version) = /Version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /Version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         bwa => {
-            version_cmd => q{2>&1 >/dev/null},
+            version_cmd    => q{2>&1 >/dev/null},
             version_regexp =>
-q?'my ($version) = /Version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /Version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{bwa-mem2} => {
-            version_cmd => q{ version 2>&1 >/dev/null},
+            version_cmd    => q{ version 2>&1 >/dev/null},
             version_regexp =>
-q?'my ($version) = /Version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /Version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         chanjo => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{configManta.py} => {
             version_cmd    => q{--version},
             version_regexp => q?'chomp;print $_;last;'?,
         },
         fastqc => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /FastQC\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /FastQC\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         ExpansionHunter => {
-            version_cmd => q{--version 2>&1 >/dev/null},
+            version_cmd    => q{--version 2>&1 >/dev/null},
             version_regexp =>
 q?'my ($version) = /Hunter\s+(v\d+.\d+.\d+)/xms; if($version) {print $version;last;}'?,
         },
         gatk => {
-            version_cmd => q{--java-options "-Xmx1G" --version},
+            version_cmd    => q{--java-options "-Xmx1G" --version},
             version_regexp =>
-q?'my ($version) = /\(GATK\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /\(GATK\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{geneBody_coverage2.py} => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
 q?'my ($version) = /geneBody_coverage2.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         genmod => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
 q?'my ($version) = /genmod\s+version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         gffcompare => {
-            version_cmd => q{--version 2>&1 >/dev/null},
+            version_cmd    => q{--version 2>&1 >/dev/null},
             version_regexp =>
-q?'my ($version) = /gffcompare\sv(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /gffcompare\sv(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{grep} => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /\(GNU\s+grep\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /\(GNU\s+grep\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         gzip => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
               q?'my ($version) = /gzip\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{infer_exeperiment.py} => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
 q?'my ($version) = /infer_exeperiment.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{inner_distance.py} => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
 q?'my ($version) = /inner_distance.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{junction_annotation.py} => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
 q?'my ($version) = /junction_annotation.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         mip => {
-            version_cmd => q{version},
+            version_cmd    => q{version},
             version_regexp =>
-q?'my ($version) = /mip\s+version\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /mip\s+version\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         multiqc => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         peddy => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         preseq => {
-            version_cmd => q{2>&1 >/dev/null},
+            version_cmd    => q{2>&1 >/dev/null},
             version_regexp =>
-q?'my ($version) = /Version:\s+(\S+)/xms; if ($version) {print $version; last;}'?,
+              q?'my ($version) = /Version:\s+(\S+)/xms; if ($version) {print $version; last;}'?,
         },
         picard => {
-            version_cmd =>
-              q{java -jar /usr/picard/picard.jar BamIndexStats 2>&1 >/dev/null},
+            version_cmd    => q{java -jar /usr/picard/picard.jar BamIndexStats 2>&1 >/dev/null},
             version_regexp =>
-q?'my ($version) = /Version:(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /Version:(\S+)/xms; if($version) {print $version;last;}'?,
         },
         pigz => {
-            version_cmd => q{--version 2>&1 >/dev/null},
+            version_cmd    => q{--version 2>&1 >/dev/null},
             version_regexp =>
               q?'my ($version) = /pigz\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         plink2 => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
 q?'my ($version) = /PLINK\s+(.*)/xms; if($version) {chomp $version;print $version;last;}'?,
         },
         q{read_distribution.py} => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
 q?'my ($version) = /read_distribution.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{read_duplication.py} => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
 q?'my ($version) = /read_duplication.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         rhocall => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         salmon => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /salmon\s+(\S+)/xms; if ($version) {print $version; last;}'?,
+              q?'my ($version) = /salmon\s+(\S+)/xms; if ($version) {print $version; last;}'?,
         },
         sambamba => {
-            version_cmd => q{--version 2>&1 >/dev/null},
+            version_cmd    => q{--version 2>&1 >/dev/null},
             version_regexp =>
-q?'my ($version) = /sambamba\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /sambamba\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         samtools => {
-            version_cmd => q{2>&1 >/dev/null},
+            version_cmd    => q{2>&1 >/dev/null},
             version_regexp =>
 q?'my ($version) = /Version:\s+(.*)/xms; if($version) {chomp $version;print $version;last;}'?,
         },
         sed => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /\(GNU\s+sed\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /\(GNU\s+sed\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         STAR => {
-            version_cmd => q{--version},
-            version_regexp =>
-              q?'my ($version) = /(\S+)/xms; if($version) {print $version; last;}'?,
+            version_cmd    => q{--version},
+            version_regexp => q?'my ($version) = /(\S+)/xms; if($version) {print $version; last;}'?,
         },
         q{STAR-Fusion} => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /version:\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         stranger => {
-            version_cmd => q{--version},
-            version_regexp =>
-              q?'my ($version) = /(\S+)/xms; if($version) {print $version;last;}'?,
+            version_cmd    => q{--version},
+            version_regexp => q?'my ($version) = /(\S+)/xms; if($version) {print $version;last;}'?,
         },
         stringtie => {
-            version_cmd => q{--version},
-            version_regexp =>
-              q?'my ($version) = /(\S+)/xms; if($version) {print $version;last;}'?
+            version_cmd    => q{--version},
+            version_regexp => q?'my ($version) = /(\S+)/xms; if($version) {print $version;last;}'?
         },
         svdb => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
               q?'my ($version) = /SVDB-(\S+)/xms; if($version) {print $version;last;}'?,
         },
         tabix => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /\(htslib\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /\(htslib\)\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         telomerecat => {
             version_regexp =>
 q?'BEGIN {my $match = 0}; if ($match) {my ($version) = /(\d+.\d+.\d+)/; print $version; last;} $match=1 if (/\A Version: /xms);'?,
         },
         q{TIDDIT.py} => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
               q?'my ($version) = /TIDDIT-(\S+)/xms; if($version) {print $version;last;}'?,
         },
         trim_galore => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?,
         },
         upd => {
-            version_cmd => q{--version},
-            version_regexp =>
-              q?'my ($version) = /(\S+)/xms; if($version) {print $version;last;}'?,
+            version_cmd    => q{--version},
+            version_regexp => q?'my ($version) = /(\S+)/xms; if($version) {print $version;last;}'?,
         },
         vcfanno => {
-            version_cmd => q{2>&1 >/dev/null},
+            version_cmd    => q{2>&1 >/dev/null},
             version_regexp =>
-q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         vcf2cytosure => {
-            version_cmd => q{-V 2>&1},
+            version_cmd    => q{-V 2>&1},
             version_regexp =>
-q?'my ($version) = /to\s+cytosure\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /to\s+cytosure\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
         varg => {
-            version_cmd => q{--version},
+            version_cmd    => q{--version},
             version_regexp =>
-q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?
+              q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?
         },
         vep => {
             version_regexp =>
-q?'my ($version) = /ensembl-vep\s+:\s(\d+)/xms; if($version) {print $version;last;}'?,
-        },
-        vt => {
-            version_cmd => q{normalize 2>&1 >/dev/null},
-            version_regexp =>
-q?'my ($version) = /normalize\s+(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /ensembl-vep\s+:\s(\d+)/xms; if($version) {print $version;last;}'?,
         },
         q{wigToBigWig} => {
-            version_cmd => q{2>&1 >/dev/null},
+            version_cmd    => q{2>&1 >/dev/null},
             version_regexp =>
-q?'my ($version) = /wigToBigWig\sv\s(\S+)/xms; if($version) {print $version;last;}'?,
+              q?'my ($version) = /wigToBigWig\sv\s(\S+)/xms; if($version) {print $version;last;}'?,
         },
         just_to_enable_testing => {
             version_cmd    => q{bwa 2>&1 >/dev/null},

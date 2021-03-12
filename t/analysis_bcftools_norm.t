@@ -30,16 +30,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Vt} => [qw{ analysis_vt_panel }],
+        q{MIP::Recipes::Analysis::Bcftools_norm} => [qw{ analysis_bcftools_norm }],
         q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Vt qw{ analysis_vt_panel };
+use MIP::Recipes::Analysis::Bcftools_norm qw{ analysis_bcftools_norm };
 
-diag(   q{Test analysis_vt_panel from Vt.pm}
+diag(   q{Test analysis_bcftools_norm from Bcftools_norm.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -50,7 +50,7 @@ diag(   q{Test analysis_vt_panel from Vt.pm}
 my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{vt};
+my $recipe_name    = q{bcftools_norm};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -62,10 +62,12 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
+
+$active_parameter{bcftools_core}                     = 0;
+$active_parameter{recipe_core_number}{bcftools_core} = 1;
+$active_parameter{recipe_time}{bcftools_core}        = 1;
+
 my $case_id = $active_parameter{case_id};
-$active_parameter{vt_uniq}      = 1;
-$active_parameter{vt_decompose} = 1;
-$active_parameter{vt_normalize} = 1;
 
 my %file_info = test_mip_hashes(
     {
@@ -84,17 +86,17 @@ my %parameter = test_mip_hashes(
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $case_id,
-        parameter_href    => \%parameter,
-        recipe_name       => $recipe_name,
-        step              => q{vcf},
+        file_info_href => \%file_info,
+        id             => $case_id,
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{vcf},
     }
 );
 
 my %sample_info;
 
-my $is_ok = analysis_vt_panel(
+my $is_ok = analysis_bcftools_norm(
     {
         active_parameter_href => \%active_parameter,
         case_id               => $case_id,

@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::Vt;
+package MIP::Recipes::Analysis::Bcftools_norm;
 
 use 5.026;
 use Carp;
@@ -26,11 +26,11 @@ BEGIN {
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_vt analysis_vt_panel };
+    our @EXPORT_OK = qw{ analysis_bcftools_norm analysis_bcftools_norm_panel };
 
 }
 
-sub analysis_vt {
+sub analysis_bcftools_norm {
 
 ## Function : Split multi allelic records into single records and normalize
 ## Returns  :
@@ -136,7 +136,7 @@ sub analysis_vt {
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
-    use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core_rio};
+    use MIP::Recipes::Analysis::Bcftools_core qw{ analysis_bcftools_core };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -220,8 +220,7 @@ sub analysis_vt {
 
     ### SHELL:
 
-    say {$filehandle}
-q{## vt - Decompose (split multi allelic records into single records) and/or normalize variants};
+    say {$filehandle} q{## Bcftools - decompose and normalize variants};
 
     my $xargs_file_path_prefix;
 
@@ -241,20 +240,14 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
   CONTIG:
     while ( my ( $contig_index, $contig ) = each @contigs_size_ordered ) {
 
-        ## vt - Split multi allelic records into single records and normalize
-        analysis_vt_core_rio(
+        analysis_bcftools_core(
             {
                 active_parameter_href  => $active_parameter_href,
                 cmd_break              => $SEMICOLON,
                 contig                 => $contig,
-                decompose              => $active_parameter_href->{vt_decompose},
                 filehandle             => $xargsfilehandle,
-                gnu_sed                => 1,
                 infile_path            => $infile_path{$contig},
-                instream               => 0,
-                normalize              => $active_parameter_href->{vt_normalize},
                 outfile_path           => $outfile_path{$contig},
-                uniq                   => $active_parameter_href->{vt_uniq},
                 xargs_file_path_prefix => $xargs_file_path_prefix,
             }
         );
@@ -268,11 +261,11 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
               splitpath($xargs_file_path_prefix);
 
             ## Collect QC metadata info for later use
-            my $qc_vt_outfile_path =
+            my $qc_bcftools_outfile_path =
               catfile( $directory, $stderr_file_xargs . $DOT . $contig . $DOT . q{stderr.txt} );
             set_recipe_outfile_in_sample_info(
                 {
-                    path             => $qc_vt_outfile_path,
+                    path             => $qc_bcftools_outfile_path,
                     recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                 }
@@ -281,7 +274,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
 
         ## VEP does not annotate '*' since the alt allele does not exist, this is captured in the upstream indel and SNV record associated with '*'
         ## Remove decomposed '*' entries
-        if ( $active_parameter_href->{vt_missing_alt_allele} ) {
+        if ( $active_parameter_href->{bcftools_missing_alt_allele} ) {
 
             # Update file tag
             my $alt_file_tag = $UNDERSCORE . q{nostar};
@@ -340,7 +333,7 @@ q{## vt - Decompose (split multi allelic records into single records) and/or nor
     return 1;
 }
 
-sub analysis_vt_panel {
+sub analysis_bcftools_norm_panel {
 
 ## Function : Split multi allelic records into single records and normalize
 ## Returns  :
@@ -438,7 +431,7 @@ sub analysis_vt_panel {
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Recipes::Analysis::Vt_core qw{ analysis_vt_core_rio};
+    use MIP::Recipes::Analysis::Bcftools_core qw{ analysis_bcftools_core };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -513,29 +506,22 @@ sub analysis_vt_panel {
 
     ### SHELL:
 
-    say {$filehandle}
-q{## vt - Decompose (split multi allelic records into single records) and/or normalize variants};
+    say {$filehandle} q{## Bcftools - Decompose and normalize variants};
 
-    ## vt - Split multi allelic records into single records and normalize
-    analysis_vt_core_rio(
+    analysis_bcftools_core(
         {
             active_parameter_href => $active_parameter_href,
             cmd_break             => $SEMICOLON,
-            decompose             => $active_parameter_href->{vt_decompose},
             filehandle            => $filehandle,
-            gnu_sed               => 1,
             infile_path           => $infile_path,
-            instream              => 0,
-            normalize             => $active_parameter_href->{vt_normalize},
             outfile_path          => $outfile_path,
-            uniq                  => $active_parameter_href->{vt_uniq},
         }
     );
     say {$filehandle} $NEWLINE;
 
     ## VEP does not annotate '*' since the alt allele does not exist, this is captured in the upstream indel and SNV record associated with '*'
     ## Remove decomposed '*' entries
-    if ( $active_parameter_href->{vt_missing_alt_allele} ) {
+    if ( $active_parameter_href->{bcftools_missing_alt_allele} ) {
 
         my $removed_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{nostar} . $outfile_suffix;
         perl_nae_oneliners(

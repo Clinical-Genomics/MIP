@@ -335,6 +335,7 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Bcftools_norm qw{ analysis_bcftools_norm };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Endvariantannotationblock qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
@@ -353,7 +354,6 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     use MIP::Recipes::Analysis::Vcf_rerun_reformat
       qw{ analysis_vcf_rerun_reformat_sv analysis_vcf_rerun_reformat };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs analysis_vep_sv_wes analysis_vep_sv_wgs };
-    use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Human_genome_prerequisites qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Rd_dna_vcf_rerun qw{build_rd_dna_vcf_rerun_meta_files};
 
@@ -397,6 +397,7 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus                => \&analysis_analysisrunstatus,
+        bcftools_norm                    => \&analysis_bcftools_norm,
         cadd_ar                          => \&analysis_cadd,
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
         frequency_filter                 => \&analysis_frequency_filter,
@@ -415,7 +416,6 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
         vcfparser_ar              => \&analysis_mip_vcfparser,
         vcf_rerun_reformat        => \&analysis_vcf_rerun_reformat,
         version_collect_ar        => \&analysis_mip_vercollect,
-        vt_ar                     => \&analysis_vt,
     );
 
     ## Special case for rankvariants recipe

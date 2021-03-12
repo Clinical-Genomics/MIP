@@ -364,6 +364,7 @@ sub pipeline_analyse_dragen_rd_dna {
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Bcftools_norm qw{ analysis_bcftools_norm };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Dragen_dna
       qw{ analysis_dragen_dna_align_vc analysis_dragen_dna_joint_calling };
@@ -384,7 +385,6 @@ sub pipeline_analyse_dragen_rd_dna {
     use MIP::Recipes::Analysis::Vcf_rerun_reformat
       qw{ analysis_vcf_rerun_reformat_sv analysis_vcf_rerun_reformat };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs analysis_vep_sv_wes analysis_vep_sv_wgs };
-    use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Human_genome_prerequisites qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Dragen_rd_dna qw{build_dragen_rd_dna_meta_files};
 
@@ -428,6 +428,7 @@ sub pipeline_analyse_dragen_rd_dna {
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus                => \&analysis_analysisrunstatus,
+        bcftools_norm                    => \&analysis_bcftools_norm,
         cadd_ar                          => \&analysis_cadd,
         dragen_dna_align_vc              => \&analysis_dragen_dna_align_vc,
         dragen_dna_joint_calling         => \&analysis_dragen_dna_joint_calling,
@@ -448,7 +449,6 @@ sub pipeline_analyse_dragen_rd_dna {
         vcfparser_ar              => \&analysis_mip_vcfparser,
         vcf_rerun_reformat        => \&analysis_vcf_rerun_reformat,
         version_collect_ar        => \&analysis_mip_vercollect,
-        vt_ar                     => \&analysis_vt,
     );
 
     ## Special case for rankvariants recipe

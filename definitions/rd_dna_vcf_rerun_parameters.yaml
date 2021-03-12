@@ -45,7 +45,7 @@ gatk_path:
 human_genome_reference:
   associated_recipe:
     - mip
-    - vt_ar
+    - bcftools_norm
   data_type: SCALAR
   default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
@@ -54,7 +54,7 @@ human_genome_reference:
   type: path
 human_genome_reference_file_endings:
   associated_recipe:
-    - vt_ar
+    - bcftools_norm
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -68,6 +68,8 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    bcftools_norm: 13
+    bcftools_core: 1
     cadd_ar: 13
     endvariantannotationblock: 1
     frequency_filter: 13
@@ -82,8 +84,6 @@ recipe_core_number:
     variant_annotation: 13
     vcf_rerun_reformat: 1
     version_collect_ar: 1
-    vt_ar: 13
-    vt_core: 1
   type: mip
 recipe_memory:
   associated_recipe:
@@ -105,6 +105,8 @@ recipe_time:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    bcftools_norm: 10
+    bcftools_core: 10
     cadd_ar: 10
     endvariantannotationblock: 2
     frequency_filter: 2
@@ -123,8 +125,6 @@ recipe_time:
     vcf_rerun_reformat: 1
     vcfparser_ar: 5
     version_collect_ar: 1
-    vt_ar: 10
-    vt_core: 10
   type: mip
 picardtools_path:
   associated_recipe:
@@ -440,56 +440,42 @@ rhocall_frequency_file:
   is_reference: 1
   reference: reference_dir
   type: path
-## VT
-vt_ar:
+## Bcftools norm
+bcftools_norm:
   analysis_mode: case
   associated_recipe:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: _vt
+  file_tag: _norm
   program_executables:
-    - vt
+    - bcftools
     - bgzip
     - tabix
   outfile_suffix: ".vcf"
   type: recipe
-vt_decompose:
+bcftools_normalize:
   associated_recipe:
-    - vt_ar
-    - vt_core
+    - bcftools_norm
+    - bcftools_core
   data_type: SCALAR
   default: 1
   type: recipe_argument
-vt_normalize:
+bcftools_missing_alt_allele:
   associated_recipe:
-    - vt_ar
-    - vt_core
+    - bcftools_norm
   data_type: SCALAR
   default: 1
   type: recipe_argument
-vt_missing_alt_allele:
-  associated_recipe:
-    - vt_ar
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
-vt_uniq:
-  associated_recipe:
-    - vt_ar
-    - vt_core
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
-vt_core:
+bcftools_core:
   analysis_mode: case
   associated_recipe:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: _vt
+  file_tag: _norm
   program_executables:
-    - vt
+    - bcftools
     - bgzip
     - tabix
   type: recipe

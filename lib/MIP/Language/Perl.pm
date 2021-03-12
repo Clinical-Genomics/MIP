@@ -344,6 +344,7 @@ sub perl_nae_oneliners {
     my %oneliner = (
         add_binary                           => \&_add_binary,
         add_pct_mapped_reads_from_samtools   => \&_add_pct_mapped_reads_from_samtools,
+        bcftools_norm_check                  => \&_bcftools_norm_check,
         build_md5sum_check                   => \&_build_md5sum_check,
         genepred_to_refflat                  => \&_genepred_to_refflat,
         get_dict_contigs                     => \&_get_dict_contigs,
@@ -514,6 +515,26 @@ sub _add_pct_mapped_reads_from_samtools {
     $add_pct_mapped_reads_from_samtools .= q?'?;
 
     return $add_pct_mapped_reads_from_samtools;
+}
+
+sub _bcftools_norm_check {
+
+## Function : Return vcf header line matching bcftools norm command
+## Returns  : $bcftools_norm_line
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    ## Find vcf_key
+    my $bcftools_norm_line = q?'if($_=~/\A[#]{2}? . q{bcftools_norm} . q?/) { ?;
+
+    ## Write to stdout
+    $bcftools_norm_line .= q?print $_} ?;
+
+    ## If header is finished quit
+    $bcftools_norm_line .= q?if($_=~ /\A#CHROM/) {last}'?;
+
+    return $bcftools_norm_line;
 }
 
 sub _build_md5sum_check {
