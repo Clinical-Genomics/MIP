@@ -59,13 +59,11 @@ my %active_parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$active_parameter{$recipe_name}                     = 1;
+$active_parameter{$recipe_name}                     = 0;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-my $case_id = $active_parameter{case_id};
-$active_parameter{bcftools_normalize} = 1;
 
-$active_parameter{bcftools_core} = 0;
+my $case_id = $active_parameter{case_id};
 
 my %file_info = test_mip_hashes(
     {
