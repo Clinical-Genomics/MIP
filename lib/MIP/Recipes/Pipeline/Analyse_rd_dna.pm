@@ -260,12 +260,12 @@ sub parse_rd_dna {
 
     ## Check that all active variant callers have a prioritization order and that the prioritization elements match a
     ## supported variant caller
-    parse_prioritize_variant_callers(
-        {
-            active_parameter_href => $active_parameter_href,
-            parameter_href        => $parameter_href,
-        }
-    );
+    ##  parse_prioritize_variant_callers(
+    ##      {
+    ##          active_parameter_href => $active_parameter_href,
+    ##          parameter_href        => $parameter_href,
+    ##      }
+    ##  );
 
     ## Update prioritize flag depending on analysis run value as some recipes are not applicable for e.g. wes
     $active_parameter_href->{sv_svdb_merge_prioritize} = update_prioritize_flag(

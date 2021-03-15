@@ -230,12 +230,12 @@ sub parse_rd_dna_panel {
     );
 
     ## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller
-    parse_prioritize_variant_callers(
-        {
-            active_parameter_href => $active_parameter_href,
-            parameter_href        => $parameter_href,
-        }
-    );
+    ## parse_prioritize_variant_callers(
+    ##    {
+    ##        active_parameter_href => $active_parameter_href,
+    ##        parameter_href        => $parameter_href,
+    ##     }
+    ## );
 
     ## Write config file for case
     write_mip_config(
