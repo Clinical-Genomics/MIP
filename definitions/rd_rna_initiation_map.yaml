@@ -15,6 +15,7 @@ CHAIN_ALL:
     - megafusion_ar
     - svdb_merge_fusion
     - fusion_report
+    - merge_fusion_reports
   - CHAIN_MAIN:
     - star_aln
     - picardtools_mergesamfiles

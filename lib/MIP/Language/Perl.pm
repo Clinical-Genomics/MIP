@@ -354,6 +354,7 @@ sub perl_nae_oneliners {
         q{get_fastq_header_v1.8_interleaved} => \&_get_fastq_header_v1_8_interleaved,
         get_fastq_read_length                => \&_get_fastq_read_length,
         get_gene_panel_header                => \&_get_gene_panel_info,
+        get_gene_panel_hgnc_symbols          => \&_get_gene_panel_hgnc_symbols,
         get_rrna_transcripts                 => \&_get_rrna_transcripts,
         get_select_contigs_by_col            => \&_get_select_contigs_by_col,
         get_vcf_header_id_line               => \&_get_vcf_header_id_line,
@@ -761,6 +762,23 @@ sub _get_gene_panel_info {
     $gene_panel_info_regexp .= q?print $1 . q{:}} elsif (/ \A [#]{1} \w /xms ) {last;}'?;
 
     return $gene_panel_info_regexp;
+}
+
+sub _get_gene_panel_hgnc_symbols {
+
+## Function : Return HGNC symbols from gene panel
+## Returns  : $gene_panel_hgnc_symbols
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    # If line starts with gene panel comment
+    my $gene_panel_hgnc_symbols = q?'next if (/ \A [#] /xms ); ?;
+
+    # Append ":". Skip rest if it's a comment
+    $gene_panel_hgnc_symbols .= q?print $F[4]'?;
+
+    return $gene_panel_hgnc_symbols;
 }
 
 sub _reformat_sacct_headers {
