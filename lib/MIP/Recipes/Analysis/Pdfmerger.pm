@@ -145,15 +145,15 @@ sub analysis_merge_fusion_reports {
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 parameter_href => $parameter_href,
-                recipe_name    => $recipe_name,
-                stream         => q{in},
+                recipe_name    => q{fusion_report},
+                stream         => q{out},
             }
         );
-        push @{ $infile{research} }, $sample_io{in}{file_paths}->[0];
+        push @{ $infile{research} }, $sample_io{out}{file_paths}->[0];
 
         if ( @report_types > 1 ) {
 
-            push @{ $infile{clinical} }, $sample_io{in}{file_paths}->[1];
+            push @{ $infile{clinical} }, $sample_io{out}{file_paths}->[1];
         }
     }
 

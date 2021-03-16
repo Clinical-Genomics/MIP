@@ -468,6 +468,7 @@ fusion_report:
   file_tag: _report
   outfile_suffix: ".pdf"
   program_executables:
+    - perl
     - draw_fusions.R
   type: recipe
 fusion_cytoband_path:

@@ -87,7 +87,7 @@ foreach my $sample_id ( @{ $active_parameter{sample_ids} } ) {
             file_info_href => \%file_info,
             id             => $sample_id,
             parameter_href => \%parameter,
-            recipe_name    => $recipe_name,
+            recipe_name    => q{fusion_report},
             step           => q{vcf},
         }
     );

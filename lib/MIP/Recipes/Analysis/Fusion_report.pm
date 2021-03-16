@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -221,7 +221,7 @@ sub analysis_fusion_report {
         {
             active_parameter_href => $active_parameter_href,
             core_number           => $recipe{core_number},
-            directory_id          => $case_id,
+            directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $recipe{memory},
@@ -244,11 +244,11 @@ sub analysis_fusion_report {
 
             perl_nae_oneliners(
                 {
+                    filehandle     => $filehandle,
                     oneliner_name  => q{get_gene_panel_hgnc_symbols},
                     print_newline  => 1,
-                    use_container  => 1,
-                    filehandle     => $filehandle,
                     stdinfile_path => $active_parameter_href->{fusion_select_file},
+                    use_container  => 1,
                 }
             );
             print {$filehandle} $PIPE . $SPACE;
@@ -270,7 +270,9 @@ sub analysis_fusion_report {
                     filehandle       => $filehandle,
                     filter_file_path => $gene_list_path,
                     infile_path      => $infile_path,
+                    pattern          => $SINGLE_QUOTE . q{^#gene1} . $SINGLE_QUOTE,
                     stdoutfile_path  => $fusion_file_path,
+                    word_regexp      => 1,
                 }
             );
             say {$filehandle} $NEWLINE;
