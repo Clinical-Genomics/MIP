@@ -224,10 +224,11 @@ sub analysis_bcftools_core {
 
     bcftools_norm(
         {
-            filehandle     => $filehandle,
-            infile_path    => q{-},
-            multiallelic   => q{-},
-            reference_path => $human_genome_reference,
+            filehandle      => $filehandle,
+            infile_path     => q{-},
+            multiallelic    => q{-},
+            reference_check => q{s},
+            reference_path  => $human_genome_reference,
         }
     );
 
