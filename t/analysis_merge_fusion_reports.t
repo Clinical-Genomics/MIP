@@ -64,8 +64,6 @@ $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 $active_parameter{fusion_outfile_count}             = 2;
 
-#my $case_id   = $active_parameter{case_id};
-#my $sample_id = $active_parameter{sample_ids}[0];
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
