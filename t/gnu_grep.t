@@ -20,9 +20,8 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $COMMA $EQUALS $SPACE };
 use MIP::Test::Commands qw{ test_function };
-
 
 BEGIN {
 
@@ -30,9 +29,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Gnu::Software::Gnu_grep} => [qw{ gnu_grep }],
-    );
+    my %perl_module = ( q{MIP::Program::Gnu::Software::Gnu_grep} => [qw{ gnu_grep }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -92,7 +89,7 @@ my %specific_argument = (
     },
     pattern => {
         input           => q{^chr},
-        expected_output => q{^chr},
+        expected_output => q{--regexp} . $EQUALS . q{^chr},
     },
     word_regexp => {
         input           => 1,

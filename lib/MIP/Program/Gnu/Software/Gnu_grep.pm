@@ -15,7 +15,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $EQUALS $SPACE };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
@@ -113,12 +113,12 @@ sub gnu_grep {
     }
     if ($filter_file_path) {
 
-        push @commands, q{--file=} . $filter_file_path;
+        push @commands, q{--file} . $EQUALS . $filter_file_path;
     }
 
     if ($pattern) {
 
-        push @commands, $pattern;
+        push @commands, q{--regexp} . $EQUALS . $pattern;
     }
 
     ## Infile

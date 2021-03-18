@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -32,16 +32,17 @@ BEGIN {
 
 sub analysis_fusion_report {
 
-## Function : Generate a single fusion report from arriba fusion calls
+## Function : Generate clinical and research fusion reports from arriba fusion calls
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $case_id               => Family id
 ##          : $file_info_href        => File_info hash {REF}
-##          : $job_id_href           => Job id hash {REF}
+##          : $job_id_href           => Job id hash {REF}    my ($arg_href) = @_;
 ##          : $parameter_href        => Parameter hash {REF}
-##          : $profile_base_command  => Submission profile base command
-##          : $recipe_name           => Recipe name
-##          : $sample_info_href      => Info on samples and case hash {REF}
+##          : $profile_base_command  => Submission profile base command    ## Flatten argument(s)
+##          : $recipe_name           => Recipe name    my $active_parameter_href;
+##          : $sample_id             => Sample id    my $file_info_href;
+##          : $sample_info_href      => Info on samples and case hash {REF    my $job_id_href;
 
     my ($arg_href) = @_;
 
@@ -51,6 +52,7 @@ sub analysis_fusion_report {
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
+    my $sample_id;
     my $sample_info_href;
 
     ## Default(s)
@@ -102,6 +104,12 @@ sub analysis_fusion_report {
             store       => \$recipe_name,
             strict_type => 1,
         },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -113,15 +121,17 @@ sub analysis_fusion_report {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_uniq };
     use MIP::Program::Arriba qw{ draw_fusions };
-    use MIP::Program::Pdfmerger qw{ pdfmerger };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{
       get_pedigree_sample_id_attributes
-      set_file_path_to_store
-      set_recipe_outfile_in_sample_info };
+      set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -129,24 +139,20 @@ sub analysis_fusion_report {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my %infile;
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        ## Get the io infiles per chain and id
-        my %sample_io = get_io_files(
-            {
-                id             => $sample_id,
-                file_info_href => $file_info_href,
-                parameter_href => $parameter_href,
-                recipe_name    => q{arriba_ar},
-                stream         => q{out},
-            }
-        );
-        $infile{$sample_id}{file_name_prefix} = $sample_io{out}{file_name_prefixes}[0];
-        $infile{$sample_id}{file_path}        = ${ $sample_io{out}{file_paths} }[0];
-        $infile{$sample_id}{file_path_prefix} = ${ $sample_io{out}{file_path_prefixes} }[0];
-    }
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            recipe_name    => q{arriba_ar},
+            stream         => q{out},
+        }
+    );
+    my $infile_name_prefix = $io{out}{file_name_prefix};
+    my $infile_path        = $io{out}{file_path};
+    my $infile_path_prefix = $io{out}{file_path_prefix};
+    my $infile_suffix      = $io{out}{file_suffix};
 
     my %recipe = parse_recipe_prerequisites(
         {
@@ -156,26 +162,55 @@ sub analysis_fusion_report {
         }
     );
 
+    my $sample_display_name = get_pedigree_sample_id_attributes(
+        {
+            attribute        => q{sample_display_name},
+            sample_id        => $sample_id,
+            sample_info_href => $sample_info_href,
+        }
+    );
+
+    if ( $sample_display_name
+        and not $active_parameter_href->{fusion_use_sample_id_as_display_name} )
+    {
+
+        $infile_name_prefix = $sample_display_name;
+    }
+
+    my @report_types = get_vcf_parser_analysis_suffix(
+        {
+            vcfparser_outfile_count => $active_parameter_href->{fusion_outfile_count},
+        }
+    );
+
     ## Set and get the io files per chain, id and stream
-    my %io = (
+    %io = (
+        %io,
         parse_io_outfiles(
             {
-                chain_id               => $recipe{job_id_chain},
-                id                     => $case_id,
-                file_info_href         => $file_info_href,
-                file_name_prefixes_ref => [$case_id],
-                outdata_dir            => $active_parameter_href->{outdata_dir},
-                parameter_href         => $parameter_href,
-                recipe_name            => $recipe_name,
+                chain_id         => $recipe{job_id_chain},
+                id               => $sample_id,
+                file_info_href   => $file_info_href,
+                iterators_ref    => \@report_types,
+                file_name_prefix => $infile_name_prefix,
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                recipe_name      => $recipe_name,
             }
         )
     );
-    my $outdir_path  = $io{out}{dir_path};
-    my $outfile_name = $io{out}{file_names}[0];
-    my $outfile_path = $io{out}{file_paths}[0];
+    my $outdir_path = $io{out}{dir_path};
+    my %outfile     = (
+        research => {
+            file_path   => $io{out}{file_paths}->[0],
+            file_suffix => $io{out}{file_suffixes}->[0],
+        },
+    );
+    if ( @report_types > 1 ) {
 
-    my $use_sample_id_as_display_name =
-      $active_parameter_href->{fusion_use_sample_id_as_display_name};
+        $outfile{clinical}{file_path}   = $io{out}{file_paths}->[1];
+        $outfile{clinical}{file_suffix} = $io{out}{file_suffixes}->[1];
+    }
 
     ## Filehandles
     # Create anonymous filehandle
@@ -186,7 +221,7 @@ sub analysis_fusion_report {
         {
             active_parameter_href => $active_parameter_href,
             core_number           => $recipe{core_number},
-            directory_id          => $case_id,
+            directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $recipe{memory},
@@ -200,82 +235,89 @@ sub analysis_fusion_report {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    my @report_paths;
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
+  TAG:
+    foreach my $tag ( keys %outfile ) {
 
-        my $report_path =
-          catfile( $outdir_path, $infile{$sample_id}{file_name_prefix} . $DOT . q{pdf} );
-        my $sample_display_name = get_pedigree_sample_id_attributes(
-            {
-                attribute        => q{sample_display_name},
-                sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-        if ( $sample_display_name and not $use_sample_id_as_display_name ) {
+        my $fusion_file_path = $infile_path;
 
-            $report_path =
-              catfile( $outdir_path, $sample_display_name . $UNDERSCORE . q{fusions.pdf} );
+        if ( $outfile{$tag}{file_suffix} eq q{.selected.pdf} ) {
+
+            perl_nae_oneliners(
+                {
+                    filehandle     => $filehandle,
+                    oneliner_name  => q{get_gene_panel_hgnc_symbols},
+                    print_newline  => 1,
+                    stdinfile_path => $active_parameter_href->{fusion_select_file},
+                    use_container  => 1,
+                }
+            );
+            print {$filehandle} $PIPE . $SPACE;
+
+            my $gene_list_path = catfile( $outdir_path, q{select_genes.txt} );
+            gnu_uniq(
+                {
+                    filehandle      => $filehandle,
+                    infile_path     => q{-},
+                    stdoutfile_path => $gene_list_path,
+                }
+            );
+            say {$filehandle} $NEWLINE;
+
+            $fusion_file_path =
+              catfile( $outdir_path, $infile_name_prefix . $DOT . q{selected} . $infile_suffix );
+            gnu_grep(
+                {
+                    filehandle       => $filehandle,
+                    filter_file_path => $gene_list_path,
+                    infile_path      => $infile_path,
+                    pattern          => $SINGLE_QUOTE . q{^#gene1} . $SINGLE_QUOTE,
+                    stdoutfile_path  => $fusion_file_path,
+                    word_regexp      => 1,
+                }
+            );
+            say {$filehandle} $NEWLINE;
         }
 
-        my $bam_file_path = $infile{$sample_id}{file_path_prefix} . $DOT . q{bam};
+        my $bam_file_path = $infile_path_prefix . $DOT . q{bam};
         draw_fusions(
             {
                 alignment_file_path      => $bam_file_path,
                 annotation_file_path     => $active_parameter_href->{transcript_annotation},
                 cytoband_file_path       => $active_parameter_href->{fusion_cytoband_path},
                 filehandle               => $filehandle,
-                fusion_file_path         => $infile{$sample_id}{file_path},
-                outfile_path             => $report_path,
+                fusion_file_path         => $fusion_file_path,
+                outfile_path             => $outfile{$tag}{file_path},
                 protein_domain_file_path => $active_parameter_href->{fusion_protein_domain_path},
             }
         );
         say {$filehandle} $NEWLINE;
-        push @report_paths, $report_path;
     }
-
-    say {$filehandle} q{## Merge fusion reports};
-    pdfmerger(
-        {
-            filehandle       => $filehandle,
-            infile_paths_ref => \@report_paths,
-            orientation      => q{landscape},
-            outdir_path      => $outdir_path,
-            outfile_name     => $outfile_name,
-            write_filenames  => 1,
-        }
-    );
 
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
 
-        ## Collect QC metadata info for later use
-        set_recipe_outfile_in_sample_info(
-            {
-                path             => $outfile_path,
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
+      TAG:
+        foreach my $tag ( keys %outfile ) {
 
-        set_file_path_to_store(
-            {
-                format           => q{meta},
-                id               => $case_id,
-                path             => $outfile_path,
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
+            ## Collect QC metadata info for later use
+            set_recipe_metafile_in_sample_info(
+                {
+                    metafile_tag     => $tag,
+                    path             => $outfile{$tag}{file_path},
+                    recipe_name      => $recipe_name,
+                    sample_id        => $sample_id,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+        }
 
         submit_recipe(
             {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
-                dependency_method                 => q{case_to_island},
+                dependency_method                 => q{sample_to_sample},
                 job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
@@ -283,7 +325,7 @@ sub analysis_fusion_report {
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
-                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                sample_id          => $sample_id,
                 submission_profile => $active_parameter_href->{submission_profile},
             }
         );

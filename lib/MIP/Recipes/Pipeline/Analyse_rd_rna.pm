@@ -96,6 +96,7 @@ sub parse_rd_rna {
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
       parse_infiles
+      set_vcfparser_outfile_counter
       write_references
     };
     use MIP::Analysis qw{ broadcast_parameters check_ids_in_dna_vcf
@@ -140,6 +141,9 @@ sub parse_rd_rna {
             parameter_href        => $parameter_href,
         }
     );
+
+    ## Update the expected number of outfiles after fusion_report
+    set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -376,6 +380,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Blobfish qw{ analysis_blobfish };
     use MIP::Recipes::Analysis::BootstrapAnn qw{ analysis_bootstrapann };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
+    use MIP::Recipes::Analysis::Fusion_report qw{ analysis_fusion_report };
     use MIP::Recipes::Analysis::Gatk_asereadcounter qw{ analysis_gatk_asereadcounter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration_rna };
     use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
@@ -389,7 +394,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
-    use MIP::Recipes::Analysis::Fusion_report qw{ analysis_fusion_report };
+    use MIP::Recipes::Analysis::Pdfmerger qw{ analysis_merge_fusion_reports };
     use MIP::Recipes::Analysis::Picardtools_collectrnaseqmetrics
       qw{ analysis_picardtools_collectrnaseqmetrics };
     use MIP::Recipes::Analysis::Picardtools_mergesamfiles qw{ analysis_picardtools_mergesamfiles };
@@ -450,6 +455,7 @@ sub pipeline_analyse_rd_rna {
         gffcompare_ar                    => \&analysis_gffcompare,
         markduplicates                   => \&analysis_markduplicates,
         megafusion_ar                    => \&analysis_megafusion,
+        merge_fusion_reports             => \&analysis_merge_fusion_reports,
         multiqc_ar                       => \&analysis_multiqc,
         picardtools_collectrnaseqmetrics => \&analysis_picardtools_collectrnaseqmetrics,
         picardtools_mergesamfiles        => \&analysis_picardtools_mergesamfiles,
