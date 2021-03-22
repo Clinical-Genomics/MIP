@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::Svdb_merge_fusion;
+package MIP::Recipes::Analysis::Pdfmerger;
 
 use 5.026;
 use Carp;
@@ -26,13 +26,13 @@ BEGIN {
 
     # Set the version for version checking
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_svdb_merge_fusion };
+    our @EXPORT_OK = qw{ analysis_merge_fusion_reports };
 
 }
 
-sub analysis_svdb_merge_fusion {
+sub analysis_merge_fusion_reports {
 
-## Function : Merge sample fusion calls to a case vcf
+## Function : Generate a single fusion report from arriba fusion calls
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $case_id               => Family id
@@ -113,13 +113,15 @@ sub analysis_svdb_merge_fusion {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
-    use MIP::Program::Bcftools qw{ bcftools_view bcftools_index };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
-    use MIP::Program::Svdb qw{ svdb_merge };
+    use MIP::Program::Pdfmerger qw{ pdfmerger };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{
+      get_pedigree_sample_id_attributes
+      set_file_path_to_store
+      set_recipe_metafile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -127,23 +129,32 @@ sub analysis_svdb_merge_fusion {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Unpack parameters
-    ## Get the io infiles per chain and id
-    my @infile_paths;
+    my @report_types = get_vcf_parser_analysis_suffix(
+        {
+            vcfparser_outfile_count => $active_parameter_href->{fusion_outfile_count},
+        }
+    );
+
+    my %infile;
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         ## Get the io infiles per chain and id
-        my %io = get_io_files(
+        my %sample_io = get_io_files(
             {
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 parameter_href => $parameter_href,
-                recipe_name    => q{megafusion_ar},
+                recipe_name    => q{fusion_report},
                 stream         => q{out},
             }
         );
-        push @infile_paths, $io{out}{file_path};
+        push @{ $infile{research} }, $sample_io{out}{file_paths}->[0];
+
+        if ( @report_types > 1 ) {
+
+            push @{ $infile{clinical} }, $sample_io{out}{file_paths}->[1];
+        }
     }
 
     my %recipe = parse_recipe_prerequisites(
@@ -158,20 +169,32 @@ sub analysis_svdb_merge_fusion {
     my %io = (
         parse_io_outfiles(
             {
-                chain_id               => $recipe{job_id_chain},
-                id                     => $case_id,
-                file_info_href         => $file_info_href,
-                file_name_prefixes_ref => [$case_id],
-                outdata_dir            => $active_parameter_href->{outdata_dir},
-                parameter_href         => $parameter_href,
-                recipe_name            => $recipe_name,
+                chain_id         => $recipe{job_id_chain},
+                id               => $case_id,
+                file_info_href   => $file_info_href,
+                file_name_prefix => $case_id,
+                iterators_ref    => \@report_types,
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                recipe_name      => $recipe_name,
             }
         )
     );
-    my $outfile_path = $io{out}{file_path};
+    my $outdir_path = $io{out}{dir_path};
+    my %outfile     = (
+        research => {
+            file_path => $io{out}{file_paths}->[0],
+            file_name => $io{out}{file_names}->[0],
+        },
+    );
+    if ( @report_types > 1 ) {
 
-    ## Filehandles
-    # Create anonymous filehandle
+        $outfile{clinical}{file_path} = $io{out}{file_paths}->[1];
+        $outfile{clinical}{file_name} = $io{out}{file_names}->[1];
+    }
+
+    ### Filehandles
+    ## Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
@@ -189,78 +212,62 @@ sub analysis_svdb_merge_fusion {
         }
     );
 
-    ### SHELL:
+    #### SHELL:
 
-    my $bcftools_infile_path;
+    say {$filehandle} q{## } . $recipe_name;
 
-    if ( @infile_paths > 1 ) {
+  TAG:
+    foreach my $tag ( keys %infile ) {
 
-        say {$filehandle} q{## Merge sample fusion files};
-        svdb_merge(
+        pdfmerger(
             {
                 filehandle       => $filehandle,
-                infile_paths_ref => \@infile_paths,
-                notag            => 1,
+                infile_paths_ref => $infile{$tag},
+                orientation      => q{landscape},
+                outdir_path      => $outdir_path,
+                outfile_name     => $outfile{$tag}{file_name},
+                write_filenames  => 1,
             }
         );
-        print {$filehandle} $PIPE . $SPACE;
-        $bcftools_infile_path = catfile( dirname( devnull() ), q{stdin} );
+        say {$filehandle} $NEWLINE;
     }
-    else {
-
-        say {$filehandle} q{## Rename file for single sample cases};
-        $bcftools_infile_path = $infile_paths[0];
-    }
-
-    bcftools_view(
-        {
-            filehandle   => $filehandle,
-            infile_path  => $bcftools_infile_path,
-            output_type  => q{z},
-            threads      => $recipe{core_number},
-            outfile_path => $outfile_path,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    bcftools_index(
-        {
-            filehandle  => $filehandle,
-            infile_path => $outfile_path,
-            output_type => q{tbi},
-        }
-    );
 
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
 
-        ## Collect QC metadata info for later use
-        set_recipe_outfile_in_sample_info(
-            {
-                path             => $outfile_path,
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
+      TAG:
+        foreach my $tag ( keys %outfile ) {
 
-        set_file_path_to_store(
-            {
-                format           => q{vcf},
-                id               => $case_id,
-                path             => $outfile_path,
-                path_index       => $outfile_path . $DOT . q{tbi},
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
+            ## Collect QC metadata info for later use
+            set_recipe_metafile_in_sample_info(
+                {
+                    sample_info_href => $sample_info_href,
+                    recipe_name      => $recipe_name,
+                    metafile_tag     => $tag,
+                    path             => $outfile{$tag}{file_path},
+                }
+            );
+
+            set_file_path_to_store(
+                {
+                    format           => q{meta},
+                    id               => $case_id,
+                    path             => $outfile{$tag}{file_path},
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                    tag              => $tag,
+                }
+            );
+
+        }
 
         submit_recipe(
             {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
-                dependency_method                 => q{sample_to_case},
+                dependency_method                 => q{case_to_island},
                 job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},

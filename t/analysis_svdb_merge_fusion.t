@@ -83,7 +83,7 @@ test_add_io_for_recipe(
     {
         file_info_href => \%file_info,
         parameter_href => \%parameter,
-        recipe_name    => $recipe_name,
+        recipe_name    => q{megafusion_ar},
         step           => q{vcf},
     }
 );
