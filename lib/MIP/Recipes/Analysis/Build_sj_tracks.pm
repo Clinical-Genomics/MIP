@@ -262,6 +262,7 @@ sub analysis_build_sj_tracks {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
+                tag              => q{coverage},
             }
         );
 
@@ -272,6 +273,7 @@ sub analysis_build_sj_tracks {
                 path             => $bed_outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
+                tag              => q{junction},
             }
         );
 
