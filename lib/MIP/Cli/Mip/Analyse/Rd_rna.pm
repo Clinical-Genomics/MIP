@@ -212,6 +212,24 @@ sub _build_usage {
     );
 
     option(
+        q{fusion_select_file} => (
+            cmd_tags      => [q{Format: tsv; HGNC Symbol required in file}],
+            documentation => q{Select file with list of genes to analyse separately},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{merge_fusion_reports} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Merge sample fusion reports to case},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{fusion_use_sample_id_as_display_name} => (
             cmd_tags      => [q{Default: 0}],
             documentation => q{Use sample id as display name for fusion report},

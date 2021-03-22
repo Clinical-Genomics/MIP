@@ -2584,8 +2584,9 @@ sub set_vcfparser_outfile_counter {
 
     ## Create link
     my %vcfparser_select_file = (
-        sv_vcfparser => { sv_vcfparser_select_file => q{sv_vcfparser_outfile_count} },
-        vcfparser_ar => { vcfparser_select_file    => q{vcfparser_outfile_count} },
+        sv_vcfparser  => { sv_vcfparser_select_file => q{sv_vcfparser_outfile_count} },
+        vcfparser_ar  => { vcfparser_select_file    => q{vcfparser_outfile_count} },
+        fusion_report => { fusion_select_file       => q{fusion_outfile_count} },
     );
 
 ## Determine if to expect select outfile for vcfparser and sv_vcfparser

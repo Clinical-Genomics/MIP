@@ -945,6 +945,13 @@ sub set_custom_default_to_active_parameter {
                 parameter_href        => $parameter_href,
             },
         },
+        fusion_select_file => {
+            method   => \&set_default_vcfparser_select_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
         infile_dirs => {
             method   => \&set_default_infile_dirs,
             arg_href => {
