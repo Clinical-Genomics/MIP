@@ -57,6 +57,9 @@ sub star_aln {
 ##           : $out_sam_strand_field          => Cufflinks-like strand field flag
 ##           : $out_sam_type                  => Format of the output aligned reads
 ##           : $out_sam_unmapped              => Write unmapped reads to main BAM file
+##           : $out_wig_norm                  => Normalize wig
+##           : $out_wig_strand                => Straandedness of wig output
+##           : $out_wig_type                  => Output wiggle
 ##           : $pe_overlap_nbases_min         => Min overlapp to trigger merging and realignment
 ##           : $quant_mode                    => Types of quantification requested
 ##           : $read_files_command            => A command which will be applied to the input files
@@ -91,6 +94,8 @@ sub star_aln {
     my $out_filter_multimap_nmax;
     my $out_sam_attr_rgline;
     my $out_sam_unmapped;
+    my $out_wig_strand;
+    my $out_wig_type;
     my $pe_overlap_nbases_min;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -102,6 +107,7 @@ sub star_aln {
     my $chim_segment_read_gap_max;
     my $out_sam_strand_field;
     my $out_sam_type;
+    my $out_wig_norm;
     my $quant_mode;
     my $read_files_command;
     my $two_pass_mode;
@@ -137,7 +143,7 @@ sub star_aln {
         chim_out_type => {
             allow => [
                 undef,
-                qw{ Junctions SeparateSAMold WithinBAM },
+                qw{Junctions SeparateSAMold WithinBAM},
                 q{WithinBAM HardClip},
                 q{WithinBAM SoftClip}
             ],
@@ -219,7 +225,7 @@ sub star_aln {
             strict_type => 1,
         },
         out_sam_strand_field => {
-            allow       => [ undef, qw{ None intronMotif } ],
+            allow       => [ undef, qw{None intronMotif} ],
             default     => q{None},
             store       => \$out_sam_strand_field,
             strict_type => 1,
@@ -230,8 +236,23 @@ sub star_aln {
             strict_type => 1,
         },
         out_sam_unmapped => {
-            allow       => [ qw{ None Within }, q{Within KeepPairs} ],
+            allow       => [ qw{None Within}, q{Within KeepPairs} ],
             store       => \$out_sam_unmapped,
+            strict_type => 1,
+        },
+        out_wig_norm => {
+            allow       => [ undef, qw{ None RPM } ],
+            default     => q{None},
+            store       => \$out_wig_norm,
+            strict_type => 1,
+        },
+        out_wig_strand => {
+            allow       => [ undef, qw{ Stranded Unstranded } ],
+            store       => \$out_wig_strand,
+            strict_type => 1,
+        },
+        out_wig_type => {
+            store       => \$out_wig_type,
             strict_type => 1,
         },
         pe_overlap_nbases_min => {
@@ -239,7 +260,7 @@ sub star_aln {
             strict_type => 1,
         },
         quant_mode => {
-            allow       => [qw{ - GeneCounts }],
+            allow       => [qw{- GeneCounts}],
             default     => q{GeneCounts},
             store       => \$quant_mode,
             strict_type => 1,
@@ -258,7 +279,7 @@ sub star_aln {
             strict_type => 1,
         },
         stdout_data_type => {
-            allow       => [qw{ Log SAM BAM_Unsorted BAM_SortedByCoordinate BAM_Quant }],
+            allow       => [qw{Log SAM BAM_Unsorted BAM_SortedByCoordinate BAM_Quant}],
             store       => \$stdout_data_type,
             strict_type => 1,
         },
@@ -272,7 +293,7 @@ sub star_aln {
             strict_type => 1,
         },
         two_pass_mode => {
-            allow       => [qw{ Basic None }],
+            allow       => [qw{Basic None}],
             default     => q{Basic},
             store       => \$two_pass_mode,
             strict_type => 1,
@@ -305,13 +326,11 @@ sub star_aln {
     }
     if ($align_sj_stitch_mismatch_nmax) {
 
-        push @commands,
-          q{--alignSJstitchMismatchNmax} . $SPACE . $align_sj_stitch_mismatch_nmax;
+        push @commands, q{--alignSJstitchMismatchNmax} . $SPACE . $align_sj_stitch_mismatch_nmax;
     }
     if ( defined $chim_junction_overhang_min ) {
 
-        push @commands,
-          q{--chimJunctionOverhangMin} . $SPACE . $chim_junction_overhang_min;
+        push @commands, q{--chimJunctionOverhangMin} . $SPACE . $chim_junction_overhang_min;
     }
     if ($chim_out_type) {
 
@@ -323,8 +342,7 @@ sub star_aln {
     }
     if ( defined $chim_score_junction_non_gtag ) {
 
-        push @commands,
-          q{--chimScoreJunctionNonGTAG} . $SPACE . $chim_score_junction_non_gtag;
+        push @commands, q{--chimScoreJunctionNonGTAG} . $SPACE . $chim_score_junction_non_gtag;
     }
     if ( defined $chim_score_min ) {
 
@@ -373,6 +391,18 @@ sub star_aln {
     if ($out_sam_unmapped) {
 
         push @commands, q{--outSAMunmapped} . $SPACE . $out_sam_unmapped;
+    }
+    if ($out_wig_norm) {
+
+        push @commands, q{--outWigNorm} . $SPACE . $out_wig_norm;
+    }
+    if ($out_wig_strand) {
+
+        push @commands, q{--outWigStrand} . $SPACE . $out_wig_strand;
+    }
+    if ($out_wig_type) {
+
+        push @commands, q{--outWigType} . $SPACE . $out_wig_type;
     }
     if ($pe_overlap_nbases_min) {
 

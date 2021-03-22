@@ -167,6 +167,15 @@ sub _build_usage {
     );
 
     option(
+        q{build_sj_tracks} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Build splice junction tracks for IGV},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{dna_vcf_file} => (
             cmd_flag      => q{dna_vcf_file},
             cmd_tags      => [q{Format: vcf | bcf}],

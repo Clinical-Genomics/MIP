@@ -133,6 +133,7 @@ recipe_time:
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 2
+    build_sj_tracks: 1
     dna_vcf_reformat: 1
     fastqc_ar: 1
     fusion_report: 1
@@ -170,6 +171,7 @@ recipe_memory:
   default:
     analysisrunstatus: 1
     arriba_ar: 3
+    build_sj_tracks: 2
     dna_vcf_reformat: 2
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
@@ -197,6 +199,7 @@ recipe_core_number:
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 1
+    build_sj_tracks: 1
     dna_vcf_reformat: 1
     fastqc_ar: 0
     fusion_report: 1
@@ -395,6 +398,19 @@ two_pass_mode:
   data_type: SCALAR
   default: Basic
   type: recipe_argument
+## Build SJ tracks
+build_sj_tracks:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _sj
+  outfile_suffix: ".bw"
+  program_executables:
+    - perl
+    - wigToBigWig
+  type: recipe
 ## Star Fusion
 star_fusion:
   analysis_mode: sample

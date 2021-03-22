@@ -379,6 +379,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Bcftools_merge qw{ analysis_bcftools_merge };
     use MIP::Recipes::Analysis::Blobfish qw{ analysis_blobfish };
     use MIP::Recipes::Analysis::BootstrapAnn qw{ analysis_bootstrapann };
+    use MIP::Recipes::Analysis::Build_sj_tracks qw{ analysis_build_sj_tracks };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Fusion_report qw{ analysis_fusion_report };
     use MIP::Recipes::Analysis::Gatk_asereadcounter qw{ analysis_gatk_asereadcounter };
@@ -443,6 +444,7 @@ sub pipeline_analyse_rd_rna {
         bcftools_merge                   => \&analysis_bcftools_merge,
         blobfish                         => \&analysis_blobfish,
         bootstrapann                     => \&analysis_bootstrapann,
+        build_sj_tracks                  => \&analysis_build_sj_tracks,
         dna_vcf_reformat                 => \&analysis_vcf_ase_reformat,
         fastqc_ar                        => \&analysis_fastqc,
         fusion_report                    => \&analysis_fusion_report,
