@@ -86,7 +86,7 @@ my %parameter = test_mip_hashes(
 );
 
 CALLER:
-foreach my $caller ( $active_parameter{gatk_combinevariants_callers_to_combine} ) {
+foreach my $caller ( @{ $active_parameter{gatk_combinevariants_callers_to_combine} } ) {
 
     test_add_io_for_recipe(
         {
@@ -133,7 +133,7 @@ my $is_ok = analysis_gatk_combinevariantcallsets(
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ multiple callers} );
 
 ## Given analysis parameters and single callers
-$active_parameter{gatk_combinevariants_callers_to_combine} = qw{ gatk_variantrecalibration };
+$active_parameter{gatk_combinevariants_callers_to_combine} = [ qw{ gatk_variantrecalibration } ];
 $is_ok = analysis_gatk_combinevariantcallsets(
     {
         active_parameter_href => \%active_parameter,
