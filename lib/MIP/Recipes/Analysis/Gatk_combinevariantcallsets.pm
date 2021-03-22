@@ -135,14 +135,14 @@ sub analysis_gatk_combinevariantcallsets {
     my @variant_callers;
 
     ## Only process active callers
-    ##  CALLER:
-    ##    foreach my $variant_caller ( @{ $parameter_href->{cache}{variant_callers} } ) {
-    ##        if ( $active_parameter_href->{$variant_caller} ) {
-    ##
-    ##            push @variant_callers, $variant_caller;
-    ##        }
-    ##    }
-    push @variant_callers, q {gatk_variantrecalibration};
+    CALLER:
+      foreach my $variant_caller ( $active_parameter_href->{gatk_combinevariants_callers_to_combine} ) {
+          if ( $active_parameter_href->{$variant_caller} ) {
+    
+                push @variant_callers, $variant_caller;
+          }
+        }
+
     ## Stores the parallel chains that job ids should be inherited from
     my @parallel_chains;
 

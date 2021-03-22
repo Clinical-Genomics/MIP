@@ -1404,6 +1404,15 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
     );
 
     option(
+        q{gatk_combinevariants_callers_to_combine} => (
+            cmd_flag      => q{gatk_combinevar_use_callers},
+            documentation => q{Combine vcf output from these recipes},
+            is            => q{rw},
+            isa           => enum( [qw{ gatk_variantcalibration glnexus_merge }] ),
+        )
+    );
+
+    option(
         q{gatk_variantevalall} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant evaluation using GATK varianteval for all variants},
