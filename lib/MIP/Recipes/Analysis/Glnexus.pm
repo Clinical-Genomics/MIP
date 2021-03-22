@@ -173,7 +173,7 @@ sub analysis_glnexus {
     );
 
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_path =
+    my $temp_outfile_path =
       catdir( $active_parameter_href->{temp_directory}, $io{out}{file_name_prefix} . q{.vcf} );
 
     ## Filehandles
@@ -211,7 +211,7 @@ sub analysis_glnexus {
                 filehandle       => $filehandle,
                 infile_paths_ref => \@genotype_infile_paths,
                 memory           => $memory,
-                stdoutfile_path  => $outfile_path,
+                stdoutfile_path  => $temp_outfile_path,
                 threads          => $core_number,
             }
         );
@@ -223,7 +223,7 @@ sub analysis_glnexus {
             {
                 filehandle          => $filehandle,
                 index_type          => q{tbi},
-                infile_path         => $outfile_path,
+                infile_path         => $temp_outfile_path,
                 outfile_path_prefix => $outfile_path_prefix,
                 output_type         => q{z},
                 threads             => $core_number,
@@ -251,7 +251,7 @@ sub analysis_glnexus {
 
         set_recipe_outfile_in_sample_info(
             {
-                path             => $outfile_path,
+                path             => $outfile_path_prefix . q{.vcf.gz},
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
