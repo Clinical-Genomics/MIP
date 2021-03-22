@@ -19,7 +19,7 @@ use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $BACKWARD_SLASH $COMMA $NEWLINE $SPACE };
+use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_mip_hashes };
 
 BEGIN {
@@ -79,10 +79,7 @@ my %container_cmd = set_executable_container_cmd(
 );
 
 my $expected_arriba_cmd =
-q{singularity exec --bind reference_dir!/a_dir:opt/conda/share/a_dir docker://docker.io/uhrigs/arriba:1.2.0 }
-  . $BACKWARD_SLASH
-  . $NEWLINE
-  . q{ /arriba_v1.2.0/arriba};
+q{singularity exec --bind reference_dir!/a_dir:opt/conda/share/a_dir docker://docker.io/uhrigs/arriba:1.2.0 /arriba_v1.2.0/arriba};
 
 ## Then return command for how to execute arriba using singularity
 is( $container_cmd{arriba}, $expected_arriba_cmd, q{Set singularity cmd for executable} );
