@@ -136,7 +136,7 @@ sub analysis_gatk_combinevariantcallsets {
 
     ## Only process active callers
     CALLER:
-      foreach my $variant_caller ( $active_parameter_href->{gatk_combinevariants_callers_to_combine} ) {
+      foreach my $variant_caller ( @{ $active_parameter_href->{gatk_combinevariants_callers_to_combine} } ) {
           if ( $active_parameter_href->{$variant_caller} ) {
     
                 push @variant_callers, $variant_caller;

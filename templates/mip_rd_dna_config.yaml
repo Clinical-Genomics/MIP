@@ -47,7 +47,7 @@ fqf_annotations:
   - GNOMADAF
   - GNOMADAF_popmax
   - SWEGENAF
-gatk_combinevariants_prioritize_caller: deepvariant
+gatk_combinevariants_prioritize_caller: deepvariant,haplotypecaller
 gatk_combinevariants_callers_to_combine:
   - gatk_variantrecalibration
   - glnexus_merge
