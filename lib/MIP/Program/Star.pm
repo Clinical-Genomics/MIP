@@ -58,7 +58,7 @@ sub star_aln {
 ##           : $out_sam_type                  => Format of the output aligned reads
 ##           : $out_sam_unmapped              => Write unmapped reads to main BAM file
 ##           : $out_wig_norm                  => Normalize wig
-##           : $out_wig_strand                => Straandedness of wig output
+##           : $out_wig_strand                => Strandedness of wig output
 ##           : $out_wig_type                  => Output wiggle
 ##           : $pe_overlap_nbases_min         => Min overlapp to trigger merging and realignment
 ##           : $quant_mode                    => Types of quantification requested
