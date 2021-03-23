@@ -19,6 +19,8 @@ CHAIN_ALL:
       - merge_fusion_reports
   - CHAIN_MAIN:
     - star_aln
+    - CHAIN_SJ:
+      - build_sj_tracks
     - picardtools_mergesamfiles
     - CHAIN_STRINGTIE:
       - stringtie_ar

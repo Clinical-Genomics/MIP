@@ -363,6 +363,7 @@ sub perl_nae_oneliners {
         reformat_arriba_contig_name          => \&_reformat_arriba_contig_name,
         reformat_sacct_headers               => \&_reformat_sacct_headers,
         remove_decomposed_asterisk_records   => \&_remove_decomposed_asterisk_records,
+        star_sj_tab_to_bed                   => \&_star_sj_tab_to_bed,
         synonyms_grch37_to_grch38            => \&_synonyms_grch37_to_grch38,
         synonyms_grch38_to_grch37            => \&_synonyms_grch38_to_grch37,
         write_header_for_contig              => \&_write_header_for_contig,
@@ -958,6 +959,52 @@ sub _remove_decomposed_asterisk_records {
     $remove_star_regexp .= q?print $_ }'?;
 
     return $remove_star_regexp;
+}
+
+sub _star_sj_tab_to_bed {
+
+## Function : Convert star splice junction file to bed format
+## Returns  : $star_sj_bed
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    ## Define motif array
+    my $star_sj_bed =
+q?'BEGIN { @motifs = qw{ non-canonical GT/AG CT/AC GC/AG CT/GC AT/AC GT/AT }; @strands = qw{ . + - } }; ?;
+
+    ## Only consider junctions with support from uniquely mapped reads
+    $star_sj_bed .= q?next if ( $F[6] == 0 ); ?;
+
+    ## Reorder line
+    $star_sj_bed .= q?my @elements; ?;
+
+    ## Add contig name
+    $star_sj_bed .= q?push @elements, $F[0]; ?;
+
+    ## Add start position
+    $star_sj_bed .= q?push @elements, $F[1] - 1; ?;
+
+    ## Add end position
+    $star_sj_bed .= q?push @elements, $F[2]; ?;
+
+    ## Build name column
+    $star_sj_bed .=
+q?my @names = ( qq{motif=$motifs[$F[4]]}, qq{uniquely_mapped=$F[6]}, qq{multi_mapped=$F[7]}, qq{maximum_spliced_alignment_overhang=$F[8]} ); ?;
+
+    ## Join and add name
+    $star_sj_bed .= q?push @elements, join q{;}, @names; ?;
+
+    ## Add score column
+    $star_sj_bed .= q?push @elements, $F[6]; ?;
+
+    ## Add strand
+    $star_sj_bed .= q?push @elements, $strands[$F[3]]; ?;
+
+    ## Print line
+    $star_sj_bed .= q?print join qq{\t}, @elements;'?;
+
+    return $star_sj_bed;
 }
 
 sub _synonyms_grch37_to_grch38 {
