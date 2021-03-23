@@ -534,7 +534,7 @@ gatk_baserecalibration:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _brecal
   outfile_suffix: ".bam"
   program_executables:
@@ -1201,7 +1201,7 @@ gatk_haplotypecaller:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _haptc
   outfile_suffix: ".vcf"
   program_executables:
@@ -1272,7 +1272,7 @@ gatk_genotypegvcfs:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _gent
   outfile_suffix: ".vcf"
   program_executables:
@@ -1297,7 +1297,7 @@ gatk_gathervcfs:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: ""
   outfile_suffix: ".vcf"
   program_executables:
@@ -1315,7 +1315,7 @@ gatk_variantrecalibration:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _vrecal
   program_executables:
     - bcftools
@@ -1468,6 +1468,12 @@ gatk_combinevariants_prioritize_caller:
   associated_recipe:
     - gatk_combinevariantcallsets
   data_type: SCALAR
+  mandatory: no
+  type: recipe_argument
+gatk_combinevariants_callers_to_combine:
+  associated_recipe:
+    - gatk_combinevariantcallsets
+  data_type: ARRAY
   mandatory: no
   type: recipe_argument
 prepareforvariantannotationblock:

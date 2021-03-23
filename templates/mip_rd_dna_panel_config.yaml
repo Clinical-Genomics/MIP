@@ -33,6 +33,9 @@ fqf_annotations:
   - GNOMADAF_popmax
   - SWEGENAF
 gatk_combinevariants_prioritize_caller: haplotypecaller
+gatk_combinevariants_callers_to_combine:
+  - gatk_variantrecalibration
+  - glnexus_merge
 picardtools_path: /usr/picard
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 vep_custom_annotation:

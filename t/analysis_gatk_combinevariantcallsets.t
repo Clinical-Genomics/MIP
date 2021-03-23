@@ -65,11 +65,11 @@ $active_parameter{gatk_variantrecalibration}        = 1;
 $active_parameter{glnexus_merge}                    = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
+$active_parameter{gatk_combinevariants_callers_to_combine} = [ qw( gatk_variantrecalibration glnexus_merge ) ];
 my $case_id = $active_parameter{case_id};
 $active_parameter{gatk_path}                            = q{gatk.jar};
 $active_parameter{gatk_combinevariantcallsets_bcf_file} = 1;
 
-my @variant_callers = qw{ gatk_variantrecalibration glnexus_merge };
 
 my %file_info = test_mip_hashes(
     {
@@ -86,7 +86,7 @@ my %parameter = test_mip_hashes(
 );
 
 CALLER:
-foreach my $caller (@variant_callers) {
+foreach my $caller ( @{ $active_parameter{gatk_combinevariants_callers_to_combine} } ) {
 
     test_add_io_for_recipe(
         {
@@ -133,7 +133,7 @@ my $is_ok = analysis_gatk_combinevariantcallsets(
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name . q{ multiple callers} );
 
 ## Given analysis parameters and single callers
-@{ $parameter{cache}{variant_callers} } = $parameter{cache}{variant_callers}[0];
+$active_parameter{gatk_combinevariants_callers_to_combine} = [ qw{ gatk_variantrecalibration } ];
 $is_ok = analysis_gatk_combinevariantcallsets(
     {
         active_parameter_href => \%active_parameter,
