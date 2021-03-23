@@ -290,7 +290,7 @@ salmon_quant:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: quant
+  file_tag: _quant
   outfile_suffix: ".sf"
   program_executables:
     - pigz
