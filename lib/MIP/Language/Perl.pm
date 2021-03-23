@@ -971,7 +971,7 @@ sub _star_sj_tab_to_bed {
 
     ## Define motif array
     my $star_sj_bed =
-q?'BEGIN { @motifs = qw{ non-canonical GT/AG CT/AC GC/AG CT/GC AT/AC GT/AT }; @strands = qw{ . + _ } }; ?;
+q?'BEGIN { @motifs = qw{ non-canonical GT/AG CT/AC GC/AG CT/GC AT/AC GT/AT }; @strands = qw{ . + - } }; ?;
 
     ## Only consider junctions with support from uniquely mapped reads
     $star_sj_bed .= q?next if ( $F[6] == 0 ); ?;
@@ -999,7 +999,7 @@ q?my @names = ( qq{motif=$motifs[$F[4]]}, qq{uniquely_mapped=$F[6]}, qq{multi_ma
     $star_sj_bed .= q?push @elements, $F[6]; ?;
 
     ## Add strand
-    $star_sj_bed .= q?push @elements, $strands[$F[4]]; ?;
+    $star_sj_bed .= q?push @elements, $strands[$F[3]]; ?;
 
     ## Print line
     $star_sj_bed .= q?print join qq{\t}, @elements;'?;
