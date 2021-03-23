@@ -974,7 +974,7 @@ sub _star_sj_tab_to_bed {
 q?'BEGIN { @motifs = qw{ non-canonical GT/AG CT/AC GC/AG CT/GC AT/AC GT/AT }; @strands = qw{ . + _ } }; ?;
 
     ## Only consider junctions with support from uniquely mapped reads
-    $star_sj_bed .= q?next if ( $F[6] == 0 ) ?;
+    $star_sj_bed .= q?next if ( $F[6] == 0 ); ?;
 
     ## Reorder line
     $star_sj_bed .= q?my @elements; ?;

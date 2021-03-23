@@ -136,7 +136,7 @@ sub analysis_build_sj_tracks {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my $star_sj_file_suffix  = q{.SJ.out.tab};
-    my $star_wig_file_suffix = q{.Signal.Str1.UniqueMultiple.out.wig};
+    my $star_wig_file_suffix = q{.Signal.UniqueMultiple.str1.out.wig};
 
     ## Unpack parameters
     ## Get the io infiles per chain and id

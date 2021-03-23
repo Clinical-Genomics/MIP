@@ -171,7 +171,6 @@ recipe_memory:
   default:
     analysisrunstatus: 1
     arriba_ar: 3
-    build_sj_tracks: 2
     dna_vcf_reformat: 2
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
