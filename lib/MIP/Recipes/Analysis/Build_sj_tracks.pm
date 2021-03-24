@@ -4,7 +4,8 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use utf8;
@@ -242,7 +243,7 @@ sub analysis_build_sj_tracks {
     htslib_bgzip(
         {
             filehandle      => $filehandle,
-            infile_path     => q{-},
+            infile_path     => catfile( dirname( devnull() ), q{stdin} ),
             stdoutfile_path => $bed_outfile_path,
             write_to_stdout => 1,
         }
@@ -258,7 +259,7 @@ sub analysis_build_sj_tracks {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Close filehandles
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
