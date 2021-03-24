@@ -291,7 +291,7 @@ sub analysis_salmon_quant {
         {
             filehandle   => $filehandle,
             force        => 1,
-            infile_path  => q{quant.sf},
+            infile_path  => catfile( $outdir_path, q{quant.sf} ),
             outfile_path => $outfile_path,
         }
     );
