@@ -17,7 +17,7 @@ use List::MoreUtils qw{ uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE };
+use MIP::Constants qw{ $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -127,8 +127,9 @@ sub analysis_salmon_quant {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_sample_file_attribute };
-    use MIP::File_info qw{ get_io_files parse_io_outfiles };
+    use MIP::File_info
+      qw{ get_io_files get_sample_file_attribute get_sample_fastq_file_lanes parse_io_outfiles };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
     use MIP::Program::Pigz qw{ pigz };
     use MIP::Program::Salmon qw{ salmon_quant };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -166,18 +167,23 @@ sub analysis_salmon_quant {
         }
     );
 
-    ## Set outfile
-    my $recipe_dir = catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
-    my $file_path  = catfile( $recipe_dir, $recipe{file_tag} . $recipe{outfile_suffix} );
-
+    ## Join infile lanes
+    my $lanes_id = join $EMPTY_STR,
+      get_sample_fastq_file_lanes(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+      );
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $recipe{job_id_chain},
-                id             => $sample_id,
-                file_info_href => $file_info_href,
-                file_paths_ref => [$file_path],
+                chain_id               => $recipe{job_id_chain},
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref =>
+                  [ $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id ],
                 outdata_dir    => $active_parameter_href->{outdata_dir},
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
@@ -246,7 +252,7 @@ sub analysis_salmon_quant {
         my @read_1_fastq_paths =
           @infile_paths[ grep { !( $_ % 2 ) } 0 .. $#infile_paths ];
 
-        # Odd array indexes get a 1 remainder and are evalauted as true
+        # Odd array indexes get a 1 remainder and are evaluated as true
         my @read_2_fastq_paths = @infile_paths[ grep { $_ % 2 } 0 .. $#infile_paths ];
 
         salmon_quant(
@@ -279,6 +285,17 @@ sub analysis_salmon_quant {
         );
         say {$filehandle} $NEWLINE;
     }
+
+    say {$filehandle} q{## Rename salmon quant file};
+    gnu_cp(
+        {
+            filehandle   => $filehandle,
+            force        => 1,
+            infile_path  => catfile( $outdir_path, q{quant.sf} ),
+            outfile_path => $outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
