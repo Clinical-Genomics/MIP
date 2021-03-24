@@ -219,7 +219,7 @@ recipe_core_number:
     sacct: 1
     salmon_quant: 20
     star_aln: 36
-    star_fusion: 24
+    star_fusion: 36
     stringtie_ar: 36
     svdb_merge_fusion: 1
     megafusion_ar: 1
