@@ -354,6 +354,7 @@ sub perl_nae_oneliners {
         q{get_fastq_header_v1.8_interleaved} => \&_get_fastq_header_v1_8_interleaved,
         get_fastq_read_length                => \&_get_fastq_read_length,
         get_gene_panel_header                => \&_get_gene_panel_info,
+        get_gene_panel_hgnc_symbols          => \&_get_gene_panel_hgnc_symbols,
         get_rrna_transcripts                 => \&_get_rrna_transcripts,
         get_select_contigs_by_col            => \&_get_select_contigs_by_col,
         get_vcf_header_id_line               => \&_get_vcf_header_id_line,
@@ -362,6 +363,7 @@ sub perl_nae_oneliners {
         reformat_arriba_contig_name          => \&_reformat_arriba_contig_name,
         reformat_sacct_headers               => \&_reformat_sacct_headers,
         remove_decomposed_asterisk_records   => \&_remove_decomposed_asterisk_records,
+        star_sj_tab_to_bed                   => \&_star_sj_tab_to_bed,
         synonyms_grch37_to_grch38            => \&_synonyms_grch37_to_grch38,
         synonyms_grch38_to_grch37            => \&_synonyms_grch38_to_grch37,
         write_header_for_contig              => \&_write_header_for_contig,
@@ -763,6 +765,23 @@ sub _get_gene_panel_info {
     return $gene_panel_info_regexp;
 }
 
+sub _get_gene_panel_hgnc_symbols {
+
+## Function : Return HGNC symbols from gene panel
+## Returns  : $gene_panel_hgnc_symbols
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    # If line starts with gene panel comment
+    my $gene_panel_hgnc_symbols = q?'next if (/ \A [#] /xms ); ?;
+
+    # Append ":". Skip rest if it's a comment
+    $gene_panel_hgnc_symbols .= q?print $F[4]'?;
+
+    return $gene_panel_hgnc_symbols;
+}
+
 sub _reformat_sacct_headers {
 
 ## Function : Write individual job line - skip line containing (.batch or .bat+) in the first column
@@ -940,6 +959,52 @@ sub _remove_decomposed_asterisk_records {
     $remove_star_regexp .= q?print $_ }'?;
 
     return $remove_star_regexp;
+}
+
+sub _star_sj_tab_to_bed {
+
+## Function : Convert star splice junction file to bed format
+## Returns  : $star_sj_bed
+## Arguments:
+
+    my ($arg_href) = @_;
+
+    ## Define motif array
+    my $star_sj_bed =
+q?'BEGIN { @motifs = qw{ non-canonical GT/AG CT/AC GC/AG CT/GC AT/AC GT/AT }; @strands = qw{ . + - } }; ?;
+
+    ## Only consider junctions with support from uniquely mapped reads
+    $star_sj_bed .= q?next if ( $F[6] == 0 ); ?;
+
+    ## Reorder line
+    $star_sj_bed .= q?my @elements; ?;
+
+    ## Add contig name
+    $star_sj_bed .= q?push @elements, $F[0]; ?;
+
+    ## Add start position
+    $star_sj_bed .= q?push @elements, $F[1] - 1; ?;
+
+    ## Add end position
+    $star_sj_bed .= q?push @elements, $F[2]; ?;
+
+    ## Build name column
+    $star_sj_bed .=
+q?my @names = ( qq{motif=$motifs[$F[4]]}, qq{uniquely_mapped=$F[6]}, qq{multi_mapped=$F[7]}, qq{maximum_spliced_alignment_overhang=$F[8]} ); ?;
+
+    ## Join and add name
+    $star_sj_bed .= q?push @elements, join q{;}, @names; ?;
+
+    ## Add score column
+    $star_sj_bed .= q?push @elements, $F[6]; ?;
+
+    ## Add strand
+    $star_sj_bed .= q?push @elements, $strands[$F[3]]; ?;
+
+    ## Print line
+    $star_sj_bed .= q?print join qq{\t}, @elements;'?;
+
+    return $star_sj_bed;
 }
 
 sub _synonyms_grch37_to_grch38 {

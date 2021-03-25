@@ -5,9 +5,9 @@ FROM ubuntu:bionic
 ################## METADATA ######################
 
 LABEL base_image="ubuntu:bionic"
-LABEL version="2"
+LABEL version="3"
 LABEL software="bwa-mem2"
-LABEL software.version="2.2"
+LABEL software.version="2.2.1"
 LABEL extra.binaries="bwa-mem2"
 LABEL maintainer="Clinical-Genomics/MIP"
 
@@ -25,7 +25,7 @@ RUN apt-get update && \
 WORKDIR /app
 
 ## Install bwa-mem2
-RUN curl -L https://github.com/bwa-mem2/bwa-mem2/releases/download/v2.2/bwa-mem2-2.2_x64-linux.tar.bz2 \
+RUN curl -L https://github.com/bwa-mem2/bwa-mem2/releases/download/v2.2.1/bwa-mem2-2.2.1_x64-linux.tar.bz2 \
   | tar jxf -
 
-ENV PATH=/app/bwa-mem2-2.2_x64-linux:${PATH}
+ENV PATH=/app/bwa-mem2-2.2.1_x64-linux:${PATH}

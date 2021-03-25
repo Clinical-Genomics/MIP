@@ -6,6 +6,7 @@ custom_default_parameters:
   default:
     - analysis_type
     - conda_path
+    - fusion_select_file
     - infile_dirs
     - install_config_file
     - pedigree_fam_file
@@ -132,6 +133,7 @@ recipe_time:
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 2
+    build_sj_tracks: 1
     dna_vcf_reformat: 1
     fastqc_ar: 1
     fusion_report: 1
@@ -146,6 +148,7 @@ recipe_time:
     markduplicates: 8
     megafusion_ar: 1
     multiqc_ar: 1
+    merge_fusion_reports: 1
     picardtools_collectrnaseqmetrics: 2
     picardtools_mergesamfiles: 2
     preseq_ar: 2
@@ -195,6 +198,7 @@ recipe_core_number:
     bcftools_merge: 1
     blobfish: 1
     bootstrapann: 1
+    build_sj_tracks: 1
     dna_vcf_reformat: 1
     fastqc_ar: 0
     fusion_report: 1
@@ -206,8 +210,9 @@ recipe_core_number:
     genebody_coverage: 1
     gffcompare_ar: 1
     gzip_fastq: 0
-    multiqc_ar: 1
     markduplicates: 13
+    merge_fusion_reports: 1
+    multiqc_ar: 1
     picardtools_collectrnaseqmetrics: 1
     picardtools_mergesamfiles: 13
     preseq_ar: 1
@@ -285,7 +290,7 @@ salmon_quant:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: quant
+  file_tag: _quant
   outfile_suffix: ".sf"
   program_executables:
     - pigz
@@ -392,6 +397,19 @@ two_pass_mode:
   data_type: SCALAR
   default: Basic
   type: recipe_argument
+## Build SJ tracks
+build_sj_tracks:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _sj
+  outfile_suffix: ".bw"
+  program_executables:
+    - perl
+    - wigToBigWig
+  type: recipe
 ## Star Fusion
 star_fusion:
   analysis_mode: sample
@@ -457,7 +475,7 @@ arriba_blacklist_path:
   data_type: SCALAR
   type: path
 fusion_report:
-  analysis_mode: case
+  analysis_mode: sample
   associated_recipe:
     - mip
   data_type: SCALAR
@@ -465,8 +483,8 @@ fusion_report:
   file_tag: _report
   outfile_suffix: ".pdf"
   program_executables:
+    - perl
     - draw_fusions.R
-    - pdfmerger
   type: recipe
 fusion_cytoband_path:
   associated_recipe:
@@ -478,6 +496,13 @@ fusion_proteindomain_path:
     - fusion_report
   data_type: SCALAR
   type: path
+fusion_select_file:
+  associated_recipe:
+    - fusion_report
+  data_type: SCALAR
+  exists_check: file
+  type: path
+  update_path: absolute_path
 fusion_use_sample_id_as_display_name:
   associated_recipe:
     - arriba_ar
@@ -522,13 +547,24 @@ svdb_merge_fusion:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: _fusion
+  file_tag: _fusion_report
   outfile_suffix: ".vcf.gz"
   program_executables:
     - bcftools
     - svdb
   type: recipe
 ## Merge bam files
+merge_fusion_reports:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _report
+  outfile_suffix: ".pdf"
+  program_executables:
+    - pdfmerger
+  type: recipe
 picardtools_mergesamfiles:
   analysis_mode: sample
   associated_recipe:

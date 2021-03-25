@@ -24,16 +24,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Star}  => [qw{ star_aln }],
-);
+    my %perl_module = ( q{MIP::Program::Star} => [qw{ star_aln }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -125,9 +122,7 @@ my %specific_argument = (
     },
     chim_junction_overhang_min => {
         input           => $CHIM_JUNCTION_OVERHANG_MIN,
-        expected_output => q{--chimJunctionOverhangMin}
-          . $SPACE
-          . $CHIM_JUNCTION_OVERHANG_MIN,
+        expected_output => q{--chimJunctionOverhangMin} . $SPACE . $CHIM_JUNCTION_OVERHANG_MIN,
     },
     chim_out_type => {
         input           => q{WithinBAM},
@@ -155,9 +150,7 @@ my %specific_argument = (
     },
     chim_segment_read_gap_max => {
         input           => $CHIM_SEGMENT_READ_GAP_MAX,
-        expected_output => q{--chimSegmentReadGapMax}
-          . $SPACE
-          . $CHIM_SEGMENT_READ_GAP_MAX,
+        expected_output => q{--chimSegmentReadGapMax} . $SPACE . $CHIM_SEGMENT_READ_GAP_MAX,
     },
     infile_paths_ref => {
         inputs_ref      => [ catfile(qw{ dir r1.fq.gz }), catfile(qw{ dir r2.fq.gz }) ],
@@ -202,6 +195,18 @@ my %specific_argument = (
     out_sam_unmapped => {
         input           => q{Within},
         expected_output => q{--outSAMunmapped Within},
+    },
+    out_wig_norm => {
+        input           => q{None},
+        expected_output => q{--outWigNorm} . $SPACE . q{None},
+    },
+    out_wig_strand => {
+        input           => q{Unstranded},
+        expected_output => q{--outWigStrand} . $SPACE . q{Unstranded},
+    },
+    out_wig_type => {
+        input           => q{wiggle},
+        expected_output => q{--outWigType} . $SPACE . q{wiggle},
     },
     pe_overlap_nbases_min => {
         input           => $PE_OVERLAP_NBASES_MIN,

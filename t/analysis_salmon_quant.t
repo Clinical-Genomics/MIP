@@ -47,7 +47,7 @@ diag(   q{Test analysis_salmon_quant from Salmon_quant.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
+test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
 my $recipe_name    = q{salmon_quant};
@@ -71,6 +71,7 @@ my %file_info = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+$file_info{$sample_id}{lanes} = [1];
 
 my %job_id;
 my %parameter = test_mip_hashes(
@@ -79,16 +80,16 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-$parameter{$recipe_name}{file_tag}       = q{salmon};
+$parameter{$recipe_name}{file_tag} = q{salmon};
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $sample_id,
+        file_info_href => \%file_info,
+        id             => $sample_id,
         outfile_suffix => q{.quant},
-        parameter_href    => \%parameter,
-        recipe_name       => $recipe_name,
-        step              => q{fastq},
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{fastq},
     }
 );
 

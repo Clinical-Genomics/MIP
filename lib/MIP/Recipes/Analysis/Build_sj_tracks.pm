@@ -1,11 +1,10 @@
-package MIP::Recipes::Analysis::Glnexus;
+package MIP::Recipes::Analysis::Build_sj_tracks;
 
 use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir catfile devnull };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use utf8;
@@ -17,30 +16,32 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
 
+    # Set the version for version checking
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_glnexus };
+    our @EXPORT_OK = qw{ analysis_build_sj_tracks };
 
 }
 
-sub analysis_glnexus {
+sub analysis_build_sj_tracks {
 
-## Function : Merges gvcfs from DeepVariant to generate a cohort vcf.
+## Function : Build splice junction tracks for IGV
 ## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id                 => Family id
-##          : $file_info_href          => File_info hash {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $parameter_href          => Parameter hash {REF}
-##          : $profile_base_command    => Submission profile base command
-##          : $recipe_name             => Recipe name
-##          : $sample_info_href        => Info on samples and case hash {REF}
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $case_id               => Family id
+##          : $file_info_href        => File_info hash {REF}
+##          : $job_id_href           => Job id hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+##          : $profile_base_command  => Submission profile base command
+##          : $recipe_name           => Recipe name
+##          : $sample_id             => Sample id
+##          : $sample_info_href      => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
 
@@ -50,6 +51,7 @@ sub analysis_glnexus {
     my $job_id_href;
     my $parameter_href;
     my $recipe_name;
+    my $sample_id;
     my $sample_info_href;
 
     ## Default(s)
@@ -101,6 +103,12 @@ sub analysis_glnexus {
             store       => \$recipe_name,
             strict_type => 1,
         },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
         sample_info_href => {
             default     => {},
             defined     => 1,
@@ -109,16 +117,17 @@ sub analysis_glnexus {
             strict_type => 1,
         },
     };
+
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
-    use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
-    use MIP::Program::Glnexus qw{ glnexus_merge };
-    use MIP::Program::Htslib qw{ htslib_bgzip };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Ucsc qw{ ucsc_wig_to_big_wig };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
+    use MIP::Reference qw{ write_contigs_size_file };
+    use MIP::Sample_info
+      qw{ set_file_path_to_store  set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -126,7 +135,22 @@ sub analysis_glnexus {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
+    my $star_sj_file_suffix  = q{.SJ.out.tab};
+    my $star_wig_file_suffix = q{.Signal.UniqueMultiple.str1.out.wig};
+
     ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $sample_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            stream         => q{in},
+        }
+    );
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
 
     my %recipe = parse_recipe_prerequisites(
         {
@@ -135,46 +159,27 @@ sub analysis_glnexus {
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe{core_number};
-    my $time        = $recipe{time};
-    my $memory      = $recipe{memory};
 
-    ## Get the io infiles per chain and id
-    my @genotype_infile_paths;
-    my @genotype_infile_path_prefixes;
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        ## Get the io infiles per chain and id
-        my %sample_io = get_io_files(
+    %io = (
+        %io,
+        parse_io_outfiles(
             {
-                id             => $sample_id,
-                file_info_href => $file_info_href,
-                parameter_href => $parameter_href,
-                recipe_name    => $recipe_name,
-                stream         => q{in},
+                chain_id               => $recipe{job_id_chain},
+                id                     => $sample_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => [$infile_name_prefix],
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                recipe_name            => $recipe_name,
             }
-        );
-        push @genotype_infile_paths,         $sample_io{in}{file_path};
-        push @genotype_infile_path_prefixes, $sample_io{in}{file_path_prefix};
-    }
-
-    my %io = parse_io_outfiles(
-        {
-            chain_id               => $recipe{job_id_chain},
-            id                     => $case_id,
-            file_info_href         => $file_info_href,
-            file_name_prefixes_ref => [$case_id],
-            outdata_dir            => $active_parameter_href->{outdata_dir},
-            parameter_href         => $parameter_href,
-            recipe_name            => $recipe_name,
-        }
+        )
     );
 
+    my $outfile_name_prefix = $io{out}{file_name_prefix};
+    my $outfile_path        = $io{out}{file_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $temp_outfile_path =
-      catdir( $active_parameter_href->{temp_directory}, $io{out}{file_name_prefix} . q{.vcf} );
+    my $outdir_path         = $io{out}{dir_path};
+    my $bed_outfile_path    = $outfile_path_prefix . q{.bed};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -185,7 +190,7 @@ sub analysis_glnexus {
         {
             active_parameter_href => $active_parameter_href,
             core_number           => $recipe{core_number},
-            directory_id          => $case_id,
+            directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $recipe{memory},
@@ -199,72 +204,76 @@ sub analysis_glnexus {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
-
-        ## Glnexus
-        say {$filehandle} q{## Glnexus};
-
-        glnexus_merge(
-            {
-                config           => q{DeepVariant_unfiltered},
-                dir              => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
-                filehandle       => $filehandle,
-                infile_paths_ref => \@genotype_infile_paths,
-                memory           => $memory,
-                stdoutfile_path  => $temp_outfile_path,
-                threads          => $core_number,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-
-        say {$filehandle} q{## View};
-
-        bcftools_view_and_index_vcf(
-            {
-                filehandle          => $filehandle,
-                index_type          => q{tbi},
-                infile_path         => $temp_outfile_path,
-                outfile_path_prefix => $outfile_path_prefix,
-                output_type         => q{z},
-                threads             => $core_number,
-            }
-        );
-    }
-    else {
-
-        say {$filehandle} q{## Single sample - copy deepvariant vcf output and index};
-
-      FILE_SUFFIX:
-        foreach my $dv_file_name_suffix (qw { .vcf.gz .vcf.gz.tbi }) {
-            gnu_cp {
-                filehandle   => $filehandle,
-                infile_path  => $genotype_infile_path_prefixes[0] . $dv_file_name_suffix,
-                outfile_path => $outfile_path_prefix . $dv_file_name_suffix,
-            };
-            say {$filehandle} $NEWLINE;
+    say {$filehandle} q{## Create chromosome name and size file};
+    my $contigs_size_file_path = catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
+    write_contigs_size_file(
+        {
+            fai_file_path => $active_parameter_href->{human_genome_reference} . $DOT . q{fai},
+            outfile_path  => $contigs_size_file_path,
         }
-    }
-    ## Close filehandle
+    );
+
+    say {$filehandle} q{## Create big wig file};
+    ucsc_wig_to_big_wig(
+        {
+            clip                   => 1,
+            contigs_size_file_path => $contigs_size_file_path,
+            filehandle             => $filehandle,
+            infile_path            => $infile_path_prefix . $star_wig_file_suffix,
+            outfile_path           => $outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    say {$filehandle} q{## Convert SJ file to bed};
+    perl_nae_oneliners(
+        {
+            filehandle      => $filehandle,
+            oneliner_name   => q{star_sj_tab_to_bed},
+            print_newline   => 1,
+            stdinfile_path  => $infile_path_prefix . $star_sj_file_suffix,
+            stdoutfile_path => $bed_outfile_path,
+            use_container   => 1,
+        }
+
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Close filehandles
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
 
+        ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                path             => $outfile_path_prefix . q{.vcf.gz},
+                infile           => $outfile_name_prefix,
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
+                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
 
         set_file_path_to_store(
             {
-                format           => q{vcf},
-                id               => $case_id,
-                path             => $outfile_path_prefix . q{.vcf.gz},
-                path_index       => $outfile_path_prefix . q{.vcf.gz.tbi},
+                format           => q{bw},
+                id               => $sample_id,
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
+                tag              => q{coverage},
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{bed},
+                id               => $sample_id,
+                path             => $bed_outfile_path,
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+                tag              => q{junction},
             }
         );
 
@@ -272,15 +281,15 @@ sub analysis_glnexus {
             {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
-                dependency_method                 => q{sample_to_case},
-                log                               => $log,
+                dependency_method                 => q{sample_to_island},
                 job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
-                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                sample_id          => $sample_id,
                 submission_profile => $active_parameter_href->{submission_profile},
             }
         );

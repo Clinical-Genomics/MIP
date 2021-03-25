@@ -759,6 +759,12 @@ gatk_combinevariants_prioritize_caller:
   data_type: SCALAR
   mandatory: no
   type: recipe_argument
+gatk_combinevariants_callers_to_combine:
+  associated_recipe:
+    - gatk_combinevariantcallsets
+  data_type: ARRAY
+  mandatory: no
+  type: recipe_argument
 ## bcftools norm
 bcftools_norm:
   analysis_mode: case

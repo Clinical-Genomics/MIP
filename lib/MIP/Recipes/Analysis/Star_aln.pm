@@ -296,6 +296,8 @@ sub analysis_star_aln {
             infile_paths_ref           => \@fastq_files,
             out_sam_attr_rgline        => $out_sam_attr_rgline,
             out_sam_strand_field       => $out_sam_strand_field,
+            out_wig_strand             => q{Unstranded},
+            out_wig_type               => q{wiggle},
             outfile_name_prefix        => $outfile_path_prefix . $DOT,
             pe_overlap_nbases_min      => $active_parameter_href->{pe_overlap_nbases_min},
             thread_number              => $recipe{core_number},

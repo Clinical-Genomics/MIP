@@ -139,11 +139,11 @@ sub analysis_svdb_merge_fusion {
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 parameter_href => $parameter_href,
-                recipe_name    => $recipe_name,
-                stream         => q{in},
+                recipe_name    => q{megafusion_ar},
+                stream         => q{out},
             }
         );
-        push @infile_paths, $io{in}{file_path};
+        push @infile_paths, $io{out}{file_path};
     }
 
     my %recipe = parse_recipe_prerequisites(

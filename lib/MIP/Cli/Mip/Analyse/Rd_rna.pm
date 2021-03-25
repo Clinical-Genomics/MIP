@@ -167,6 +167,15 @@ sub _build_usage {
     );
 
     option(
+        q{build_sj_tracks} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Build splice junction tracks for IGV},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{dna_vcf_file} => (
             cmd_flag      => q{dna_vcf_file},
             cmd_tags      => [q{Format: vcf | bcf}],
@@ -208,6 +217,24 @@ sub _build_usage {
             documentation => q{Path to protein domain file},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{fusion_select_file} => (
+            cmd_tags      => [q{Format: tsv; HGNC Symbol required in file}],
+            documentation => q{Select file with list of genes to analyse separately},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{merge_fusion_reports} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Merge sample fusion reports to case},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 

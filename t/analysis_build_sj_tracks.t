@@ -30,16 +30,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Fusion_report} => [qw{ analysis_fusion_report }],
+        q{MIP::Recipes::Analysis::Build_sj_tracks} => [qw{ analysis_build_sj_tracks }],
         q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Fusion_report qw{ analysis_fusion_report };
+use MIP::Recipes::Analysis::Build_sj_tracks qw{ analysis_build_sj_tracks };
 
-diag(   q{Test analysis_fusion_report from Fusion_report.pm}
+diag(   q{Test analysis_build_sj_tracks from Build_sj_tracks.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -50,7 +50,7 @@ diag(   q{Test analysis_fusion_report from Fusion_report.pm}
 test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{fusion_report};
+my $recipe_name    = q{build_sj_tracks};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -62,10 +62,10 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-$active_parameter{transcript_annotation}            = catfile(qw{ path to annotation.gtf });
-$active_parameter{fusion_outfile_count}             = 2;
-
+$active_parameter{human_genome_reference} =
+  catfile( $Bin, qw{ data references grch38_homo_sapiens_-assembly-.fasta} );
 my $sample_id = $active_parameter{sample_ids}[0];
+
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
@@ -85,14 +85,14 @@ test_add_io_for_recipe(
         file_info_href => \%file_info,
         id             => $sample_id,
         parameter_href => \%parameter,
-        recipe_name    => q{arriba_ar},
-        step           => q{fastq},
+        recipe_name    => $recipe_name,
+        step           => q{bam},
     }
 );
 
 my %sample_info;
 
-my $is_ok = analysis_fusion_report(
+my $is_ok = analysis_build_sj_tracks(
     {
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,
