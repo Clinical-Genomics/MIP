@@ -170,6 +170,7 @@ recipe_memory:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    build_sj_tracks: 8
     dna_vcf_reformat: 2
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
@@ -178,7 +179,7 @@ recipe_memory:
     picardtools_collectrnaseqmetrics: 5
     picardtools_mergesamfiles: 5
     preseq_ar: 8
-    rseqc: 30
+    rseqc: 35
     salmon_quant: 2
     star_aln: 3
     stringtie_ar: 2
