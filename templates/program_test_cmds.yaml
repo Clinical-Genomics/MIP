@@ -112,5 +112,3 @@ vcfanno:
   execution: 'vcfanno'
 vep:
   execution: 'vep'
-vt:
-  execution: 'vt'
