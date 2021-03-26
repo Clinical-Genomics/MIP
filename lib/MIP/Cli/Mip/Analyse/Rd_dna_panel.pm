@@ -840,7 +840,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
             cmd_flag      => q{gatk_combinevar_use_callers},
             documentation => q{Combine vcf output from these recipes},
             is            => q{rw},
-            isa           => ArrayRef [ enum( [qw{ gatk_variantrecalibration glnexus_merge }] ), ],
+            isa           => ArrayRef [ enum( [qw{ gatk_variantrecalibration }] ), ],
         )
     );
 
