@@ -404,9 +404,11 @@ build_sj_tracks:
   data_type: SCALAR
   default: 1
   file_tag: _sj
-  outfile_suffix: ".bw"
+  outfile_suffix: ".bigWig"
   program_executables:
+    - bgzip
     - perl
+    - tabix
     - wigToBigWig
   type: recipe
 ## Star Fusion

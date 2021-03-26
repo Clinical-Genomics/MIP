@@ -704,7 +704,7 @@ sub set_file_path_to_store {
 
     my $tmpl = {
         format => {
-            allow       => [qw{ bam bb bcf bed bw cram fastq meta png tar vcf wig }],
+            allow       => [qw{ bam bb bcf bed bigwig bw cram fastq meta png tar vcf wig }],
             defined     => 1,
             required    => 1,
             store       => \$format,
