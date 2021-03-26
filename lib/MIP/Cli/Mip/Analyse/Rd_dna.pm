@@ -1399,7 +1399,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
             cmd_flag      => q{gatk_combinevar_prio_cal},
             documentation => q{Prioritization order of variant callers},
             is            => q{rw},
-            isa           => enum( [qw{ deepvariant haplotypecaller }] ),
+            isa => enum( [ q{deepvariant,haplotypecaller}, q{haplotypecaller,deepvariant} ] ),
         )
     );
 
