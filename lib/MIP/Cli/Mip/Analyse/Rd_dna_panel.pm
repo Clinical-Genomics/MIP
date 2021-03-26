@@ -831,7 +831,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
             cmd_flag      => q{gatk_combinevar_prio_cal},
             documentation => q{Prioritization order of variant callers},
             is            => q{rw},
-            isa           => enum( [qw{ gatk }] ),
+            isa           => enum( [qw{ deepvariant haplotypecaller }] ),
         )
     );
 
@@ -840,7 +840,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
             cmd_flag      => q{gatk_combinevar_use_callers},
             documentation => q{Combine vcf output from these recipes},
             is            => q{rw},
-            isa           => enum( [qw{ gatk_variantcalibration glnexus_merge }] ),
+            isa           => ArrayRef [ enum( [qw{ gatk_variantrecalibration glnexus_merge }] ), ],
         )
     );
 
