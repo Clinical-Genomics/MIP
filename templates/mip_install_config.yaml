@@ -249,8 +249,4 @@ container:
     executable:
       vcf2cytosure:
     uri: docker.io/jemten/vcf2cytosure:0.5.1
-  vt:
-    executable:
-      vt:
-    uri: docker.io/clinicalgenomics/vt:2015.11.10
 
