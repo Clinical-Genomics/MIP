@@ -1130,6 +1130,7 @@ sub bcftools_norm {
 ##          : $multiallelic_type      => Type of multiallelic to split/join {OPTIONAL}
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+##          : $reference_check        => Controls how to treat incorrect reference alleles - 's' fix; 'w' warn; 'x' exclude; 'e' exit
 ##          : $reference_path         => Human genome reference path
 ##          : $regions_ref            => Regions to process {REF}
 ##          : $remove_duplicates      => If a record is present in multiple files, output only the first instance.
@@ -1147,6 +1148,7 @@ sub bcftools_norm {
     my $infile_path;
     my $multiallelic;
     my $outfile_path;
+    my $reference_check;
     my $reference_path;
     my $regions_ref;
     my $remove_duplicates;
@@ -1183,6 +1185,11 @@ sub bcftools_norm {
             allow       => [qw{ b u z v }],
             default     => q{v},
             store       => \$output_type,
+            strict_type => 1,
+        },
+        reference_check => {
+            allow       => [qw{ e s w x }],
+            store       => \$reference_check,
             strict_type => 1,
         },
         reference_path => {
@@ -1233,6 +1240,11 @@ sub bcftools_norm {
     if ($multiallelic) {
 
         push @commands, q{--multiallelics} . $SPACE . $multiallelic . $multiallelic_type;
+    }
+
+    if ($reference_check) {
+
+        push @commands, q{--check-ref} . $SPACE . $reference_check;
     }
 
     if ($reference_path) {

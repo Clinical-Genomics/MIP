@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Bcftools} => [qw{ bcftools_norm }],
-);
+    my %perl_module = ( q{MIP::Program::Bcftools} => [qw{ bcftools_norm }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -94,6 +91,10 @@ my %specific_argument = (
     output_type => {
         input           => q{v},
         expected_output => q{--output-type v},
+    },
+    reference_check => {
+        input           => q{w},
+        expected_output => q{--check-ref w},
     },
     reference_path => {
         input           => q{path_to_fasta_ref},

@@ -301,7 +301,7 @@ sub _parse_vcfanno_toml_path {
         next ANNOTATION if ( not exists $annotation_href->{fields} );
 
         ## Skip files not set for normalization in the toml
-        next ANNOTATION if ( $annotation_href->{skip_split_and_normalize} );
+        next ANNOTATION if ( $annotation_href->{skip_normalize} );
 
         if ( not exists $seen_href->{$annotation_file_path} ) {
 
