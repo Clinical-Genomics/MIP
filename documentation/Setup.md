@@ -61,7 +61,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Samtools] (version: 1.11)
 - [SMNCopyNumberCaller] (version: v1.1.1)
 - [Stranger] (version: 0.7)
-- [Svdb] (version: 2.2.0)
+- [Svdb] (version: 2.4.0)
 - [Telomerecat] (version: 3.4.0)
 - [Tiddit] (version: 2.12.1)
 - [Upd] (version: 0.1)
@@ -189,4 +189,3 @@ Corresponding MIP references:
 [Vcf2cytosure]: https://github.com/NBISweden/vcf2cytosure
 [Vcfanno]: https://github.com/brentp/vcfanno
 [VEP]: https://github.com/Ensembl/ensembl-vep
-
