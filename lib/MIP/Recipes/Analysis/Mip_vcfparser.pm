@@ -514,11 +514,16 @@ sub analysis_mip_vcfparser_panel {
     use MIP::List qw{ get_splitted_lists };
     use MIP::Parameter qw{ get_cache };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Bcftools qw{ bcftools_view bcftools_view_and_index_vcf };
-    use MIP::Program::Gatk qw{ gatk_concatenate_variants };
+    use MIP::Program::Bcftools qw{ bcftools_concat bcftools_view bcftools_view_and_index_vcf };
+    use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Program::Mip qw{ mip_vcfparser };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Sample_info qw{ set_gene_panel set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{
+      set_file_path_to_store
+      set_gene_panel
+      set_recipe_metafile_in_sample_info
+      set_recipe_outfile_in_sample_info
+    };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -579,12 +584,20 @@ sub analysis_mip_vcfparser_panel {
             }
         )
     );
-    my $outdir_path         = $io{out}{dir_path};
-    my %outfile_path        = %{ $io{out}{file_path_href} };
-    my @outfile_paths       = @{ $io{out}{file_paths} };
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my @outfile_suffixes    = @{ $io{out}{file_suffixes} };
-    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outdir_path           = $io{out}{dir_path};
+    my %outfile_path          = %{ $io{out}{file_path_href} };
+    my @outfile_paths         = @{ $io{out}{file_paths} };
+    my @outfile_suffixes      = @{ $io{out}{file_suffixes} };
+    my $temp_file_path_prefix = $io{temp}{file_path_prefix};
+    my @temp_file_suffixes    = map { s/[.]gz\z//xmsr } @outfile_suffixes;
+
+    ## Construct vcfparser program outfiles
+    my @temp_ids          = qw{ chr mt };
+    my %temp_outfile_path = (
+        all => [ map { $temp_file_path_prefix . $DOT . $_ . $temp_file_suffixes[0] } @temp_ids ],
+        selected =>
+          [ map { $temp_file_path_prefix . $DOT . $_ . $temp_file_suffixes[1] } @temp_ids ],
+    );
 
     ## Filehandles
     # Create anonymous filehandle
@@ -611,16 +624,6 @@ sub analysis_mip_vcfparser_panel {
     ## Get parameters
     my $log_file_path = catfile( $outdir_path, q{vcfparser} . q{.log} );
     my @paddings      = ( $ANNOTATION_DISTANCE, $ANNOTATION_DISTANCE_MT );
-
-    ## Analysis recipe select outfile
-    my $select_outfile_path = $outfile_path{ $vcfparser_analysis_suffixes[1] };
-
-    ## Construct vcfparser program outfiles
-    my @temp_ids = qw{ chr mt };
-    my @temp_outfile_paths =
-      map { $outfile_path_prefix . $DOT . $_ . $outfile_suffixes[0] } @temp_ids;
-    my @temp_select_outfile_paths =
-      map { $outfile_path_prefix . $DOT . $_ . $outfile_suffixes[1] } @temp_ids;
 
     # List of genes to analyse separately
     my $select_file_path = $active_parameter_href->{vcfparser_select_file};
@@ -651,7 +654,7 @@ sub analysis_mip_vcfparser_panel {
     my ( $mt_contig_ref, $contigs_ref ) = get_splitted_lists(
         {
             regexp   => qr/M/,
-            list_ref => $file_info_href->{bam_contigs},
+            list_ref => $file_info_href->{primary_contigs},
         }
     );
 
@@ -685,8 +688,8 @@ sub analysis_mip_vcfparser_panel {
                 select_feature_annotation_columns_ref => \@select_feature_annotation_columns,
                 select_feature_file_path              => $select_file_path,
                 select_feature_matching_column        => $select_file_matching_column,
-                select_outfile                        => $temp_select_outfile_paths[$index],
-                stdoutfile_path                       => $temp_outfile_paths[$index],
+                select_outfile                        => $temp_outfile_path{selected}[$index],
+                stdoutfile_path                       => $temp_outfile_path{all}[$index],
             }
         );
         say {$filehandle} $NEWLINE;
@@ -694,19 +697,27 @@ sub analysis_mip_vcfparser_panel {
 
     ## Concatenate chr outfiles with mt outfiles
   ANALYSIS_SUFFIXES:
-    foreach my $analysis_suffix (@outfile_suffixes) {
+    foreach my $analysis_suffix (@vcfparser_analysis_suffixes) {
 
-        gatk_concatenate_variants(
+        bcftools_concat(
             {
-                active_parameter_href => $active_parameter_href,
-                elements_ref          => \@temp_ids,
-                filehandle            => $filehandle,
-                infile_postfix        => $analysis_suffix,
-                infile_prefix         => $outfile_path_prefix,
-                outfile_path_prefix   => $outfile_path_prefix,
-                outfile_suffix        => $analysis_suffix,
+                filehandle       => $filehandle,
+                infile_paths_ref => $temp_outfile_path{$analysis_suffix},
+                outfile_path     => $outfile_path{$analysis_suffix},
+                output_type      => q{z},
+                threads          => $recipe{core_number},
             }
         );
+        say {$filehandle} $NEWLINE;
+
+        htslib_tabix(
+            {
+                filehandle  => $filehandle,
+                infile_path => $outfile_path{$analysis_suffix},
+                preset      => q{vcf},
+            }
+        );
+        say {$filehandle} $NEWLINE;
     }
 
     close $filehandle or $log->logcroak(q{Could not close $filehandle});
@@ -730,6 +741,26 @@ sub analysis_mip_vcfparser_panel {
                     sample_info_href          => $sample_info_href,
                 }
             );
+        }
+        if ( $analysis_type eq q{wts} ) {
+
+            my @tags = qw{ research clinical };
+
+          TAG:
+            while ( my ( $index, $tag ) = each @tags ) {
+
+                set_file_path_to_store(
+                    {
+                        format           => q{vcf},
+                        id               => $case_id,
+                        path             => $outfile_paths[$index],
+                        path_index       => $outfile_paths[$index] . q{.tbi},
+                        recipe_name      => $recipe_name,
+                        sample_info_href => $sample_info_href,
+                        tag              => $tag,
+                    }
+                );
+            }
         }
 
         ## Collect QC metadata info for later use

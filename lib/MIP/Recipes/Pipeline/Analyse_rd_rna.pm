@@ -393,6 +393,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
     use MIP::Recipes::Analysis::Megafusion qw{ analysis_megafusion };
     use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
+    use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser_panel };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Pdfmerger qw{ analysis_merge_fusion_reports };
@@ -472,6 +473,7 @@ sub pipeline_analyse_rd_rna {
         svdb_merge_fusion                => \&analysis_svdb_merge_fusion,
         trim_galore_ar                   => \&analysis_trim_galore,
         varianteffectpredictor           => \&analysis_vep,
+        vcfparser_ar                     => \&analysis_mip_vcfparser_panel,
         version_collect_ar               => \&analysis_mip_vercollect,
     );
 

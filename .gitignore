@@ -7,6 +7,7 @@ mip_log/
 **/.idea
 _Deparsed_XSubs.pm
 .gitignore
+**/.vscode
 
 ## Carton
 local/
