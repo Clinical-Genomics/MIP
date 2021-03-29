@@ -29,6 +29,7 @@ picardtools: 2.23.4 -> 2.25.0
 samtools: 1.10-h9402c20_2 -> 1.11-h6270b1f_0
 smncopynumbercaller: 4b2c1ad -> v1.1.1
 stranger: 0.7 -> 0.7.1
+svdb: 2.2.0 -> 2.4.0--py37h77a2a36_4
 tiddit: 2.8.1 -> 2.12.1
 
 ## [9.1.3]
