@@ -194,15 +194,11 @@ sub gatk_applybqsr {
     if ( @{$static_quantized_quals_ref} ) {
         push
           @commands,
-          q{--static-quantized-quals}
-          . $SPACE
-          . join $SPACE
-          . q{--static-quantized-quals}
-          . $SPACE, @{$static_quantized_quals_ref};
+          q{--static-quantized-quals} . $SPACE . join $SPACE . q{--static-quantized-quals} . $SPACE,
+          @{$static_quantized_quals_ref};
     }
 
-    push @commands,
-      q{--bqsr-recal-file} . $SPACE . $base_quality_score_recalibration_file;
+    push @commands, q{--bqsr-recal-file} . $SPACE . $base_quality_score_recalibration_file;
 
     push @commands, q{--output} . $SPACE . $outfile_path;
 
@@ -624,7 +620,7 @@ sub gatk_base {
             store       => \$base_quality_score_recalibration_file,
             strict_type => 1,
         },
-        commands_ref => { default => [], store => \$commands_ref, strict_type => 1, },
+        commands_ref       => { default => [], store => \$commands_ref, strict_type => 1, },
         disable_indel_qual => {
             allow       => [ 0, 1 ],
             store       => \$disable_indel_qual,
@@ -661,8 +657,7 @@ sub gatk_base {
             store       => \$pedigree_validation_type,
             strict_type => 1,
         },
-        read_filters_ref =>
-          { default => [], store => \$read_filters_ref, strict_type => 1, },
+        read_filters_ref   => { default => [], store => \$read_filters_ref, strict_type => 1, },
         referencefile_path => {
             defined     => 1,
             required    => 1,
@@ -697,9 +692,7 @@ sub gatk_base {
     if ($num_cpu_threads_per_data_thread) {
 
         push @commands,
-            q{--num_cpu_threads_per_data_thread}
-          . $SPACE
-          . $num_cpu_threads_per_data_thread;
+          q{--num_cpu_threads_per_data_thread} . $SPACE . $num_cpu_threads_per_data_thread;
     }
 
     if ($downsample_to_coverage) {
@@ -745,11 +738,8 @@ sub gatk_base {
 
         push
           @commands,
-          q{--static_quantized_quals}
-          . $SPACE
-          . join $SPACE
-          . q{--static_quantized_quals}
-          . $SPACE, @{$static_quantized_quals_ref};
+          q{--static_quantized_quals} . $SPACE . join $SPACE . q{--static_quantized_quals} . $SPACE,
+          @{$static_quantized_quals_ref};
     }
     unix_write_to_file(
         {
@@ -1334,8 +1324,8 @@ sub gatk_combinevariants {
             store       => \$infile_paths_ref,
             strict_type => 1,
         },
-        intervals_ref => { default => [], store => \$intervals_ref, strict_type => 1, },
-        java_jar             => { store => \$java_jar, strict_type => 1, },
+        intervals_ref        => { default => [], store => \$intervals_ref, strict_type => 1, },
+        java_jar             => { store   => \$java_jar, strict_type => 1, },
         java_use_large_pages => {
             allow       => [ 0, 1 ],
             default     => 0,
@@ -1391,16 +1381,15 @@ sub gatk_combinevariants {
 
     @commands = gatk_base(
         {
-            analysis_type          => q{CombineVariants},
-            commands_ref           => \@commands,
-            downsample_to_coverage => $downsample_to_coverage,
-            gatk_disable_auto_index_and_file_lock =>
-              $gatk_disable_auto_index_and_file_lock,
-            intervals_ref            => $intervals_ref,
-            logging_level            => $logging_level,
-            pedigree                 => $pedigree,
-            pedigree_validation_type => $pedigree_validation_type,
-            referencefile_path       => $referencefile_path,
+            analysis_type                         => q{CombineVariants},
+            commands_ref                          => \@commands,
+            downsample_to_coverage                => $downsample_to_coverage,
+            gatk_disable_auto_index_and_file_lock => $gatk_disable_auto_index_and_file_lock,
+            intervals_ref                         => $intervals_ref,
+            logging_level                         => $logging_level,
+            pedigree                              => $pedigree,
+            pedigree_validation_type              => $pedigree_validation_type,
+            referencefile_path                    => $referencefile_path,
         }
     );
 
@@ -1896,9 +1885,7 @@ sub gatk_gathervcfscloud {
 
     push @commands, q{GatherVcfsCloud};
 
-    push @commands,
-      q{--input} . $SPACE . join $SPACE . q{--input} . $SPACE,
-      @{$infile_paths_ref};
+    push @commands, q{--input} . $SPACE . join $SPACE . q{--input} . $SPACE, @{$infile_paths_ref};
 
     gatk_common_options(
         {
@@ -2266,7 +2253,7 @@ sub gatk_genotypegvcfs {
 
 sub gatk_haplotypecaller {
 
-## Function : Perl wrapper for writing GATK haplotypecaller recipe to $filehandle. Based on GATK 4.1.8.1.
+## Function : Perl wrapper for writing GATK haplotypecaller recipe to $filehandle. Based on GATK 4.2.0.0.
 ## Returns  : @commands
 ## Arguments: $annotations_ref                               => One or more specific annotations to apply to variant calls
 ##          : $dbsnp_path                                    => Path to DbSNP file
@@ -3183,11 +3170,8 @@ sub gatk_selectvariants {
     if ( @{$select_type_to_include_ref} ) {
 
         push @commands,
-            q{--select-type-to-include}
-          . $SPACE
-          . join $SPACE
-          . q{--select-type-to-include}
-          . $SPACE, @{$select_type_to_include_ref};
+          q{--select-type-to-include} . $SPACE . join $SPACE . q{--select-type-to-include} . $SPACE,
+          @{$select_type_to_include_ref};
     }
 
     push @commands, q{--output} . $SPACE . $outfile_path;
@@ -3394,7 +3378,7 @@ sub gatk_varianteval {
         filehandle      => { store => \$filehandle, },
         indel_gold_standard_file_path =>
           { store => \$indel_gold_standard_file_path, strict_type => 1, },
-        intervals_ref => { default => [], store => \$intervals_ref, strict_type => 1, },
+        intervals_ref    => { default => [], store => \$intervals_ref, strict_type => 1, },
         infile_paths_ref => {
             default     => [],
             defined     => 1,
@@ -3476,8 +3460,7 @@ sub gatk_varianteval {
 
     if ( @{$infile_paths_ref} ) {
 
-        push @commands, q{--eval} . $SPACE . join $SPACE . q{--eval} . $SPACE,
-          @{$infile_paths_ref};
+        push @commands, q{--eval} . $SPACE . join $SPACE . q{--eval} . $SPACE, @{$infile_paths_ref};
     }
 
     if ($outfile_path) {
