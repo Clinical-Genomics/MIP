@@ -1378,19 +1378,6 @@ sub analysis_vep {
             }
         );
 
-        if ( $consensus_analysis_type eq q{wts} ) {
-
-            set_file_path_to_store(
-                {
-                    format           => q{vcf},
-                    id               => $case_id,
-                    path             => $outfile_path,
-                    recipe_name      => $recipe_name,
-                    sample_info_href => $sample_info_href,
-                }
-            );
-        }
-
         submit_recipe(
             {
                 base_command                      => $profile_base_command,
