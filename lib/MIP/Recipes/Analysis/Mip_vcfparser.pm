@@ -514,8 +514,8 @@ sub analysis_mip_vcfparser_panel {
     use MIP::List qw{ get_splitted_lists };
     use MIP::Parameter qw{ get_cache };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Bcftools qw{ bcftools_concat bcftools_view bcftools_view_and_index_vcf };
-    use MIP::Program::Htslib qw{ htslib_tabix };
+    use MIP::Program::Bcftools qw{ bcftools_concat bcftools_sort bcftools_view };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Mip qw{ mip_vcfparser };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{
@@ -638,17 +638,27 @@ sub analysis_mip_vcfparser_panel {
           @{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} };
     }
 
-    ## Prepare file for vcfparser
-    my $bcftools_outfile_path_prefix = catfile( $outdir_path, $infile_name_prefix );
-    bcftools_view_and_index_vcf(
+    say {$filehandle} q{## Prepare file for vcfparser};
+    my $bcftools_outfile_path = catfile( $outdir_path, $infile_name_prefix . q{.vcf.gz} );
+    bcftools_sort(
         {
-            filehandle          => $filehandle,
-            index_type          => q{tbi},
-            infile_path         => $infile_path,
-            outfile_path_prefix => $bcftools_outfile_path_prefix,
-            output_type         => q{z},
+            filehandle     => $filehandle,
+            infile_path    => $infile_path,
+            outfile_path   => $bcftools_outfile_path,
+            output_type    => q{z},
+            temp_directory => $temp_directory,
         }
     );
+    say {$filehandle} $NEWLINE;
+
+    htslib_tabix(
+        {
+            filehandle  => $filehandle,
+            infile_path => $bcftools_outfile_path,
+            preset      => q{vcf},
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     ## Get contigs
     my ( $mt_contig_ref, $contigs_ref ) = get_splitted_lists(
@@ -665,11 +675,12 @@ sub analysis_mip_vcfparser_panel {
   REGIONS_REF:
     while ( my ( $index, $regions_ref ) = each @all_contigs ) {
 
+        say {$filehandle} qq{## parse @{ $regions_ref }};
         bcftools_view(
             {
                 filehandle  => $filehandle,
                 regions_ref => $regions_ref,
-                infile_path => $bcftools_outfile_path_prefix . q{.vcf.gz},
+                infile_path => $bcftools_outfile_path,
                 output_type => q{v},
             }
         );
@@ -693,19 +704,45 @@ sub analysis_mip_vcfparser_panel {
             }
         );
         say {$filehandle} $NEWLINE;
+
+      TEMP_OUTFILE_TYPE:
+        foreach my $temp_outfile_type ( keys %temp_outfile_path ) {
+
+            say {$filehandle} q{## Compress and index};
+            htslib_bgzip(
+                {
+                    filehandle  => $filehandle,
+                    infile_path => $temp_outfile_path{$temp_outfile_type}[$index],
+                    threads     => $recipe{core_number},
+                }
+            );
+            say {$filehandle} $NEWLINE;
+
+            htslib_tabix(
+                {
+                    filehandle  => $filehandle,
+                    infile_path => $temp_outfile_path{$temp_outfile_type}[$index] . q{.gz},
+                    preset      => q{vcf},
+                }
+            );
+            say {$filehandle} $NEWLINE;
+        }
     }
 
     ## Concatenate chr outfiles with mt outfiles
   ANALYSIS_SUFFIXES:
     foreach my $analysis_suffix (@vcfparser_analysis_suffixes) {
 
+        say {$filehandle} qq{## Concatenate and index $analysis_suffix};
         bcftools_concat(
             {
                 filehandle       => $filehandle,
-                infile_paths_ref => $temp_outfile_path{$analysis_suffix},
-                outfile_path     => $outfile_path{$analysis_suffix},
-                output_type      => q{z},
-                threads          => $recipe{core_number},
+                infile_paths_ref =>
+                  [ map { $_ . q{.gz} } @{ $temp_outfile_path{$analysis_suffix} } ],
+                outfile_path => $outfile_path{$analysis_suffix},
+                output_type  => q{z},
+                rm_dups      => 0,
+                threads      => $recipe{core_number},
             }
         );
         say {$filehandle} $NEWLINE;
