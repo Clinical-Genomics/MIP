@@ -99,15 +99,15 @@ vep_plugin:
   LoFtool:
     exist_check:
       - type: file
-        path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/LoFtool_scores.txt
+        path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/LoFtool_scores.txt
     parameters:
-      - cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/LoFtool_scores.txt
+      - cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/LoFtool_scores.txt
   MaxEntScan:
     exist_check:
       - type: directory
-        path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/fordownload
+        path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/fordownload
     parameters:
-      - cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/fordownload
+      - cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/fordownload
       - SWA
       - NCSS
   SpliceAI:
