@@ -54,8 +54,7 @@ my $test_dir = File::Temp->newdir();
 test_log( {} );
 
 ## Given matching vep API and cache version
-my $vep_directory_cache =
-  catdir( $Bin, qw{ data references ensembl-tools-data-100 cache } );
+my $vep_directory_cache = catdir( $Bin, qw{ data references ensembl-tools-data-103 cache } );
 
 my %process_return = (
     buffers_ref   => [],
@@ -71,7 +70,7 @@ test_constants(
 );
 my $base_command = q{vep};
 my $container_base_command =
-  q{singularity exec docker//docker.io/ensemblorg/ensembl-vep:release_100.2 vep};
+  q{singularity exec docker//docker.io/ensemblorg/ensembl-vep:release_103 vep};
 my %container_cmd = ( $base_command => $container_base_command, );
 set_container_cmd( { container_cmd_href => \%container_cmd, } );
 
@@ -86,8 +85,7 @@ my $match = check_vep_api_cache_versions(
 ok( $match, q{Return on matching versions} );
 
 ## Given non matching API and cache
-$vep_directory_cache =
-  catdir( $Bin, qw{ data references ensembl-tools-data-100 cache2 } );
+$vep_directory_cache = catdir( $Bin, qw{ data references ensembl-tools-data-103 cache2 } );
 
 ## When comparing API and cache version
 trap {
@@ -103,8 +101,7 @@ like( $trap->stderr, qr/FATAL/xms, q{Throw FATAL log message} );
 ok( $trap->exit, q{Exit on non matching versions} );
 
 ## Given a cache folder lacking the homo_sapiens subdirectory
-$vep_directory_cache =
-  catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-vep } );
+$vep_directory_cache = catdir( $Bin, qw{ data modules miniconda envs test_env ensembl-vep } );
 
 ## When trying to get the cache versions
 trap {
@@ -138,10 +135,6 @@ trap {
 
 ## Then return and print warning message
 ok( $trap->return, q{Return on unknown API version} );
-like(
-    $trap->stderr,
-    qr/Could \s+ not \s+ retrieve /xms,
-    q{Warn for unknown VEP api version}
-);
+like( $trap->stderr, qr/Could \s+ not \s+ retrieve /xms, q{Warn for unknown VEP api version} );
 
 done_testing();
