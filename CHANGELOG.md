@@ -5,8 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [10.0.0]
 - Remove unused recipe split_fastq_file
 - Align with the same bwa mem options as used by Broad
-    - Fixed number of bases in each batch
-    - Use bwa mem instead of run-bwamem for alignment to grch38
+  - Fixed number of bases in each batch
+  - Use bwa mem instead of run-bwamem for alignment to grch38
 - Use Chanjo repos Docker file instead of MIPs
 - Removed support to run bcftools_mpileup as a variant caller
 - Added perl and MIP docker file and use it in recipes
@@ -28,6 +28,7 @@ pdfmerger: v1.0
 picardtools: 2.23.4 -> 2.25.0
 samtools: 1.10-h9402c20_2 -> 1.11-h6270b1f_0
 smncopynumbercaller: 4b2c1ad -> v1.1.1
+star: 2.7.4a -> 2.7.8a
 stranger: 0.7 -> 0.7.1
 svdb: 2.2.0 -> 2.4.0--py37h77a2a36_4
 tiddit: 2.8.1 -> 2.12.1

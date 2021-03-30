@@ -181,7 +181,7 @@ container:
   star:
     executable:
       STAR:
-    uri: docker.io/clinicalgenomics/star:2.7.4a
+    uri: docker.io/clinicalgenomics/star:2.7.8a
   star-fusion:
     executable:
       blastn:
