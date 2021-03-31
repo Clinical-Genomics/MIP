@@ -244,7 +244,7 @@ container:
   vep:
     executable:
       vep:
-    uri: docker.io/ensemblorg/ensembl-vep:release_100.2
+    uri: docker.io/ensemblorg/ensembl-vep:release_103.1
   vcf2cytosure:
     executable:
       vcf2cytosure:
