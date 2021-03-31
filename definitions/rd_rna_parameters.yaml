@@ -542,12 +542,14 @@ megafusion_arriba_config:
   data_type: SCALAR
   default: "/opt/conda/share/MegaFusion/json/Ariba.json"
   type: path
+  update_path: absolute_path
 megafusion_star_fusion_config:
   associated_recipe:
     - megafusion_ar
   data_type: SCALAR
   default: "/opt/conda/share/MegaFusion/json/Star_Fusion.json"
   type: path
+  update_path: absolute_path
 svdb_merge_fusion:
   analysis_mode: case
   associated_recipe:
