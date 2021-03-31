@@ -120,9 +120,17 @@ my %specific_argument = (
         input           => q{5 -1 5 5},
         expected_output => q{--alignSJstitchMismatchNmax 5 -1 5 5},
     },
+    align_spliced_mate_map_lmin_over_lmate => {
+        input           => q{0.5},
+        expected_output => q{--alignSplicedMateMapLminOverLmate 0.5},
+    },
     chim_junction_overhang_min => {
         input           => $CHIM_JUNCTION_OVERHANG_MIN,
         expected_output => q{--chimJunctionOverhangMin} . $SPACE . $CHIM_JUNCTION_OVERHANG_MIN,
+    },
+    chim_multimap_nmax => {
+        input           => 1,
+        expected_output => q{--chimMultimapNmax 1},
     },
     chim_out_type => {
         input           => q{WithinBAM},

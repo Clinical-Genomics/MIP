@@ -472,7 +472,12 @@ arriba_ar:
   type: recipe
 arriba_blacklist_path:
   associated_recipe:
-    - fusion_report
+    - arriba_ar
+  data_type: SCALAR
+  type: path
+arriba_known_fusion_path:
+  associated_recipe:
+    - arriba_ar
   data_type: SCALAR
   type: path
 fusion_report:
@@ -492,8 +497,9 @@ fusion_cytoband_path:
     - fusion_report
   data_type: SCALAR
   type: path
-fusion_proteindomain_path:
+fusion_protein_domain_path:
   associated_recipe:
+    - arriba_ar
     - fusion_report
   data_type: SCALAR
   type: path

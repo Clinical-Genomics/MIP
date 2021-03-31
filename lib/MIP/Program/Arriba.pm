@@ -37,13 +37,14 @@ sub arriba {
 ##          : $filehandle                 => Filehandle to write to
 ##          : $genome_file_path           => Genome reference path
 ##          : $infile_path                => SAM/BAM file path
+##          : $known_fusion_file_path     => Path to file with known fusions
 ##          : $outfile_path               => Path to outfile
-##          : $print_fusion_peptide       => Add fusion peptide sequence to outfile
-##          : $print_fusion_transcript    => Add fusion transcript sequence to outfile
+##          : $protein_domain_file_path   => Path to file with protein domains
 ##          : $stderrfile_path            => Stderrfile path
 ##          : $stderrfile_path_append     => Append stderr info to file path
 ##          : $stdinfile_path             => Stdinfile path
 ##          : $stdoutfile_path            => Stdoutfile path
+##          : $tag_file_path              => Tag file path
 
     my ($arg_href) = @_;
 
@@ -55,13 +56,14 @@ sub arriba {
     my $filehandle;
     my $genome_file_path;
     my $infile_path;
+    my $known_fusion_file_path;
     my $outfile_path;
-    my $print_fusion_peptide;
-    my $print_fusion_transcript;
+    my $protein_domain_file_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
+    my $tag_file_path;
 
     my $tmpl = {
         annotation_file_path => {
@@ -94,19 +96,17 @@ sub arriba {
             store       => \$infile_path,
             strict_type => 1,
         },
+        known_fusion_file_path => {
+            store       => \$known_fusion_file_path,
+            strict_type => 1,
+        },
         outfile_path => {
             required    => 1,
             store       => \$outfile_path,
             strict_type => 1,
         },
-        print_fusion_peptide => {
-            allow       => [ undef, 0, 1 ],
-            store       => \$print_fusion_peptide,
-            strict_type => 1,
-        },
-        print_fusion_transcript => {
-            allow       => [ undef, 0, 1 ],
-            store       => \$print_fusion_transcript,
+        protein_domain_file_path => {
+            store       => \$protein_domain_file_path,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -123,6 +123,10 @@ sub arriba {
         },
         stdoutfile_path => {
             store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+        tag_file_path => {
+            store       => \$tag_file_path,
             strict_type => 1,
         },
     };
@@ -152,16 +156,21 @@ sub arriba {
 
     push @commands, q{-x} . $SPACE . $infile_path;
 
-    push @commands, q{-o} . $SPACE . $outfile_path;
+    if ($known_fusion_file_path) {
 
-    if ($print_fusion_peptide) {
-
-        push @commands, q{-P};
+        push @commands, q{-k} . $SPACE . $known_fusion_file_path;
     }
 
-    if ($print_fusion_transcript) {
+    push @commands, q{-o} . $SPACE . $outfile_path;
 
-        push @commands, q{-T};
+    if ($protein_domain_file_path) {
+
+        push @commands, q{-p} . $SPACE . $protein_domain_file_path;
+    }
+
+    if ($tag_file_path) {
+
+        push @commands, q{-t} . $SPACE . $tag_file_path;
     }
 
     push @commands,
