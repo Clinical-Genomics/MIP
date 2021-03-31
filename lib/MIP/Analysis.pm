@@ -467,7 +467,7 @@ sub get_vcf_parser_analysis_suffix {
     Readonly my $VCFPARSER_OUTFILE_COUNT => $vcfparser_outfile_count - 1;
 
     my $analysis_type_suffix = $EMPTY_STR;
-    if ( defined $analysis_type and $analysis_type eq q{panel} ) {
+    if ( defined $analysis_type and $analysis_type =~ /panel|wts/xms ) {
 
         $analysis_type_suffix = q{all};
     }

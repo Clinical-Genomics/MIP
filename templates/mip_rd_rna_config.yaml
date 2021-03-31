@@ -13,6 +13,7 @@ slurm_quality_of_service: low
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
 reference_dir: cluster_constant_path!/references
 fusion_select_file: cluster_constant_path!/case_id!/gene_panels.bed
+vcfparser_select_file: cluster_constant_path!/case_id!/gene_panels.bed
 ## Output
 config_file_analysis: cluster_constant_path!/case_id!/analysis/case_id!_config.yaml
 outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!

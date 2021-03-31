@@ -42,6 +42,7 @@ CHAIN_ALL:
       - bootstrapann
       - bcftools_merge
       - varianteffectpredictor
+      - vcfparser_ar
   - qccollect_ar
   - version_collect_ar
   - multiqc_ar

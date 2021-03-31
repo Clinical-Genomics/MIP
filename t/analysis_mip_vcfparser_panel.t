@@ -82,14 +82,15 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
+$parameter{cache}{consensus_analysis_type} = q{wts};
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $case_id,
-        parameter_href    => \%parameter,
-        recipe_name       => $recipe_name,
-        step              => q{vcf},
+        file_info_href => \%file_info,
+        id             => $case_id,
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{vcf},
     }
 );
 
