@@ -70,7 +70,7 @@ test_constants(
 );
 my $base_command = q{vep};
 my $container_base_command =
-  q{singularity exec docker//docker.io/ensemblorg/ensembl-vep:release_103 vep};
+  q{singularity exec docker//docker.io/ensemblorg/ensembl-vep:release_103.1 vep};
 my %container_cmd = ( $base_command => $container_base_command, );
 set_container_cmd( { container_cmd_href => \%container_cmd, } );
 

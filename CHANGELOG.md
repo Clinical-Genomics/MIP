@@ -34,7 +34,7 @@ svdb: 2.2.0 -> 2.4.0--py37h77a2a36_4
 tiddit: 2.8.1 -> 2.12.1
 
 **References**
-- VEP cache: 100 -> 103
+- VEP cache: 100 -> 103.1
 
 ## [9.1.3]
 - Fix memory allocation for mip-rna markduplicates.

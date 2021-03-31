@@ -52,7 +52,7 @@ open my $filehandle, q{>}, \$file_content
 
 ## Given an existing perl command in CONTAINER_CMD
 my $container_perl_command = q{singularity exec docker.io/clinicalgenomics/perl:5.26 perl};
-my $container_vep_command  = q{singularity exec docker.io/ensemblorg/ensembl-vep:release_103 vep};
+my $container_vep_command  = q{singularity exec docker.io/ensemblorg/ensembl-vep:release_103.1 vep};
 
 my %container_cmd = (
     perl => $container_perl_command,

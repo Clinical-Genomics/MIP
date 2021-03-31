@@ -234,7 +234,7 @@ container:
   vep:
     executable:
       vep: ~
-    uri: docker.io/ensemblorg/ensembl-vep:release_103
+    uri: docker.io/ensemblorg/ensembl-vep:release_103.1
 container_manager: singularity
 custom_default_parameters:
   - program_test_file
