@@ -23,6 +23,7 @@ reference:
   human_reference:
     - decoy_5
     - assembly38
+    - gencode_pri
   mills_and_1000g_indels:
     - gold_standard_indels
   pfam:
@@ -96,11 +97,21 @@ reference_feature:
         url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
         outfile_decompress: gzip
         outfile_check_method: md5sum
+      gencode_pri:
+        file: GRCh37.primary_assembly.genome.fa.gz
+        outfile: grch37_homo_sapiens_-gencode_pri-.fasta.gz
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/
+        outfile_decompress: gzip
     grch38:
       assembly38:
         file: Homo_sapiens_assembly38.fasta
         outfile: grch38_homo_sapiens_-assembly-.fasta
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
+      gencode_pri:
+        file: GRCh38.primary_assembly.genome.fa.gz
+        outfile: grch38_homo_sapiens_-gencode_pri-.fasta.gz
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/
+        outfile_decompress: gzip
   1000g_indels:
     grch37:
       phase1:
