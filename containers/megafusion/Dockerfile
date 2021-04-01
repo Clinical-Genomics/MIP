@@ -5,9 +5,9 @@ FROM clinicalgenomics/mip_base:2.1
 ################## METADATA ######################
 
 LABEL base_image="clinicalgenomics/mip_base:2.1"
-LABEL version="2"
+LABEL version="3"
 LABEL software="MegaFusion"
-LABEL software.version="5112def"
+LABEL software.version="cc6676c"
 LABEL extra.binaries="MegaFusion.py"
 LABEL maintainer="Clinical-Genomics/MIP"
 
@@ -25,4 +25,4 @@ RUN git clone https://github.com/J35P312/MegaFusion.git /opt/conda/share/MegaFus
 WORKDIR /opt/conda/share/MegaFusion
 
 ## Make sure we're on the right commit
-RUN git reset --hard 5112def
+RUN git reset --hard cc6676c
