@@ -30,9 +30,13 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $THREE  => 3;
-Readonly my $TEN    => 10;
-Readonly my $THIRTY => 30;
+Readonly my $CHIM_JUNCTION_OVERHANG_MIN => 10;
+Readonly my $CHIM_MULTIMAP_NMAX         => 50;
+Readonly my $CHIM_SCORE_DROP_MAX        => 30;
+Readonly my $CHIM_SEGMENT_MIN           => 10;
+Readonly my $CHIM_SEGMENT_READ_GAP_MAX  => 3;
+Readonly my $OUT_FILTER_MISMATCH_NMAX   => 3;
+Readonly my $OUT_FILTER_MULTIMAP_NMAX   => 50;
 
 sub analysis_arriba {
 
@@ -292,29 +296,30 @@ sub analysis_arriba {
 
     my @arriba_commands = star_aln(
         {
-            align_sj_stitch_mismatch_nmax => q{5 -1 5 5},
-            chim_junction_overhang_min    => $TEN,
-            chim_out_type                 => q{WithinBAM SoftClip},
-            chim_score_drop_max           => $THIRTY,
-            chim_score_junction_non_gtag  => 0,
-            chim_score_min                => 1,
-            chim_score_separation         => 1,
-            chim_segment_min              => $TEN,
-            chim_segment_read_gap_max     => $THREE,
-            genome_dir_path               => $referencefile_dir_path,
-            infile_paths_ref              => \@fastq_files,
-            out_bam_compression           => 0,
-            outfile_name_prefix           => $outfile_path_prefix . $DOT,
-            out_filter_mismatch_nmax      => $THREE,
-            out_filter_multimap_nmax      => 1,
-            out_sam_attr_rgline           => $out_sam_attr_rgline,
-            out_sam_type                  => q{BAM Unsorted},
-            out_sam_unmapped              => q{Within},
-            pe_overlap_nbases_min         => $active_parameter_href->{pe_overlap_nbases_min},
-            quant_mode                    => q{-},
-            stdout_data_type              => q{BAM_Unsorted},
-            thread_number                 => $recipe{core_number},
-            two_pass_mode                 => q{None},
+            align_sj_stitch_mismatch_nmax          => q{5 -1 5 5},
+            align_spliced_mate_map_lmin_over_lmate => q{0.5},
+            chim_junction_overhang_min             => $CHIM_JUNCTION_OVERHANG_MIN,
+            chim_multimap_nmax                     => $CHIM_MULTIMAP_NMAX,
+            chim_out_type                          => q{WithinBAM HardClip},
+            chim_score_drop_max                    => $CHIM_SCORE_DROP_MAX,
+            chim_score_junction_non_gtag           => 0,
+            chim_score_min                         => 1,
+            chim_score_separation                  => 1,
+            chim_segment_min                       => $CHIM_SEGMENT_MIN,
+            chim_segment_read_gap_max              => $CHIM_SEGMENT_READ_GAP_MAX,
+            genome_dir_path                        => $referencefile_dir_path,
+            infile_paths_ref                       => \@fastq_files,
+            out_bam_compression                    => 0,
+            outfile_name_prefix                    => $outfile_path_prefix . $DOT,
+            out_filter_mismatch_nmax               => $OUT_FILTER_MISMATCH_NMAX,
+            out_filter_multimap_nmax               => $OUT_FILTER_MULTIMAP_NMAX,
+            out_sam_attr_rgline                    => $out_sam_attr_rgline,
+            out_sam_type                           => q{BAM Unsorted},
+            out_sam_unmapped                       => q{Within},
+            pe_overlap_nbases_min => $active_parameter_href->{pe_overlap_nbases_min},
+            stdout_data_type      => q{BAM_Unsorted},
+            thread_number         => $recipe{core_number},
+            two_pass_mode         => q{None},
         },
     );
     push @arriba_commands, $PIPE;
@@ -337,11 +342,12 @@ sub analysis_arriba {
               . $UNDERSCORE
               . q{discarded}
               . $outfile_suffix,
-            genome_file_path        => $active_parameter_href->{human_genome_reference},
-            infile_path             => catfile( dirname( devnull() ), q{stdin} ),
-            outfile_path            => $outfile_path,
-            print_fusion_peptide    => 1,
-            print_fusion_transcript => 1,
+            genome_file_path         => $active_parameter_href->{human_genome_reference},
+            infile_path              => catfile( dirname( devnull() ), q{stdin} ),
+            known_fusion_file_path   => $active_parameter_href->{arriba_known_fusion_path},
+            outfile_path             => $outfile_path,
+            protein_domain_file_path => $active_parameter_href->{fusion_protein_domain_path},
+            tag_file_path            => $active_parameter_href->{arriba_known_fusion_path},
         }
       );
 

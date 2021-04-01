@@ -360,7 +360,6 @@ sub perl_nae_oneliners {
         get_vcf_header_id_line               => \&_get_vcf_header_id_line,
         get_vcf_loqusdb_headers              => \&_get_vcf_loqusdb_headers,
         get_vcf_sample_ids                   => \&_get_vcf_sample_ids,
-        reformat_arriba_contig_name          => \&_reformat_arriba_contig_name,
         reformat_sacct_headers               => \&_reformat_sacct_headers,
         remove_decomposed_asterisk_records   => \&_remove_decomposed_asterisk_records,
         star_sj_tab_to_bed                   => \&_star_sj_tab_to_bed,
@@ -1096,25 +1095,6 @@ sub _write_contigs_size_file {
     my $write_contigs_size = q?'say STDOUT $F[0] . "\t" . $F[1] '?;
 
     return $write_contigs_size;
-}
-
-sub _reformat_arriba_contig_name {
-
-## Function : Prepend chr prefix to contig names
-## Returns  : $reformat_arriba_contig_name
-
-    my ($arg_href) = @_;
-
-    ## For each column with contig info
-    my $reformat_arriba_contig_name = q?'foreach my $contig (@F[4,5]) ?;
-
-    ## Prepend chr prefix
-    $reformat_arriba_contig_name .= q?{ $contig=~s/(^\d+:\d+)/chr$1/g; } ?;
-
-    ## Write to STDOUT
-    $reformat_arriba_contig_name .= q?print join qq{\t}, @F;'?;
-
-    return $reformat_arriba_contig_name;
 }
 
 1;

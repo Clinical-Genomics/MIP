@@ -31,9 +31,10 @@ gatk_baserecalibration_known_sites:
 ### Analysis
 ## Programs
 ## Parameters
-arriba_blacklist_path: /arriba_v1.2.0/database/blacklist_hg38_GRCh38_2018-11-04.tsv.gz
-fusion_cytoband_path: /arriba_v1.2.0/database/cytobands_hg38_GRCh38_2018-02-23.tsv
-fusion_proteindomain_path: /arriba_v1.2.0/database/protein_domains_hg38_GRCh38_2019-07-05.gff3
+arriba_blacklist_path: /arriba_v2.1.0/database/blacklist_hg38_GRCh38_v2.1.0.tsv.gz
+arriba_known_fusion_path: /arriba_v2.1.0/database/known_fusions_hg38_GRCh38_v2.1.0.tsv.gz
+fusion_cytoband_path: /arriba_v2.1.0/database/cytobands_hg38_GRCh38_v2.1.0.tsv
+fusion_protein_domain_path: /arriba_v2.1.0/database/protein_domains_hg38_GRCh38_v2.1.0.gff3
 picardtools_path: /usr/picard
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna/ensembl-tools-100/cache/

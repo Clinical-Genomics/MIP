@@ -475,7 +475,12 @@ arriba_ar:
   type: recipe
 arriba_blacklist_path:
   associated_recipe:
-    - fusion_report
+    - arriba_ar
+  data_type: SCALAR
+  type: path
+arriba_known_fusion_path:
+  associated_recipe:
+    - arriba_ar
   data_type: SCALAR
   type: path
 fusion_report:
@@ -495,8 +500,9 @@ fusion_cytoband_path:
     - fusion_report
   data_type: SCALAR
   type: path
-fusion_proteindomain_path:
+fusion_protein_domain_path:
   associated_recipe:
+    - arriba_ar
     - fusion_report
   data_type: SCALAR
   type: path
@@ -539,12 +545,14 @@ megafusion_arriba_config:
   data_type: SCALAR
   default: "/opt/conda/share/MegaFusion/json/Ariba.json"
   type: path
+  update_path: absolute_path
 megafusion_star_fusion_config:
   associated_recipe:
     - megafusion_ar
   data_type: SCALAR
   default: "/opt/conda/share/MegaFusion/json/Star_Fusion.json"
   type: path
+  update_path: absolute_path
 svdb_merge_fusion:
   analysis_mode: case
   associated_recipe:

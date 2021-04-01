@@ -131,6 +131,15 @@ sub _build_usage {
     );
 
     option(
+        q{arriba_known_fusion_path} => (
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to arriba known fusions file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{fusion_use_sample_id_as_display_name} => (
             cmd_tags      => [q{Default: 0}],
             documentation => q{Use sample id as display name for fusion report},
@@ -212,7 +221,7 @@ sub _build_usage {
     );
 
     option(
-        q{fusion_proteindomain_path} => (
+        q{fusion_protein_domain_path} => (
             cmd_tags      => [q{Recipe argument}],
             documentation => q{Path to protein domain file},
             is            => q{rw},
