@@ -179,7 +179,7 @@ container:
       prep_genome_lib.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl
       remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
       restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
-    uri: docker.io/trinityctat/starfusion:1.9.0
+    uri: docker.io/trinityctat/starfusion:1.10.0
   stranger:
     executable:
       stranger: ~
