@@ -38,6 +38,7 @@ tiddit: 2.8.1 -> 2.12.1
 - VEP cache: 100 -> 103.1
 - grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz -> grch37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz
 - grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz -> grch38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz
+- gencode annotation: v34 -> v37
 
 ## [9.1.3]
 - Fix memory allocation for mip-rna markduplicates.
