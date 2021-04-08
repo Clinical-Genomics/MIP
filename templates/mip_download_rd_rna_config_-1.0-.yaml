@@ -16,8 +16,8 @@ reference:
     - gold_standard_dbsnp
     - 146
   gencode_annotation:
-    - v31
     - v34
+    - v37
   human_reference:
     - decoy_5
     - assembly38
@@ -29,27 +29,27 @@ reference:
 reference_feature:
   gencode_annotation:
     grch37:
-      v31:
-        file: gencode.v31lift37.annotation.gtf.gz
-        outfile: grch37_gencode_annotation_-v31-.gtf.gz
-        outfile_decompress: gzip
-        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_31/GRCh37_mapping/
       v34:
         file: gencode.v34lift37.annotation.gtf.gz
         outfile: grch37_gencode_annotation_-v34-.gtf.gz
         outfile_decompress: gzip
         url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_34/GRCh37_mapping/
-    grch38:
-      v31:
-        file: gencode.v31.annotation.gtf.gz
-        outfile: grch38_gencode_annotation_-v31-.gtf.gz
+      v37:
+        file: gencode.v37lift37.annotation.gtf.gz
+        outfile: grch37_gencode_annotation_-v37-.gtf.gz
         outfile_decompress: gzip
-        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_31/
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/
+    grch38:
       v34:
         file: gencode.v34.annotation.gtf.gz
         outfile: grch38_gencode_annotation_-v34-.gtf.gz
         outfile_decompress: gzip
         url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_34/
+      v37:
+        file: gencode.v37.annotation.gtf.gz
+        outfile: grch38_gencode_annotation_-v37-.gtf.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/
   ctat_resource_lib:
     grch37:
       gencode_v19_ctat_lib_mar012021:
