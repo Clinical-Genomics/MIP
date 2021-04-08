@@ -1,8 +1,10 @@
 # Change Log
+
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [10.0.0]
+
 - Remove unused recipe split_fastq_file
 - Align with the same bwa mem options as used by Broad
   - Fixed number of bases in each batch
@@ -15,7 +17,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Removed support to run variant_integrity
 - Added deepvariant as variant caller and glnexus to merge samples to case vcf
 
-**Tools**
+### Tools
+
 arriba: v1.2.0 -> v2.1.0
 bcftools: 1.10.2-hd2cd319_0 -> 1.11-h7c999a4_0
 bwa-mem2 2.0 -> 2.2
@@ -34,7 +37,8 @@ stranger: 0.7 -> 0.7.1
 svdb: 2.2.0 -> 2.4.0--py37h77a2a36_4
 tiddit: 2.8.1 -> 2.12.1
 
-**References**
+### References
+
 - VEP cache: 100 -> 103.1
 - grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz -> grch37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz
 - grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz -> grch38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz
