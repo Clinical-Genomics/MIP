@@ -36,10 +36,10 @@ You can speed up, for instance, the Readonly module by also installing the compa
 #### **Pipeline: Rare disease**
 - [Arriba] (version: 2.1.0)
 - [Bcftools] (version: 1.11)
-- [BedTools] (version: 2.2.29)
-- [Blobfish] (version: 0.0.2 )
-- [BootstrapAnn] (version: df02f35)
 - [BWA] (version: 0.7.17)
+- [BedTools] (version: 2.30.0)
+- [Blobfish] (version: 0.0.2 )
+- [BootstrapAnn] (version: df02f35t)
 - [BWAKit] (version: 0.7.17)
 - [CADD] (version: 1.6)
 - [Chanjo] (version: 4.6.0)
