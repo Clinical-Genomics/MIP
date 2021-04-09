@@ -20,6 +20,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Tools
 
 arriba: v1.2.0 -> v2.1.0
+bedtools: 2.29.0 -> 2.30.0
 bcftools: 1.10.2-hd2cd319_0 -> 1.11-h7c999a4_0
 bwa-mem2 2.0 -> 2.2
 chanjo: 4.2.0 -> 4.6

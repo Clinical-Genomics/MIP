@@ -5,6 +5,10 @@ container:
       arriba: /arriba_v2.1.0/arriba
       draw_fusions.R: /arriba_v2.1.0/draw_fusions.R
     uri: docker.io/uhrigs/arriba:2.1.0
+  bedtools:
+    executable:
+      bedtools:
+    uri: docker.io/clinicalgenomics/bedtools:2.30.0
   blobfish:
     executable:
       BlobFish.py:
@@ -26,10 +30,6 @@ container:
     executable:
       bwa-mem2:
     uri: docker.io/clinicalgenomics/bwa-mem2:2.2.1
-  bedtools:
-    executable:
-      bedtools:
-    uri: docker.io/clinicalgenomics/bedtools:2.2.29
   cadd:
     bind_path:
       CADD.sh: reference_dir!/CADD-scripts/data/annotations:/opt/conda/share/CADD-scripts/data/annotations

@@ -35,7 +35,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 
 #### **Pipeline: Rare disease**
 - [Bcftools] (version: 1.11)
-- [BedTools] (version: 2.2.29)
+- [BedTools] (version: 2.30.0)
 - [BWA] (version: 0.7.17)
 - [BWAKit] (version: 0.7.17)
 - [CADD] (version: 1.6)
