@@ -13,6 +13,7 @@ slurm_quality_of_service: low
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml
 reference_dir: cluster_constant_path!/references
 fusion_select_file: cluster_constant_path!/case_id!/gene_panels.bed
+vcfparser_select_file: cluster_constant_path!/case_id!/gene_panels.bed
 ## Output
 config_file_analysis: cluster_constant_path!/case_id!/analysis/case_id!_config.yaml
 outdata_dir: cluster_constant_path!/case_id!/analysis_constant_path!
@@ -21,13 +22,14 @@ sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_i
 ## References
 human_genome_reference: grch37_homo_sapiens_-d5-.fasta
 star_fusion_genome_lib_dir: cluster_constant_path!/references/GRCh37_gencode_v19_CTAT_lib_Apr032020.plug-n-play/ctat_genome_lib_build_dir
-transcript_annotation: grch37_gencode_annotation_reformated_-v34-.gtf
+transcript_annotation: grch37_gencode_annotation_reformated_-v37-.gtf
 ### Analysis
 ## Programs
 ## Parameters
-arriba_blacklist_path: /arriba_v1.2.0/database/blacklist_hg19_hs37d5_GRCh37_2018-11-04.tsv.gz
-fusion_cytoband_path: /arriba_v1.2.0/database/cytobands_hg19_hs37d5_GRCh37_2018-02-23.tsv
-fusion_proteindomain_path: /arriba_v1.2.0/database/protein_domains_hg19_hs37d5_GRCh37_2019-07-05.gff3
+arriba_blacklist_path: /arriba_v2.1.0/database/blacklist_hg19_hs37d5_GRCh37_v2.1.0.tsv.gz
+arriba_known_fusion_path: /arriba_v2.1.0/database/known_fusions_hg19_hs37d5_GRCh37_v2.1.0.tsv.gz
+fusion_cytoband_path: /arriba_v2.1.0/database/cytobands_hg19_hs37d5_GRCh37_v2.1.0.tsv
+fusion_protein_domain_path: /arriba_v2.1.0/database/protein_domains_hg19_hs37d5_GRCh37_v2.1.0.gff3
 picardtools_path: /usr/picard
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/MIP_rd_rna/ensembl-tools-100/cache/

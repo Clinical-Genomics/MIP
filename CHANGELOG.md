@@ -1,12 +1,14 @@
 # Change Log
+
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [10.0.0]
+
 - Remove unused recipe split_fastq_file
 - Align with the same bwa mem options as used by Broad
-    - Fixed number of bases in each batch
-    - Use bwa mem instead of run-bwamem for alignment to grch38
+  - Fixed number of bases in each batch
+  - Use bwa mem instead of run-bwamem for alignment to grch38
 - Use Chanjo repos Docker file instead of MIPs
 - Removed support to run bcftools_mpileup as a variant caller
 - Added perl and MIP docker file and use it in recipes
@@ -15,21 +17,34 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Removed support to run variant_integrity
 - Added deepvariant as variant caller and glnexus to merge samples to case vcf
 
-**Tools**
+### Tools
+
+arriba: v1.2.0 -> v2.1.0
+bedtools: 2.29.0 -> 2.30.0
 bcftools: 1.10.2-hd2cd319_0 -> 1.11-h7c999a4_0
 bwa-mem2 2.0 -> 2.2
 chanjo: 4.2.0 -> 4.6
 cyrius: v1.0 -> v1.1
 deepvariant: 1.0.0  
+gatk: v4.1.8.1 -> v4.2.0.0
 glnexus: v1.2.7
 htslib: 1.10.2-h78d89cc_0 -> 1.11-hd3b49d5_2
 pdfmerger: v1.0
 picardtools: 2.23.4 -> 2.25.0
 samtools: 1.10-h9402c20_2 -> 1.11-h6270b1f_0
 smncopynumbercaller: 4b2c1ad -> v1.1.1
+star: 2.7.4a -> 2.7.8a
 stranger: 0.7 -> 0.7.1
 telomerecat: 3.4.0 -> 4.0.0
+svdb: 2.2.0 -> 2.4.0--py37h77a2a36_4
 tiddit: 2.8.1 -> 2.12.1
+
+### References
+
+- VEP cache: 100 -> 103.1
+- grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz -> grch37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz
+- grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz -> grch38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz
+- gencode annotation: v34 -> v37
 
 ## [9.1.3]
 - Fix memory allocation for mip-rna markduplicates.

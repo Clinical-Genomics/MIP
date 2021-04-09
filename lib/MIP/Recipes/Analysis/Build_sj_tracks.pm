@@ -4,7 +4,8 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catdir catfile };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use utf8;
@@ -16,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -123,6 +124,7 @@ sub analysis_build_sj_tracks {
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Ucsc qw{ ucsc_wig_to_big_wig };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Reference qw{ write_contigs_size_file };
@@ -179,7 +181,7 @@ sub analysis_build_sj_tracks {
     my $outfile_path        = $io{out}{file_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outdir_path         = $io{out}{dir_path};
-    my $bed_outfile_path    = $outfile_path_prefix . q{.bed};
+    my $bed_outfile_path    = $outfile_path_prefix . q{.bed.gz};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -228,18 +230,36 @@ sub analysis_build_sj_tracks {
     say {$filehandle} q{## Convert SJ file to bed};
     perl_nae_oneliners(
         {
-            filehandle      => $filehandle,
-            oneliner_name   => q{star_sj_tab_to_bed},
-            print_newline   => 1,
-            stdinfile_path  => $infile_path_prefix . $star_sj_file_suffix,
-            stdoutfile_path => $bed_outfile_path,
-            use_container   => 1,
+            filehandle     => $filehandle,
+            oneliner_name  => q{star_sj_tab_to_bed},
+            print_newline  => 1,
+            stdinfile_path => $infile_path_prefix . $star_sj_file_suffix,
+            use_container  => 1,
         }
 
     );
+    print {$filehandle} $PIPE . $SPACE;
+
+    htslib_bgzip(
+        {
+            filehandle      => $filehandle,
+            infile_path     => catfile( dirname( devnull() ), q{stdin} ),
+            stdoutfile_path => $bed_outfile_path,
+            write_to_stdout => 1,
+        }
+    );
     say {$filehandle} $NEWLINE;
 
-    ## Close filehandles
+    htslib_tabix(
+        {
+            filehandle  => $filehandle,
+            infile_path => $bed_outfile_path,
+            preset      => q{bed},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
@@ -257,7 +277,7 @@ sub analysis_build_sj_tracks {
 
         set_file_path_to_store(
             {
-                format           => q{bw},
+                format           => q{bigwig},
                 id               => $sample_id,
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,

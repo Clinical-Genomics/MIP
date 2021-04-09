@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $GENOME_VERSION $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -217,22 +217,13 @@ sub analysis_megafusion {
   FUSION_RECIPE:
     foreach my $fusion_recipe ( keys %fusion_file_path ) {
 
-        my $infile_path = _reformat_arriba_file(
-            {
-                filehandle     => $filehandle,
-                fusion_recipe  => $fusion_recipe,
-                infile_href    => $fusion_file_path{$fusion_recipe},
-                temp_directory => $active_parameter_href->{temp_directory},
-            }
-        );
-
         my $megafusion_outfile_path =
           $outdir_path . $fusion_file_path{$fusion_recipe}{file_name_prefix} . $outfile_suffix;
         megafusion(
             {
                 config_file_path => $config_path{$fusion_recipe},
                 filehandle       => $filehandle,
-                infile_path      => $infile_path,
+                infile_path      => $fusion_file_path{$fusion_recipe}{infile_path},
                 sample_id        => $sample_id,
                 stdoutfile_path  => $megafusion_outfile_path,
             }
@@ -312,73 +303,4 @@ sub analysis_megafusion {
     return 1;
 }
 
-sub _reformat_arriba_file {
-
-## Function : Prepend chr prefix to arriba tsv file for grch38
-## Returns  : $megafusion_infile_path
-## Arguments: $filehandle     => Filehandle
-##          : $fusion_recipe  => Fusion recipe
-##          : $infile_href    => Infile hash {REF}
-##          : $temp_directory => Temporary directory path
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $filehandle;
-    my $fusion_recipe;
-    my $infile_href;
-    my $temp_directory;
-
-    my $tmpl = {
-        filehandle => {
-            defined  => 1,
-            required => 1,
-            store    => \$filehandle,
-        },
-        fusion_recipe => {
-            defined     => 1,
-            required    => 1,
-            store       => \$fusion_recipe,
-            strict_type => 1,
-        },
-        infile_href => {
-            default     => {},
-            defined     => 1,
-            required    => 1,
-            store       => \$infile_href,
-            strict_type => 1,
-        },
-        temp_directory => {
-            defined     => 1,
-            required    => 1,
-            store       => \$temp_directory,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    use MIP::Language::Perl qw{ perl_nae_oneliners };
-
-    Readonly my $GENOME_VERSION_38 => 38;
-
-    return $infile_href->{infile_path}
-      if ( ( $GENOME_VERSION ne $GENOME_VERSION_38 ) or ( $fusion_recipe ne q{arriba_ar} ) );
-
-    say {$filehandle} q{## Reformat Arriba contig names before merging};
-    my $megafusion_infile_path = catfile( $temp_directory, $infile_href->{infile_name} );
-    perl_nae_oneliners(
-        {
-            filehandle      => $filehandle,
-            oneliner_name   => q{reformat_arriba_contig_name},
-            print_newline   => 1,
-            stdinfile_path  => $infile_href->{infile_path},
-            stdoutfile_path => $megafusion_infile_path,
-            use_container   => 1,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    return $megafusion_infile_path;
-}
 1;

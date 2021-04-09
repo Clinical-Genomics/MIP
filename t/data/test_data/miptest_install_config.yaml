@@ -10,9 +10,13 @@ shell:
 container:
   arriba:
     executable:
-      arriba: /arriba_v1.2.0/arriba
-      draw_fusions.R: /arriba_v1.2.0/draw_fusions.R
-    uri: docker.io/uhrigs/arriba:1.2.0
+      arriba: /arriba_v2.1.0/arriba
+      draw_fusions.R: /arriba_v2.1.0/draw_fusions.R
+    uri: docker.io/uhrigs/arriba:2.1.0
+  bedtools:
+    executable:
+      bedtools:
+    uri: docker.io/clinicalgenomics/bedtools:2.30.0
   blobfish:
     executable:
       BlobFish.py:
@@ -34,10 +38,6 @@ container:
     executable:
       bwa-mem2:
     uri: docker.io/clinicalgenomics/bwa-mem2:2.2.1
-  bedtools:
-    executable:
-      bedtools:
-    uri: docker.io/clinicalgenomics/bedtools:2.2.29
   cadd:
     bind_path:
       CADD.sh: reference_dir!/CADD-scripts/data/annotations:/opt/conda/share/CADD-scripts/data/annotations
@@ -87,7 +87,7 @@ container:
   gatk4:
     executable:
       gatk:
-    uri: docker.io/broadinstitute/gatk:4.1.8.1
+    uri: docker.io/broadinstitute/gatk:4.2.0.0
   genmod:
     executable:
       genmod:
@@ -114,7 +114,7 @@ container:
   megafusion:
     executable:
       MegaFusion.py: "python /opt/conda/share/MegaFusion/MegaFusion.py"
-    uri: docker.io/clinicalgenomics/megafusion:5828fbe
+    uri: docker.io/clinicalgenomics/megafusion:cc6676c
   multiqc:
     executable:
       multiqc:
@@ -178,7 +178,7 @@ container:
   star:
     executable:
       STAR:
-    uri: docker.io/clinicalgenomics/star:2.7.4a
+    uri: docker.io/clinicalgenomics/star:2.7.8a
   star-fusion:
     executable:
       blastn:
@@ -190,7 +190,7 @@ container:
       remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
       restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
       STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
-    uri: docker.io/trinityctat/starfusion:1.9.0
+    uri: docker.io/trinityctat/starfusion:1.10.0
   stranger:
     executable:
       stranger:
@@ -202,7 +202,7 @@ container:
   svdb:
     executable:
       svdb:
-    uri: docker.io/jemten/svdb:2.2.0
+    uri: quay.io/biocontainers/svdb:2.4.0--py37h77a2a36_4
   telomerecat:
     executable:
       telomerecat:
@@ -241,7 +241,7 @@ container:
   vep:
     executable:
       vep:
-    uri: docker.io/ensemblorg/ensembl-vep:release_100.2
+    uri: docker.io/ensemblorg/ensembl-vep:release_103.1
   vcf2cytosure:
     executable:
       vcf2cytosure:

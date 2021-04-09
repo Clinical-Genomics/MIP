@@ -283,7 +283,7 @@ sub analysis_fusion_report {
             {
                 alignment_file_path      => $bam_file_path,
                 annotation_file_path     => $active_parameter_href->{transcript_annotation},
-                cytoband_file_path       => $active_parameter_href->{fusion_cytoband_path},
+                cytoband_file_path       => $active_parameter_href->{arriba_cytoband_path},
                 filehandle               => $filehandle,
                 fusion_file_path         => $fusion_file_path,
                 outfile_path             => $outfile{$tag}{file_path},

@@ -21,6 +21,7 @@ custom_default_parameters:
     - store_file
     - temp_directory
     - transcript_annotation_file_endings
+    - vcfparser_select_file
   type: mip
 human_genome_reference:
   associated_recipe:
@@ -162,6 +163,7 @@ recipe_time:
     svdb_merge_fusion: 1
     trim_galore_ar: 6
     varianteffectpredictor: 4
+    vcfparser_ar: 2
     version_collect_ar: 1
   type: mip
 recipe_memory:
@@ -225,6 +227,7 @@ recipe_core_number:
     svdb_merge_fusion: 1
     megafusion_ar: 1
     varianteffectpredictor: 1
+    vcfparser_ar: 1
     version_collect_ar: 1
   type: mip
 picardtools_path:
@@ -404,9 +407,11 @@ build_sj_tracks:
   data_type: SCALAR
   default: 1
   file_tag: _sj
-  outfile_suffix: ".bw"
+  outfile_suffix: ".bigWig"
   program_executables:
+    - bgzip
     - perl
+    - tabix
     - wigToBigWig
   type: recipe
 ## Star Fusion
@@ -470,7 +475,12 @@ arriba_ar:
   type: recipe
 arriba_blacklist_path:
   associated_recipe:
-    - fusion_report
+    - arriba_ar
+  data_type: SCALAR
+  type: path
+arriba_known_fusion_path:
+  associated_recipe:
+    - arriba_ar
   data_type: SCALAR
   type: path
 fusion_report:
@@ -490,8 +500,9 @@ fusion_cytoband_path:
     - fusion_report
   data_type: SCALAR
   type: path
-fusion_proteindomain_path:
+fusion_protein_domain_path:
   associated_recipe:
+    - arriba_ar
     - fusion_report
   data_type: SCALAR
   type: path
@@ -534,12 +545,14 @@ megafusion_arriba_config:
   data_type: SCALAR
   default: "/opt/conda/share/MegaFusion/json/Ariba.json"
   type: path
+  update_path: absolute_path
 megafusion_star_fusion_config:
   associated_recipe:
     - megafusion_ar
   data_type: SCALAR
   default: "/opt/conda/share/MegaFusion/json/Star_Fusion.json"
   type: path
+  update_path: absolute_path
 svdb_merge_fusion:
   analysis_mode: case
   associated_recipe:
@@ -961,6 +974,47 @@ vep_plugins_dir_path:
   mandatory: no
   type: path
   update_path: absolute_path
+vcfparser_ar:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _parsed
+  outfile_suffix: ".vcf.gz"
+  type: recipe
+vcfparser_add_all_mt_var:
+  associated_recipe:
+    - vcfparser_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
+vcfparser_outfile_count:
+  associated_recipe:
+    - vcfparser_ar
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
+vcfparser_select_file:
+  associated_recipe:
+    - vcfparser_ar
+  data_type: SCALAR
+  exists_check: file
+  type: path
+  update_path: absolute_path
+vcfparser_select_file_matching_column:
+  associated_recipe:
+    - vcfparser_ar
+  data_type: SCALAR
+  default: 3
+  type: recipe_argument
+vcfparser_vep_transcripts:
+  associated_recipe:
+    - vcfparser_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 ## QCCollect
 qccollect_ar:
   analysis_mode: case

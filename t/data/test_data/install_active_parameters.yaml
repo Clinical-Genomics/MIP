@@ -87,7 +87,7 @@ container:
   gatk4:
     executable:
       gatk: ~
-    uri: docker.io/broadinstitute/gatk:4.1.8.1
+    uri: docker.io/broadinstitute/gatk:4.2.0.0
   genmod:
     executable:
       genmod: ~
@@ -179,7 +179,7 @@ container:
       prep_genome_lib.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl
       remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
       restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
-    uri: docker.io/trinityctat/starfusion:1.9.0
+    uri: docker.io/trinityctat/starfusion:1.10.0
   stranger:
     executable:
       stranger: ~
@@ -234,7 +234,7 @@ container:
   vep:
     executable:
       vep: ~
-    uri: docker.io/ensemblorg/ensembl-vep:release_100.2
+    uri: docker.io/ensemblorg/ensembl-vep:release_103.1
 container_manager: singularity
 custom_default_parameters:
   - program_test_file

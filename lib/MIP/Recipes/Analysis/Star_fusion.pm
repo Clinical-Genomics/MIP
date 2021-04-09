@@ -260,7 +260,7 @@ sub analysis_star_fusion {
 
     say {$filehandle} q{## Remove intermediary files};
   FILE_TAG:
-    foreach my $file_tag (qw{ _STARgenome _STARpass1 }) {
+    foreach my $file_tag (qw{ _STARgenome _STARpass1 _starF_checkpoints }) {
 
         gnu_rm(
             {

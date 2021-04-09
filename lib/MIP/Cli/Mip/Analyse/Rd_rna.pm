@@ -131,6 +131,15 @@ sub _build_usage {
     );
 
     option(
+        q{arriba_known_fusion_path} => (
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to arriba known fusions file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{fusion_use_sample_id_as_display_name} => (
             cmd_tags      => [q{Default: 0}],
             documentation => q{Use sample id as display name for fusion report},
@@ -212,7 +221,7 @@ sub _build_usage {
     );
 
     option(
-        q{fusion_proteindomain_path} => (
+        q{fusion_protein_domain_path} => (
             cmd_tags      => [q{Recipe argument}],
             documentation => q{Path to protein domain file},
             is            => q{rw},
@@ -924,6 +933,42 @@ q{Regular expression file containing the regular expression to be used for each 
         )
     );
 
+    option(
+        q{vcfparser_ar} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Parse variants using vcfparser},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{vcfparser_select_file} => (
+            cmd_flag      => q{vcfparser_slt_fl},
+            cmd_tags      => [q{Format: tsv; HGNC Symbol required in file}],
+            documentation => q{Select file with list of genes to analyse separately},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{vcfparser_select_file_matching_column} => (
+            cmd_flag      => q{vcfparser_slt_fmc},
+            documentation => q{Position of HGNC Symbol column in select file},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{vcfparser_vep_transcripts} => (
+            cmd_flag      => q{vcfparser_vtr},
+            documentation => q{Parse VEP transcript specific entries},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
     option(
         q{varianteffectpredictor} => (
             cmd_tags      => [q{Analysis recipe switch}],
