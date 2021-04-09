@@ -34,33 +34,45 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - Simple Linux Utility for Resource Management ([SLURM]) (version: 18.08.0)
 
 #### **Pipeline: Rare disease**
+- [Arriba] (version: 2.1.0)
 - [Bcftools] (version: 1.11)
 - [BedTools] (version: 2.2.29)
+- [Blobfish] (version: 0.0.2 )
+- [BootstrapAnn] (version: df02f35)
 - [BWA] (version: 0.7.17)
 - [BWAKit] (version: 0.7.17)
 - [CADD] (version: 1.6)
 - [Chanjo] (version: 4.6.0)
-- [Chromograph] (version: 1.0.0)
+- [Chromograph] (version: 1.0.1)
 - [Cnvnator] (version: 0.4.1)
 - [Cyrius] (version: v1.1)
 - [Expansionhunter] (version 4.0.2)
 - [FastQC] (version: 0.11.9)
-- [Deepvariant] (version: 1.0.0)
+- [Deepvariant] (version: 1.1.0)
 - [GATK] (version: 3.8.1 and 4.2.0.0)
 - [GENMOD] (version: 3.7.3)
+- [Gffcompare] (version: 0.11.2)
 - [Glnexus] (version: 1.2.7)
 - [Htslib] (version: 1.11)
 - [Manta] (version: 1.6.0)
+- [Megafusion] (version: cc6676c)
 - [MultiQC] (version: 1.9)
+- [Pdfmerger] (version: 1.0)
 - [Peddy] (version: 0.4.3)
 - [PicardTools] (version: 2.25.0)
 - [PLINK] (version: 1.90b3x35)
+- [Preseq] (version: 2.0.3)
 - [Rhocall] (version: 0.5.1)
+- [RSeQC] (version: 3.0.1)
 - [rtg-tools] (version: 3.10.1)
+- [Salmon] (version: 0.12.0)
 - [Sambamba] (version: 0.6.8)
 - [Samtools] (version: 1.11)
 - [SMNCopyNumberCaller] (version: v1.1.1)
+- [STAR-Fusion] (version: 1.10.0)
+- [STAR] (version: 2.7.8a)
 - [Stranger] (version: 0.7)
+- [StringTie] (version: 2.1.3b)
 - [Svdb] (version: 2.4.0)
 - [Telomerecat] (version: 3.4.0)
 - [Tiddit] (version: 2.12.1)
@@ -150,8 +162,11 @@ Corresponding MIP references:
  - grch37_spliceai_scores_raw_snv_-v1.3-.vcf.gz
  - grch37_spliceai_scores_raw_indel_-v1.3-.vcf.gz
 
+[Arriba]: https://github.com/suhrig/arriba
 [Bcftools]: http://www.htslib.org/
 [BedTools]: http://bedtools.readthedocs.org/en/latest/
+[Blobfish]: https://github.com/J35P312/BlobFish
+[BoostrapAnn]: https://github.com/J35P312/BootstrapAnn
 [BWA]: https://github.com/lh3/bwa
 [BWAKit]: https://github.com/lh3/bwa/tree/master/bwakit
 [CADD]: (https://github.com/kircherlab/CADD-scripts)
@@ -165,21 +180,30 @@ Corresponding MIP references:
 [FastQC]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 [GATK]: http://www.broadinstitute.org/gatk/
 [GENMOD]: https://github.com/moonso/genmod/
+[Gffcompare]: https://ccb.jhu.edu/software/stringtie/gffcompare.shtml
 [Glnexus]: https://github.com/dnanexus-rnd/GLnexus
 [Htslib]: http://www.htslib.org/
 [Manta]: https://github.com/Illumina/manta
+[Megafusion]: https://github.com/J35P312/MegaFusion
 [MultiQC]: https://github.com/ewels/MultiQC
+[Pdfmerger]: https://github.com/northwestwitch/pdfmerger
 [Peddy]: https://github.com/brentp/peddy
 [Pedigree file]: ../templates/643594-miptest_pedigree.yaml  
 [PicardTools]: http://broadinstitute.github.io/picard/
 [PLINK]: https://www.cog-genomics.org/plink2
+[Preseq]: http://smithlabresearch.org/software/preseq/
 [Rhocall]: https://github.com/dnil/rhocall
+[RSeQC]: http://rseqc.sourceforge.net/
 [rtg-tools]: https://github.com/RealTimeGenomics/rtg-tools
+[Salmon]: https://combine-lab.github.io/salmon/
 [Sambamba]: http://lomereiter.github.io/sambamba/
 [Samtools]: http://www.htslib.org/
 [SLURM]: http://slurm.schedmd.com/
 [SMNCopyNumberCaller]: https://github.com/Illumina/SMNCopyNumberCaller
+[STAR]: https://github.com/alexdobin/STAR
+[STAR-Fusion]: https://github.com/STAR-Fusion/STAR-Fusion
 [Stranger]: https://github.com/moonso/stranger
+[StringTie]: https://ccb.jhu.edu/software/stringtie/
 [Svdb]: https://github.com/J35P312/SVDB
 [Tabix]: http://samtools.sourceforge.net/tabix.shtml
 [Telomerecat]: https://github.com/cancerit/telomerecat
