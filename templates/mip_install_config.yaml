@@ -53,14 +53,6 @@ container:
     executable:
       star_caller.py:
     uri: docker.io/clinicalgenomics/cyrius:v1.1
-  expansionhunter:
-    executable:
-      ExpansionHunter:
-    uri: docker.io/clinicalgenomics/expansionhunter:4.0.2
-  fastqc:
-    executable:
-      fastqc:
-    uri: docker.io/clinicalgenomics/fastqc:0.11.9
   deepvariant:
     executable:
       run_deepvariant: /opt/deepvariant/bin/run_deepvariant
@@ -77,7 +69,15 @@ container:
   delly:
     executable:
       delly:
-    uri: docker.io/clinicalgenomics/delly:0.8.1
+    uri: docker.io/clinicalgenomics/delly:0.8.7
+  expansionhunter:
+    executable:
+      ExpansionHunter:
+    uri: docker.io/clinicalgenomics/expansionhunter:4.0.2
+  fastqc:
+    executable:
+      fastqc:
+    uri: docker.io/clinicalgenomics/fastqc:0.11.9
   gatk:
     executable:
       gatk3: "no_executable_in_image"
