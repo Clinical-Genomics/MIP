@@ -49,6 +49,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Expansionhunter] (version 4.0.2)
 - [FastQC] (version: 0.11.9)
 - [Deepvariant] (version: 1.1.0)
+- [Delly] (version 0.8.7)
 - [GATK] (version: 3.8.1 and 4.2.0.0)
 - [GENMOD] (version: 3.7.3)
 - [Gffcompare] (version: 0.11.2)
@@ -175,6 +176,7 @@ Corresponding MIP references:
 [Cnvnator]: https://github.com/abyzovlab/CNVnator
 [Configuration file]: ../templates/mip_rd_dna_config.yaml
 [Cyrius]: https://github.com/Illumina/Cyrius
+[Delly]: https://github.com/dellytools/delly
 [Deepvariant]: https://github.com/google/deepvariant
 [Expansionhunter]: https://github.com/Illumina/ExpansionHunter
 [FastQC]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/

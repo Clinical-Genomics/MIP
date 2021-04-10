@@ -25,7 +25,8 @@ bcftools: 1.10.2-hd2cd319_0 -> 1.11-h7c999a4_0
 bwa-mem2 2.0 -> 2.2
 chanjo: 4.2.0 -> 4.6
 cyrius: v1.0 -> v1.1
-deepvariant: 1.0.0  
+deepvariant: 1.0.0
+delly: 0.8.1 -> 0.8.7
 gatk: v4.1.8.1 -> v4.2.0.0
 glnexus: v1.2.7
 htslib: 1.10.2-h78d89cc_0 -> 1.11-hd3b49d5_2
