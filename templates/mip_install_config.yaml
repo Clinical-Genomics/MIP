@@ -165,7 +165,7 @@ container:
   rtg-tools:
     executable:
       rtg:
-    uri: docker.io/realtimegenomics/rtg-tools:3.10.1
+    uri: docker.io/realtimegenomics/rtg-tools:3.12
   salmon:
     executable:
       salmon:

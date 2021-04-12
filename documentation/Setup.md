@@ -65,7 +65,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Preseq] (version: 3.1.2)
 - [Rhocall] (version: 0.5.1)
 - [RSeQC] (version: 4.0.0)
-- [rtg-tools] (version: 3.10.1)
+- [rtg-tools] (version: 3.12)
 - [Salmon] (version: 1.4.0)
 - [Sambamba] (version: 0.6.8)
 - [Samtools] (version: 1.11)

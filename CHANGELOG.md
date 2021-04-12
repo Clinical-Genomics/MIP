@@ -35,6 +35,7 @@ pdfmerger: v1.0
 picardtools: 2.23.4 -> 2.25.0
 preseq: 2.0.3 -> 3.1.2
 rseqc: 3.0.1 -> 4.0.0
+rtg-tools: 3.10.1 -> 3.12
 salmon: 0.12.0 -> 1.4.0
 samtools: 1.10-h9402c20_2 -> 1.12=h9aed4be_1
 smncopynumbercaller: 4b2c1ad -> v1.1.1
