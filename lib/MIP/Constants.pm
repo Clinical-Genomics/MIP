@@ -339,7 +339,7 @@ Readonly our $ESCAPE            => q{\\};
 Readonly our $EQUALS            => q{=};
 Readonly our $FORWARD_SLASH     => q{/};
 Readonly our $NEWLINE           => qq{\n};
-Readonly our $OPEN_BRACE        => q?\{?;
+Readonly our $OPEN_BRACE        => q{\{};
 Readonly our $OPEN_BRACKET      => q{[};
 Readonly our $OPEN_PARENTHESIS  => q{(};
 Readonly our $PIPE              => q{|};
