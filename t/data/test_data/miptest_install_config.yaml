@@ -206,7 +206,7 @@ container:
   telomerecat:
     executable:
       telomerecat:
-    uri: quay.io/wtsicgp/telomerecat:3.4.0
+    uri: docker.io/clinicalgenomics/telomerecat:4.0.0
   tiddit:
     executable:
       TIDDIT.py:
