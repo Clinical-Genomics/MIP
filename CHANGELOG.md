@@ -32,6 +32,7 @@ glnexus: v1.3.1
 htslib: 1.10.2-h78d89cc_0 -> 1.12=h9093b5e_1
 pdfmerger: v1.0
 picardtools: 2.23.4 -> 2.25.0
+rtg-tools: 3.10.1 -> 3.12
 samtools: 1.10-h9402c20_2 -> 1.12=h9aed4be_1
 smncopynumbercaller: 4b2c1ad -> v1.1.1
 star: 2.7.4a -> 2.7.8a
