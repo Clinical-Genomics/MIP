@@ -62,7 +62,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Peddy] (version: 0.4.3)
 - [PicardTools] (version: 2.25.0)
 - [PLINK] (version: 1.90b3x35)
-- [Preseq] (version: 2.0.3)
+- [Preseq] (version: 3.1.2)
 - [Rhocall] (version: 0.5.1)
 - [RSeQC] (version: 3.0.1)
 - [rtg-tools] (version: 3.10.1)

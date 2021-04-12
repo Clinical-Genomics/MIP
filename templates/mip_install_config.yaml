@@ -145,7 +145,7 @@ container:
   preseq:
     executable:
       preseq:
-    uri: docker.io/clinicalgenomics/preseq:2.0.3
+    uri: docker.io/clinicalgenomics/preseq:3.1.2
   rhocall:
     executable:
       rhocall:
