@@ -66,7 +66,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Rhocall] (version: 0.5.1)
 - [RSeQC] (version: 4.0.0)
 - [rtg-tools] (version: 3.10.1)
-- [Salmon] (version: 0.12.0)
+- [Salmon] (version: 1.4.0)
 - [Sambamba] (version: 0.6.8)
 - [Samtools] (version: 1.11)
 - [SMNCopyNumberCaller] (version: v1.1.1)

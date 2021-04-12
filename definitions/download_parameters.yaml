@@ -196,6 +196,13 @@ gencode_annotation:
   data_type: SCALAR
   default: 1
   type: recipe
+gencode_transcript:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 genomic_superdups:
   analysis_mode: case
   associated_recipe:
@@ -333,6 +340,7 @@ recipe_core_number:
     gatk_mitochondrial_ref: 1
     genbank_haplogroup: 1
     gencode_annotation: 1
+    gencode_transcript: 1
     genomic_superdups: 1
     giab: 1
     gnomad: 1
@@ -384,6 +392,7 @@ recipe_time:
     gatk_mitochondrial_ref: 1
     genbank_haplogroup: 1
     gencode_annotation: 1
+    gencode_transcript: 1
     genomic_superdups: 1
     giab: 1
     gnomad: 25

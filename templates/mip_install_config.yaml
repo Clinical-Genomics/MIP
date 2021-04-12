@@ -169,7 +169,7 @@ container:
   salmon:
     executable:
       salmon:
-    uri: docker.io/clinicalgenomics/salmon:0.12.0
+    uri: docker.io/combinelab/salmon:1.4.0
   sambamba:
     executable:
       sambamba:
