@@ -20,7 +20,7 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $ASTERISK $BACKWARD_SLASH $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
 BEGIN {
@@ -80,6 +80,14 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    atomize => {
+        input           => 1,
+        expected_output => q{--atomize},
+    },
+    atom_overlaps => {
+        input           => $BACKWARD_SLASH . $ASTERISK,
+        expected_output => q{--atom_overlaps} . $SPACE . $BACKWARD_SLASH . $ASTERISK,
+    },
     infile_path => {
         input           => q{infile.test},
         expected_output => q{infile.test},
@@ -87,6 +95,10 @@ my %specific_argument = (
     multiallelic_type => {
         input           => q{snps},
         expected_output => q{--multiallelics +snps},
+    },
+    old_rec_tag => {
+        input           => 1,
+        expected_output => q{--old-rec-tag},
     },
     output_type => {
         input           => q{v},

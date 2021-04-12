@@ -21,19 +21,19 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 arriba: v1.2.0 -> v2.1.0
 bedtools: 2.29.0 -> 2.30.0
-bcftools: 1.10.2-hd2cd319_0 -> 1.11-h7c999a4_0
+bcftools: 1.10.2-hd2cd319_0 -> 1.12=h45bccc9_1
 bwa-mem2 2.0 -> 2.2
 chanjo: 4.2.0 -> 4.6
 cyrius: v1.0 -> v1.1
 deepvariant: 1.0.0
 delly: 0.8.1 -> 0.8.7
 gatk: v4.1.8.1 -> v4.2.0.0
-glnexus: v1.2.7
-htslib: 1.10.2-h78d89cc_0 -> 1.11-hd3b49d5_2
+glnexus: v1.3.1
+htslib: 1.10.2-h78d89cc_0 -> 1.12=h9093b5e_1
 multiqc: 1.9 -> 1.10.1
 pdfmerger: v1.0
 picardtools: 2.23.4 -> 2.25.0
-samtools: 1.10-h9402c20_2 -> 1.11-h6270b1f_0
+samtools: 1.10-h9402c20_2 -> 1.12=h9aed4be_1
 smncopynumbercaller: 4b2c1ad -> v1.1.1
 star: 2.7.4a -> 2.7.8a
 stranger: 0.7 -> 0.7.1

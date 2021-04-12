@@ -97,14 +97,14 @@ container:
   glnexus:
     executable:
       glnexus_cli:
-    uri: quay.io/mlin/glnexus:v1.2.7
+    uri: quay.io/mlin/glnexus:v1.3.1
   htslib:
     executable:
       bcftools:
       bgzip:
       samtools:
       tabix:
-    uri: docker.io/clinicalgenomics/htslib:1.11
+    uri: docker.io/clinicalgenomics/htslib:1.12
   manta:
     executable:
       configManta.py:
