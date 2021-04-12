@@ -118,7 +118,7 @@ container:
   multiqc:
     executable:
       multiqc:
-    uri: docker.io/ewels/multiqc:1.9
+    uri: docker.io/ewels/multiqc:1.10.1
   pdfmerger:
     executable:
       pdfmerger:
@@ -142,7 +142,7 @@ container:
   preseq:
     executable:
       preseq:
-    uri: docker.io/clinicalgenomics/preseq:2.0.3
+    uri: docker.io/clinicalgenomics/preseq:3.1.2
   rhocall:
     executable:
       rhocall:
@@ -158,7 +158,7 @@ container:
       junction_saturation.py:
       read_distribution.py:
       read_duplication.py:
-    uri: docker.io/clinicalgenomics/rseqc:3.0.1
+    uri: quay.io/biocontainers/rseqc:4.0.0--py38h4a8c8d9_1
   rtg-tools:
     executable:
       rtg:
