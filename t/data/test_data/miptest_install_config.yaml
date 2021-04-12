@@ -99,13 +99,13 @@ container:
   glnexus:
     executable:
       glnexus_cli:
-    uri: quay.io/mlin/glnexus:v1.2.7
+    uri: quay.io/mlin/glnexus:v1.3.1
   htslib:
     executable:
       bgzip:
       samtools:
       tabix:
-    uri: docker.io/clinicalgenomics/htslib:1.11
+    uri: docker.io/clinicalgenomics/htslib:1.12
   manta:
     executable:
       configManta.py:
@@ -118,7 +118,7 @@ container:
   multiqc:
     executable:
       multiqc:
-    uri: docker.io/ewels/multiqc:1.9
+    uri: docker.io/ewels/multiqc:1.10.1
   pdfmerger:
     executable:
       pdfmerger:
@@ -142,7 +142,7 @@ container:
   preseq:
     executable:
       preseq:
-    uri: docker.io/clinicalgenomics/preseq:2.0.3
+    uri: docker.io/clinicalgenomics/preseq:3.1.2
   rhocall:
     executable:
       rhocall:

@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $NEWLINE $PIPE $SPACE };
+use MIP::Constants qw{ $ASTERISK $BACKWARD_SLASH $COMMA $DOUBLE_QUOTE $DOT $NEWLINE $PIPE $SPACE };
 use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
@@ -1124,10 +1124,13 @@ sub bcftools_norm {
 
 ## Function : Perl wrapper for writing bcftools norm recipe to $filehandle or return commands array. Based on bcftools 1.6.
 ## Returns  : @commands
-## Arguments: $filehandle             => Filehandle to write to
+## Arguments: $atomize                => Decompose complex variants e.g. split MNVs into consecutive SNVs
+##          : $atom_overlaps          => Use "." or "*" for missing allele when decomposing complex varaiants
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $multiallelic           => To split/join multiallelic calls or not
 ##          : $multiallelic_type      => Type of multiallelic to split/join {OPTIONAL}
+##          : $old_rec_tag            => Annotate the decomposed records with the orignal record
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $reference_check        => Controls how to treat incorrect reference alleles - 's' fix; 'w' warn; 'x' exclude; 'e' exit
@@ -1144,9 +1147,12 @@ sub bcftools_norm {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $atomize;
+    my $atom_overlaps;
     my $filehandle;
     my $infile_path;
     my $multiallelic;
+    my $old_rec_tag;
     my $outfile_path;
     my $reference_check;
     my $reference_path;
@@ -1164,6 +1170,16 @@ sub bcftools_norm {
     my $output_type;
 
     my $tmpl = {
+        atomize => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$atomize,
+            strict_type => 1,
+        },
+        atom_overlaps => {
+            allow       => [ undef, $DOT, $BACKWARD_SLASH . $ASTERISK ],
+            store       => \$atom_overlaps,
+            strict_type => 1,
+        },
         filehandle   => { store => \$filehandle, },
         infile_path  => { store => \$infile_path, strict_type => 1, },
         multiallelic => {
@@ -1175,6 +1191,11 @@ sub bcftools_norm {
             allow       => [qw{ snps indels both any }],
             default     => q{both},
             store       => \$multiallelic_type,
+            strict_type => 1,
+        },
+        old_rec_tag => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$old_rec_tag,
             strict_type => 1,
         },
         outfile_path => {
@@ -1237,9 +1258,24 @@ sub bcftools_norm {
         }
     );
 
+    if ($atomize) {
+
+        push @commands, q{--atomize};
+    }
+
+    if ($atom_overlaps) {
+
+        push @commands, q{--atom_overlaps} . $SPACE . $atom_overlaps;
+    }
+
     if ($multiallelic) {
 
         push @commands, q{--multiallelics} . $SPACE . $multiallelic . $multiallelic_type;
+    }
+
+    if ($old_rec_tag) {
+
+        push @commands, q{--old-rec-tag};
     }
 
     if ($reference_check) {
