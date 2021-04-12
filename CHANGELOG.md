@@ -28,7 +28,7 @@ cyrius: v1.0 -> v1.1
 deepvariant: 1.0.0
 delly: 0.8.1 -> 0.8.7
 gatk: v4.1.8.1 -> v4.2.0.0
-glnexus: v1.2.7
+glnexus: v1.3.1
 htslib: 1.10.2-h78d89cc_0 -> 1.11-hd3b49d5_2
 pdfmerger: v1.0
 picardtools: 2.23.4 -> 2.25.0
