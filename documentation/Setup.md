@@ -64,7 +64,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [PLINK] (version: 1.90b3x35)
 - [Preseq] (version: 2.0.3)
 - [Rhocall] (version: 0.5.1)
-- [RSeQC] (version: 3.0.1)
+- [RSeQC] (version: 4.0.0)
 - [rtg-tools] (version: 3.10.1)
 - [Salmon] (version: 0.12.0)
 - [Sambamba] (version: 0.6.8)
