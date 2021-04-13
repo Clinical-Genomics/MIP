@@ -23,6 +23,7 @@ sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_i
 human_genome_reference: grch37_homo_sapiens_-d5-.fasta
 star_fusion_genome_lib_dir: cluster_constant_path!/references/GRCh37_gencode_v19_CTAT_lib_Apr032020.plug-n-play/ctat_genome_lib_build_dir
 transcript_annotation: grch37_gencode_annotation_reformated_-v37-.gtf
+transcript_sequence: grch37_gencode_transcripts_-v37-.fa
 ### Analysis
 ## Programs
 ## Parameters

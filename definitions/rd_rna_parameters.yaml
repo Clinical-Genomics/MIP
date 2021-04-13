@@ -66,7 +66,6 @@ transcript_annotation:
     - gffcompare_ar
     - picardtools_collectrnaseqmetrics
     - rseqc
-    - salmon_quant
     - star_aln
     - star_fusion
     - stringtie_ar
@@ -86,6 +85,14 @@ transcript_annotation_file_endings:
   mandatory: no
   reference: reference_dir
   type: mip
+transcript_sequence:
+  associated_recipe:
+    - salmon_quant
+  data_type: SCALAR
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
 library_type:
   associated_recipe:
     - genebody_coverage
@@ -308,6 +315,12 @@ salmon_quant_reference_genome:
   mandatory: no
   reference: reference_dir
   type: path
+salmon_quant_gencode_reference:
+  associated_recipe:
+    - salmon_quant
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 ## Blobfish
 blobfish:
   analysis_mode: case

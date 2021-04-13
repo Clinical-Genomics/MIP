@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -144,7 +144,9 @@ sub build_salmon_quant_prerequisites {
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Star_fusion qw{ star_fusion_gtf_file_to_feature_seqs };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat gnu_cut };
+    use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
+    use MIP::Program::Gnu::Software::Gnu_sed qw{ gnu_sed };
     use MIP::Program::Salmon qw{ salmon_index };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -206,14 +208,46 @@ sub build_salmon_quant_prerequisites {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Build cDNA sequence file
-    star_fusion_gtf_file_to_feature_seqs(
+    ## Make decoy file
+    my $decoy_file_path = catfile( $salmon_quant_directory_tmp, q{decoys.txt} );
+    gnu_grep(
         {
-            filehandle         => $filehandle,
-            gtf_path           => $active_parameter_href->{transcript_annotation},
-            referencefile_path => $human_genome_reference,
-            seq_type           => q{cDNA},
-            stdoutfile_path    => catfile( $salmon_quant_directory_tmp, q{cDNA_seqs.fa} ),
+            filehandle  => $filehandle,
+            infile_path => $active_parameter_href->{human_genome_reference},
+            pattern     => q{'^>'},
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    gnu_cut(
+        {
+            delimiter       => q{' '},
+            filehandle      => $filehandle,
+            list            => 1,
+            stdoutfile_path => $decoy_file_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    gnu_sed(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $decoy_file_path,
+            inplace_edit => 1,
+            script       => q{'s/>//g'},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Combine transcriptome and genome
+    gnu_cat(
+        {
+            filehandle       => $filehandle,
+            infile_paths_ref => [
+                $active_parameter_href->{transcript_sequence},
+                $active_parameter_href->{human_genome_reference}
+            ],
+            stdoutfile_path => catfile( $salmon_quant_directory_tmp, q{gentrome.fa} ),
         }
     );
     say {$filehandle} $NEWLINE;
@@ -221,9 +255,13 @@ sub build_salmon_quant_prerequisites {
     ## Build Salmon index file
     salmon_index(
         {
-            fasta_path   => catfile( $salmon_quant_directory_tmp, q{cDNA_seqs.fa} ),
-            filehandle   => $filehandle,
-            outfile_path => $salmon_quant_directory_tmp,
+            decoy_path     => $decoy_file_path,
+            fasta_path     => catfile( $salmon_quant_directory_tmp, q{gentrome.fa} ),
+            filehandle     => $filehandle,
+            gencode        => $active_parameter_href->{salmon_quant_gencode_reference},
+            outfile_path   => $salmon_quant_directory_tmp,
+            temp_directory => $temp_directory,
+            threads        => $NUMBER_OF_CORES,
         }
     );
     say {$filehandle} $NEWLINE;

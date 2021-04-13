@@ -18,6 +18,8 @@ reference:
   gencode_annotation:
     - v34
     - v37
+  gencode_transcript:
+    - v37
   human_reference:
     - decoy_5
     - assembly38
@@ -48,6 +50,19 @@ reference_feature:
       v37:
         file: gencode.v37.annotation.gtf.gz
         outfile: grch38_gencode_annotation_-v37-.gtf.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/
+  gencode_transcript:
+    grch37:
+      v37:
+        file: gencode.v37lift37.transcripts.fa.gz
+        outfile: grch37_gencode_transcripts_-v37-.fa.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/
+    grch38:
+      v37:
+        file: gencode.v37.transcripts.fa.gz
+        outfile: grch38_gencode_transcripts_-v37-.fa.gz
         outfile_decompress: gzip
         url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/
   ctat_resource_lib:

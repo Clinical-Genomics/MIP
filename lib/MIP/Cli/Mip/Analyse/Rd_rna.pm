@@ -416,6 +416,14 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
+        q{salmon_quant_gencode_reference} => (
+            documentation => q{Salmon uses a gencode reference},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{star_aln} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Align reads using Star aln},
@@ -919,6 +927,15 @@ q{Regular expression file containing the regular expression to be used for each 
         q{transcript_annotation} => (
             cmd_tags      => [q{Transcripts file: Format: GTF}],
             documentation => q{Transcript file for the rd_rna pipeline},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{transcript_sequence} => (
+            cmd_tags      => [q{Transcript sequence file: Format: fasta}],
+            documentation => q{Transcript sequences for the rd_rna pipeline},
             is            => q{rw},
             isa           => Str,
         )

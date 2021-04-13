@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Gnu::Coreutils} => [qw{ gnu_cut }],
-);
+    my %perl_module = ( q{MIP::Program::Gnu::Coreutils} => [qw{ gnu_cut }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -69,16 +66,11 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = (
-    infile_path => {
-        input           => q{an_infile.txt},
-        expected_output => q{an_infile.txt},
-    },
-);
-
 my %specific_argument = (
+    delimiter => {
+        input           => q{' '},
+        expected_output => q{-d ' '},
+    },
     infile_path => {
         input           => q{an_infile.txt},
         expected_output => q{an_infile.txt},
@@ -104,7 +96,6 @@ foreach my $argument_href (@arguments) {
             do_test_base_command       => 1,
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
-            required_argument_href     => \%required_argument,
         }
     );
 }

@@ -93,6 +93,7 @@ sub pipeline_download {
     use MIP::Recipes::Download::Gatk_mitochondrial_ref qw{ download_gatk_mitochondrial_ref };
     use MIP::Recipes::Download::Genbank_haplogroup qw{ download_genbank_haplogroup };
     use MIP::Recipes::Download::Gencode_annotation qw{ download_gencode_annotation };
+    use MIP::Recipes::Download::Gencode_transcript qw{ download_gencode_transcript };
     use MIP::Recipes::Download::Genomic_superdups qw{ download_genomic_superdups };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Recipes::Download::Giab qw{ download_giab };
@@ -135,6 +136,7 @@ sub pipeline_download {
         gatk_mitochondrial_ref         => \&download_gatk_mitochondrial_ref,
         genbank_haplogroup             => \&download_genbank_haplogroup,
         gencode_annotation             => \&download_gencode_annotation,
+        gencode_transcript             => \&download_gencode_transcript,
         genomic_superdups              => \&download_genomic_superdups,
         giab                           => \&download_giab,
         gnomad                         => \&download_gnomad,
