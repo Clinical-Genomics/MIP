@@ -255,13 +255,13 @@ sub build_salmon_quant_prerequisites {
     ## Build Salmon index file
     salmon_index(
         {
-            fasta_path     => catfile( $salmon_quant_directory_tmp, q{gentrome.fa} ),
-            threads        => $NUMBER_OF_CORES,
-            filehandle     => $filehandle,
-            temp_directory => $temp_directory,
-            gencode        => $active_parameter_href->{salmon_quant_gencode_reference},
             decoy_path     => $decoy_file_path,
+            fasta_path     => catfile( $salmon_quant_directory_tmp, q{gentrome.fa} ),
+            filehandle     => $filehandle,
+            gencode        => $active_parameter_href->{salmon_quant_gencode_reference},
             outfile_path   => $salmon_quant_directory_tmp,
+            temp_directory => $temp_directory,
+            threads        => $NUMBER_OF_CORES,
         }
     );
     say {$filehandle} $NEWLINE;
