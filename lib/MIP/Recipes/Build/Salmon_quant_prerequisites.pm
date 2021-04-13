@@ -213,7 +213,7 @@ sub build_salmon_quant_prerequisites {
     gnu_grep(
         {
             filehandle  => $filehandle,
-            infile_path => $active_parameter_href->{transcript_sequence},
+            infile_path => $active_parameter_href->{human_genome_reference},
             pattern     => q{'^>'},
         }
     );
