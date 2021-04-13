@@ -30,6 +30,6 @@ RUN unzip -o /opt/conda/share/UPD-0.1.1.zip -d /opt/conda/share/
 
 ## Move to UPD directory
 RUN cd /opt/conda/share/upd-0.1.1 && \
-    python -m pip install --editable .
+    python -m pip install --no-cache-dir --editable .
 
 WORKDIR /data/
