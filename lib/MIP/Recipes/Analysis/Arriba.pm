@@ -153,6 +153,8 @@ sub analysis_arriba {
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
+    Readonly my $SCALING_FACTOR => 0.75;
+
     ### PREPROCESSING:
 
     ## Retrieve logger object
@@ -364,6 +366,8 @@ sub analysis_arriba {
     ## Sort BAM before visualization
     my $sorted_bam_file = $outfile_path_prefix . $DOT . q{bam};
     my $thread_memory   = int( $recipe{memory} / $recipe{core_number} );
+    ## Allow for process overhead
+    $thread_memory = int( $thread_memory * $SCALING_FACTOR );
     samtools_sort(
         {
             filehandle            => $filehandle,
