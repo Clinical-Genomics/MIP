@@ -48,7 +48,7 @@ reference_feature:
         outfile_decompress: gzip
         url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_34/
       v37:
-        file: gencode.v37.annotation.gtf.gz
+        file: gencode.v37.primary_assembly.annotation.gtf.gz
         outfile: grch38_gencode_annotation_-v37-.gtf.gz
         outfile_decompress: gzip
         url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/
