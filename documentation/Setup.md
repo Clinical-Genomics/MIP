@@ -43,7 +43,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [BWAKit] (version: 0.7.17)
 - [CADD] (version: 1.6)
 - [Chanjo] (version: 4.6.0)
-- [Chromograph] (version: 1.0.1)
+- [Chromograph] (version: 1.1)
 - [Cnvnator] (version: 0.4.1)
 - [Cyrius] (version: v1.1)
 - [Expansionhunter] (version 4.0.2)
