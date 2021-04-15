@@ -24,6 +24,7 @@ bedtools: 2.29.0 -> 2.30.0
 bcftools: 1.10.2-hd2cd319_0 -> 1.12=h45bccc9_1
 bwa-mem2 2.0 -> 2.2
 chanjo: 4.2.0 -> 4.6
+chromograph: 1.0.1 -> 1.1
 cyrius: v1.0 -> v1.1
 deepvariant: 1.0.0
 delly: 0.8.1 -> 0.8.7
