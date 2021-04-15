@@ -41,9 +41,10 @@ samtools: 1.10-h9402c20_2 -> 1.12=h9aed4be_1
 smncopynumbercaller: 4b2c1ad -> v1.1.1
 star: 2.7.4a -> 2.7.8a
 stranger: 0.7 -> 0.7.1
-telomerecat: 3.4.0 -> 4.0.0
 svdb: 2.2.0 -> 2.4.0--py37h77a2a36_4
+telomerecat: 3.4.0 -> 4.0.0
 tiddit: 2.8.1 -> 2.12.1
+upd: 0.1 -> 0.1.1
 
 ### References
 

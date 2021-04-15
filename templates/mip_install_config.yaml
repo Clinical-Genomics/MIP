@@ -227,7 +227,7 @@ container:
   upd:
     executable:
       upd:
-    uri: docker.io/clinicalgenomics/upd:0.1
+    uri: docker.io/clinicalgenomics/upd:0.1.1
   utilities:
     executable:
       gtf2bed:
