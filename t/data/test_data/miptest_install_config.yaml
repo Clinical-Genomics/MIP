@@ -158,11 +158,11 @@ container:
       junction_saturation.py:
       read_distribution.py:
       read_duplication.py:
-    uri: clinicalgenomics/rseqc:4.0.0
+    uri: docker.io/clinicalgenomics/rseqc:4.0.0
   rtg-tools:
     executable:
       rtg:
-    uri: realtimegenomics/rtg-tools:3.12
+    uri: docker.io/realtimegenomics/rtg-tools:3.12
   salmon:
     executable:
       salmon:
