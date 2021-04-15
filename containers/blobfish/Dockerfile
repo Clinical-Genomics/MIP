@@ -5,11 +5,18 @@ FROM clinicalgenomics/mip_base:2.1
 ################## METADATA ######################
 
 LABEL base_image="clinicalgenomics/mip_base:2.1"
-LABEL version="1"
+LABEL version="2"
 LABEL software="BlobFish"
 LABEL software.version="0.0.2"
 LABEL extra.binaries="BlobFish.py, BlobFish.R"
 LABEL maintainer="Clinical-Genomics/MIP"
+
+RUN apt-get update --fix-missing && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        tzdata && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN conda install --channel bioconda --channel conda-forge bioconductor-tximport python=2.7 bioconductor-deseq2=1.22.1 r-readr r-optparse
 
