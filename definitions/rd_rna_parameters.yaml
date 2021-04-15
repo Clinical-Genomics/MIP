@@ -157,7 +157,7 @@ recipe_time:
     megafusion_ar: 1
     multiqc_ar: 1
     merge_fusion_reports: 1
-    picardtools_collectrnaseqmetrics: 2
+    picardtools_collectrnaseqmetrics: 4
     picardtools_mergesamfiles: 2
     preseq_ar: 2
     qccollect_ar: 1
@@ -165,7 +165,7 @@ recipe_time:
     sacct: 1
     salmon_quant: 5
     star_aln: 8
-    star_fusion: 10
+    star_fusion: 16
     stringtie_ar: 2
     svdb_merge_fusion: 1
     trim_galore_ar: 6
@@ -181,11 +181,12 @@ recipe_memory:
     analysisrunstatus: 1
     build_sj_tracks: 8
     dna_vcf_reformat: 2
+    fusion_report: 15
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
     genebody_coverage: 16
     multiqc_ar: 10
-    picardtools_collectrnaseqmetrics: 5
+    picardtools_collectrnaseqmetrics: 10
     picardtools_mergesamfiles: 5
     preseq_ar: 8
     rseqc: 35
