@@ -161,7 +161,7 @@ container:
       junction_saturation.py:
       read_distribution.py:
       read_duplication.py:
-    uri: quay.io/biocontainers/rseqc:4.0.0--py38h4a8c8d9_1
+    uri: clinicalgenomics/rseqc:4.0.0
   rtg-tools:
     executable:
       rtg:
