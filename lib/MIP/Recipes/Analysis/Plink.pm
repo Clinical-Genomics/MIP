@@ -316,6 +316,8 @@ sub analysis_plink {
     my $uniq_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{no_indels_ann_uniq.vcf};
     bcftools_norm(
         {
+            atomize           => 1,
+            atom_overlaps     => $DOT,
             filehandle        => $filehandle,
             infile_path       => $DASH,
             outfile_path      => $uniq_outfile_path,

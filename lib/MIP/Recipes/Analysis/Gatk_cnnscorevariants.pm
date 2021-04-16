@@ -277,6 +277,8 @@ sub analysis_gatk_cnnscorevariants {
         $mv_infile_path = $norm_outfile_path;
         bcftools_norm(
             {
+                atomize         => 1,
+                atom_overlaps   => $DOT,
                 filehandle      => $filehandle,
                 infile_path     => $cnn_outfile_path,
                 multiallelic    => $DASH,

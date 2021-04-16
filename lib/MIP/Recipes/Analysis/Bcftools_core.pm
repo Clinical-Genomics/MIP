@@ -237,7 +237,8 @@ sub analysis_bcftools_core {
 
     bcftools_norm(
         {
-
+            atomize           => 1,
+            atom_overlaps     => $DOT,
             filehandle        => $filehandle,
             infile_path       => q{-},
             remove_duplicates => 1,
