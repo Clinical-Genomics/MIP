@@ -86,7 +86,7 @@ my %specific_argument = (
     },
     atom_overlaps => {
         input           => $BACKWARD_SLASH . $ASTERISK,
-        expected_output => q{--atom_overlaps} . $SPACE . $BACKWARD_SLASH . $ASTERISK,
+        expected_output => q{--atom-overlaps} . $SPACE . $BACKWARD_SLASH . $ASTERISK,
     },
     infile_path => {
         input           => q{infile.test},

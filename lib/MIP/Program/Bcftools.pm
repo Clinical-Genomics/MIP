@@ -1265,7 +1265,7 @@ sub bcftools_norm {
 
     if ($atom_overlaps) {
 
-        push @commands, q{--atom_overlaps} . $SPACE . $atom_overlaps;
+        push @commands, q{--atom-overlaps} . $SPACE . $atom_overlaps;
     }
 
     if ($multiallelic) {
