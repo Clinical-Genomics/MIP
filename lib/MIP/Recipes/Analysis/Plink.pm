@@ -320,6 +320,7 @@ sub analysis_plink {
             atom_overlaps     => $DOT,
             filehandle        => $filehandle,
             infile_path       => $DASH,
+            old_rec_tag       => 1,
             outfile_path      => $uniq_outfile_path,
             remove_duplicates => 1,
         }

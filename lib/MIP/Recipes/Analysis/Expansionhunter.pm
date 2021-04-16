@@ -342,6 +342,7 @@ sub analysis_expansionhunter {
                 filehandle    => $filehandle,
                 infile_path   => $decompose_infile_path_prefix . q{.bcf},
                 multiallelic  => q{-},
+                old_rec_tag   => 1,
                 outfile_path  => $decompose_outfile_path,
             }
         );

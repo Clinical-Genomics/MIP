@@ -227,6 +227,7 @@ sub analysis_bcftools_core {
             filehandle      => $filehandle,
             infile_path     => q{-},
             multiallelic    => q{-},
+            old_rec_tag     => 1, 
             reference_check => q{s},
             reference_path  => $human_genome_reference,
         }
@@ -241,6 +242,7 @@ sub analysis_bcftools_core {
             atom_overlaps     => $DOT,
             filehandle        => $filehandle,
             infile_path       => q{-},
+            old_rec_tag       => 1,
             remove_duplicates => 1,
         }
     );

@@ -304,6 +304,7 @@ sub analysis_sv_combinevariantcallsets {
                 filehandle    => $filehandle,
                 infile_path   => $outfile_path,
                 multiallelic  => q{-},
+                old_rec_tag   => 1,
                 outfile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
             }
         );
@@ -586,6 +587,7 @@ sub _preprocess_joint_callers_file {
                     filehandle    => $filehandle,
                     infile_path   => $infile_path,
                     multiallelic  => q{-},
+                    old_rec_tag   => 1,
                     outfile_path  => $decompose_outfile_path,
                 }
             );

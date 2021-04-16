@@ -282,6 +282,7 @@ sub analysis_gatk_cnnscorevariants {
                 filehandle      => $filehandle,
                 infile_path     => $cnn_outfile_path,
                 multiallelic    => $DASH,
+                old_rec_tag     => 1,
                 outfile_path    => $norm_outfile_path,
                 output_type     => q{v},
                 reference_path  => $referencefile_path,
