@@ -227,7 +227,6 @@ sub analysis_bcftools_core {
             filehandle      => $filehandle,
             infile_path     => q{-},
             multiallelic    => q{-},
-            old_rec_tag     => 1, 
             reference_check => q{s},
             reference_path  => $human_genome_reference,
         }

@@ -1275,7 +1275,7 @@ sub bcftools_norm {
 
     if ($old_rec_tag) {
 
-        push @commands, q{--old-rec-tag};
+        push @commands, q{--old-rec-tag OLD_REC_TAG};
     }
 
     if ($reference_check) {
