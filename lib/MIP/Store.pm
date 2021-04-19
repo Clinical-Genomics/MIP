@@ -117,9 +117,25 @@ sub define_qc_metrics_to_store {
             analysis_mode => q{sample},
             recipe_name   => q{collectmultiplemetricsinsertsize},
         },
+        PCT_INTERGENIC_BASES => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collectrnaseqmetrics},
+        },
+        PCT_INTRONIC_BASES => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collectrnaseqmetrics},
+        },
+        PCT_MRNA_BASES => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collectrnaseqmetrics},
+        },
         percentage_mapped_reads => {
             analysis_mode => q{sample},
             recipe_name   => q{bamstats},
+        },
+        percentage_uniquely_mapped_reads => {
+            analysis_mode => q{sample},
+            recipe_name   => q{star_log},
         },
         raw_total_sequences => {
             analysis_mode => q{sample},
