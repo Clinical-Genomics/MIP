@@ -86,7 +86,7 @@ my %specific_argument = (
     },
     atom_overlaps => {
         input           => $BACKWARD_SLASH . $ASTERISK,
-        expected_output => q{--atom_overlaps} . $SPACE . $BACKWARD_SLASH . $ASTERISK,
+        expected_output => q{--atom-overlaps} . $SPACE . $BACKWARD_SLASH . $ASTERISK,
     },
     infile_path => {
         input           => q{infile.test},
@@ -98,7 +98,7 @@ my %specific_argument = (
     },
     old_rec_tag => {
         input           => 1,
-        expected_output => q{--old-rec-tag},
+        expected_output => q{--old-rec-tag OLD_REC_TAG},
     },
     output_type => {
         input           => q{v},
