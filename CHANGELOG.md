@@ -49,6 +49,7 @@ upd: 0.1 -> 0.1.1
 
 ### References
 
+- clinvar_20200905 -> clinvar_20210415
 - VEP cache: 100 -> 103.1
 - grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz -> grch37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz
 - grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz -> grch38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz
