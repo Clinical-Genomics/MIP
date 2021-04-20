@@ -65,10 +65,6 @@ $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
 $active_parameter{bcftools_normalize} = 1;
 
-$active_parameter{bcftools_core}                     = 2;
-$active_parameter{recipe_core_number}{bcftools_core} = 1;
-$active_parameter{recipe_time}{bcftools_core}        = 1;
-
 my %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},

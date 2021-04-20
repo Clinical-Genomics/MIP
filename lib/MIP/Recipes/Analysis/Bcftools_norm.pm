@@ -131,12 +131,12 @@ sub analysis_bcftools_norm {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Program::Bcftools qw{ bcftools_norm };
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
-    use MIP::Recipes::Analysis::Bcftools_core qw{ analysis_bcftools_core };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -236,21 +236,34 @@ sub analysis_bcftools_norm {
         }
     );
 
-    ## Split vcf into contigs
   CONTIG:
     while ( my ( $contig_index, $contig ) = each @contigs_size_ordered ) {
 
-        analysis_bcftools_core(
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+
+        bcftools_norm(
             {
-                active_parameter_href  => $active_parameter_href,
-                cmd_break              => $SEMICOLON,
-                contig                 => $contig,
-                filehandle             => $xargsfilehandle,
-                infile_path            => $infile_path{$contig},
-                outfile_path           => $outfile_path{$contig},
-                xargs_file_path_prefix => $xargs_file_path_prefix,
+                filehandle      => $xargsfilehandle,
+                infile_path     => $infile_path{$contig},
+                multiallelic    => q{-},
+                output_type     => q{u},
+                reference_check => q{s},
+                reference_path  => $active_parameter_href->{human_genome_reference},
+                stderrfile_path => $stderrfile_path,
             }
         );
+        print {$xargsfilehandle} $PIPE . $SPACE;
+
+        bcftools_norm(
+            {
+                filehandle             => $xargsfilehandle,
+                infile_path            => q{-},
+                outfile_path           => $outfile_path{$contig},
+                remove_duplicates      => 1,
+                stderrfile_path_append => $stderrfile_path,
+            }
+        );
+        print {$xargsfilehandle} $SEMICOLON . $SPACE;
 
         if (   $contig_index == 0
             && $recipe{mode} == 1 )
@@ -280,8 +293,6 @@ sub analysis_bcftools_norm {
             my $alt_file_tag = $UNDERSCORE . q{nostar};
             my $removed_outfile_path =
               $outfile_path_prefix . $alt_file_tag . $DOT . $contig . $outfile_suffix;
-            my $stderr_contig_path =
-              $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
             perl_nae_oneliners(
                 {
                     escape_oneliner        => 1,
@@ -289,7 +300,7 @@ sub analysis_bcftools_norm {
                     oneliner_name          => q{remove_decomposed_asterisk_records},
                     stdinfile_path         => $outfile_path{$contig},
                     stdoutfile_path        => $removed_outfile_path,
-                    stderrfile_path_append => $stderr_contig_path,
+                    stderrfile_path_append => $stderrfile_path,
                     use_container          => 1,
                 }
             );
@@ -428,10 +439,10 @@ sub analysis_bcftools_norm_panel {
 
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Program::Bcftools qw{ bcftools_norm };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Recipes::Analysis::Bcftools_core qw{ analysis_bcftools_core };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -508,13 +519,24 @@ sub analysis_bcftools_norm_panel {
 
     say {$filehandle} q{## Bcftools - Decompose and normalize variants};
 
-    analysis_bcftools_core(
+    bcftools_norm(
         {
-            active_parameter_href => $active_parameter_href,
-            cmd_break             => $SEMICOLON,
-            filehandle            => $filehandle,
-            infile_path           => $infile_path,
-            outfile_path          => $outfile_path,
+            filehandle      => $filehandle,
+            infile_path     => $infile_path,
+            multiallelic    => q{-},
+            output_type     => q{u},
+            reference_check => q{s},
+            reference_path  => $active_parameter_href->{human_genome_reference},
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    bcftools_norm(
+        {
+            filehandle        => $filehandle,
+            infile_path       => q{-},
+            outfile_path      => $outfile_path,
+            remove_duplicates => 1,
         }
     );
     say {$filehandle} $NEWLINE;
