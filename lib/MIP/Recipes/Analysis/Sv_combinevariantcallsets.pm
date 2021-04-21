@@ -299,13 +299,10 @@ sub analysis_sv_combinevariantcallsets {
         say {$filehandle} q{## Split multiallelic variants};
         bcftools_norm(
             {
-                atomize       => 1,
-                atom_overlaps => $DOT,
-                filehandle    => $filehandle,
-                infile_path   => $outfile_path,
-                multiallelic  => q{-},
-                old_rec_tag   => 1,
-                outfile_path  => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
+                filehandle   => $filehandle,
+                infile_path  => $outfile_path,
+                multiallelic => q{-},
+                outfile_path => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -582,13 +579,10 @@ sub _preprocess_joint_callers_file {
             say {$filehandle} q{## Split multiallelic variants};
             bcftools_norm(
                 {
-                    atomize       => 1,
-                    atom_overlaps => $DOT,
-                    filehandle    => $filehandle,
-                    infile_path   => $infile_path,
-                    multiallelic  => q{-},
-                    old_rec_tag   => 1,
-                    outfile_path  => $decompose_outfile_path,
+                    filehandle   => $filehandle,
+                    infile_path  => $infile_path,
+                    multiallelic => q{-},
+                    outfile_path => $decompose_outfile_path,
                 }
             );
             say {$filehandle} $NEWLINE;

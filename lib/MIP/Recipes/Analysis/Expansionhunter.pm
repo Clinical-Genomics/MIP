@@ -337,13 +337,10 @@ sub analysis_expansionhunter {
         say {$filehandle} $NEWLINE;
         bcftools_norm(
             {
-                atomize       => 1,
-                atom_overlaps => $DOT,
-                filehandle    => $filehandle,
-                infile_path   => $decompose_infile_path_prefix . q{.bcf},
-                multiallelic  => q{-},
-                old_rec_tag   => 1,
-                outfile_path  => $decompose_outfile_path,
+                filehandle   => $filehandle,
+                infile_path  => $decompose_infile_path_prefix . q{.bcf},
+                multiallelic => q{-},
+                outfile_path => $decompose_outfile_path,
             }
         );
         say {$filehandle} $NEWLINE;

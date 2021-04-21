@@ -336,12 +336,9 @@ sub analysis_gatk_variantrecalibration_wes {
           $outfile_path_prefix . $UNDERSCORE . q{normalized} . $outfile_suffix;
         bcftools_norm(
             {
-                atomize         => 1,
-                atom_overlaps   => $DOT,
                 filehandle      => $filehandle,
                 infile_path     => $norm_infile_path,
                 multiallelic    => $DASH,
-                old_rec_tag     => 1,
                 outfile_path    => $norm_outfile_path,
                 output_type     => q{v},
                 reference_path  => $referencefile_path,
@@ -423,12 +420,9 @@ sub analysis_gatk_variantrecalibration_wes {
           $outfile_path_prefix . $UNDERSCORE . q{selected_normalized} . $outfile_suffix;
         bcftools_norm(
             {
-                atomize        => 1,
-                atom_overlaps  => $DOT,
                 filehandle     => $filehandle,
                 infile_path    => $outfile_path,
                 multiallelic   => $DASH,
-                old_rec_tag    => 1,
                 outfile_path   => $selected_norm_outfile_path,
                 output_type    => q{v},
                 reference_path => $referencefile_path,
@@ -890,12 +884,9 @@ sub analysis_gatk_variantrecalibration_wgs {
           $outfile_path_prefix . $UNDERSCORE . q{normalized} . $outfile_suffix;
         bcftools_norm(
             {
-                atomize        => 1,
-                atom_overlaps  => $DOT,
                 filehandle     => $filehandle,
                 infile_path    => $outfile_path,
                 multiallelic   => $DASH,
-                old_rec_tag    => 1,
                 output_type    => q{v},
                 outfile_path   => $bcftools_outfile_path,
                 reference_path => $referencefile_path,
