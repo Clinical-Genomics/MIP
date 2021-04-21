@@ -60,7 +60,7 @@ my %process_return = (
     buffers_ref   => [],
     error_message => undef,
     stderrs_ref   => [],
-    stdouts_ref   => [qw{ 100 }],
+    stdouts_ref   => [qw{ 103 }],
     success       => 1,
 );
 test_constants(
