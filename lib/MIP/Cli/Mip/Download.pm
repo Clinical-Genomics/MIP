@@ -148,6 +148,14 @@ sub _build_usage {
     );
 
     option(
+        q{install_config_file} => (
+            documentation => q{File with install configuration parameters in YAML format},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{job_reservation_name} => (
             documentation => q{Allocate node resources from named reservation},
             is            => q{rw},
