@@ -158,6 +158,7 @@ sub download_dbnsfp {
             core_number                     => $recipe{core_number},
             directory_id                    => q{mip_download},
             filehandle                      => $filehandle,
+            info_file_id                    => $genome_version . $UNDERSCORE . $reference_version,
             job_id_href                     => $job_id_href,
             memory_allocation               => $recipe{memory},
             outdata_dir                     => $reference_dir,
