@@ -46,6 +46,7 @@ sub build_script_directories_and_paths {
 ## Function : Builds and makes recipe directories (info & data & script) and recipe script paths
 ## Returns  : $file_info_path, $file_path_prefix, $recipe_data_directory_path
 ## Arguments: $directory_id               => $sample id | $case_id
+##          : $info_file_id               => Extra id for stderrr/stdout file
 ##          : $outdata_dir                => MIP outdata directory
 ##          : $outscript_dir              => MIP outscript directory
 ##          : $recipe_data_directory_path => Set recipe data directory path
@@ -64,11 +65,21 @@ sub build_script_directories_and_paths {
     my $recipe_mode;
     my $recipe_name;
 
+    ## Default(s)
+    my $info_file_id;
+
     my $tmpl = {
         directory_id => {
             defined     => 1,
             required    => 1,
             store       => \$directory_id,
+            strict_type => 1,
+        },
+        info_file_id => {
+            default     => $arg_href->{info_file_id} ||= $arg_href->{directory_id},
+            defined     => 1,
+            required    => 1,
+            store       => \$info_file_id,
             strict_type => 1,
         },
         outdata_dir => {
@@ -112,7 +123,7 @@ sub build_script_directories_and_paths {
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my $file_name_prefix = $recipe_name . $UNDERSCORE . $directory_id . $DOT;
+    my $file_name_prefix = $recipe_name . $UNDERSCORE . $info_file_id . $DOT;
 
     ## Directory paths
     if ( not defined $recipe_data_directory_path ) {
@@ -430,6 +441,7 @@ sub setup_script {
 ##          : $error_trap                      => Error trap switch {Optional}
 ##          : $filehandle                      => filehandle to write to
 ##          : $gpu_number                      => Number of GPUs to use
+##          : $info_file_id                    => Extra id for stderrr/stdout file
 ##          : $job_id_href                     => The job_id hash {REF}
 ##          : $memory_allocation               => Memory allocation
 ##          : $outdata_dir                     => MIP outdata directory {Optional}
@@ -451,6 +463,7 @@ sub setup_script {
     my $active_parameter_href;
     my $directory_id;
     my $filehandle;
+    my $info_file_id;
     my $job_id_href;
     my $memory_allocation;
     my $recipe_data_directory_path;
@@ -501,6 +514,10 @@ sub setup_script {
         gpu_number => {
             allow       => [ undef, sub { $constraint{is_digit}->( $_[0] ) }, ],
             store       => \$gpu_number,
+            strict_type => 1,
+        },
+        info_file_id => {
+            store       => \$info_file_id,
             strict_type => 1,
         },
         job_id_href => {
@@ -609,6 +626,7 @@ sub setup_script {
       build_script_directories_and_paths(
         {
             directory_id               => $directory_id,
+            info_file_id               => $info_file_id,
             outdata_dir                => $outdata_dir,
             outscript_dir              => $outscript_dir,
             recipe_data_directory_path => $recipe_data_directory_path,
