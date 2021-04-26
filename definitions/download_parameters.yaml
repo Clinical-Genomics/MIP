@@ -94,6 +94,10 @@ clinvar:
     - mip
   data_type: SCALAR
   default: 1
+  program_executables:
+    - bcftools
+    - bgzip
+    - tabix
   type: recipe
 config_file:
   associated_recipe:
@@ -120,6 +124,7 @@ custom_default_parameters:
     - mip
   data_type: ARRAY
   default:
+    - install_config_file
     - reference_dir
     - temp_directory
   type: mip
@@ -129,6 +134,9 @@ dbnsfp:
     - mip
   data_type: SCALAR
   default: 1
+  program_executables:
+    - bgzip
+    - tabix
   type: recipe
 dbsnp:
   analysis_mode: case
@@ -209,6 +217,9 @@ genomic_superdups:
     - mip
   data_type: SCALAR
   default: 1
+  program_executables:
+    - bgzip
+    - tabix
   type: recipe
 giab:
   analysis_mode: case
@@ -223,6 +234,11 @@ gnomad:
     - mip
   data_type: SCALAR
   default: 1
+  program_executables:
+    - bcftools
+    - bgzip
+    - tabix
+    - vcfanno
   type: recipe
 gnomad_pli_per_gene:
   analysis_mode: case
@@ -244,7 +260,16 @@ human_reference:
     - mip
   data_type: SCALAR
   default: 1
+  program_executables:
+    - samtools
   type: recipe
+install_config_file:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 0
+  type: path
+  update_path: absolute_path
 job_reservation_name:
   associated_recipe:
     - mip
@@ -296,6 +321,8 @@ pfam:
     - mip
   data_type: SCALAR
   default: 1
+  program_executables:
+    - hmmpress
   type: recipe
 print_parameter_default:
   associated_recipe:
