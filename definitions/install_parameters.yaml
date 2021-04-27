@@ -87,6 +87,7 @@ rd_dna:
     - mip_scripts
     - multiqc
     - peddy
+    - perl
     - picard
     - plink
     - python
@@ -123,6 +124,7 @@ rd_rna:
     - mip_scripts
     - multiqc
     - pdfmerger
+    - perl
     - picard
     - preseq
     - python
