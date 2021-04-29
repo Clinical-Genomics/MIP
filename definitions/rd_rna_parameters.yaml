@@ -170,7 +170,7 @@ recipe_time:
     svdb_merge_fusion: 1
     trim_galore_ar: 6
     varianteffectpredictor: 4
-    vcfparser_ar: 2
+    vcfparser_ar: 3
     version_collect_ar: 1
   type: mip
 recipe_memory:
