@@ -377,6 +377,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Arriba qw{ analysis_arriba };
     use MIP::Recipes::Analysis::Bcftools_merge qw{ analysis_bcftools_merge };
+    use MIP::Recipes::Analysis::Bcftools_norm qw{ analysis_bcftools_norm_panel };
     use MIP::Recipes::Analysis::Blobfish qw{ analysis_blobfish };
     use MIP::Recipes::Analysis::BootstrapAnn qw{ analysis_bootstrapann };
     use MIP::Recipes::Analysis::Build_sj_tracks qw{ analysis_build_sj_tracks };
@@ -443,6 +444,7 @@ sub pipeline_analyse_rd_rna {
         analysisrunstatus                => \&analysis_analysisrunstatus,
         arriba_ar                        => \&analysis_arriba,
         bcftools_merge                   => \&analysis_bcftools_merge,
+        bcftools_norm                    => \&analysis_bcftools_norm_panel,
         blobfish                         => \&analysis_blobfish,
         bootstrapann                     => \&analysis_bootstrapann,
         build_sj_tracks                  => \&analysis_build_sj_tracks,

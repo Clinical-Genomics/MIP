@@ -139,6 +139,7 @@ recipe_time:
     analysisrunstatus: 1
     arriba_ar: 4
     bcftools_merge: 1
+    bcftools_norm: 2
     blobfish: 1
     bootstrapann: 2
     build_sj_tracks: 1
@@ -205,6 +206,7 @@ recipe_core_number:
     analysisrunstatus: 1
     arriba_ar: 24
     bcftools_merge: 1
+    bcftools_norm: 1
     blobfish: 1
     bootstrapann: 1
     build_sj_tracks: 1
@@ -897,6 +899,25 @@ bcftools_merge:
   program_executables:
     - bcftools
   type: recipe
+bcftools_norm:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _norm
+  program_executables:
+    - bcftools
+    - bgzip
+    - tabix
+  outfile_suffix: ".vcf"
+  type: recipe
+bcftools_missing_alt_allele:
+  associated_recipe:
+    - bcftools_norm
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 ## Reformat dna vcf
 dna_vcf_reformat:
   analysis_mode: sample
