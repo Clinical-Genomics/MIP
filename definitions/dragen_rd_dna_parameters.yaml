@@ -287,6 +287,8 @@ sv_vcfparser:
   default: 1
   file_tag: _parsed
   outfile_suffix: ".vcf"
+  program_executables:
+    - mip
   type: recipe
 sv_vcfparser_add_all_mt_var:
   associated_recipe:
@@ -640,6 +642,8 @@ vcfparser_ar:
   default: 1
   file_tag: _parsed
   outfile_suffix: ".vcf"
+  program_executables:
+    - mip
   type: recipe
 vcfparser_add_all_mt_var:
   associated_recipe:

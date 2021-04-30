@@ -288,4 +288,6 @@ version_collect_ar:
   default: 1
   file_tag: _vcol
   outfile_suffix: ".yaml"
+  program_executables:
+    - mip
   type: recipe
