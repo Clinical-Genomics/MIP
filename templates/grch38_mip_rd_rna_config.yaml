@@ -8,6 +8,9 @@ load_env:
   MIP_rd_rna:
     method: conda
     mip:
+recipe_bind_path:
+  vcfparser_ar:
+    - cluster_constant_path!/case_id!
 slurm_quality_of_service: low
 ## Input
 pedigree_file: cluster_constant_path!/case_id!/case_id!_pedigree.yaml

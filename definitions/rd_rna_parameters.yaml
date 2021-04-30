@@ -1017,6 +1017,11 @@ vcfparser_ar:
   default: 1
   file_tag: _parsed
   outfile_suffix: ".vcf.gz"
+  program_executables:
+    - bcftools
+    - bgzip
+    - mip
+    - tabix
   type: recipe
 vcfparser_add_all_mt_var:
   associated_recipe:
@@ -1059,6 +1064,8 @@ qccollect_ar:
   default: 1
   file_tag: _qc_metrics
   outfile_suffix: ".yaml"
+  program_executables:
+    - mip
   type: recipe
 qccollect_eval_metric_file:
   associated_recipe:
