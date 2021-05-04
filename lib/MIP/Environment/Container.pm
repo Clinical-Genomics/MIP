@@ -182,6 +182,7 @@ sub get_recipe_executable_bind_path {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Active_parameter qw{add_recipe_bind_paths};
+    use MIP::Environment::Path qw{ reduce_dir_paths };
     use MIP::Language::Shell qw{ quote_bash_variable };
     use MIP::Parameter qw{get_cache get_parameter_attribute};
 
@@ -220,11 +221,23 @@ sub get_recipe_executable_bind_path {
                 }
             );
 
-            ## Special case for xdg_runtime_dir, which always should be added
-            push @export_bind_paths, $xdg_runtime_dir;
-
-            $recipe_executable_bind_path{$executable} = [@export_bind_paths];
+            push @{ $recipe_executable_bind_path{$executable} }, @export_bind_paths;
         }
+    }
+
+  EXECUTABLE:
+    foreach my $executable ( keys %recipe_executable_bind_path ) {
+
+        ## Special case for xdg_runtime_dir, which always should be added
+        push @{ $recipe_executable_bind_path{$executable} }, $xdg_runtime_dir;
+
+        $recipe_executable_bind_path{$executable} = [
+            reduce_dir_paths(
+                {
+                    dir_paths_ref => $recipe_executable_bind_path{$executable},
+                }
+            )
+        ];
     }
     return %recipe_executable_bind_path;
 }
