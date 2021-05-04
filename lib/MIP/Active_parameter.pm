@@ -169,17 +169,9 @@ sub add_recipe_bind_paths {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Environment::Path qw{ reduce_dir_paths };
-
     return if ( not $active_parameter_href->{recipe_bind_path}{$recipe_name} );
 
     push @{$export_bind_paths_ref}, @{ $active_parameter_href->{recipe_bind_path}{$recipe_name} };
-
-    @{$export_bind_paths_ref} = reduce_dir_paths(
-        {
-            dir_paths_ref => $export_bind_paths_ref
-        }
-    );
 
     return;
 }
