@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE };
+use MIP::Constants qw{ $DASH $LOG_NAME $NEWLINE $PIPE $SPACE };
 
 BEGIN {
 
@@ -112,10 +112,9 @@ sub analysis_glnexus {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
-    use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
+    use MIP::Program::Bcftools qw{ bcftools_norm };
     use MIP::Program::Glnexus qw{ glnexus_merge };
-    use MIP::Program::Htslib qw{ htslib_bgzip };
+    use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
@@ -126,8 +125,6 @@ sub analysis_glnexus {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Unpack parameters
-
     my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
@@ -136,12 +133,10 @@ sub analysis_glnexus {
         }
     );
     my $core_number = $recipe{core_number};
-    my $time        = $recipe{time};
     my $memory      = $recipe{memory};
 
     ## Get the io infiles per chain and id
     my @genotype_infile_paths;
-    my @genotype_infile_path_prefixes;
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -156,8 +151,7 @@ sub analysis_glnexus {
                 stream         => q{in},
             }
         );
-        push @genotype_infile_paths,         $sample_io{in}{file_path};
-        push @genotype_infile_path_prefixes, $sample_io{in}{file_path_prefix};
+        push @genotype_infile_paths, $sample_io{in}{file_path};
     }
 
     my %io = parse_io_outfiles(
@@ -171,10 +165,7 @@ sub analysis_glnexus {
             recipe_name            => $recipe_name,
         }
     );
-
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $temp_outfile_path =
-      catdir( $active_parameter_href->{temp_directory}, $io{out}{file_name_prefix} . q{.vcf} );
+    my $outfile_path = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -184,11 +175,11 @@ sub analysis_glnexus {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe{core_number},
+            core_number           => $core_number,
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $recipe{memory},
+            memory_allocation     => $memory,
             process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
@@ -199,10 +190,10 @@ sub analysis_glnexus {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
+    ## Set infile for bcftools norm for single sample cases
+    my $bcftools_norm_infile_path = $genotype_infile_paths[0];
 
-        ## Glnexus
-        say {$filehandle} q{## Glnexus};
+    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
         glnexus_merge(
             {
@@ -211,39 +202,34 @@ sub analysis_glnexus {
                 filehandle       => $filehandle,
                 infile_paths_ref => \@genotype_infile_paths,
                 memory           => $memory,
-                stdoutfile_path  => $temp_outfile_path,
                 threads          => $core_number,
             }
         );
-        say {$filehandle} $NEWLINE;
+        print {$filehandle} $PIPE . $SPACE;
 
-        say {$filehandle} q{## View};
-
-        bcftools_view_and_index_vcf(
-            {
-                filehandle          => $filehandle,
-                index_type          => q{tbi},
-                infile_path         => $temp_outfile_path,
-                outfile_path_prefix => $outfile_path_prefix,
-                output_type         => q{z},
-                threads             => $core_number,
-            }
-        );
+        $bcftools_norm_infile_path = $DASH;
     }
-    else {
 
-        say {$filehandle} q{## Single sample - copy deepvariant vcf output and index};
-
-      FILE_SUFFIX:
-        foreach my $dv_file_name_suffix (qw { .vcf.gz .vcf.gz.tbi }) {
-            gnu_cp {
-                filehandle   => $filehandle,
-                infile_path  => $genotype_infile_path_prefixes[0] . $dv_file_name_suffix,
-                outfile_path => $outfile_path_prefix . $dv_file_name_suffix,
-            };
-            say {$filehandle} $NEWLINE;
+    bcftools_norm(
+        {
+            filehandle     => $filehandle,
+            infile_path    => $bcftools_norm_infile_path,
+            multiallelic   => q{-},
+            outfile_path   => $outfile_path,
+            output_type    => q{z},
+            reference_path => $active_parameter_href->{human_genome_reference},
+            threads        => $core_number,
         }
-    }
+    );
+    say {$filehandle} $NEWLINE;
+
+    htslib_tabix {
+        (
+            filehandle  => $filehandle,
+            infile_path => $outfile_path,
+        )
+    };
+
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
@@ -251,7 +237,7 @@ sub analysis_glnexus {
 
         set_recipe_outfile_in_sample_info(
             {
-                path             => $outfile_path_prefix . q{.vcf.gz},
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
@@ -261,8 +247,8 @@ sub analysis_glnexus {
             {
                 format           => q{vcf},
                 id               => $case_id,
-                path             => $outfile_path_prefix . q{.vcf.gz},
-                path_index       => $outfile_path_prefix . q{.vcf.gz.tbi},
+                path             => $outfile_path,
+                path_index       => $outfile_path . q{.tbi},
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }

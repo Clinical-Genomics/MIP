@@ -262,7 +262,7 @@ sub bcftools_base {
             strict_type => 1,
         },
         threads => {
-            allow       => qr/\A \d+ \z | undef /xms,
+            allow       => [ undef, qr{\A \d+ \z}xms ],
             store       => \$threads,
             strict_type => 1,
         },
@@ -1143,6 +1143,7 @@ sub bcftools_norm {
 ##          : $stderrfile_path        => Stderr file path to write to {OPTIONAL}
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $threads                => Number of threads to use
 
     my ($arg_href) = @_;
 
@@ -1163,6 +1164,7 @@ sub bcftools_norm {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $threads;
 
     ## Default(s)
     my $multiallelic_type;
@@ -1239,6 +1241,10 @@ sub bcftools_norm {
         stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
         stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
+        threads                => {
+            store       => \$threads,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1255,6 +1261,7 @@ sub bcftools_norm {
             output_type       => $output_type,
             samples_file_path => $samples_file_path,
             samples_ref       => $samples_ref,
+            threads           => $threads,
         }
     );
 

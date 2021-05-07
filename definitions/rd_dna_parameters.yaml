@@ -522,9 +522,9 @@ glnexus_merge:
   file_tag: _glnex
   outfile_suffix: ".vcf.gz"
   program_executables:
-    - glnexus_cli
     - bcftools
-    - bgzip
+    - glnexus_cli
+    - tabix
   recipe_type: variant_callers
   type: recipe
   variant_caller: deepvariant
