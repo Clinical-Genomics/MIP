@@ -75,7 +75,6 @@ sub pipeline_download {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Constants qw{ set_container_constants };
     use MIP::Recipes::Download::1000g_indels qw{ download_1000g_indels };
     use MIP::Recipes::Download::1000g_omni qw{ download_1000g_omni };
     use MIP::Recipes::Download::1000g_sites qw{ download_1000g_sites };
@@ -117,8 +116,6 @@ sub pipeline_download {
 
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger( uc q{mip_download} );
-
-    set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Download recipes
     ## Create code reference table for download recipes

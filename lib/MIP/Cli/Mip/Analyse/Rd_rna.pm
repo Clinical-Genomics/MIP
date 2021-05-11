@@ -158,6 +158,23 @@ sub _build_usage {
     );
 
     option(
+        q{bcftools_norm} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Decompose and normalize},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{bcftools_missing_alt_allele} => (
+            documentation => q{Remove missing alternative alleles '*'},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{blobfish} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Run BlobFish on salmon quant files},

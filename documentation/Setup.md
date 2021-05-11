@@ -56,7 +56,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Glnexus] (version: 1.3.1)
 - [Htslib] (version: 1.12)
 - [Manta] (version: 1.6.0)
-- [Megafusion] (version: cc6676c)
+- [Megafusion] (version: 66a3a80)
 - [MultiQC] (version: 1.10.1)
 - [Pdfmerger] (version: 1.0)
 - [Peddy] (version: 0.4.3)

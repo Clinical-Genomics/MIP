@@ -29,7 +29,8 @@ use MIP::Active_parameter qw{
 };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants
-  qw{ $COLON $COMMA $DOT $LOG_NAME $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $COLON $COMMA $DOT $LOG_NAME $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE set_container_constants };
+use MIP::Environment::Container qw{ parse_containers };
 use MIP::Download qw{ check_user_reference parse_download_reference_parameter };
 use MIP::Environment::Cluster qw{ check_max_core_number };
 use MIP::Environment::User qw{ check_email_address };
@@ -239,6 +240,15 @@ sub mip_download {
             reference_genome_versions_ref => $active_parameter_href->{reference_genome_versions},
             reference_ref                 => $active_parameter_href->{reference_feature},
             user_supplied_reference_ref   => $active_parameter_href->{reference},
+        }
+    );
+
+    set_container_constants( { active_parameter_href => $active_parameter_href, } );
+
+    parse_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
         }
     );
 

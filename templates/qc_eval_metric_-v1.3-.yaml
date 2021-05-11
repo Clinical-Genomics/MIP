@@ -53,7 +53,7 @@ wes:
 wts:
   collectrnaseqmetrics:
     PCT_MRNA_BASES:
-      lt: 0.9
+      lt: 0.80
     PCT_RIBOSOMAL_BASES:
       gt: 0.05
   markduplicates:

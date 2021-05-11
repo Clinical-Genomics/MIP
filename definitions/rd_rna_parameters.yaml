@@ -139,6 +139,7 @@ recipe_time:
     analysisrunstatus: 1
     arriba_ar: 4
     bcftools_merge: 1
+    bcftools_norm: 2
     blobfish: 1
     bootstrapann: 2
     build_sj_tracks: 1
@@ -170,7 +171,7 @@ recipe_time:
     svdb_merge_fusion: 1
     trim_galore_ar: 6
     varianteffectpredictor: 4
-    vcfparser_ar: 2
+    vcfparser_ar: 3
     version_collect_ar: 1
   type: mip
 recipe_memory:
@@ -205,6 +206,7 @@ recipe_core_number:
     analysisrunstatus: 1
     arriba_ar: 24
     bcftools_merge: 1
+    bcftools_norm: 1
     blobfish: 1
     bootstrapann: 1
     build_sj_tracks: 1
@@ -557,7 +559,7 @@ megafusion_arriba_config:
   associated_recipe:
     - megafusion_ar
   data_type: SCALAR
-  default: "/opt/conda/share/MegaFusion/json/Ariba.json"
+  default: "/opt/conda/share/MegaFusion/json/Arriba.json"
   type: path
   update_path: absolute_path
 megafusion_star_fusion_config:
@@ -897,6 +899,25 @@ bcftools_merge:
   program_executables:
     - bcftools
   type: recipe
+bcftools_norm:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _norm
+  program_executables:
+    - bcftools
+    - bgzip
+    - tabix
+  outfile_suffix: ".vcf"
+  type: recipe
+bcftools_missing_alt_allele:
+  associated_recipe:
+    - bcftools_norm
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 ## Reformat dna vcf
 dna_vcf_reformat:
   analysis_mode: sample
@@ -996,6 +1017,11 @@ vcfparser_ar:
   default: 1
   file_tag: _parsed
   outfile_suffix: ".vcf.gz"
+  program_executables:
+    - bcftools
+    - bgzip
+    - mip
+    - tabix
   type: recipe
 vcfparser_add_all_mt_var:
   associated_recipe:
@@ -1038,6 +1064,8 @@ qccollect_ar:
   default: 1
   file_tag: _qc_metrics
   outfile_suffix: ".yaml"
+  program_executables:
+    - mip
   type: recipe
 qccollect_eval_metric_file:
   associated_recipe:

@@ -238,7 +238,6 @@ sub analysis_star_fusion {
             cpu                   => $recipe{core_number},
             examine_coding_effect => 1,
             filehandle            => $filehandle,
-            fusion_inspector      => q{inspect},
             genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
             min_junction_reads    => $active_parameter_href->{star_fusion_min_junction_reads},
             output_directory_path => $outdir_path,

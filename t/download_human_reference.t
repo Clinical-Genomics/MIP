@@ -32,7 +32,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Download::Human_reference} => [qw{ download_human_reference }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }],
+        q{MIP::Test::Fixtures}                     => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -76,10 +76,11 @@ my %job_id;
 my $is_ok = download_human_reference(
     {
         active_parameter_href => \%active_parameter,
+        genome_version        => $genome_version,
         job_id_href           => \%job_id,
         profile_base_command  => $slurm_mock_cmd,
-        reference_href        => $reference_href,
         recipe_name           => $recipe_name,
+        reference_href        => $reference_href,
         reference_version     => $reference_version,
         temp_directory        => catfile($test_dir),
     }

@@ -1002,6 +1002,11 @@ vcfparser_ar:
   default: 1
   file_tag: _parsed
   outfile_suffix: ".vcf"
+  program_executables:
+    - bcftools
+    - bgzip
+    - mip
+    - tabix
   type: recipe
 vcfparser_add_all_mt_var:
   associated_recipe:

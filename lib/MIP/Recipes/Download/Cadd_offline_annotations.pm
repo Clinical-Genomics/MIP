@@ -118,7 +118,7 @@ sub download_cadd_offline_annotations {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_mv gnu_rm_and_echo };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir gnu_rm_and_echo };
     use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -149,6 +149,7 @@ sub download_cadd_offline_annotations {
             core_number                     => $recipe{core_number},
             directory_id                    => q{mip_download},
             filehandle                      => $filehandle,
+            info_file_id                    => $genome_version . $UNDERSCORE . $reference_version,
             job_id_href                     => $job_id_href,
             memory_allocation               => $recipe{memory},
             outdata_dir                     => $reference_dir,

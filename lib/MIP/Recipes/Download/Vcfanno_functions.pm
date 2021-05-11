@@ -117,7 +117,6 @@ sub download_vcfanno_functions {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Gnu::Coreutils qw{ gnu_mv};
     use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
@@ -149,6 +148,7 @@ sub download_vcfanno_functions {
             core_number                     => $recipe{core_number},
             directory_id                    => q{mip_download},
             filehandle                      => $filehandle,
+            info_file_id                    => $genome_version . $UNDERSCORE . $reference_version,
             job_id_href                     => $job_id_href,
             memory_allocation               => $recipe{memory},
             outdata_dir                     => $reference_dir,

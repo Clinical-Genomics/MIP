@@ -133,7 +133,7 @@ sub _build_usage {
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit bwa-mem2 cadd chanjo
                           chromograph cnvnator cyrius deeptrio deepvariant delly expansionhunter fastqc gatk
                           gatk4 genmod gffcompare glnexus htslib manta megafusion mip mip_scripts multiqc
-                          pdfmerger peddy picard plink preseq python rhocall rseqc rtg-tools salmon sambamba
+                          pdfmerger perl peddy picard plink preseq python rhocall rseqc rtg-tools salmon sambamba
                           smncopynumbercaller star star-fusion stranger stringtie svdb telomerecat tiddit
                           trim-galore ucsc upd utilities varg vcf2cytosure vcfanno vep vts }
                     ]
@@ -155,7 +155,7 @@ sub _build_usage {
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit bwa-mem2 cadd chanjo
                           chromograph cnvnator cyrius deeptrio deepvariant delly expansionhunter fastqc gatk
                           gatk4 genmod gffcompare glnexus htslib manta megafusion mip mip_scripts multiqc
-                          pdfmerger peddy picard plink preseq python rhocall rseqc rtg-tools salmon sambamba
+                          pdfmerger perl peddy picard plink preseq python rhocall rseqc rtg-tools salmon sambamba
                           smncopynumbercaller star star-fusion stranger stringtie svdb telomerecat tiddit
                           trim-galore ucsc upd utilities varg vcf2cytosure vcfanno vep vts }
                     ]
