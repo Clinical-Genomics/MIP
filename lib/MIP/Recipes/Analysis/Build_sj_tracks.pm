@@ -291,6 +291,7 @@ sub analysis_build_sj_tracks {
                 format           => q{bed},
                 id               => $sample_id,
                 path             => $bed_outfile_path,
+                path_index       => $bed_outfile_path . $DOT . q{tbi},
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
                 tag              => q{junction},
