@@ -351,13 +351,12 @@ sub analysis_mip_vcfparser {
             {
                 add_all_mt_var => $active_parameter_href->{vcfparser_add_all_mt_var},
                 contig         => $contig,
-                filehandle     => $xargsfilehandle,
+                filehandle     => $filehandle,
                 infile_path    => $outfile_path{$contig},
                 outfile_path   => $select_outfile,
             }
         );
     }
-    say {$xargsfilehandle} $NEWLINE;
 
     if ( $recipe{mode} == 1 ) {
 
@@ -1420,13 +1419,12 @@ sub analysis_mip_vcfparser_sv_wgs {
             {
                 add_all_mt_var => $active_parameter_href->{sv_vcfparser_add_all_mt_var},
                 contig         => $contig,
-                filehandle     => $xargsfilehandle,
+                filehandle     => $filehandle,
                 infile_path    => $vcfparser_outfile_path,
                 outfile_path   => $select_outfile,
             }
         );
     }
-    say {$xargsfilehandle} $NEWLINE;
 
   ANALYSIS_SUFFIXES:
     foreach my $analysis_suffix (@outfile_suffixes) {
