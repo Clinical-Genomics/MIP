@@ -267,14 +267,9 @@ reference_feature:
       v1.6:
         file: whole_genome_SNVs.tsv.gz
         file_check: whole_genome_SNVs.tsv.gz.md5
-        file_index: whole_genome_SNVs.tsv.gz.tbi
-        file_index_check: whole_genome_SNVs.tsv.gz.tbi.md5
         outfile: grch37_cadd_whole_genome_snvs_-v1.6-.tsv.gz
         outfile_check: grch37_cadd_whole_genome_snvs_-v1.6-.tsv.gz.md5
         outfile_check_method: md5sum
-        outfile_index: grch37_cadd_whole_genome_snvs_-v1.6-.tsv.gz.tbi
-        outfile_index_check: grch37_cadd_whole_genome_snvs_-v1.6-.tsv.gz.tbi.md5
-        outfile_index_check_method: md5sum
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh37/
     grch38:
       v1.5:
@@ -292,14 +287,9 @@ reference_feature:
       v1.6:
         file: whole_genome_SNVs.tsv.gz
         file_check: whole_genome_SNVs.tsv.gz.md5
-        file_index: whole_genome_SNVs.tsv.gz.tbi
-        file_index_check: whole_genome_SNVs.tsv.gz.tbi.md5
         outfile: grch38_cadd_whole_genome_snvs_-v1.6-.tsv.gz
         outfile_check: grch38_cadd_whole_genome_snvs_-v1.6-.tsv.gz.md5
         outfile_check_method: md5sum
-        outfile_index: grch38_cadd_whole_genome_snvs_-v1.6-.tsv.gz.tbi
-        outfile_index_check: grch38_cadd_whole_genome_snvs_-v1.6-.tsv.gz.tbi.md5
-        outfile_index_check_method: md5sum
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh38/
   chromograph_cytoband:
     grch37:
