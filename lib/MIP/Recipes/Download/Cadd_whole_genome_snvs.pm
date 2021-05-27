@@ -117,10 +117,11 @@ sub download_cadd_whole_genome_snvs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
 
     ### PREPROCESSING:
 
@@ -137,7 +138,6 @@ sub download_cadd_whole_genome_snvs {
         }
     );
 
-## Filehandle(s)
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
@@ -176,7 +176,19 @@ sub download_cadd_whole_genome_snvs {
         }
     );
 
-    ## Close filehandleS
+    htslib_tabix(
+        {
+            begin       => 2,
+            end         => 2,
+            filehandle  => $filehandle,
+            force       => 1,
+            sequence    => 1,
+            infile_path => catfile( $reference_dir, $reference_href->{outfile} ),
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
