@@ -105,7 +105,7 @@ container:
       bgzip:
       samtools:
       tabix:
-    uri: docker.io/clinicalgenomics/htslib:1.12
+    uri: docker.io/clinicalgenomics/htslib:1.10.2
   manta:
     executable:
       configManta.py:
