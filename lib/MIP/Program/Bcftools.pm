@@ -290,7 +290,7 @@ sub bcftools_base {
     }
     if ($outfile_path) {
 
-        push @commands, q{--output} . $SPACE . $outfile_path;
+        push @commands, q{-o} . $SPACE . $outfile_path;
     }
 
     if ($output_type) {
