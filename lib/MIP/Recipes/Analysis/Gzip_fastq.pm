@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.12;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gzip_fastq };
@@ -125,12 +121,11 @@ sub analysis_gzip_fastq {
 
     use MIP::Cluster qw{ update_core_number_to_seq_mode };
     use MIP::Environment::Cluster qw{ check_max_core_number };
-    use MIP::File_info qw{ get_is_sample_files_compressed get_sample_file_attribute };
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info
+      qw{ get_io_files get_is_sample_files_compressed get_sample_file_attribute parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gzip qw{ gzip };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     my $is_files_compressed = get_is_sample_files_compressed(
@@ -161,21 +156,14 @@ sub analysis_gzip_fastq {
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
     my @infile_paths         = @{ $io{in}{file_paths} };
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe_resource{core_number};
+    my $core_number = $recipe{core_number};
 
     ## Outpaths
     my @outfile_paths =
@@ -186,7 +174,7 @@ sub analysis_gzip_fastq {
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
+                chain_id       => $recipe{job_id_chain},
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 file_paths_ref => \@outfile_paths,
@@ -198,7 +186,7 @@ sub analysis_gzip_fastq {
 
     ## Adjust according to number of infiles to process
     # One full lane on Hiseq takes approx. 2 h for gzip to process
-    my $time = $recipe_resource{time} * scalar @infile_names;
+    my $time = $recipe{time} * scalar @infile_names;
 
     ## Filehandles
     # Create anonymous filehandle
@@ -242,17 +230,15 @@ sub analysis_gzip_fastq {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $time,
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $time,
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -301,14 +287,14 @@ sub analysis_gzip_fastq {
     print {$filehandle} $NEWLINE;
     say {$filehandle} q{wait}, $NEWLINE;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         submit_recipe(
             {
                 base_command         => $profile_base_command,
                 case_id              => $case_id,
                 dependency_method    => q{island_to_sample},
-                job_id_chain         => $job_id_chain,
+                job_id_chain         => $recipe{job_id_chain},
                 job_id_href          => $job_id_href,
                 job_reservation_name => $active_parameter_href->{job_reservation_name},
                 log                  => $log,

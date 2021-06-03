@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.11;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_qccollect };
@@ -121,10 +117,10 @@ sub analysis_mip_qccollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Mip qw{ mip_qccollect };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -134,24 +130,17 @@ sub analysis_mip_qccollect {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
     my %io = parse_io_outfiles(
         {
-            chain_id               => $job_id_chain,
+            chain_id               => $recipe{job_id_chain},
             id                     => $case_id,
             file_info_href         => $file_info_href,
             file_name_prefixes_ref => [$case_id],
@@ -171,17 +160,15 @@ sub analysis_mip_qccollect {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            process_time                    => $recipe_resource{time},
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            process_time          => $recipe{time},
         }
     );
 
@@ -190,20 +177,21 @@ sub analysis_mip_qccollect {
     my $log_file_path = $outfile_path_prefix . $UNDERSCORE . q{qccollect.log};
     mip_qccollect(
         {
-            eval_metric_file => $active_parameter_href->{qccollect_eval_metric_file},
-            filehandle       => $filehandle,
-            infile_path      => $infile_path,
-            log_file_path    => $log_file_path,
-            outfile_path     => $outfile_path,
-            regexp_file_path => $active_parameter_href->{qccollect_regexp_file},
-            skip_evaluation  => $active_parameter_href->{qccollect_skip_evaluation},
+            eval_metric_file      => $active_parameter_href->{qccollect_eval_metric_file},
+            filehandle            => $filehandle,
+            infile_path           => $infile_path,
+            log_file_path         => $log_file_path,
+            outfile_path          => $outfile_path,
+            regexp_file_path      => $active_parameter_href->{qccollect_regexp_file},
+            skip_evaluation       => $active_parameter_href->{qccollect_skip_evaluation},
+            store_metrics_outfile => $active_parameter_href->{qccollect_store_metrics_outfile},
         }
     );
     say {$filehandle} $NEWLINE;
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -223,12 +211,25 @@ sub analysis_mip_qccollect {
             }
         );
 
+        if ( defined $active_parameter_href->{qccollect_store_metrics_outfile} ) {
+
+            set_file_path_to_store(
+                {
+                    format           => q{meta},
+                    id               => $case_id,
+                    path             => $active_parameter_href->{qccollect_store_metrics_outfile},
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                }
+            );
+
+        }
         submit_recipe(
             {
                 base_command         => $profile_base_command,
                 dependency_method    => q{add_to_all},
                 job_dependency_type  => q{afterok},
-                job_id_chain         => $job_id_chain,
+                job_id_chain         => $recipe{job_id_chain},
                 job_id_href          => $job_id_href,
                 job_reservation_name => $active_parameter_href->{job_reservation_name},
                 log                  => $log,

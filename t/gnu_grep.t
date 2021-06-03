@@ -20,19 +20,8 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $COMMA $EQUALS $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,18 +29,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Gnu::Software::Gnu_grep} => [qw{ gnu_grep }],
-        q{MIP::Test::Fixtures}                   => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Program::Gnu::Software::Gnu_grep} => [qw{ gnu_grep }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
 
-diag(   q{Test gnu_grep from Gnu_grep.pm v}
-      . $MIP::Program::Gnu::Software::Gnu_grep::VERSION
+diag(   q{Test gnu_grep from Gnu_grep.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -104,7 +89,7 @@ my %specific_argument = (
     },
     pattern => {
         input           => q{^chr},
-        expected_output => q{^chr},
+        expected_output => q{--regexp} . $EQUALS . q{^chr},
     },
     word_regexp => {
         input           => 1,

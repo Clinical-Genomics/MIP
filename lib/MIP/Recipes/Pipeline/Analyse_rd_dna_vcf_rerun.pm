@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.18;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna_vcf_rerun pipeline_analyse_rd_dna_vcf_rerun };
@@ -106,7 +102,9 @@ sub parse_rd_dna_vcf_rerun {
     };
     use MIP::Analysis qw{ broadcast_parameters };
     use MIP::Config qw{ write_mip_config };
+    use MIP::Constants qw{ set_container_constants };
     use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::Environment::Container qw{ parse_containers };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Parameter qw{ get_cache };
     use MIP::Reference qw{ get_select_file_contigs };
@@ -119,6 +117,16 @@ sub parse_rd_dna_vcf_rerun {
     ## Constants
     Readonly my @MIP_VEP_PLUGINS    => qw{ sv_vep_plugin vep_plugin };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
+    ## Set analysis constants
+    set_container_constants( { active_parameter_href => $active_parameter_href, } );
+
+    parse_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+        }
+    );
 
     my $consensus_analysis_type = get_cache(
         {
@@ -320,16 +328,16 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Constants qw{ set_container_constants };
+    use MIP::Analysis qw{ set_rankvariants_ar set_recipe_on_analysis_type };
+    use MIP::Parameter qw{ get_cache };
     use MIP::Parse::Reference qw{ parse_references };
-    use MIP::Set::Analysis qw{ set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
+    use MIP::Recipes::Analysis::Bcftools_norm qw{ analysis_bcftools_norm };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
-    use MIP::Recipes::Analysis::Endvariantannotationblock
-      qw{ analysis_endvariantannotationblock };
+    use MIP::Recipes::Analysis::Endvariantannotationblock qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Mip_vcfparser
       qw{ analysis_mip_vcfparser analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
@@ -345,11 +353,8 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation };
     use MIP::Recipes::Analysis::Vcf_rerun_reformat
       qw{ analysis_vcf_rerun_reformat_sv analysis_vcf_rerun_reformat };
-    use MIP::Recipes::Analysis::Vep
-      qw{ analysis_vep_wgs analysis_vep_sv_wes analysis_vep_sv_wgs };
-    use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs analysis_vep_sv_wes analysis_vep_sv_wgs };
+    use MIP::Recipes::Build::Human_genome_prerequisites qw{ build_human_genome_prerequisites };
     use MIP::Recipes::Build::Rd_dna_vcf_rerun qw{build_rd_dna_vcf_rerun_meta_files};
 
     ### Pipeline specific checks
@@ -363,9 +368,6 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
             sample_info_href      => $sample_info_href,
         }
     );
-
-    ## Set analysis constants
-    set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
@@ -395,42 +397,47 @@ sub pipeline_analyse_rd_dna_vcf_rerun {
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus                => \&analysis_analysisrunstatus,
+        bcftools_norm                    => \&analysis_bcftools_norm,
         cadd_ar                          => \&analysis_cadd,
         endvariantannotationblock        => \&analysis_endvariantannotationblock,
         frequency_filter                 => \&analysis_frequency_filter,
         prepareforvariantannotationblock => \&analysis_prepareforvariantannotationblock,
-        rankvariant    => undef,                         # Depends on sample features
-        rhocall_ar     => \&analysis_rhocall_annotate,
-        sacct          => \&analysis_sacct,
-        sv_annotate    => \&analysis_sv_annotate,
-        sv_rankvariant => undef,                         # Depends on sample features
-        sv_reformat    => \&analysis_reformat_sv,
-        sv_vcf_rerun_reformat => \&analysis_vcf_rerun_reformat_sv,
-        sv_varianteffectpredictor => undef,                # Depends on analysis type,
-        sv_vcfparser              => undef,                # Depends on analysis type
+        rankvariant               => undef,                             # Depends on sample features
+        rhocall_ar                => \&analysis_rhocall_annotate,
+        sacct                     => \&analysis_sacct,
+        sv_annotate               => \&analysis_sv_annotate,
+        sv_rankvariant            => undef,                             # Depends on sample features
+        sv_reformat               => \&analysis_reformat_sv,
+        sv_vcf_rerun_reformat     => \&analysis_vcf_rerun_reformat_sv,
+        sv_varianteffectpredictor => undef,                             # Depends on analysis type,
+        sv_vcfparser              => undef,                             # Depends on analysis type
         varianteffectpredictor    => \&analysis_vep_wgs,
-        variant_annotation => \&analysis_variant_annotation,
-        vcfparser_ar       => \&analysis_mip_vcfparser,
-        vcf_rerun_reformat => \&analysis_vcf_rerun_reformat,
-        version_collect_ar => \&analysis_mip_vercollect,
-        vt_ar              => \&analysis_vt,
+        variant_annotation        => \&analysis_variant_annotation,
+        vcfparser_ar              => \&analysis_mip_vcfparser,
+        vcf_rerun_reformat        => \&analysis_vcf_rerun_reformat,
+        version_collect_ar        => \&analysis_mip_vercollect,
     );
 
     ## Special case for rankvariants recipe
     set_rankvariants_ar(
         {
             analysis_recipe_href => \%analysis_recipe,
-            log                  => $log,
             parameter_href       => $parameter_href,
             sample_ids_ref       => $active_parameter_href->{sample_ids},
         }
     );
 
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
     ## Update which recipe to use depending on consensus analysis type
     set_recipe_on_analysis_type(
         {
             analysis_recipe_href    => \%analysis_recipe,
-            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+            consensus_analysis_type => $consensus_analysis_type,
         }
     );
 

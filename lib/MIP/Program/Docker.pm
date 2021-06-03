@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -22,9 +21,6 @@ use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ docker_run };
@@ -52,7 +48,6 @@ sub docker_run {
     my $container_cmds_ref;
     my $filehandle;
     my $image;
-    my $remove;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -60,6 +55,7 @@ sub docker_run {
 
     ## Default(s)
     my $entrypoint;
+    my $remove;
 
     my $tmpl = {
         bind_paths_ref => {
@@ -87,7 +83,8 @@ sub docker_run {
             strict_type => 1,
         },
         remove => {
-            allow       => [ undef, 0, 1 ],
+            allow       => [ 0, 1 ],
+            default     => 1,
             store       => \$remove,
             strict_type => 1,
         },

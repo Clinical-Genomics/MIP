@@ -1,45 +1,28 @@
 package MIP::Main::Install;
 
+use 5.026;
 use Carp;
-use charnames qw{ :full :short };
-use Cwd;
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname basename fileparse };
-use File::Spec::Functions qw{ catfile catdir devnull };
-use Getopt::Long;
-use IO::Handle;
-use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use Time::Piece;
+use charnames qw{ :full :short };
+use open qw{ :encoding(UTF-8) :std };
 use utf8;
-use warnings;
 use warnings qw{ FATAL utf8 };
-
-## CPANM
-use Readonly;
+use warnings;
 
 ## MIPs lib/
-use MIP::Active_parameter qw{ update_to_absolute_path };
-use MIP::Check::Parameter qw{ check_active_installation_parameters };
+use MIP::Active_parameter qw{ set_conda_paths update_to_absolute_path };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
-use MIP::Constants
-  qw{ $COLON $COMMA $DOT $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $COLON $MIP_VERSION $SPACE };
+use MIP::Environment::Container qw{ parse_containers };
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{ set_default };
 use MIP::Pipeline qw{ run_install_pipeline };
-use MIP::Set::Parameter qw{ set_conda_path };
-
-## Constants
-Readonly my $THREE     => 3;
-Readonly my $MINUS_ONE => -1;
 
 BEGIN {
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 2.16;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_install };
@@ -83,9 +66,6 @@ sub mip_install {
     my $date_time_stamp = $date_time->datetime;
     my $date            = $date_time->ymd;
 
-    # Catches name of current script
-    my $script = _this_sub();
-
     ## Change relative path to absolute path for parameter with "update_path: absolute_path" in config
     update_to_absolute_path(
         {
@@ -126,64 +106,37 @@ sub mip_install {
             active_parameter_href => $active_parameter_href,
             date                  => $date,
             date_time_stamp       => $date_time_stamp,
-            log_name              => uc $script,
-            script                => $script,
+            log_name              => q{MIP_INSTALL},
+            script                => q{mip_install},
         }
     );
     $log->info( q{MIP Version: } . $MIP_VERSION );
-    $log->info( q{Writing log messages to}
-          . $COLON
-          . $SPACE
-          . $active_parameter_href->{log_file} );
+    $log->info( q{Writing log messages to} . $COLON . $SPACE . $active_parameter_href->{log_file} );
 
     ## Set default from parameter hash to active_parameter for uninitilized parameters
     set_default(
         {
-            active_parameter_href => $active_parameter_href,
-            custom_default_parameters_ref =>
-              $parameter_href->{custom_default_parameters}{default},
-            parameter_href => $parameter_href,
+            active_parameter_href         => $active_parameter_href,
+            custom_default_parameters_ref => $parameter_href->{custom_default_parameters}{default},
+            parameter_href                => $parameter_href,
         }
     );
 
-    ## Installation specific checks of active_parameter hash
-    check_active_installation_parameters(
-        {
-            project_id  => $active_parameter_href->{project_id},
-            sbatch_mode => $active_parameter_href->{sbatch_mode},
-        }
-    );
-
-    ## Set path to conda
-    set_conda_path(
+    ## Set path to conda and conda env path
+    set_conda_paths(
         {
             active_parameter_href => $active_parameter_href,
+            environment_name      => $active_parameter_href->{environment_name},
         }
     );
 
     run_install_pipeline(
         {
             active_parameter_href => $active_parameter_href,
-            pipeline              => lc $script,
         }
     );
 
     return;
-}
-
-sub _this_sub {
-
-## Function : Returns the name of the current subroutine
-## Returns  : $this_sub
-## Arguments:
-
-    ## Get full path to subroutine
-    my $this_sub = ( caller 1 )[$THREE];
-
-    ## Isolate subroutine
-    $this_sub = ( split /::/xms, $this_sub )[$MINUS_ONE];
-
-    return $this_sub;
 }
 
 1;

@@ -22,9 +22,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.07;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_sacct };
 
@@ -113,9 +110,9 @@ sub analysis_sacct {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Slurm qw{ slurm_sacct };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -124,17 +121,10 @@ sub analysis_sacct {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -147,13 +137,12 @@ sub analysis_sacct {
     my ($recipe_file_path) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $recipe_resource{core_number},
+            core_number           => $recipe{core_number},
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            log                   => $log,
-            memory_allocation     => $recipe_resource{memory_allocation},
-            process_time          => $recipe_resource{time},
+            memory_allocation     => $recipe{memory_allocation},
+            process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
         }
@@ -165,21 +154,21 @@ sub analysis_sacct {
         {
             fields_format_ref => \@{ $active_parameter_href->{sacct_format_fields} },
             filehandle        => $filehandle,
-            job_ids_ref       => \@{ $job_id_href->{PAN}{PAN} },
+            job_ids_ref       => \@{ $job_id_href->{ALL}{ALL} },
         }
     );
     say {$filehandle} $NEWLINE;
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         submit_recipe(
             {
                 base_command         => $profile_base_command,
                 dependency_method    => q{add_to_all},
                 job_dependency_type  => q{afterany},
-                job_id_chain         => $job_id_chain,
+                job_id_chain         => $recipe{job_id_chain},
                 job_id_href          => $job_id_href,
                 job_reservation_name => $active_parameter_href->{job_reservation_name},
                 log                  => $log,

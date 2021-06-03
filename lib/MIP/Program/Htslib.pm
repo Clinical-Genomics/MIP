@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -16,15 +15,13 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ htslib_bgzip htslib_tabix };
@@ -41,6 +38,7 @@ sub htslib_bgzip {
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $threads                => Number of threads to use
 ##          : $write_to_stdout        => Write on standard output, keep original files unchanged
 
     my ($arg_href) = @_;
@@ -55,6 +53,7 @@ sub htslib_bgzip {
     ## Default(s)
     my $decompress;
     my $force;
+    my $threads;
     my $write_to_stdout;
 
     my $tmpl = {
@@ -86,6 +85,11 @@ sub htslib_bgzip {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
+        threads => {
+            allow       => qr/ \A \d+ \z /xms,
+            store       => \$threads,
+            strict_type => 1,
+        },
         write_to_stdout => {
             default     => 0,
             allow       => [ 0, 1 ],
@@ -96,8 +100,7 @@ sub htslib_bgzip {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = q{bgzip};
+    my @commands = ( get_executable_base_command( { base_command => q{bgzip}, } ), );
 
     if ($decompress) {
 
@@ -116,6 +119,11 @@ sub htslib_bgzip {
     if ($infile_path) {
 
         push @commands, $infile_path;
+    }
+
+    if ($threads) {
+
+        push @commands, q{--threads} . $SPACE . $threads;
     }
 
     push @commands,
@@ -237,8 +245,7 @@ sub htslib_tabix {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = q{tabix};
+    my @commands = ( get_executable_base_command( { base_command => q{tabix}, } ), );
 
     if ($force) {
 

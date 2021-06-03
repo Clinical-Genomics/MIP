@@ -9,7 +9,6 @@ use File::Spec::Functions qw{ catfile };
 use File::Path qw{ make_path };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -25,9 +24,6 @@ use MIP::Constants
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK =

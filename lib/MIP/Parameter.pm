@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -18,15 +17,11 @@ use List::MoreUtils qw { any uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ $COMMA $COLON $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
+use MIP::Constants qw{ $COMMA $COLON $LOG_NAME $NEWLINE $SINGLE_QUOTE $SPACE $TAB $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.17;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -37,6 +32,7 @@ BEGIN {
       get_order_of_parameters
       get_parameter_attribute
       get_program_executables
+      get_recipe_attributes
       parse_reference_path
       parse_parameter_files
       parse_parameter_recipe_names
@@ -427,6 +423,54 @@ sub get_program_executables {
     return uniq(@program_executables);
 }
 
+sub get_recipe_attributes {
+
+## Function : Return recipe attributes
+## Returns  : $attribute | %attribute
+## Arguments: $attribute      => Attribute key
+##          : $parameter_href => Holds all parameters
+##          : $recipe_name    => Recipe name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $attribute;
+    my $parameter_href;
+    my $recipe_name;
+
+    my $tmpl = {
+        attribute => {
+            store       => \$attribute,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$recipe_name,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( not exists $parameter_href->{$recipe_name} ) {
+        croak(qq{Recipe name: $recipe_name. Does not exists in parameter hash});
+    }
+
+    ## Get attribute value
+    return $parameter_href->{$recipe_name}{$attribute} if ( defined $attribute and $attribute );
+
+    ## Get recipe attribute hash
+    return %{ $parameter_href->{$recipe_name} };
+}
+
 sub parse_parameter_files {
 
 ## Function : Parse parameter file objects and checks that their paths exist
@@ -534,8 +578,8 @@ sub parse_parameter_recipe_names {
             check_recipe_exists_in_hash(
                 {
                     parameter_name => $parameter_name,
-                    query_ref  => \@{ $parameter_href->{$parameter}{$parameter_name} },
-                    truth_href => $parameter_href,
+                    query_ref      => \@{ $parameter_href->{$parameter}{$parameter_name} },
+                    truth_href     => $parameter_href,
                 }
             );
         }
@@ -586,7 +630,7 @@ sub parse_reference_path {
 
         update_reference_parameters(
             {
-                active_parameter_href => $active_parameter_href,
+                active_parameter_href  => $active_parameter_href,
                 associated_recipes_ref =>
                   \@{ $parameter_href->{$parameter_name}{associated_recipe} },
                 parameter_name => $parameter_name,
@@ -857,22 +901,20 @@ sub set_custom_default_to_active_parameter {
 
     use MIP::Active_parameter qw{
       set_default_analysis_type
-      set_default_conda_path
       set_default_human_genome
       set_default_infile_dirs
+      set_default_install_config_file
       set_default_pedigree_fam_file
       set_default_program_test_file
       set_default_reference_dir
       set_default_reference_info_file
       set_default_store_file
+      set_default_qccollect_store_metrics_outfile
       set_default_temp_directory
       set_default_transcript_annotation
       set_default_uninitialized_parameter
       set_default_vcfparser_select_file
     };
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Set default value only to active_parameter
     my %set_default_parameter = (
@@ -880,13 +922,6 @@ sub set_custom_default_to_active_parameter {
             method   => \&set_default_analysis_type,
             arg_href => {
                 active_parameter_href => $active_parameter_href,
-            },
-        },
-        conda_path => {
-            method   => \&set_default_conda_path,
-            arg_href => {
-                active_parameter_href => $active_parameter_href,
-                conda_path            => $parameter_name,
             },
         },
         bwa_build_reference => {
@@ -910,10 +945,24 @@ sub set_custom_default_to_active_parameter {
                 parameter_href        => $parameter_href,
             },
         },
+        fusion_select_file => {
+            method   => \&set_default_vcfparser_select_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
         infile_dirs => {
             method   => \&set_default_infile_dirs,
             arg_href => {
                 active_parameter_href => $active_parameter_href,
+            },
+        },
+        install_config_file => {
+            method   => \&set_default_install_config_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
             },
         },
         pedigree_fam_file => {
@@ -968,13 +1017,6 @@ sub set_custom_default_to_active_parameter {
                 parameter_name        => $parameter_name,
             },
         },
-        shell_install => {
-            method   => \&set_default_uninitialized_parameter,
-            arg_href => {
-                active_parameter_href => $active_parameter_href,
-                parameter_name        => $parameter_name,
-            },
-        },
         skip_programs => {
             method   => \&set_default_uninitialized_parameter,
             arg_href => {
@@ -998,6 +1040,12 @@ sub set_custom_default_to_active_parameter {
         },
         store_file => {
             method   => \&set_default_store_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+            },
+        },
+        qccollect_store_metrics_outfile => {
+            method   => \&set_default_qccollect_store_metrics_outfile,
             arg_href => {
                 active_parameter_href => $active_parameter_href,
             },
@@ -1033,7 +1081,7 @@ sub set_custom_default_to_active_parameter {
 
     if ( exists $set_default_parameter{$parameter_name} ) {
 
-        my %hash = $set_default_parameter{$parameter_name}{method}
+        $set_default_parameter{$parameter_name}{method}
           ->( { %{ $set_default_parameter{$parameter_name}{arg_href} } } );
 
     }
@@ -1112,7 +1160,7 @@ sub set_default {
         ## Checks and sets user input or default values to active_parameters
         set_default_to_active_parameter(
             {
-                active_parameter_href => $active_parameter_href,
+                active_parameter_href  => $active_parameter_href,
                 associated_recipes_ref =>
                   \@{ $parameter_href->{$parameter_name}{associated_recipe} },
                 parameter_href => $parameter_href,
@@ -1211,10 +1259,8 @@ sub set_default_to_active_parameter {
           if ( not $active_parameter_href->{$associated_recipe} );
 
         ## Mandatory parameter not supplied
-        $log->fatal( q{Supply '-}
-              . $parameter_name
-              . q{' if you want to run }
-              . $associated_recipe );
+        $log->fatal(
+            q{Supply '-} . $parameter_name . q{' if you want to run } . $associated_recipe );
         exit 1;
     }
     return;
@@ -1604,9 +1650,8 @@ sub _set_default_capture_kit {
     ## Return a default capture kit as user supplied no info
     my $capture_kit = get_capture_kit(
         {
-            capture_kit => q{latest},
-            supported_capture_kit_href =>
-              $parameter_href->{supported_capture_kit}{default},
+            capture_kit                => q{latest},
+            supported_capture_kit_href => $parameter_href->{supported_capture_kit}{default},
         }
     );
 

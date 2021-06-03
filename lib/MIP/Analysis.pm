@@ -9,7 +9,6 @@ use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -28,9 +27,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.28;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       broadcast_parameters
@@ -42,6 +38,12 @@ BEGIN {
       parse_prioritize_variant_callers
       set_ase_chain_recipes
       set_parameter_to_broadcast
+      set_rankvariants_ar
+      set_recipe_bwa_mem
+      set_recipe_deepvariant
+      set_recipe_gatk_variantrecalibration
+      set_recipe_on_analysis_type
+      set_recipe_star_aln
       update_prioritize_flag
       update_recipe_mode_for_fastq_compatibility
       update_recipe_mode_for_pedigree
@@ -130,10 +132,10 @@ sub check_analysis_type_to_pipeline {
             strict_type => 1,
         },
         pipeline => {
-            allow    => [qw{ dragen_rd_dna rd_dna rd_dna_panel rd_dna_vcf_rerun rd_rna }],
-            defined  => 1,
-            required => 1,
-            store    => \$pipeline,
+            allow       => [qw{ dragen_rd_dna rd_dna rd_dna_panel rd_dna_vcf_rerun rd_rna }],
+            defined     => 1,
+            required    => 1,
+            store       => \$pipeline,
             strict_type => 1,
         },
     };
@@ -156,11 +158,9 @@ sub check_analysis_type_to_pipeline {
     if ( $analysis_pipeline_map{$analysis_type} ne $pipeline ) {
 
         $log->fatal(
-qq{Analysis type: $analysis_type is not compatible with MIP pipeline: $pipeline}
-        );
+            qq{Analysis type: $analysis_type is not compatible with MIP pipeline: $pipeline});
         $log->fatal(
-qq{Start MIP pipeline: $analysis_pipeline_map{$analysis_type} for this analysis type}
-        );
+            qq{Start MIP pipeline: $analysis_pipeline_map{$analysis_type} for this analysis type});
         $log->fatal(q{Aborting run});
         exit 1;
     }
@@ -467,7 +467,7 @@ sub get_vcf_parser_analysis_suffix {
     Readonly my $VCFPARSER_OUTFILE_COUNT => $vcfparser_outfile_count - 1;
 
     my $analysis_type_suffix = $EMPTY_STR;
-    if ( defined $analysis_type and $analysis_type eq q{panel} ) {
+    if ( defined $analysis_type and $analysis_type =~ /panel|wts/xms ) {
 
         $analysis_type_suffix = q{all};
     }
@@ -557,8 +557,7 @@ sub parse_prioritize_variant_callers {
                 {
                     active_parameter_href => $active_parameter_href,
                     parameter_href        => $parameter_href,
-                    priority_name_str =>
-                      $active_parameter_href->{$prioritize_parameter_name},
+                    priority_name_str     => $active_parameter_href->{$prioritize_parameter_name},
                     variant_caller_recipes_ref => \@variant_caller_recipes,
                 }
             );
@@ -602,8 +601,7 @@ sub set_ase_chain_recipes {
         qw{ gatk_baserecalibration gatk_haplotypecaller gatk_splitncigarreads gatk_variantfiltration }
     );
 
-    my @recipes =
-      $active_parameter_href->{dna_vcf_file} ? @RNA_VC_RECIPES : @DNA_VC_RECIPES;
+    my @recipes = $active_parameter_href->{dna_vcf_file} ? @RNA_VC_RECIPES : @DNA_VC_RECIPES;
 
     set_recipe_mode(
         {
@@ -699,6 +697,374 @@ sub set_parameter_to_broadcast {
             push @{$broadcasts_ref}, $info;
         }
     }
+    return;
+}
+
+sub set_rankvariants_ar {
+
+## Function : Update which rankvariants recipe to use
+## Returns  :
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $parameter_href       => Parameter hash {REF}
+##          : $sample_ids_ref       => Sample ids {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $parameter_href;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Rankvariant
+      qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    if ( defined $parameter_href->{cache}{unaffected}
+        && @{ $parameter_href->{cache}{unaffected} } eq @{$sample_ids_ref} )
+    {
+
+        $log->warn(
+q{Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'}
+        );
+
+        $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant_unaffected;
+        $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv_unaffected;
+        return;
+    }
+
+    $analysis_recipe_href->{rankvariant}    = \&analysis_rankvariant;
+    $analysis_recipe_href->{sv_rankvariant} = \&analysis_rankvariant_sv;
+    return;
+}
+
+sub set_recipe_bwa_mem {
+
+## Function : Set correct bwa_mem recipe depending on version and source of the human_genome_reference: Source (hg19 or grch)
+## Returns  :
+## Arguments: $analysis_recipe_href           => Analysis recipe hash {REF}
+##          : $human_genome_reference_version => Human genome reference version
+##          : $run_bwakit                     => Use bwakit for alignment to GRCh38
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $human_genome_reference_version;
+    my $run_bwakit;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        human_genome_reference_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$human_genome_reference_version,
+            strict_type => 1,
+        },
+        run_bwakit => {
+            defined     => 1,
+            required    => 1,
+            store       => \$run_bwakit,
+            strict_type => 1,
+        }
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem analysis_run_bwa_mem };
+
+    Readonly my $GENOME_BUILD_VERSION_PRIOR_ALTS => 37;
+
+    ## Default recipes for genomes pre alt contigs
+    $analysis_recipe_href->{bwa_mem} = \&analysis_bwa_mem;
+
+    if ( $human_genome_reference_version > $GENOME_BUILD_VERSION_PRIOR_ALTS && $run_bwakit ) {
+
+        $analysis_recipe_href->{bwa_mem} = \&analysis_run_bwa_mem;
+    }
+    return;
+}
+
+sub set_recipe_deepvariant {
+
+## Function : Set deeptrio or deepvariant recipe depending on the presence of parent-child duo or trio
+## Returns  :
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $deeptrio_mode        => Deeptrio mode
+##          : $sample_info_href     => Sample info hash {HASH}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $deeptrio_mode;
+    my $sample_info_href;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        deeptrio_mode => {
+            required    => 1,
+            store       => \$deeptrio_mode,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Deeptrio qw{ analysis_deeptrio };
+    use MIP::Recipes::Analysis::Deepvariant qw{ analysis_deepvariant };
+
+    $analysis_recipe_href->{deeptrio}    = undef;
+    $analysis_recipe_href->{deepvariant} = \&analysis_deepvariant;
+
+    ## Return if deeptrio is turned off
+    return if ( not $deeptrio_mode );
+
+  CONSTELLATION_STATE:
+    foreach my $constellation_state (qw{ has_duo has_trio }) {
+
+        next CONSTELLATION_STATE if ( not $sample_info_href->{$constellation_state} );
+
+        $analysis_recipe_href->{deeptrio}    = \&analysis_deeptrio;
+        $analysis_recipe_href->{deepvariant} = undef;
+        return;
+    }
+    return;
+}
+
+sub set_recipe_gatk_variantrecalibration {
+
+## Function : Update which gatk variant recalibration to use depending on number of samples
+## Returns  :
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $sample_ids_ref       => Sample ids {REF}
+##          : $use_cnnscorevariants => Use gatk cnnscorevariants recipe
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $sample_ids_ref;
+    my $use_cnnscorevariants;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+        use_cnnscorevariants => {
+            store       => \$use_cnnscorevariants,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Gatk_cnnscorevariants qw{ analysis_gatk_cnnscorevariants };
+
+    ## Use already set gatk_variantrecalibration recipe
+    return if ( @{$sample_ids_ref} != 1 );
+
+    return if ( not $use_cnnscorevariants );
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    $log->warn(
+        q{Switched from VariantRecalibration to CNNScoreVariants for single sample analysis});
+
+    ## Use new CNN recipe for single samples
+    $analysis_recipe_href->{gatk_variantrecalibration} = \&analysis_gatk_cnnscorevariants;
+
+    return;
+}
+
+sub set_recipe_on_analysis_type {
+
+## Function : Set which recipe to use depending on consensus analysis type
+## Returns  :
+## Arguments: $analysis_recipe_href    => Analysis recipe hash {REF}
+##          : $consensus_analysis_type => Consensus analysis type
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $analysis_recipe_href;
+    my $consensus_analysis_type;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        consensus_analysis_type => {
+            defined     => 1,
+            required    => 1,
+            store       => \$consensus_analysis_type,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Recipes::Analysis::Gatk_variantrecalibration
+      qw{ analysis_gatk_variantrecalibration_wes analysis_gatk_variantrecalibration_wgs };
+    use MIP::Recipes::Analysis::Mip_vcfparser
+      qw{ analysis_mip_vcfparser_sv_wes analysis_mip_vcfparser_sv_wgs };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_sv_wes analysis_vep_sv_wgs };
+
+    my %analysis_type_recipe = (
+        vrn => {
+            sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
+            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wgs,
+        },
+        wes => {
+            gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wes,
+            sv_varianteffectpredictor => \&analysis_vep_sv_wes,
+            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wes,
+        },
+        wgs => {
+            gatk_variantrecalibration => \&analysis_gatk_variantrecalibration_wgs,
+            sv_varianteffectpredictor => \&analysis_vep_sv_wgs,
+            sv_vcfparser              => \&analysis_mip_vcfparser_sv_wgs,
+        },
+    );
+
+    ## If not a defined consensus analysis type in analysis_type_recipe e.g. "mixed"
+    $consensus_analysis_type =
+      ( not exists $analysis_type_recipe{$consensus_analysis_type} )
+      ? q{wgs}
+      : $consensus_analysis_type;
+
+  ANALYSIS_RECIPE:
+    foreach my $recipe_name ( keys %{$analysis_recipe_href} ) {
+
+        next ANALYSIS_RECIPE
+          if ( not exists $analysis_type_recipe{$consensus_analysis_type}{$recipe_name} );
+
+        $analysis_recipe_href->{$recipe_name} =
+          $analysis_type_recipe{$consensus_analysis_type}{$recipe_name};
+    }
+    return;
+}
+
+sub set_recipe_star_aln {
+
+## Function : Set star_aln analysis recipe depending on mix of fastq files
+## Returns  :
+## Arguments: $analysis_recipe_href => Analysis recipe hash {REF}
+##          : $file_info_href       => File_info hash {REF}
+##          : $sample_ids_ref       => Sample ids
+
+    my ($arg_href) = @_;
+
+    ## Flatten arguments
+    my $analysis_recipe_href;
+    my $file_info_href;
+    my $sample_ids_ref;
+
+    my $tmpl = {
+        analysis_recipe_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$analysis_recipe_href,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_ids_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_ids_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File_info qw{ get_consensus_sequence_run_type };
+    use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_aln analysis_star_aln_mixed };
+
+    ## Get consensus sequence run types
+    my $is_compatible = get_consensus_sequence_run_type(
+        {
+            file_info_href => $file_info_href,
+            sample_ids_ref => $sample_ids_ref,
+        }
+    );
+
+    if ( not $is_compatible ) {
+
+        $analysis_recipe_href->{star_aln} = \&analysis_star_aln_mixed;
+        return;
+    }
+
+    ## The fastq files are either all single or paired end
+    $analysis_recipe_href->{star_aln} = \&analysis_star_aln;
     return;
 }
 
@@ -955,8 +1321,10 @@ sub update_recipe_mode_for_pedigree {
         );
         $log->warn( q{Turned off}
               . $COLON
+              . $SPACE
               . $recipe
-              . q{as it is not compatible with this pedigrees phenotypes constellation} );
+              . $SPACE
+              . q{as it is not compatible with this pedigree} );
     }
     return;
 }

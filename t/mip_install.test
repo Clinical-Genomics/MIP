@@ -4,7 +4,6 @@ use Carp;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 use utf8;
@@ -29,7 +28,7 @@ BEGIN {
       MODULE:
         foreach my $module ( @{$modules_ref} ) {
 
-  # Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
+            # Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
             $module =~ s/::/\//gxms;
 
             # Add perl module ending for the same reason
@@ -87,39 +86,39 @@ BEGIN {
 }
 
 use Cwd;
-use FindBin qw{ $Bin };
 use File::Basename qw{ dirname basename };
-use File::Spec::Functions qw{ catfile catdir devnull };
+use File::Spec::Functions qw{ catfile catdir };
+use FindBin qw{ $Bin };
 use Getopt::Long;
 use IPC::Cmd qw{ can_run run };
 use Params::Check qw{ check allow last_error };
-use Readonly;
+use Path::Tiny qw{ path };
 use Test::More;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Script::Utils qw{ help };
-use MIP::Constants qw{ $EMPTY_STR $NEWLINE $SPACE };
+use MIP::Constants qw{ $EMPTY_STR $MIP_VERSION $NEWLINE $SPACE };
 use MIP::Environment::Child_process qw{ child_process };
 
 our $USAGE = build_usage( {} );
 
-my $conda_path;
-my $verbose = 1;
-our $VERSION = 1.38;
-
+my $conda_path       = catdir( dirname($Bin), qw{ t data modules miniconda} );
+my $reference_dir    = catdir( dirname($Bin), qw{ t data mip_install_test } );
+my $log_file_path    = catfile( cwd(), qw{mip_install_test.log} );
+my $environment_name = q{mip_install_test};
+my $verbose          = 1;
 ###User Options
 GetOptions(
-    q{cdp|conda_dir_path:s} => \$conda_path,
-    q{vb|verbose}           => $verbose,
-    q{h|help}               => sub {
+    q{vb|verbose} => $verbose,
+    q{h|help}     => sub {
         done_testing();
         print {*STDOUT} $USAGE, $NEWLINE;
         exit;
     },    #Display help text
     q{v|version} => sub {
         done_testing();
-        print {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION, $NEWLINE;
+        print {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $MIP_VERSION, $NEWLINE;
         exit;
     },    #Display version number
   )
@@ -133,68 +132,32 @@ GetOptions(
     )
   );
 
-## Conda check
-ok( can_run(q{conda}), q{Checking can run of conda binary} );
-
-my @installation_modes = ( $EMPTY_STR, qw{ --prefer_shell --sbatch_mode } );
-
-ok( catfile( dirname($Bin), qw{ lib MIP Cli Mip Install.pm } ),
-    q{Locating install script} );
+ok( catfile( dirname($Bin), qw{ lib MIP Cli Mip Install.pm } ), q{Locating install script} );
 
 ## Test execution of install script
-my $cmds_ref =
-  [ q{perl}, catfile( dirname($Bin), q{mip} ), q{install} ];
-if ($conda_path) {
+my $cmds_ref = [
+    q{perl},           catfile( dirname($Bin), q{mip} ),
+    q{install},        q{--conda_path},
+    $conda_path,       q{--environment_name},
+    $environment_name, q{--log_file},
+    $log_file_path,    q{--reference_dir},
+    $reference_dir,    q{--test_mode},
+];
 
-    push @{$cmds_ref}, q{--conda_path}, $conda_path;
-}
-push @{$cmds_ref}, q{--log_file}, catfile( cwd(), qw{mip_install_test.log} );
-
-push @{$cmds_ref}, q{--reference_dir}, cwd();
-
-INSTALLATION_MODE:
-foreach my $installation_mode (@installation_modes) {
-    my @mode_cmds = @{$cmds_ref};
-
-    if ( $installation_mode eq q{--sbatch_mode} ) {
-
-        push @mode_cmds, qw{ --project_id development };
-    }
-
-    push @mode_cmds, $installation_mode;
-
-    my %process_return = child_process(
-        {
-            commands_ref => \@mode_cmds,
-            process_type => q{ipc_cmd_run},
-            verbose      => $verbose,
-        }
-    );
-
-    ok( $process_return{success}, qq{Executed install $installation_mode} );
-
-    ## Test that mip.sh has been created
-    ok( -e catfile( getcwd(), q{mip.sh} ), q{Located mip.sh} );
-}
-
-## Clean-up mip_install.pl output
-my @outfiles = (qw{ mip.sh mip_install_test.log });
-
-OUTFILE:
-foreach my $outfile (@outfiles) {
-
-    my $cmd = q{rm } . catfile( getcwd(), $outfile );
-    if (
-        scalar run(
-            command => $cmd,
-            timeout => 20,
-            verbose => $verbose,
-        )
-      )
+my %process_return = child_process(
     {
-        say {*STDOUT} q{Removed outfile successfully: } . $outfile;
+        commands_ref => $cmds_ref,
+        process_type => q{ipc_cmd_run},
+        verbose      => $verbose,
     }
-}
+);
+
+ok( $process_return{success}, q{Executed install} );
+
+## Remove paths
+path($log_file_path)->remove;
+path( catdir( $conda_path, q{envs}, $environment_name ) )->remove_tree;
+path($reference_dir)->remove_tree;
 
 done_testing();
 
@@ -225,7 +188,6 @@ sub build_usage {
 
     return <<"END_USAGE";
  $program_name [options]
-    -cdp/--conda_dir_path The conda directory path (Default: "HOME/miniconda")
     -vb/--verbose         Verbose
     -h/--help             Display this help message
     -v/--version          Display version

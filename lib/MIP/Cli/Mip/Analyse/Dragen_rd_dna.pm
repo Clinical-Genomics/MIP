@@ -3,7 +3,6 @@ package MIP::Cli::Mip::Analyse::Dragen_rd_dna;
 use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -16,8 +15,6 @@ use Moose::Util::TypeConstraints;
 
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
-
-our $VERSION = 1.19;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -405,7 +402,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{sv_genmod_annotate_regions} => (
-            cmd_flag => q{sv_genmod_ann_reg},
+            cmd_flag      => q{sv_genmod_ann_reg},
             documentation =>
               q{Use predefined gene annotation supplied with genmod for defining genes},
             is  => q{rw},
@@ -469,10 +466,10 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{prepareforvariantannotationblock} => (
-            cmd_flag => q{prep_for_var_ann_bl},
-            cmd_tags => [q{Analysis recipe switch}],
+            cmd_flag      => q{prep_for_var_ann_bl},
+            cmd_tags      => [q{Analysis recipe switch}],
             documentation =>
-q{Prepare for variant annotation block by copying and splitting files per contig},
+              q{Prepare for variant annotation block by copying and splitting files per contig},
             is  => q{rw},
             isa => enum( [ 0, 1, 2 ] ),
         )
@@ -480,17 +477,16 @@ q{Prepare for variant annotation block by copying and splitting files per contig
 
     option(
         q{rhocall_ar} => (
-            cmd_tags => [q{Analysis recipe switch}],
-            documentation =>
-              q{Rhocall performs annotation of variants in autozygosity regions},
-            is  => q{rw},
-            isa => enum( [ 0, 1, 2 ] ),
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Rhocall performs annotation of variants in autozygosity regions},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
         )
     );
 
     option(
         q{rhocall_frequency_file} => (
-            cmd_tags => [q{Default: grch37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
+            cmd_tags      => [q{Default: grch37_anon_swegen_snp_-2016-10-19-.tab.gz; tsv}],
             documentation => q{Frequency file for bcftools roh calculation},
             is            => q{rw},
             isa           => Str,
@@ -498,7 +494,7 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{vt_ar} => (
+        q{bcftools_norm} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Decompose and normalize},
             is            => q{rw},
@@ -507,15 +503,7 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{vt_decompose} => (
-            documentation => q{Split multi allelic records into single records},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{vt_missing_alt_allele} => (
+        q{bcftools_missing_alt_allele} => (
             documentation => q{Remove missing alternative alleles '*'},
             is            => q{rw},
             isa           => Bool,
@@ -523,16 +511,8 @@ q{Prepare for variant annotation block by copying and splitting files per contig
     );
 
     option(
-        q{vt_normalize} => (
+        q{bcftools_normalize} => (
             documentation => q{Normalize variants},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{vt_uniq} => (
-            documentation => q{Remove variant duplicates},
             is            => q{rw},
             isa           => Bool,
         )
@@ -745,7 +725,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{genmod_annotate_regions} => (
-            cmd_flag => q{genmod_ann_reg},
+            cmd_flag      => q{genmod_ann_reg},
             documentation =>
               q{Use predefined gene annotation supplied with genmod for defining genes},
             is  => q{rw},
@@ -778,15 +758,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
             documentation => q{Allow compound pairs in intronic regions},
             is            => q{rw},
             isa           => Bool,
-        )
-    );
-
-    option(
-        q{rankvariant_binary_file} => (
-            documentation =>
-              q{Produce binary file from the rank variant chromosomal sorted vcfs},
-            is  => q{rw},
-            isa => Bool,
         )
     );
 

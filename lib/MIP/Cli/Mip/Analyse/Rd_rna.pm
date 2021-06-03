@@ -3,7 +3,6 @@ package MIP::Cli::Mip::Analyse::Rd_rna;
 use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -16,8 +15,6 @@ use Moose::Util::TypeConstraints;
 
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
-
-our $VERSION = 1.39;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -94,7 +91,7 @@ sub run {
         salmon_quant_reference_genome       => [qw{ _salmon_quant_genome_dir }],
         star_aln_reference_genome           => [qw{ _star_genome_dir }],
         star_fusion_reference_genome        => [qw{ _star_fusion_genome_dir }],
-        transcript_annotation_file_endings  => [qw{ .refFlat .rrna.interval_list }],
+        transcript_annotation_file_endings  => [qw{ .bed .refflat .rrna.interval_list }],
     );
 
     mip_analyse(
@@ -134,27 +131,18 @@ sub _build_usage {
     );
 
     option(
-        q{arriba_cytoband_path} => (
+        q{arriba_known_fusion_path} => (
             cmd_tags      => [q{Recipe argument}],
-            documentation => q{Path to arriba cytoband file},
+            documentation => q{Path to arriba known fusions file},
             is            => q{rw},
             isa           => Str,
         )
     );
 
     option(
-        q{arriba_proteindomain_path} => (
-            cmd_tags      => [q{Recipe argument}],
-            documentation => q{Path to arriba protein domain file},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
-        q{arriba_use_sample_id_as_display_name} => (
+        q{fusion_use_sample_id_as_display_name} => (
             cmd_tags      => [q{Default: 0}],
-            documentation => q{Use sample id as display name for arriba fusion report},
+            documentation => q{Use sample id as display name for fusion report},
             is            => q{rw},
             isa           => Bool,
         )
@@ -166,6 +154,23 @@ sub _build_usage {
             documentation => q{Merge vcfs before annotation},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{bcftools_norm} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Decompose and normalize},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{bcftools_missing_alt_allele} => (
+            documentation => q{Remove missing alternative alleles '*'},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -188,6 +193,15 @@ sub _build_usage {
     );
 
     option(
+        q{build_sj_tracks} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Build splice junction tracks for IGV},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{dna_vcf_file} => (
             cmd_flag      => q{dna_vcf_file},
             cmd_tags      => [q{Format: vcf | bcf}],
@@ -200,6 +214,60 @@ sub _build_usage {
     option(
         q{force_dna_ase} => (
             documentation => q{Force ASE analysis on partially matching dna-rna samples},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{fusion_report} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Generate fusion report from Arriba calls},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{fusion_cytoband_path} => (
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to cytoband file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{fusion_protein_domain_path} => (
+            cmd_tags      => [q{Recipe argument}],
+            documentation => q{Path to protein domain file},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{fusion_select_file} => (
+            cmd_tags      => [q{Format: tsv; HGNC Symbol required in file}],
+            documentation => q{Select file with list of genes to analyse separately},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{merge_fusion_reports} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Merge sample fusion reports to case},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{fusion_use_sample_id_as_display_name} => (
+            cmd_tags      => [q{Default: 0}],
+            documentation => q{Use sample id as display name for fusion report},
             is            => q{rw},
             isa           => Bool,
         )
@@ -247,25 +315,6 @@ sub _build_usage {
             documentation => q{Time point of replicate},
             is            => q{rw},
             isa           => HashRef,
-        )
-    );
-
-    option(
-        q{split_fastq_file} => (
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Split fastq files in batches of X reads and exits},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
-        q{split_fastq_file_read_batch} => (
-            cmd_flag      => q{spt_fsq_rd_bt},
-            cmd_tags      => [q{Default: 25,000,000}],
-            documentation => q{Number of sequence reads to place in each batch},
-            is            => q{rw},
-            isa           => Int,
         )
     );
 
@@ -380,6 +429,14 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{Quantify transcripts using salmon},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{salmon_quant_gencode_reference} => (
+            documentation => q{Salmon uses a gencode reference},
+            is            => q{rw},
+            isa           => Bool,
         )
     );
 
@@ -507,15 +564,6 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
-        q{rseqc_transcripts_file} => (
-            cmd_tags      => [q{Rseqc transcripts file: Format: bed}],
-            documentation => q{Input for rseqc to build transcript bed format file},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{gatk_haplotypecaller} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},
@@ -583,6 +631,42 @@ q{Default: BaseQualityRankSumTest, ChromosomeCounts, Coverage, DepthPerAlleleByS
             documentation => q{Picardtools markduplicates optical duplicate distance},
             is            => q{rw},
             isa           => Int,
+        )
+    );
+
+    option(
+        q{megafusion_ar} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Merge fusion calls from different callers},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{megafusion_callers} => (
+            cmd_tags      => [q{Default: arriba_ar star_fusion}],
+            documentation => q{Fusion caller recipes to fuse into a vcf},
+            is            => q{rw},
+            isa           => ArrayRef,
+        )
+    );
+
+    option(
+        q{megafusion_arriba_config} => (
+            cmd_tags      => [q{Default: Path inside MegaFusion container}],
+            documentation => q{MegaFusion config for Arriba calls},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{megafusion_star_fusion_config} => (
+            cmd_tags      => [q{Default: Path inside MegaFusion container}],
+            documentation => q{MegaFusion config for Star Fusion calls},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -749,6 +833,16 @@ q{Regular expression file containing the regular expression to be used for each 
             isa           => Bool,
         )
     );
+
+    option(
+        q{qccollect_store_metrics_outfile} => (
+            cmd_tags      => [q{Default: {outdata_dir}/{case_id}_metrics_deliverables.yaml}],
+            documentation => q{File containing metrics from this analysis run},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
     option(
         q{multiqc_ar} => (
             cmd_tags      => [q{Analysis recipe switch}],
@@ -838,9 +932,27 @@ q{Regular expression file containing the regular expression to be used for each 
     );
 
     option(
+        q{svdb_merge_fusion} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Merge sample fusion vcfs to a case vcf},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{transcript_annotation} => (
             cmd_tags      => [q{Transcripts file: Format: GTF}],
             documentation => q{Transcript file for the rd_rna pipeline},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{transcript_sequence} => (
+            cmd_tags      => [q{Transcript sequence file: Format: fasta}],
+            documentation => q{Transcript sequences for the rd_rna pipeline},
             is            => q{rw},
             isa           => Str,
         )
@@ -855,6 +967,42 @@ q{Regular expression file containing the regular expression to be used for each 
         )
     );
 
+    option(
+        q{vcfparser_ar} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Parse variants using vcfparser},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{vcfparser_select_file} => (
+            cmd_flag      => q{vcfparser_slt_fl},
+            cmd_tags      => [q{Format: tsv; HGNC Symbol required in file}],
+            documentation => q{Select file with list of genes to analyse separately},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{vcfparser_select_file_matching_column} => (
+            cmd_flag      => q{vcfparser_slt_fmc},
+            documentation => q{Position of HGNC Symbol column in select file},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{vcfparser_vep_transcripts} => (
+            cmd_flag      => q{vcfparser_vtr},
+            documentation => q{Parse VEP transcript specific entries},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
     option(
         q{varianteffectpredictor} => (
             cmd_tags      => [q{Analysis recipe switch}],

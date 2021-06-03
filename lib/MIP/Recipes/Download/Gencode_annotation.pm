@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -24,9 +23,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.04;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_gencode_annotation };
@@ -121,12 +117,10 @@ sub download_gencode_annotation {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
-    use MIP::Program::Gtf2bed qw{ gtf2bed };
+    use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Processmanagement::Slurm_processes
-      qw{ slurm_submit_job_no_dependency_dead_end };
 
     ### PREPROCESSING:
 
@@ -136,37 +130,34 @@ sub download_gencode_annotation {
     ## Unpack parameters
     my $reference_dir = $active_parameter_href->{reference_dir};
 
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
-    ## Set recipe mode
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    ## Filehandle(s)
+## Filehandle(s)
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href      => $active_parameter_href,
-            core_number                => $recipe_resource{core_number},
-            directory_id               => q{mip_download},
-            filehandle                 => $filehandle,
-            job_id_href                => $job_id_href,
-            log                        => $log,
-            memory_allocation          => $recipe_resource{memory},
-            outdata_dir                => $reference_dir,
-            outscript_dir              => $reference_dir,
-            process_time               => $recipe_resource{time},
-            recipe_data_directory_path => $active_parameter_href->{reference_dir},
-            recipe_directory           => $recipe_name . $UNDERSCORE . $reference_version,
-            recipe_name                => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $recipe{core_number},
+            directory_id                    => q{mip_download},
+            filehandle                      => $filehandle,
+            info_file_id                    => $genome_version . $UNDERSCORE . $reference_version,
+            job_id_href                     => $job_id_href,
+            memory_allocation               => $recipe{memory},
+            outdata_dir                     => $reference_dir,
+            outscript_dir                   => $reference_dir,
+            process_time                    => $recipe{time},
+            recipe_data_directory_path      => $active_parameter_href->{reference_dir},
+            recipe_directory                => $recipe_name . $UNDERSCORE . $reference_version,
+            recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe{load_env_ref},
         }
     );
 
@@ -187,7 +178,7 @@ sub download_gencode_annotation {
 
     ### POST PROCESSING
     my $outfile_name = join $UNDERSCORE,
-      ( $genome_version, $recipe_name, q{-} . $reference_version . q{-.gtf} );
+      ( $genome_version, $recipe_name, $DASH . $reference_version . $DASH . q{.gtf} );
     my $outfile_path = catfile( $reference_dir, $outfile_name );
 
     if ( $genome_version eq q{grch37} ) {
@@ -195,7 +186,7 @@ sub download_gencode_annotation {
         my $reformated_outfile = join $UNDERSCORE,
           (
             $genome_version, $recipe_name, q{reformated},
-            q{-} . $reference_version . q{-.gtf}
+            $DASH . $reference_version . $DASH . q{.gtf}
           );
         my $reformated_outfile_path = catfile( $reference_dir, $reformated_outfile );
 
@@ -218,21 +209,10 @@ sub download_gencode_annotation {
         $outfile_path = $reformated_outfile_path;
     }
 
-    ## Reformat gtf to bed
-    my $bed_outfile_path = $outfile_path =~ s/gtf$/bed/rxms;
-    gtf2bed(
-        {
-            filehandle      => $filehandle,
-            infile_path     => $outfile_path,
-            stdoutfile_path => $bed_outfile_path,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## No upstream or downstream dependencies
         slurm_submit_job_no_dependency_dead_end(

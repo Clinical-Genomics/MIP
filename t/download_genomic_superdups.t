@@ -22,17 +22,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
 BEGIN {
 
@@ -43,7 +33,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Download::Genomic_superdups} =>
           [qw{ download_genomic_superdups }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -51,8 +41,7 @@ BEGIN {
 
 use MIP::Recipes::Download::Genomic_superdups qw{ download_genomic_superdups };
 
-diag(   q{Test download_genomic_superdups from Genomic_superdups.pm v}
-      . $MIP::Recipes::Download::Genomic_superdups::VERSION
+diag(   q{Test download_genomic_superdups from Genomic_superdups.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

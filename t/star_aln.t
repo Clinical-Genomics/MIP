@@ -23,17 +23,6 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,18 +30,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Star}  => [qw{ star_aln }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Program::Star} => [qw{ star_aln }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Star qw{ star_aln };
 
-diag(   q{Test star_aln from Star.pm v}
-      . $MIP::Program::Star::VERSION
+diag(   q{Test star_aln from Star.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -135,11 +120,17 @@ my %specific_argument = (
         input           => q{5 -1 5 5},
         expected_output => q{--alignSJstitchMismatchNmax 5 -1 5 5},
     },
+    align_spliced_mate_map_lmin_over_lmate => {
+        input           => q{0.5},
+        expected_output => q{--alignSplicedMateMapLminOverLmate 0.5},
+    },
     chim_junction_overhang_min => {
         input           => $CHIM_JUNCTION_OVERHANG_MIN,
-        expected_output => q{--chimJunctionOverhangMin}
-          . $SPACE
-          . $CHIM_JUNCTION_OVERHANG_MIN,
+        expected_output => q{--chimJunctionOverhangMin} . $SPACE . $CHIM_JUNCTION_OVERHANG_MIN,
+    },
+    chim_multimap_nmax => {
+        input           => 1,
+        expected_output => q{--chimMultimapNmax 1},
     },
     chim_out_type => {
         input           => q{WithinBAM},
@@ -167,9 +158,7 @@ my %specific_argument = (
     },
     chim_segment_read_gap_max => {
         input           => $CHIM_SEGMENT_READ_GAP_MAX,
-        expected_output => q{--chimSegmentReadGapMax}
-          . $SPACE
-          . $CHIM_SEGMENT_READ_GAP_MAX,
+        expected_output => q{--chimSegmentReadGapMax} . $SPACE . $CHIM_SEGMENT_READ_GAP_MAX,
     },
     infile_paths_ref => {
         inputs_ref      => [ catfile(qw{ dir r1.fq.gz }), catfile(qw{ dir r2.fq.gz }) ],
@@ -214,6 +203,18 @@ my %specific_argument = (
     out_sam_unmapped => {
         input           => q{Within},
         expected_output => q{--outSAMunmapped Within},
+    },
+    out_wig_norm => {
+        input           => q{None},
+        expected_output => q{--outWigNorm} . $SPACE . q{None},
+    },
+    out_wig_strand => {
+        input           => q{Unstranded},
+        expected_output => q{--outWigStrand} . $SPACE . q{Unstranded},
+    },
+    out_wig_type => {
+        input           => q{wiggle},
+        expected_output => q{--outWigType} . $SPACE . q{wiggle},
     },
     pe_overlap_nbases_min => {
         input           => $PE_OVERLAP_NBASES_MIN,

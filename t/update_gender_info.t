@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
 BEGIN {
 
@@ -40,17 +30,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Gender}  => [qw{ update_gender_info }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Recipes::Analysis::Estimate_gender} => [qw{ update_gender_info }],
+        q{MIP::Test::Fixtures}                     => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::Gender qw{ update_gender_info };
+use MIP::Recipes::Analysis::Estimate_gender qw{ update_gender_info };
 
-diag(   q{Test update_gender_info from Gender.pm v}
-      . $MIP::Parse::Gender::VERSION
+diag(   q{Test update_gender_info from Estimate_gender.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,7 +47,7 @@ diag(   q{Test update_gender_info from Gender.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { no_screen => 1, } );
+test_log( { no_screen => 1, } );
 
 ## Constants
 Readonly my $MALE_THRESHOLD   => 36;
@@ -82,10 +71,17 @@ my %sample_info = test_mip_hashes(
         mip_hash_name => q{qc_sample_info},
     }
 );
-my $sample_id    = $active_parameter{sample_ids}[2];
+
+## Given a sample id
+my $sample_id = $active_parameter{sample_ids}[2];
+
+## Given a male read count
 my $y_read_count = $MALE_THRESHOLD + 1;
+
+## Given an unknown gender for a sample
 $active_parameter{gender}{others} = [$sample_id];
 
+## When updating gender info
 my $is_ok = update_gender_info(
     {
         active_parameter_href   => \%active_parameter,
@@ -96,21 +92,30 @@ my $is_ok = update_gender_info(
         y_read_count            => $y_read_count,
     }
 );
+
 ## Then return true
 ok( $is_ok, q{Updated gender info} );
 
-## Then set include_y to 1 and add estimated gender for sample id
+## Then set include_y to 1
 is( $active_parameter{include_y}, 1, q{Include y} );
-is( $active_parameter{gender_estimation}{$sample_id},
-    q{male}, q{Added estimated gender male} );
+
+## Then add estimated gender for sample id
+is( $active_parameter{gender_estimation}{$sample_id}, q{male}, q{Added estimated gender male} );
+
+## Then add the sample_id to list of male samples ids
 is_deeply( $active_parameter{gender}{males}, [$sample_id], q{Add to males sample_id} );
+
+## Then remove the sample_id from list of other genders
 is( @{ $active_parameter{gender}{others} }, 0, q{Remove from others sample_id} );
 
 ## Given a y read count when female
 $y_read_count = $FEMALE_THRESHOLD;
 delete $active_parameter{gender};
+
+## Given an unknown gender for a sample
 $active_parameter{gender}{others} = [$sample_id];
 
+## When updating gender info
 update_gender_info(
     {
         active_parameter_href   => \%active_parameter,
@@ -122,12 +127,16 @@ update_gender_info(
     }
 );
 
-## Then set include y to zero and add estimated gender for sample id
+## Then set include y to zero
 is( $active_parameter{include_y}, 0, q{Exclude y} );
-is( $active_parameter{gender_estimation}{$sample_id},
-    q{female}, q{Added estimated gender female} );
-is_deeply( $active_parameter{gender}{females}, [$sample_id],
-    q{Add to females sample_id} );
+
+## Then add estimated gender for sample id
+is( $active_parameter{gender_estimation}{$sample_id}, q{female}, q{Added estimated gender female} );
+
+## Then add the sample_id to list of female samples ids
+is_deeply( $active_parameter{gender}{females}, [$sample_id], q{Add to females sample_id} );
+
+## Then remove the sample_id from list of other genders
 is( @{ $active_parameter{gender}{others} }, 0, q{Remove from others sample_id} );
 
 done_testing();

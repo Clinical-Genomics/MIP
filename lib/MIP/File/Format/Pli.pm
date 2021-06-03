@@ -6,24 +6,19 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $NEWLINE $SPACE $TAB };
+use MIP::Constants qw{ $LOG_NAME $TAB };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ load_pli_file };
@@ -34,14 +29,12 @@ sub load_pli_file {
 ## Function : Load plI file values
 ## Returns  :
 ## Arguments: $infile_path    => Infile path
-##          : $log            => Log object
 ##          : $pli_score_href => Pli scores hash
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $infile_path;
-    my $log;
     my $pli_score_href;
 
     my $tmpl = {
@@ -50,11 +43,6 @@ sub load_pli_file {
             required    => 1,
             store       => \$infile_path,
             strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         pli_score_href => {
             default     => {},
@@ -67,20 +55,23 @@ sub load_pli_file {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $filehandle = IO::Handle->new();
+    use MIP::Io::Read qw{ read_from_file };
 
-    open $filehandle, q{<}, $infile_path
-      or $log->logdie( q{Cannot open } . $infile_path . $COLON . $OS_ERROR, $NEWLINE );
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    $log->info(qq{Loading pli value file: $infile_path});
+
+    my @lines = read_from_file(
+        {
+            chomp  => 1,
+            format => q{line_by_line},
+            path   => $infile_path,
+        }
+    );
 
   LINE:
-    while (<$filehandle>) {
+    foreach my $line (@lines) {
 
-        chomp;
-
-        ## Unpack line
-        my $line = $_;
-
-        ## Get hgnc symbol and pli score
         my ( $hgnc_symbol, $pli_score ) = split $TAB, $line;
 
         ## Skip header
@@ -89,7 +80,9 @@ sub load_pli_file {
         ## Set rounded pli score to hash
         $pli_score_href->{$hgnc_symbol} = sprintf q{%.2f}, $pli_score;
     }
-    close $filehandle;
+
+    $log->info(q{Loading pli value file: Done});
+
     return 1;
 }
 

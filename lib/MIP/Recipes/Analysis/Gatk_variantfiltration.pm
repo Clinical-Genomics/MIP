@@ -8,7 +8,6 @@ use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use POSIX qw{ floor };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -24,9 +23,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.10;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_variantfiltration };
@@ -131,13 +127,12 @@ sub analysis_gatk_variantfiltration {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_variantfiltration };
-    use MIP::Script::Setup_script qw{ setup_script };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
     Readonly my $JAVA_MEMORY_ALLOCATION => 3;
@@ -163,20 +158,13 @@ sub analysis_gatk_variantfiltration {
     my @infile_name_prefixes = @{ $io{in}{file_name_prefixes} };
     my $infile_path          = ${ $io{in}{file_paths} }[0];
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode        = $active_parameter_href->{$recipe_name};
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
 
     ## Get module parameters
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -187,7 +175,7 @@ sub analysis_gatk_variantfiltration {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => \@infile_name_prefixes,
@@ -208,18 +196,16 @@ sub analysis_gatk_variantfiltration {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -229,12 +215,12 @@ sub analysis_gatk_variantfiltration {
     say {$filehandle} q{## GATK VariantFiltration};
     gatk_variantfiltration(
         {
-            cluster_size => $active_parameter_href->{gatk_variantfiltration_cluster_size},
+            cluster_size        => $active_parameter_href->{gatk_variantfiltration_cluster_size},
             cluster_window_size =>
               $active_parameter_href->{gatk_variantfiltration_cluster_window_size},
-            filehandle  => $filehandle,
-            filter_href => $active_parameter_href->{gatk_variantfiltration_filter},
-            infile_path => $infile_path,
+            filehandle           => $filehandle,
+            filter_href          => $active_parameter_href->{gatk_variantfiltration_filter},
+            infile_path          => $infile_path,
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path         => $outfile_path,
@@ -247,7 +233,7 @@ sub analysis_gatk_variantfiltration {
 
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -262,13 +248,13 @@ sub analysis_gatk_variantfiltration {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

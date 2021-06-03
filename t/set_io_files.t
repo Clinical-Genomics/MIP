@@ -20,23 +20,10 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Constants qw{ $COMMA $FORWARD_SLASH $SPACE };
 
 ## Constants
-Readonly my $COMMA     => q{,};
-Readonly my $FRW_SLASH => q{/};
-Readonly my $CHR_23    => q{23};
-Readonly my $SPACE     => q{ };
+Readonly my $CHR_23 => q{23};
 
 BEGIN {
 
@@ -44,18 +31,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Set::File}      => [qw{ set_io_files }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::File_info} => [qw{ set_io_files }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Set::File qw{ set_io_files };
+use MIP::File_info qw{ set_io_files };
 
-diag(   q{Test set_io_files from File.pm v}
-      . $MIP::Set::File::VERSION
+diag(   q{Test set_io_files from File_info.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -63,33 +46,51 @@ diag(   q{Test set_io_files from File.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-## Given
+## Given a chain id
 my $chain_id = 1;
-my $id       = q{sample_1};
-my @file_paths =
-  ( catfile(qw{ a test dir file_1.1.txt}), catfile(qw{ a test dir file_2.txt}), );
-my @file_path_prefixes =
-  ( catfile(qw{ a test dir file_1}), catfile(qw{ a test dir file_2}), );
-my @file_suffixes = qw{.1.txt .txt};
-my @temp_file_paths =
-  ( catfile(qw{ a temp dir file_1.1.txt}), catfile(qw{ a temp dir file_2.txt}), );
-my @temp_file_path_prefixes =
-  ( catfile(qw{ a temp dir file_1}), catfile(qw{ a temp dir file_2}), );
+
+## Given contigs and contig_files
 my @contigs = ( 1 .. $CHR_23, qw{ X Y MT } );
 my @contig_files =
   map { catfile( qw{ a temp dir }, q{file.} . $_ . q{.bam} ) } @contigs;
-my %file_contig;
 
+## Given a file_info hash
+my %file_info;
+
+## Given file contig hash with contig keys and file paths
+my %file_contig;
+CONTIG:
 while ( my ( $index, $contig ) = each @contigs ) {
 
     $file_contig{$contig} = $contig_files[$index];
 }
 
-my %file_info;
-my $stream         = q{in};
-my $temp_directory = catfile(qw{ a temp dir});
-my $recipe_name    = q{bwa_mem};
+## Given file_paths and suffixes
+my @file_paths =
+  ( catfile(qw{ a test dir file_1.1.txt}), catfile(qw{ a test dir file_2.txt}), );
+my @file_path_prefixes =
+  ( catfile(qw{ a test dir file_1}), catfile(qw{ a test dir file_2}), );
+my @file_suffixes = qw{.1.txt .txt};
 
+## Given temporary file paths
+my @temp_file_paths =
+  ( catfile(qw{ a temp dir file_1.1.txt}), catfile(qw{ a temp dir file_2.txt}), );
+my @temp_file_path_prefixes =
+  ( catfile(qw{ a temp dir file_1}), catfile(qw{ a temp dir file_2}), );
+
+## Given a sample id
+my $id = q{sample_1};
+
+## Given a input stream direction
+my $stream = q{in};
+
+## Given a temp dir
+my $temp_directory = catfile(qw{ a temp dir});
+
+## Given a recipe name
+my $recipe_name = q{bwa_mem};
+
+## When setting io files
 set_io_files(
     {
         chain_id       => $chain_id,
@@ -102,10 +103,10 @@ set_io_files(
     }
 );
 
-## Then set io features for $chain_id
+## Then set io features for $chain_id and input stream
 is(
     $file_info{io}{$chain_id}{$id}{$recipe_name}{$stream}{dir_path},
-    catfile(qw{ a test dir }) . $FRW_SLASH,
+    catfile(qw{ a test dir }) . $FORWARD_SLASH,
     q{Set file path}
 );
 
@@ -121,15 +122,13 @@ is_deeply(
     q{Set file name}
 );
 
-is_deeply(
-    \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$stream}{file_name_prefixes} },
+is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$stream}{file_name_prefixes} },
     [qw{ file_1 file_2 }], q{Set file name prefixes} );
 
 is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$stream}{file_paths} },
     \@file_paths, q{Set file paths} );
 
-is_deeply(
-    \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$stream}{file_path_prefixes} },
+is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$stream}{file_path_prefixes} },
     \@file_path_prefixes, q{Set file path prefixes} );
 
 is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$stream}{file_suffixes} },
@@ -141,12 +140,12 @@ is( $file_info{io}{$chain_id}{$id}{$recipe_name}{$stream}{file_suffix},
 is( $file_info{io}{$chain_id}{$id}{$recipe_name}{$stream}{file_constant_suffix},
     undef, q{Did not set file constant suffix} );
 
-## And for the temp dir
+## Then set io features for $chain_id and temp stream
 my $temp_stream = q{temp};
 
 is(
     $file_info{io}{$chain_id}{$id}{$recipe_name}{$temp_stream}{dir_path},
-    catfile(qw{ a temp dir }) . $FRW_SLASH,
+    catfile(qw{ a temp dir }) . $FORWARD_SLASH,
     q{Set file path for temp stream}
 );
 
@@ -162,23 +161,16 @@ is_deeply(
     q{Set file name for temp stream}
 );
 
-is_deeply(
-    \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$temp_stream}{file_name_prefixes} },
-    [qw{ file_1 file_2 }],
-    q{Set file name prefixes for temp stream}
-);
+is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$temp_stream}{file_name_prefixes} },
+    [qw{ file_1 file_2 }], q{Set file name prefixes for temp stream} );
 
 is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$temp_stream}{file_paths} },
     \@temp_file_paths, q{Set file paths for temp stream} );
 
-is_deeply(
-    \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$temp_stream}{file_path_prefixes} },
-    \@temp_file_path_prefixes,
-    q{Set file path prefixes for temp stream}
-);
+is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$temp_stream}{file_path_prefixes} },
+    \@temp_file_path_prefixes, q{Set file path prefixes for temp stream} );
 
-is_deeply(
-    \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$temp_stream}{file_suffixes} },
+is_deeply( \@{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$temp_stream}{file_suffixes} },
     \@file_suffixes, q{Set file suffixes for temp stream} );
 
 is( $file_info{io}{$chain_id}{$id}{$recipe_name}{$temp_stream}{file_suffix},
@@ -191,6 +183,7 @@ is( $file_info{io}{$chain_id}{$id}{$recipe_name}{$temp_stream}{file_constant_suf
 @file_paths =
   ( catfile(qw{ a test dir file.fastq.gz}), catfile(qw{ a test dir file.fastq.gz}), );
 
+## When setting io files
 set_io_files(
     {
         chain_id       => $chain_id,
@@ -203,7 +196,7 @@ set_io_files(
     }
 );
 
-## Then set file constant suffix
+## Then set file constant suffix for chain_id and stream
 is( $file_info{io}{$chain_id}{$id}{$recipe_name}{$stream}{file_constant_suffix},
     q{.fastq.gz}, q{Set file constant suffix} );
 
@@ -229,6 +222,8 @@ is(
 );
 
 ## Given contig files
+
+## When setting io files using contig files
 set_io_files(
     {
         chain_id       => $chain_id,
@@ -241,6 +236,7 @@ set_io_files(
     }
 );
 
+## Then set file_path_href to file_contigs hash
 is_deeply( \%{ $file_info{io}{$chain_id}{$id}{$recipe_name}{$stream}{file_path_href} },
     \%{file_contig}, q{Set file path hash} );
 done_testing();

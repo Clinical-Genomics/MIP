@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $CPU                 => 16;
@@ -46,7 +36,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Trinity} => [qw{ trinity_genome_guided }],
-        q{MIP::Test::Fixtures}   => [qw{ test_standard_cli }],
+
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -54,8 +44,7 @@ BEGIN {
 
 use MIP::Program::Trinity qw{ trinity_genome_guided };
 
-diag(   q{Test trinity_genome_guided from Trinity.pm v}
-      . $MIP::Program::Trinity::VERSION
+diag(   q{Test trinity_genome_guided from Trinity.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

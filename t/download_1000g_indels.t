@@ -17,22 +17,11 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
 BEGIN {
 
@@ -42,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Download::1000g_indels} => [qw{ download_1000g_indels }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -50,8 +39,7 @@ BEGIN {
 
 use MIP::Recipes::Download::1000g_indels qw{ download_1000g_indels };
 
-diag(   q{Test download_1000g_indels from 1000g_indels.pm v}
-      . $MIP::Recipes::Download::1000g_indels::VERSION
+diag(   q{Test download_1000g_indels from 1000g_indels.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,9 +47,8 @@ diag(   q{Test download_1000g_indels from 1000g_indels.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $test_dir  = File::Temp->newdir();
-my $file_path = catfile( $test_dir, q{recipe_script.sh} );
-my $log       = test_log( { log_name => uc q{mip_download}, no_screen => 1, } );
+my $test_dir = File::Temp->newdir();
+my $log      = test_log( { log_name => uc q{mip_download}, no_screen => 1, } );
 
 ## Given analysis parameters
 my $genome_version    = q{grch37};
@@ -97,7 +84,7 @@ my $is_ok = download_1000g_indels(
     }
 );
 
-## Then
+## Then download recipe should be executed
 ok( $is_ok, q{ Executed download recipe } . $recipe_name );
 
 done_testing();

@@ -6,25 +6,22 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $EQUALS $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    our $VERSION = 1.00;
 
     our @EXPORT_OK = qw{ arriba draw_fusions };
 }
@@ -40,13 +37,14 @@ sub arriba {
 ##          : $filehandle                 => Filehandle to write to
 ##          : $genome_file_path           => Genome reference path
 ##          : $infile_path                => SAM/BAM file path
+##          : $known_fusion_file_path     => Path to file with known fusions
 ##          : $outfile_path               => Path to outfile
-##          : $print_fusion_peptide       => Add fusion peptide sequence to outfile
-##          : $print_fusion_transcript    => Add fusion transcript sequence to outfile
+##          : $protein_domain_file_path   => Path to file with protein domains
 ##          : $stderrfile_path            => Stderrfile path
 ##          : $stderrfile_path_append     => Append stderr info to file path
 ##          : $stdinfile_path             => Stdinfile path
 ##          : $stdoutfile_path            => Stdoutfile path
+##          : $tag_file_path              => Tag file path
 
     my ($arg_href) = @_;
 
@@ -58,13 +56,14 @@ sub arriba {
     my $filehandle;
     my $genome_file_path;
     my $infile_path;
+    my $known_fusion_file_path;
     my $outfile_path;
-    my $print_fusion_peptide;
-    my $print_fusion_transcript;
+    my $protein_domain_file_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
+    my $tag_file_path;
 
     my $tmpl = {
         annotation_file_path => {
@@ -97,19 +96,17 @@ sub arriba {
             store       => \$infile_path,
             strict_type => 1,
         },
+        known_fusion_file_path => {
+            store       => \$known_fusion_file_path,
+            strict_type => 1,
+        },
         outfile_path => {
             required    => 1,
             store       => \$outfile_path,
             strict_type => 1,
         },
-        print_fusion_peptide => {
-            allow       => [ undef, 0, 1 ],
-            store       => \$print_fusion_peptide,
-            strict_type => 1,
-        },
-        print_fusion_transcript => {
-            allow       => [ undef, 0, 1 ],
-            store       => \$print_fusion_transcript,
+        protein_domain_file_path => {
+            store       => \$protein_domain_file_path,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -128,11 +125,15 @@ sub arriba {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        tag_file_path => {
+            store       => \$tag_file_path,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ arriba };
+    my @commands = ( get_executable_base_command( { base_command => q{arriba}, } ), );
 
     push @commands, q{-g} . $SPACE . $annotation_file_path;
 
@@ -155,16 +156,21 @@ sub arriba {
 
     push @commands, q{-x} . $SPACE . $infile_path;
 
-    push @commands, q{-o} . $SPACE . $outfile_path;
+    if ($known_fusion_file_path) {
 
-    if ($print_fusion_peptide) {
-
-        push @commands, q{-P};
+        push @commands, q{-k} . $SPACE . $known_fusion_file_path;
     }
 
-    if ($print_fusion_transcript) {
+    push @commands, q{-o} . $SPACE . $outfile_path;
 
-        push @commands, q{-T};
+    if ($protein_domain_file_path) {
+
+        push @commands, q{-p} . $SPACE . $protein_domain_file_path;
+    }
+
+    if ($tag_file_path) {
+
+        push @commands, q{-t} . $SPACE . $tag_file_path;
     }
 
     push @commands,
@@ -265,7 +271,7 @@ sub draw_fusions {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = qw{ draw_fusions.R };
+    my @commands = ( get_executable_base_command( { base_command => q{draw_fusions.R}, } ), );
 
     push @commands, q{--alignments} . $EQUALS . $alignment_file_path;
 

@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -24,9 +23,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_tiddit_coverage };
@@ -124,13 +120,12 @@ sub analysis_tiddit_coverage {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Tiddit qw{ tiddit_coverage };
     use MIP::Program::Ucsc qw{ ucsc_wig_to_big_wig };
     use MIP::Reference qw{ write_contigs_size_file };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -155,17 +150,10 @@ sub analysis_tiddit_coverage {
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            attribute      => q{chain},
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -174,7 +162,7 @@ sub analysis_tiddit_coverage {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => [$infile_name_prefix],
@@ -198,17 +186,15 @@ sub analysis_tiddit_coverage {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            job_id_href                     => $job_id_href,
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            memory_allocation     => $recipe{memory},
+            job_id_href           => $job_id_href,
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -229,13 +215,11 @@ sub analysis_tiddit_coverage {
     say {$filehandle} $NEWLINE;
 
     ## Create chromosome name and size file
-    my $contigs_size_file_path =
-      catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
+    my $contigs_size_file_path = catfile( $outdir_path, q{contigs_size_file} . $DOT . q{tsv} );
     write_contigs_size_file(
         {
-            fai_file_path => $active_parameter_href->{human_genome_reference}
-              . $DOT . q{fai},
-            outfile_path => $contigs_size_file_path,
+            fai_file_path => $active_parameter_href->{human_genome_reference} . $DOT . q{fai},
+            outfile_path  => $contigs_size_file_path,
         }
     );
 
@@ -254,7 +238,7 @@ sub analysis_tiddit_coverage {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -279,13 +263,13 @@ sub analysis_tiddit_coverage {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                dependency_method    => q{sample_to_sample},
-                case_id              => $case_id,
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                dependency_method                 => q{sample_to_sample},
+                case_id                           => $case_id,
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

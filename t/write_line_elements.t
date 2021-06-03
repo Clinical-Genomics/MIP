@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $COLON $DOT $NEWLINE $PIPE $SPACE $TAB };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,16 +31,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Vcfparser}      => [qw{ write_line_elements }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Vcfparser qw{ write_line_elements };
 
-diag(   q{Test write_line_elements from Vcfparser.pm v}
-      . $MIP::Vcfparser::VERSION
+diag(   q{Test write_line_elements from Vcfparser.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

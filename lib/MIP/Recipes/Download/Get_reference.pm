@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -22,9 +21,6 @@ use MIP::Constants qw{ $NEWLINE $SPACE $UNDERSCORE };
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ get_reference };
@@ -102,7 +98,7 @@ sub get_reference {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Check::File qw{ check_file_md5sum };
+    use MIP::Validate::File qw{ check_file_md5sum };
     use MIP::File::Decompression qw{ decompress_files };
     use MIP::Program::Wget qw{ wget };
 

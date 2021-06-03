@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -21,11 +20,9 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.00;
-
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ check_user_reference get_download_reference_attributes };
+    our @EXPORT_OK =
+      qw{ check_user_reference get_download_reference_attributes parse_download_reference_parameter };
 }
 
 sub check_user_reference {
@@ -163,12 +160,46 @@ sub get_download_reference_attributes {
 
     use Data::Diver qw{ Dive };
 
-    my $reference_file_attribute_href =
-      Dive( $reference_href, ( $id, $genome_version, $version ) );
+    my $reference_file_attribute_href = Dive( $reference_href, ( $id, $genome_version, $version ) );
 
     return if ( not $reference_file_attribute_href );
 
     return %{$reference_file_attribute_href};
+}
+
+sub parse_download_reference_parameter {
+
+## Function : Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per
+##          : reference_id while yaml is stored as arrays per reference_id
+## Returns  :
+## Arguments: $reference_href => Reference hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $reference_href;
+
+    my $tmpl = {
+        reference_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  VERSION_REF:
+    foreach my $versions_ref ( values %{$reference_href} ) {
+
+        next VERSION_REF if ( ref $versions_ref eq q{ARRAY} );
+
+        ## Make scalar from CLI '--ref key=value' option into array
+        $versions_ref = [$versions_ref];
+    }
+    return;
 }
 
 1;

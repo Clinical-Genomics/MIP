@@ -16,23 +16,12 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,16 +31,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Gnu::Coreutils} => [qw{ gnu_echo }],
-        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
 
-diag(   q{Test gnu_echo from Coreutils.pm v}
-      . $MIP::Program::Gnu::Coreutils::VERSION
+diag(   q{Test gnu_echo from Coreutils.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -116,12 +103,12 @@ my $module_function_cref = \&gnu_echo;
 my @arguments = ( \%base_argument, \%specific_argument );
 
 foreach my $argument_href (@arguments) {
-    my @commands = test_function(
+    test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
             function_base_commands_ref => \@function_base_commands,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

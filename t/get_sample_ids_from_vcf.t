@@ -21,17 +21,7 @@ use Test::Trap qw{ :stderr:output(systemsafe) };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_constants test_log };
 
 BEGIN {
 
@@ -41,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Vcf}            => [qw{ get_sample_ids_from_vcf }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -49,8 +39,7 @@ BEGIN {
 
 use MIP::Vcf qw{ get_sample_ids_from_vcf };
 
-diag(   q{Test get_sample_ids_from_vcf from Vcf.pm v}
-      . $MIP::Vcf::VERSION
+diag(   q{Test get_sample_ids_from_vcf from Vcf.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,7 +47,19 @@ diag(   q{Test get_sample_ids_from_vcf from Vcf.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+test_log( {} );
+my %test_process_return = (
+    buffers_ref   => [],
+    error_message => undef,
+    stderrs_ref   => [],
+    stdouts_ref   => [q{ADM1059A1 ADM1059A2 ADM1059A3}],
+    success       => 1,
+);
+test_constants(
+    {
+        test_process_return_href => \%test_process_return,
+    }
+);
 
 ## Given vcf input
 my $vcf_file_path = catfile( dirname($Bin),
@@ -74,6 +75,12 @@ my @expected_ids = qw{ ADM1059A1 ADM1059A2 ADM1059A3 };
 is_deeply( \@sample_ids, \@expected_ids, q{Get VCF sample ids} );
 
 ## Given something that will error
+$test_process_return{stderrs_ref} = [q{error}];
+test_constants(
+    {
+        test_process_return_href => \%test_process_return,
+    }
+);
 trap {
     get_sample_ids_from_vcf(
         {

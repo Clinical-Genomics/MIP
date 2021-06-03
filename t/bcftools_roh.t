@@ -22,17 +22,6 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,18 +29,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Bcftools} => [qw{ bcftools_roh }],
-        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Program::Bcftools} => [qw{ bcftools_roh }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Bcftools qw{ bcftools_roh };
 
-diag(   q{Test bcftools_roh from Bcftools v}
-      . $MIP::Program::Bcftools::VERSION
+diag(   q{Test bcftools_roh from Bcftools}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -101,7 +86,7 @@ my %specific_argument = (
     },
     outfile_path => {
         input           => q{outfile.txt},
-        expected_output => q{--output outfile.txt},
+        expected_output => q{-o outfile.txt},
     },
     samples_ref => {
         inputs_ref      => [qw{ idref1 idref2 idref3 }],

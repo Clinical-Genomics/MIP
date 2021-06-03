@@ -20,17 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,16 +30,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::File_info}      => [qw{ set_alt_loci_contigs }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::File_info qw{ set_alt_loci_contigs };
 
-diag(   q{Test set_alt_loci_contigs from File_info.pm v}
-      . $MIP::File_info::VERSION
+diag(   q{Test set_alt_loci_contigs from File_info.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

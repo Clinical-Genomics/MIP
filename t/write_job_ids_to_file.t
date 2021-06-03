@@ -21,17 +21,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $DOT $SPACE $UNDERSCORE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 BEGIN {
 
@@ -41,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Processmanagement::Processes} => [qw{ write_job_ids_to_file }],
-        q{MIP::Test::Fixtures}               => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures}               => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -49,8 +39,7 @@ BEGIN {
 
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
 
-diag(   q{Test write_job_ids_to_file from Processes.pm v}
-      . $MIP::Processmanagement::Processes::VERSION
+diag(   q{Test write_job_ids_to_file from Processes.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,15 +50,15 @@ diag(   q{Test write_job_ids_to_file from Processes.pm v}
 my $log = test_log( { no_screen => 1, } );
 
 ## Given a case and a job ids file path
-my $case_id         = q{case_1};
+my $case_id = q{case_1};
 my %job_id;
-my $job_ids_file_path = catfile($Bin, q{slurm_job_ids} . $DOT . q{yaml});
+my $job_ids_file_path = catfile( $Bin, q{slurm_job_ids} . $DOT . q{yaml} );
 
 ## When no job_ids to write to file
 my $is_ok = write_job_ids_to_file(
     {
-        case_id         => $case_id,
-        job_id_href     => \%job_id,
+        case_id           => $case_id,
+        job_id_href       => \%job_id,
         job_ids_file_path => $job_ids_file_path,
     }
 );
@@ -81,10 +70,10 @@ is( $is_ok, undef, q{Skip when no job ids} );
 %job_id = ( ALL => { ALL => [ qw{ job_id_1 job_id_2 }, undef, ], }, );
 
 ## When job_ids to write to file
-$is_ok  = write_job_ids_to_file(
+$is_ok = write_job_ids_to_file(
     {
-        case_id         => $case_id,
-        job_id_href     => \%job_id,
+        case_id           => $case_id,
+        job_id_href       => \%job_id,
         job_ids_file_path => $job_ids_file_path,
     }
 );

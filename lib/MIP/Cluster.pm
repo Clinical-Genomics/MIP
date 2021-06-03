@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use POSIX qw{ floor };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
 
     use base qw{ Exporter };
     require Exporter;
-
-    # Set the version for version checking
-    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -133,8 +129,7 @@ sub get_parallel_processes {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my $parallel_processes =
-      floor( $recipe_memory_allocation / $process_memory_allocation );
+    my $parallel_processes = floor( $recipe_memory_allocation / $process_memory_allocation );
 
     ## Check that the number of processes doesn't exceed the number of available cores
     if ( $parallel_processes > $core_number ) {
@@ -187,7 +182,7 @@ sub update_memory_allocation {
     my $recipe_memory_allocation = $process_memory_allocation * $parallel_processes;
 
     ## Check that memory is available
-    check_recipe_memory_allocation(
+    $recipe_memory_allocation = check_recipe_memory_allocation(
         {
             node_ram_memory          => $node_ram_memory,
             recipe_memory_allocation => $recipe_memory_allocation,

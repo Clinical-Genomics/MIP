@@ -16,23 +16,12 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes };
 
 BEGIN {
 
@@ -42,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Blobfish} => [qw{ analysis_blobfish }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -50,8 +39,7 @@ BEGIN {
 
 use MIP::Recipes::Analysis::Blobfish qw{ analysis_blobfish };
 
-diag(   q{Test analysis_blobfish from Blobfish.pm v}
-      . $MIP::Recipes::Analysis::Blobfish::VERSION
+diag(   q{Test analysis_blobfish from Blobfish.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -89,7 +77,17 @@ my %parameter = test_mip_hashes(
         recipe_name   => $recipe_name,
     }
 );
-@{ $parameter{cache}{order_recipes_ref} } = ($recipe_name);
+
+test_add_io_for_recipe(
+    {
+        file_info_href => \%file_info,
+        id             => $active_parameter{case_id},
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{bam},
+    }
+);
+
 my %sample_info = (
     sample => {
         ADM1059A1 => { phenotype => q{affected}, },

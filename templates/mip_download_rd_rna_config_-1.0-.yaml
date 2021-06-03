@@ -8,21 +8,22 @@ reference:
   1000g_indels:
     - phase1
   ctat_resource_lib:
-    - gencode_v19_ctat_lib_oct012019
-    - gencode_v19_ctat_lib_apr032020
-    - gencode_v31_ctat_lib_oct012019
-    - gencode_v33_ctat_lib_apr062020
+    - gencode_v19_ctat_lib_mar012021
+    - gencode_v37_ctat_lib_mar012021
   dbsnp:
     - 138_esa_129
     - 138
     - gold_standard_dbsnp
     - 146
   gencode_annotation:
-    - v31
     - v34
+    - v37
+  gencode_transcript:
+    - v37
   human_reference:
     - decoy_5
     - assembly38
+    - gencode_pri
   mills_and_1000g_indels:
     - gold_standard_indels
   pfam:
@@ -30,62 +31,59 @@ reference:
 reference_feature:
   gencode_annotation:
     grch37:
-      v31:
-        file: gencode.v31lift37.annotation.gtf.gz
-        outfile: grch37_gencode_annotation_-v31-.gtf.gz
-        outfile_decompress: gzip
-        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_31/GRCh37_mapping/
       v34:
         file: gencode.v34lift37.annotation.gtf.gz
         outfile: grch37_gencode_annotation_-v34-.gtf.gz
         outfile_decompress: gzip
         url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_34/GRCh37_mapping/
-    grch38:
-      v31:
-        file: gencode.v31.annotation.gtf.gz
-        outfile: grch38_gencode_annotation_-v31-.gtf.gz
+      v37:
+        file: gencode.v37lift37.annotation.gtf.gz
+        outfile: grch37_gencode_annotation_-v37-.gtf.gz
         outfile_decompress: gzip
-        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_31/
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/
+    grch38:
       v34:
         file: gencode.v34.annotation.gtf.gz
         outfile: grch38_gencode_annotation_-v34-.gtf.gz
         outfile_decompress: gzip
         url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_34/
+      v37:
+        file: gencode.v37.primary_assembly.annotation.gtf.gz
+        outfile: grch38_gencode_annotation_-v37-.gtf.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/
+  gencode_transcript:
+    grch37:
+      v37:
+        file: gencode.v37lift37.transcripts.fa.gz
+        outfile: grch37_gencode_transcripts_-v37-.fa.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/
+    grch38:
+      v37:
+        file: gencode.v37.transcripts.fa.gz
+        outfile: grch38_gencode_transcripts_-v37-.fa.gz
+        outfile_decompress: gzip
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/
   ctat_resource_lib:
     grch37:
-      gencode_v19_ctat_lib_oct012019:
-        file: GRCh37_gencode_v19_CTAT_lib_Oct012019.plug-n-play.tar.gz
-        file_check: GRCh37_gencode_v19_CTAT_lib_Oct012019.plug-n-play.tar.gz.md5sum
-        outfile: grch37_gencode_v19_ctat_lib_plug-n-play_-oct012019-.tar.gz
-        outfile_check: grch37_gencode_v19_ctat_lib_plug-n-play_-oct012019-.tar.gz.md5
+      gencode_v19_ctat_lib_mar012021:
+        file: GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz
+        file_check: GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz.md5sum
+        outfile: grch37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz
+        outfile_check: grch37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz.md5
         outfile_decompress: tar
         outfile_check_method: md5sum
-        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.8/
-      gencode_v19_ctat_lib_apr032020:
-        file: GRCh37_gencode_v19_CTAT_lib_Apr032020.plug-n-play.tar.gz
-        file_check: GRCh37_gencode_v19_CTAT_lib_Apr032020.plug-n-play.tar.gz.md5sum
-        outfile: grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz
-        outfile_check: grch37_gencode_v19_ctat_lib_plug-n-play_-apr032020-.tar.gz.md5
-        outfile_decompress: tar
-        outfile_check_method: md5sum
-        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.9/
+        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.10/
     grch38:
-      gencode_v31_ctat_lib_oct012019:
-        file: GRCh38_gencode_v31_CTAT_lib_Oct012019.plug-n-play.tar.gz
-        file_check: GRCh38_gencode_v31_CTAT_lib_Oct012019.plug-n-play.tar.gz.md5sum
-        outfile: grch38_gencode_v31_ctat_lib_plug-n-play_-oct012019-.tar.gz
-        outfile_check: grch38_gencode_v31_ctat_lib_plug-n-play_-oct012019-.tar.gz.md5
+      gencode_v37_ctat_lib_mar012021:
+        file: GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz
+        file_check: GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz.md5sum
+        outfile: grch38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz
+        outfile_check: grch38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz.md5
         outfile_decompress: tar
         outfile_check_method: md5sum
-        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.8/
-      gencode_v33_ctat_lib_apr062020:
-        file: GRCh38_gencode_v33_CTAT_lib_Apr062020.plug-n-play.tar.gz
-        file_check: GRCh38_gencode_v33_CTAT_lib_Apr062020.plug-n-play.tar.gz.md5sum
-        outfile: grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz
-        outfile_check: grch38_gencode_v31_ctat_lib_plug-n-play_-apr062020-.tar.gz.md5
-        outfile_decompress: tar
-        outfile_check_method: md5sum
-        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.9/
+        url_prefix: https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.10/
   human_reference:
     grch37:
       decoy_5:
@@ -96,11 +94,21 @@ reference_feature:
         url_prefix: https://storage.googleapis.com/gatk-legacy-bundles/b37/
         outfile_decompress: gzip
         outfile_check_method: md5sum
+      gencode_pri:
+        file: GRCh37.primary_assembly.genome.fa.gz
+        outfile: grch37_homo_sapiens_-gencode_pri-.fasta.gz
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/GRCh37_mapping/
+        outfile_decompress: gzip
     grch38:
       assembly38:
         file: Homo_sapiens_assembly38.fasta
         outfile: grch38_homo_sapiens_-assembly-.fasta
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
+      gencode_pri:
+        file: GRCh38.primary_assembly.genome.fa.gz
+        outfile: grch38_homo_sapiens_-gencode_pri-.fasta.gz
+        url_prefix: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37/
+        outfile_decompress: gzip
   1000g_indels:
     grch37:
       phase1:

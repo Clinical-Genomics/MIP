@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
@@ -22,9 +21,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_transcript_annotation_prerequisites };
@@ -136,10 +132,10 @@ sub build_transcript_annotation_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Ucsc qw{ ucsc_gtf_to_genepred };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -149,19 +145,19 @@ sub build_transcript_annotation_prerequisites {
     my $submit_switch;
 
     ## Unpack parameters
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
-            recipe_name           => q{mip},
+            parameter_href        => $parameter_href,
+            recipe_name           => $recipe_name,
         }
     );
 
     ## Generate a random integer.
-    my $random_integer       = int rand $MAX_RANDOM_NUMBER;
-    my $annotation_file_path = $active_parameter_href->{transcript_annotation};
-    my $annotation_file_path_random =
-      $annotation_file_path . $UNDERSCORE . $random_integer;
+    my $random_integer              = int rand $MAX_RANDOM_NUMBER;
+    my $annotation_file_path        = $active_parameter_href->{transcript_annotation};
+    my $annotation_file_path_random = $annotation_file_path . $UNDERSCORE . $random_integer;
 
     ## No supplied filehandle i.e. create new sbatch script
     if ( not defined $filehandle ) {
@@ -178,10 +174,9 @@ sub build_transcript_annotation_prerequisites {
                 filehandle                      => $filehandle,
                 directory_id                    => $case_id,
                 job_id_href                     => $job_id_href,
-                log                             => $log,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
+                source_environment_commands_ref => $recipe{load_env_ref},
             }
         );
     }
@@ -192,13 +187,20 @@ sub build_transcript_annotation_prerequisites {
           . $recipe_name );
 
     my %build_transcript_annotation = (
-        q{.refFlat} => {
+        q{.bed} => {
             extra_arg_href => {},
-            method         => \&_build_refflat,
+            method         => \&_build_bed,
+        },
+        q{.refflat} => {
+            extra_arg_href => {
+                annotation_file_path_random => $annotation_file_path_random,
+            },
+            method => \&_build_refflat,
         },
         q{.rrna.interval_list} => {
             extra_arg_href => {
-                active_parameter_href => $active_parameter_href,
+                active_parameter_href       => $active_parameter_href,
+                annotation_file_path_random => $annotation_file_path_random,
             },
             method => \&_build_rrna_interval_list,
         },
@@ -214,10 +216,9 @@ sub build_transcript_annotation_prerequisites {
         $build_transcript_annotation{$annotation_suffix}{method}->(
             {
                 %{ $build_transcript_annotation{$annotation_suffix}{extra_arg_href} },
-                annotation_file_path        => $annotation_file_path,
-                annotation_file_path_random => $annotation_file_path_random,
-                filehandle                  => $filehandle,
-                temp_file_path              => $temp_file_path,
+                annotation_file_path => $annotation_file_path,
+                filehandle           => $filehandle,
+                temp_file_path       => $temp_file_path,
             }
         );
 
@@ -239,7 +240,7 @@ sub build_transcript_annotation_prerequisites {
 
         close $filehandle;
 
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             submit_recipe(
                 {
@@ -259,9 +260,55 @@ sub build_transcript_annotation_prerequisites {
     return 1;
 }
 
+sub _build_bed {
+
+## Function : Creates the transcript annotation bed file
+## Returns  :
+## Arguments: $annotation_file_path => Annotation file path
+##          : $filehandle           => Filehandle to write to
+##          : $temp_file_path       => Temp file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $annotation_file_path;
+    my $filehandle;
+    my $temp_file_path;
+
+    my $tmpl = {
+        annotation_file_path => {
+            required    => 1,
+            store       => \$annotation_file_path,
+            strict_type => 1,
+        },
+        filehandle     => { store => \$filehandle, },
+        temp_file_path => {
+            required    => 1,
+            store       => \$temp_file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Gtf2bed qw{ gtf2bed };
+
+    say {$filehandle} q{## Converting to bed format};
+    gtf2bed(
+        {
+            filehandle      => $filehandle,
+            infile_path     => $annotation_file_path,
+            stdoutfile_path => $temp_file_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    return;
+}
+
 sub _build_refflat {
 
-## Function : Creates the transcript annotation refFlat file.
+## Function : Creates the transcript annotation refflat file.
 ## Returns  :
 ## Arguments: $annotation_file_path        => Annotation file path
 ##          : $annotation_file_path_random => Annotation suffix
@@ -345,7 +392,8 @@ sub _build_rrna_interval_list {
 
 ## Function : Creates the transcript annotation ribomal RNA interval_list
 ## Returns  :
-## Arguments: $annotation_file_path        => Annotation file path
+## Arguments: $active_parameter_href       => Active parameter hash {REF}
+##          : $annotation_file_path        => Annotation file path
 ##          : $annotation_file_path_random => Annotation suffix
 ##          : $filehandle                  => Filehandle to write to
 ##          : $temp_file_path              => Temp file
@@ -420,8 +468,7 @@ sub _build_rrna_interval_list {
     picardtools_createsequencedictionary(
         {
             filehandle => $filehandle,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_jar   => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx2g},
             outfile_path         => $temp_dict_file_path,
@@ -436,8 +483,7 @@ sub _build_rrna_interval_list {
         {
             filehandle  => $filehandle,
             infile_path => $temp_rrna_bed_file_path,
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_jar    => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
             memory_allocation    => q{Xmx2g},
             outfile_path         => $temp_file_path,

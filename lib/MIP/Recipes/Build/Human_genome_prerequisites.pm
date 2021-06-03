@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_human_genome_prerequisites };
@@ -147,7 +143,6 @@ sub build_human_genome_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_ln };
     use MIP::Language::Java qw{ java_core };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
@@ -155,8 +150,8 @@ sub build_human_genome_prerequisites {
     use MIP::Program::Samtools qw{ samtools_faidx };
     use MIP::Program::Picardtools qw{ picardtools_createsequencedictionary };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Recipes::Build::Capture_file_prerequisites
-      qw{ build_capture_file_prerequisites };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::Recipes::Build::Capture_file_prerequisites qw{ build_capture_file_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -166,11 +161,11 @@ sub build_human_genome_prerequisites {
     my $submit_switch;
 
     ## Unpack parameters
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
-            recipe_name           => q{mip},
+            parameter_href        => $parameter_href,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -192,10 +187,9 @@ sub build_human_genome_prerequisites {
                 job_id_href                     => $job_id_href,
                 filehandle                      => $filehandle,
                 directory_id                    => $case_id,
-                log                             => $log,
                 recipe_name                     => $recipe_name,
                 recipe_directory                => $recipe_name,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
+                source_environment_commands_ref => $recipe{load_env_ref},
             }
         );
     }
@@ -258,22 +252,19 @@ sub build_human_genome_prerequisites {
                       . q{ before executing }
                       . $recipe_name );
 
-                my $filename_prefix = catfile( $reference_dir,
-                    $file_info_href->{human_genome_reference_name_prefix} );
+                my $filename_prefix =
+                  catfile( $reference_dir, $file_info_href->{human_genome_reference_name_prefix} );
 
                 say {$filehandle} q{#CreateSequenceDictionary from reference};
 
                 picardtools_createsequencedictionary(
                     {
                         filehandle => $filehandle,
-                        java_jar   => catfile(
-                            $active_parameter_href->{picardtools_path},
-                            q{picard.jar}
-                        ),
-                        java_use_large_pages =>
-                          $active_parameter_href->{java_use_large_pages},
-                        memory_allocation => q{Xmx2g},
-                        outfile_path      => $filename_prefix
+                        java_jar   =>
+                          catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                        java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+                        memory_allocation    => q{Xmx2g},
+                        outfile_path         => $filename_prefix
                           . $UNDERSCORE
                           . $random_integer
                           . $file_ending,
@@ -328,9 +319,8 @@ sub build_human_genome_prerequisites {
                 );
                 say {$filehandle} $NEWLINE;
 
-                my $intended_file_path = $human_genome_reference . $file_ending;
-                my $temporary_file_path =
-                  $human_genome_reference_temp_file . $file_ending;
+                my $intended_file_path  = $human_genome_reference . $file_ending;
+                my $temporary_file_path = $human_genome_reference_temp_file . $file_ending;
 
                 ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
                 check_exist_and_move_file(
@@ -362,7 +352,7 @@ sub build_human_genome_prerequisites {
 
         close $filehandle;
 
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             submit_recipe(
                 {

@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use Time::Piece;
 use utf8;
 use warnings;
@@ -16,6 +15,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw{ any };
 
 ## MIPs lib/
 use MIP::Constants qw{ $COLON $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
@@ -25,15 +25,15 @@ BEGIN {
     require Exporter;
     use base qw{Exporter};
 
-    # Set the version for version checking
-    our $VERSION = 1.38;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
+      get_case_members_attributes_in_duos
       get_family_member_id
       get_read_group
       get_rg_header_line
+      get_path_entries
       get_pedigree_sample_id_attributes
+      get_pedigree_sample_ids
       get_sample_info_case_recipe_attributes
       get_sample_info_sample_recipe_attributes
       reload_previous_pedigree_info
@@ -52,6 +52,62 @@ BEGIN {
       write_sample_info_to_file
     };
 
+}
+
+sub get_case_members_attributes_in_duos {
+
+## Function : Get the sample IDs and phenotypes of the family members
+## Returns  : %case_members_attributes
+## Arguments: $sample_info_href => Sample info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my %case_members_attributes = (
+        affected => [],
+        children => [],
+        father   => 0,
+        mother   => 0,
+        unknown  => [],
+    );
+
+  SAMPLE_ID:
+    foreach my $sample_id ( keys %{ $sample_info_href->{sample} } ) {
+
+        my %sample_attributes = get_pedigree_sample_id_attributes(
+            {
+                sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        my $phenotype = $sample_attributes{phenotype};
+        push @{ $case_members_attributes{$phenotype} }, $sample_id;
+
+        next SAMPLE_ID if ( not( $sample_attributes{father} or $sample_attributes{mother} ) );
+
+        ## Append child
+        push @{ $case_members_attributes{children} }, $sample_id;
+
+        $case_members_attributes{father} = $sample_attributes{father};
+        $case_members_attributes{mother} = $sample_attributes{mother};
+    }
+
+    return %case_members_attributes;
 }
 
 sub get_family_member_id {
@@ -133,6 +189,90 @@ sub get_family_member_id {
     return %family_member_id;
 }
 
+sub get_path_entries {
+
+## Function  : Collects all recipes outfile path(s) created by MIP as Path->value located in %sample_info.
+## Returns   :
+## Arguments : $paths_ref        => Holds the collected paths {REF}
+##           : $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $paths_ref;
+    my $sample_info_href;
+
+    my $tmpl = {
+        paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$paths_ref,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Copy hash to enable recursive removal of keys
+    my %info = %{$sample_info_href};
+
+    ## Temporary array for collecting outdirectories within the same recipe
+    my @outdirectories;
+
+    ## Temporary array for collecting outfile within the same recipe
+    my @outfiles;
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %info ) {
+
+        if ( ref $value eq q{HASH} ) {
+
+            get_path_entries(
+                {
+                    paths_ref        => $paths_ref,
+                    sample_info_href => $value,
+                }
+            );
+        }
+        else {
+
+            ## Required for first dry-run
+            next KEY_VALUE_PAIR if ( not $value );
+
+            ## Check if key is "path" and adds value to @paths_ref if true.
+            _check_and_add_to_array(
+                {
+                    key       => $key,
+                    paths_ref => $paths_ref,
+                    value     => $value,
+                }
+            );
+
+            ## Check if key is "outdirectory" or "outfile"  and adds joined value to @paths_ref if true.
+            _collect_outfile(
+                {
+                    key                => $key,
+                    paths_ref          => $paths_ref,
+                    outdirectories_ref => \@outdirectories,
+                    outfiles_ref       => \@outfiles,
+                    value              => $value,
+                }
+            );
+
+            delete $info{$value};
+        }
+    }
+    return;
+}
+
 sub get_pedigree_sample_id_attributes {
 
 ## Function : Get pedigree sample id attribute
@@ -199,6 +339,32 @@ sub get_pedigree_sample_id_attributes {
     return;
 }
 
+sub get_pedigree_sample_ids {
+
+## Function : Get pedigree sample ids
+## Returns  : @sample_ids
+## Arguments: $sample_info_href => Info on samples and case hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sample_info_href;
+
+    my $tmpl = {
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return ( keys %{ $sample_info_href->{sample} } );
+}
+
 sub get_read_group {
 
 ## Function : Builds hash with read group headers
@@ -252,18 +418,13 @@ sub get_read_group {
           {read_direction_file}{ $infile_prefix . q{_1} } };
 
     my $platform_unit =
-        $fastq_file{flowcell}
-      . $DOT
-      . $fastq_file{lane}
-      . $DOT
-      . $fastq_file{sample_barcode};
+      $fastq_file{flowcell} . $DOT . $fastq_file{lane} . $DOT . $fastq_file{sample_barcode};
 
     ## RG hash
     my %rg = (
         id   => $infile_prefix,
         lane => $fastq_file{lane},
-        lb   => $sample_id
-        ,    ## Add molecular library (Dummy value since the actual LB isn't available)
+        lb => $sample_id, ## Add molecular library (Dummy value since the actual LB isn't available)
         pl => $platform,
         pu => $platform_unit,
         sm => $sample_id,
@@ -447,17 +608,12 @@ sub get_sample_info_sample_recipe_attributes {
     ## Get and return attribute value
     if ( defined $attribute && $attribute ) {
 
-        return $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}
-          {$infile}{$attribute};
+        return $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile}{$attribute};
     }
-    if (
-        ref $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile} eq
-        q{HASH} )
-    {
+    if ( ref $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile} eq q{HASH} ) {
 
 ## Get recipe attribute for infile hash
-        return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile}
-        };
+        return %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$infile} };
     }
 
     ## No infile level
@@ -548,7 +704,7 @@ sub set_file_path_to_store {
 
     my $tmpl = {
         format => {
-            allow       => [qw{ bam bb bcf bed bw cram fastq meta png tar vcf wig }],
+            allow       => [qw{ bam bb bcf bed bigwig bw cram fastq meta png tar vcf wig }],
             defined     => 1,
             required    => 1,
             store       => \$format,
@@ -601,6 +757,10 @@ sub set_file_path_to_store {
         tag        => $tag,
     );
 
+    ## Remove old entries with the same path
+    @{ $sample_info_href->{files} } =
+      grep { $_->{path} ne $path } @{ $sample_info_href->{files} };
+
     ## Set file path according to file type and tag
     push @{ $sample_info_href->{files} }, {%file_info};
 
@@ -613,8 +773,6 @@ sub set_gene_panel {
 ## Returns  :
 ## Arguments: $aggregate_gene_panel_file => Database file
 ##          : $aggregate_gene_panels_key => Database key i.e. select or range
-##          : $case_id                   => Case ID
-##          : $log                       => Log object
 ##          : $recipe_name               => Recipe name
 ##          : $sample_info_href          => Info on samples and case hash {REF}
 
@@ -623,30 +781,16 @@ sub set_gene_panel {
     ## Flatten argument(s)
     my $aggregate_gene_panel_file;
     my $aggregate_gene_panels_key;
-    my $case_id;
-    my $log;
     my $recipe_name;
     my $sample_info_href;
 
     my $tmpl = {
-        aggregate_gene_panel_file =>
-          { store => \$aggregate_gene_panel_file, strict_type => 1, },
+        aggregate_gene_panel_file => { store => \$aggregate_gene_panel_file, strict_type => 1, },
         aggregate_gene_panels_key => {
             defined     => 1,
             required    => 1,
             store       => \$aggregate_gene_panels_key,
             strict_type => 1,
-        },
-        case_id => {
-            defined     => 1,
-            required    => 1,
-            store       => \$case_id,
-            strict_type => 1,
-        },
-        log => {
-            defined  => 1,
-            required => 1,
-            store    => \$log,
         },
         recipe_name => {
             defined     => 1,
@@ -664,98 +808,66 @@ sub set_gene_panel {
     };
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    if ($aggregate_gene_panel_file) {
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Environment::Child_process qw{ child_process };
 
-        # Collect each gene panel features
-        my %gene_panel;
-        my %header = (
-            display_name => q{display_name},
-            gene_panel   => q{gene_panel},
-            updated_at   => q{updated_at},
-            version      => q{version},
-        );
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-        # Execute perl
-        my $sub_database_regexp = q?perl -nae '?;
+    return if ( not $aggregate_gene_panel_file );
 
-        # If line starts with gene panel comment
-        $sub_database_regexp .= q?if ($_=~/^##gene_panel=/)? . $SPACE;
-
-        # Remove newline char and split fields
-        $sub_database_regexp .= q?{chomp($_);my @entries=split(/,/, $_);? . $SPACE;
-
-        # Join fields with comma separator appending ":". Skip rest if it's a comment
-        $sub_database_regexp .=
-          q?my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
-
-        # Collect header_lines(s) from select_file header
-        my $ret = `$sub_database_regexp $aggregate_gene_panel_file`;
-
-        # Split each gene panel meta data header line into array element
-        my @header_lines = split /:/sxm, $ret;
-
-      LINE:
-        foreach my $line (@header_lines) {
-
-            # Split each member database line into features
-            my @features = split /,/sxm, $line;
-
-          ELEMENT:
-            foreach my $feature_element (@features) {
-
-              KEY_VALUE:
-                foreach my $gene_panel_header_element ( keys %header ) {
-
-                    # Parse the features using defined header keys
-                    if ( $feature_element =~ /$gene_panel_header_element=/sxm ) {
-
-                        my @temps = split /=/sxm, $feature_element;
-
-                        # Value
-                        $gene_panel{ $header{$gene_panel_header_element} } =
-                          $temps[1];
-                        last;
-                    }
-                }
-            }
-
-            if ( defined $gene_panel{gene_panel} ) {
-
-                # Create unique gene panel ID
-                my $gene_panel_name = $gene_panel{gene_panel};
-
-                ## Add new entries
-              FEATURE:
-                foreach my $feature ( keys %gene_panel ) {
-
-                    $sample_info_href->{$recipe_name}
-                      {$aggregate_gene_panels_key}{gene_panel}{$gene_panel_name}{$feature}
-                      = $gene_panel{$feature};
-                }
-            }
-            else {
-
-                $log->warn( q{Unable to write}
-                      . $SPACE
-                      . $aggregate_gene_panels_key
-                      . $SPACE
-                      . q{aggregate gene panel(s) to qc_sample_info. Lacking ##gene_panel=<ID=[?] or version=[?] in aggregate gene panel(s) header.}
-                      . $NEWLINE );
-            }
-
-            # Reset hash for next line
-            %gene_panel = ();
+    # Collect each gene panel features
+    my @get_gene_panel_header_cmds = perl_nae_oneliners(
+        {
+            oneliner_name  => q{get_gene_panel_header},
+            stdinfile_path => $aggregate_gene_panel_file,
         }
+    );
 
-        # Call set_processing_metafile_in_sample_info with case parameter
-        set_processing_metafile_in_sample_info(
-            {
-                metafile_tag     => $aggregate_gene_panels_key,
-                sample_info_href => $sample_info_href,
-                path             => $aggregate_gene_panel_file,
-            }
-        );
+    my %return = child_process(
+        {
+            commands_ref => \@get_gene_panel_header_cmds,
+            process_type => q{open3},
+        }
+    );
+
+    my $ret = $return{stdouts_ref}[0]
+      or $log->logdie(qq{Unable to parse gene panel information from $aggregate_gene_panel_file});
+
+  LINE:
+
+    # Loop over each gene panel meta data header line
+    foreach my $line ( split /:/sxm, $ret ) {
+
+        # Split each info line into gene panel hash
+        my %gene_panel = ( split /[,=]/sxm, $line );
+
+        # Gene panel name must exist
+        if (    ( defined $gene_panel{gene_panel} )
+            and ( not $gene_panel{gene_panel} eq $EMPTY_STR ) )
+        {
+
+            # Create unique gene panel ID
+            my $gene_panel_name = $gene_panel{gene_panel};
+            $sample_info_href->{$recipe_name}{$aggregate_gene_panels_key}{gene_panel}
+              {$gene_panel_name} = \%gene_panel;
+        }
+        else {
+
+            $log->warn(
+qq{Unable to write $aggregate_gene_panels_key aggregate gene panel(s) to qc_sample_info. Lacking ##gene_panel=<ID=[?] in aggregate gene panel(s) header.}
+            );
+        }
     }
+
+    # Call set_processing_metafile_in_sample_info with case parameter
+    set_processing_metafile_in_sample_info(
+        {
+            metafile_tag     => $aggregate_gene_panels_key,
+            sample_info_href => $sample_info_href,
+            path             => $aggregate_gene_panel_file,
+        }
+    );
     return;
 }
 
@@ -857,8 +969,7 @@ sub set_infile_info {
                 sample_id       => $sample_id,
             }
         );
-        my $sequence_run_type =
-          $attribute{is_interleaved} ? q{interleaved} : q{single-end};
+        my $sequence_run_type = $attribute{is_interleaved} ? q{interleaved} : q{single-end};
         set_sample_file_attribute(
             {
                 attribute       => q{sequence_run_type},
@@ -1257,8 +1368,8 @@ sub set_recipe_outfile_in_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}
-                  {$parameter_key} = $parameter_value;
+                $sample_info_href->{sample}{$sample_id}{recipe}{$recipe_name}{$parameter_key} =
+                  $parameter_value;
             }
         }
     }
@@ -1449,8 +1560,8 @@ sub set_recipe_metafile_in_sample_info {
 
             if ( defined $parameter_value ) {
 
-                $sample_info_href->{recipe}{$recipe_name}{$metafile_tag}{$parameter_key}
-                  = $parameter_value;
+                $sample_info_href->{recipe}{$recipe_name}{$metafile_tag}{$parameter_key} =
+                  $parameter_value;
             }
         }
     }
@@ -1498,7 +1609,7 @@ sub set_parameter_in_sample_info {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Pedigree qw{ has_trio };
+    use MIP::Pedigree qw{ has_duo has_trio };
 
     my %set_parameter_map = (
         analysis_type => {
@@ -1510,6 +1621,16 @@ sub set_parameter_in_sample_info {
             key    => q{expected_coverage},
             set_at => $sample_info_href,
             value  => $active_parameter_href->{expected_coverage},
+        },
+        has_duo => {
+            key    => q{has_duo},
+            set_at => $sample_info_href,
+            value  => has_duo(
+                {
+                    active_parameter_href => $active_parameter_href,
+                    sample_info_href      => $sample_info_href,
+                }
+            ),
         },
         has_trio => {
             key    => q{has_trio},
@@ -1654,6 +1775,119 @@ sub write_sample_info_to_file {
     );
     $log->info( q{Wrote: } . $sample_info_file );
 
+    return;
+}
+
+sub _check_and_add_to_array {
+
+## Function  : Check if Key name is "path" and adds to @paths_ref if true.
+## Returns   :
+## Arguments : $key       => Hash key
+##           : $paths_ref => Holds the collected paths {REF}
+##           : $value     => Hash value
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $key;
+    my $paths_ref;
+    my $value;
+
+    my $tmpl = {
+        key       => { defined => 1, required => 1, store => \$key, strict_type => 1, },
+        paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$paths_ref,
+            strict_type => 1,
+        },
+        value => { required => 1, store => \$value, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( $key ne q{path} );
+
+    ## Do not add same path twice
+    if ( not any { $_ eq $value } @{$paths_ref} ) {
+
+        push @{$paths_ref}, $value;
+    }
+    return;
+}
+
+sub _collect_outfile {
+
+## Function  : Check if Key name is "outdirectory" or "outfile" and adds to @paths_ref if true
+## Returns   :
+## Arguments : $key                => Hash key
+##           : $outdirectories_ref => Holds temporary outdirectory path(s) {Optional, REF}
+##           : $outfiles_ref       => Holds temporary outdirectory path(s) {Optional, REF}
+##           : $paths_ref          => Holds the collected paths {REF}
+##           : $value              => Hash value
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $key;
+    my $outdirectories_ref;
+    my $outfiles_ref;
+    my $paths_ref;
+    my $value;
+
+    my $tmpl = {
+        key                => { defined => 1, store => \$key, required => 1, strict_type => 1, },
+        outdirectories_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$outdirectories_ref,
+            strict_type => 1,
+        },
+        outfiles_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$outfiles_ref,
+            strict_type => 1,
+        },
+        paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$paths_ref,
+            strict_type => 1,
+        },
+        value => { defined => 1, required => 1, store => \$value, },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    if ( $key eq q{outdirectory} ) {
+
+        push @{$outdirectories_ref}, $value;
+    }
+    if ( $key eq q{outfile} ) {
+
+        push @{$outfiles_ref}, $value;
+    }
+
+    ## Both outdirectory and outfile have been collected, time to join
+    if ( @{$outdirectories_ref} && @{$outfiles_ref} ) {
+
+        my $path = catfile( $outdirectories_ref->[0], $outfiles_ref->[0] );
+
+        ## Do not add same path twice
+        if ( not any { $_ eq $path } @{$paths_ref} ) {
+
+            push @{$paths_ref}, $path;
+
+            ## Restart
+            @{$outdirectories_ref} = ();
+            @{$outfiles_ref}       = ();
+        }
+    }
     return;
 }
 

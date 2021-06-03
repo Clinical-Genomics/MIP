@@ -29,10 +29,11 @@ use MIP::Active_parameter qw{
 };
 use MIP::Config qw{ check_cmd_config_vs_definition_file set_config_to_active_parameters };
 use MIP::Constants
-  qw{ $COLON $COMMA $DOT $LOG_NAME $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE };
+  qw{ $COLON $COMMA $DOT $LOG_NAME $MIP_VERSION $NEWLINE $SINGLE_QUOTE $SPACE $UNDERSCORE set_container_constants };
+use MIP::Environment::Container qw{ parse_containers };
+use MIP::Download qw{ check_user_reference parse_download_reference_parameter };
 use MIP::Environment::Cluster qw{ check_max_core_number };
 use MIP::Environment::User qw{ check_email_address };
-use MIP::Download qw{ check_user_reference };
 use MIP::Io::Read qw{ read_from_file };
 use MIP::Log::MIP_log4perl qw{ get_log };
 use MIP::Parameter qw{
@@ -40,16 +41,12 @@ use MIP::Parameter qw{
   set_cache
   set_default
 };
-use MIP::Parse::Parameter qw{ parse_download_reference_parameter };
 use MIP::Pipeline qw{ run_download_pipeline };
 use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
 use MIP::Recipes::Parse qw{ parse_recipes };
 
 BEGIN {
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.23;
 
     # Functions and variables that can be optionally exported
     our @EXPORT_OK = qw{ mip_download };
@@ -157,18 +154,14 @@ sub mip_download {
     );
 
     $log->info( q{MIP Version: } . $MIP_VERSION );
-    $log->info( q{Writing log messages to}
-          . $COLON
-          . $SPACE
-          . $active_parameter_href->{log_file} );
+    $log->info( q{Writing log messages to} . $COLON . $SPACE . $active_parameter_href->{log_file} );
 
     ## Set default from parameter hash to active_parameter for uninitilized parameters
     set_default(
         {
-            active_parameter_href => $active_parameter_href,
-            custom_default_parameters_ref =>
-              $parameter_href->{custom_default_parameters}{default},
-            parameter_href => $parameter_href,
+            active_parameter_href         => $active_parameter_href,
+            custom_default_parameters_ref => $parameter_href->{custom_default_parameters}{default},
+            parameter_href                => $parameter_href,
         }
     );
 
@@ -244,16 +237,23 @@ sub mip_download {
 
     check_user_reference(
         {
-            reference_genome_versions_ref =>
-              $active_parameter_href->{reference_genome_versions},
-            reference_ref               => $active_parameter_href->{reference_feature},
-            user_supplied_reference_ref => $active_parameter_href->{reference},
+            reference_genome_versions_ref => $active_parameter_href->{reference_genome_versions},
+            reference_ref                 => $active_parameter_href->{reference_feature},
+            user_supplied_reference_ref   => $active_parameter_href->{reference},
+        }
+    );
+
+    set_container_constants( { active_parameter_href => $active_parameter_href, } );
+
+    parse_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
         }
     );
 
     $log->info(
-q{Will write sbatch install instructions for references to individual sbatch scripts}
-    );
+        q{Will write sbatch install instructions for references to individual sbatch scripts});
 
     run_download_pipeline( { active_parameter_href => $active_parameter_href, } );
 

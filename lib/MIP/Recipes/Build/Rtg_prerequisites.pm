@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_rtg_prerequisites };
@@ -145,12 +141,11 @@ sub build_rtg_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Rtg qw{ rtg_format };
-    use MIP::Recipes::Build::Human_genome_prerequisites
-      qw{ build_human_genome_prerequisites };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::Recipes::Build::Human_genome_prerequisites qw{ build_human_genome_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -158,12 +153,11 @@ sub build_rtg_prerequisites {
     Readonly my $PROCESSING_TIME   => 3;
 
     ## Unpack parameters
-    my $job_id_chain    = $parameter_href->{$recipe_name}{chain};
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
-            recipe_name           => q{mip},
+            parameter_href        => $parameter_href,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -177,26 +171,25 @@ sub build_rtg_prerequisites {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href => $active_parameter_href,
-            core_number           => $active_parameter_href->{max_cores_per_node},
-            filehandle            => $filehandle,
-            directory_id          => $case_id,
-            job_id_href           => $job_id_href,
-            log                   => $log,
-            process_time          => $PROCESSING_TIME,
-            recipe_directory      => $recipe_name,
-            recipe_name           => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $active_parameter_href->{max_cores_per_node},
+            filehandle                      => $filehandle,
+            directory_id                    => $case_id,
+            job_id_href                     => $job_id_href,
+            process_time                    => $PROCESSING_TIME,
+            recipe_directory                => $recipe_name,
+            recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe{load_env_ref},
         }
     );
 
     build_human_genome_prerequisites(
         {
-            active_parameter_href => $active_parameter_href,
-            filehandle            => $filehandle,
-            file_info_href        => $file_info_href,
-            job_id_href           => $job_id_href,
-            log                   => $log,
+            active_parameter_href        => $active_parameter_href,
+            filehandle                   => $filehandle,
+            file_info_href               => $file_info_href,
+            job_id_href                  => $job_id_href,
+            log                          => $log,
             parameter_build_suffixes_ref =>
               \@{ $file_info_href->{human_genome_reference_file_endings} },
             parameter_href   => $parameter_href,
@@ -216,9 +209,7 @@ sub build_rtg_prerequisites {
         say {$filehandle} q{## Building SDF dir files};
         ## Get parameters
         my $sdf_directory_tmp =
-            $active_parameter_href->{rtg_vcfeval_reference_genome}
-          . $UNDERSCORE
-          . $random_integer;
+          $active_parameter_href->{rtg_vcfeval_reference_genome} . $UNDERSCORE . $random_integer;
         rtg_format(
             {
                 filehandle            => $filehandle,
@@ -251,7 +242,7 @@ sub build_rtg_prerequisites {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         submit_recipe(
             {
@@ -260,7 +251,7 @@ sub build_rtg_prerequisites {
                 case_id            => $case_id,
                 job_id_href        => $job_id_href,
                 log                => $log,
-                job_id_chain       => $job_id_chain,
+                job_id_chain       => $recipe{job_id_chain},
                 recipe_file_path   => $recipe_file_path,
                 sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile => $active_parameter_href->{submission_profile},

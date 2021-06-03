@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -25,18 +24,19 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.05;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_arriba };
 
 }
 
 ## Constants
-Readonly my $THREE  => 3;
-Readonly my $TEN    => 10;
-Readonly my $THIRTY => 30;
+Readonly my $CHIM_JUNCTION_OVERHANG_MIN => 10;
+Readonly my $CHIM_MULTIMAP_NMAX         => 50;
+Readonly my $CHIM_SCORE_DROP_MAX        => 30;
+Readonly my $CHIM_SEGMENT_MIN           => 10;
+Readonly my $CHIM_SEGMENT_READ_GAP_MAX  => 3;
+Readonly my $OUT_FILTER_MISMATCH_NMAX   => 3;
+Readonly my $OUT_FILTER_MULTIMAP_NMAX   => 50;
 
 sub analysis_arriba {
 
@@ -136,15 +136,14 @@ sub analysis_arriba {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_sample_file_attribute };
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::File_info
+      qw{ get_io_files get_sample_fastq_file_lanes get_sample_file_attribute parse_io_outfiles };
     use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_tee };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Arriba qw{ arriba draw_fusions };
-    use MIP::Program::Sambamba qw{ sambamba_index sambamba_sort };
+    use MIP::Program::Arriba qw{ arriba };
+    use MIP::Program::Samtools qw{ samtools_index samtools_sort };
     use MIP::Program::Star qw{ star_aln };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{
       get_pedigree_sample_id_attributes
       get_rg_header_line
@@ -154,6 +153,8 @@ sub analysis_arriba {
     use MIP::Script::Setup_script qw{ setup_script };
     use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
+    Readonly my $SCALING_FACTOR => 0.75;
+
     ### PREPROCESSING:
 
     ## Retrieve logger object
@@ -162,6 +163,7 @@ sub analysis_arriba {
     ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
+            chain_id       => q{MAIN},
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
@@ -171,48 +173,41 @@ sub analysis_arriba {
     );
     my @infile_paths = @{ $io{in}{file_paths} };
 
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    ## Build outfile_paths
-    my %rec_atr = get_recipe_attributes(
+    my %recipe = parse_recipe_prerequisites(
         {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+            recipe_name           => $recipe_name,
         }
     );
-    my $job_id_chain = $rec_atr{chain};
-    my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
-    my $lanes_id            = join $EMPTY_STR, @{ $file_info_href->{$sample_id}{lanes} };
-    my $outfile_tag         = $file_info_href->{$sample_id}{$recipe_name}{file_tag};
-    my $outfile_suffix      = $rec_atr{outfile_suffix};
-    my $outfile_path_prefix = catfile( $outsample_directory,
-        $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id . $outfile_tag );
 
+    ## Join infile lanes
+    my $lanes_id = join $EMPTY_STR,
+      get_sample_fastq_file_lanes(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+      );
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref =>
+                  [ $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id ],
                 id             => $sample_id,
-                file_info_href => $file_info_href,
-                file_paths_ref => [ $outfile_path_prefix . $outfile_suffix ],
+                outdata_dir    => $active_parameter_href->{outdata_dir},
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
             }
         )
     );
-    my $outfile_name = ${ $io{out}{file_names} }[0];
-    my $outfile_path = $io{out}{file_path};
-
-    my %recipe_resource = get_recipe_resources(
-        {
-            active_parameter_href => $active_parameter_href,
-            recipe_name           => $recipe_name,
-        }
-    );
-    my $use_sample_id_as_display_name =
-      $active_parameter_href->{arriba_use_sample_id_as_display_name};
+    my $outfile_name        = ${ $io{out}{file_names} }[0];
+    my $outfile_path        = $io{out}{file_path};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -221,19 +216,17 @@ sub analysis_arriba {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
-            ulimit_n                        => $active_parameter_href->{star_ulimit_n},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
+            ulimit_n              => $active_parameter_href->{star_ulimit_n},
         }
     );
 
@@ -305,34 +298,35 @@ sub analysis_arriba {
 
     my @arriba_commands = star_aln(
         {
-            align_sj_stitch_mismatch_nmax => q{5 -1 5 5},
-            chim_junction_overhang_min    => $TEN,
-            chim_out_type                 => q{WithinBAM SoftClip},
-            chim_score_drop_max           => $THIRTY,
-            chim_score_junction_non_gtag  => 0,
-            chim_score_min                => 1,
-            chim_score_separation         => 1,
-            chim_segment_min              => $TEN,
-            chim_segment_read_gap_max     => $THREE,
-            genome_dir_path               => $referencefile_dir_path,
-            infile_paths_ref              => \@fastq_files,
-            out_bam_compression           => 0,
-            outfile_name_prefix           => $outfile_path_prefix . $DOT,
-            out_filter_mismatch_nmax      => $THREE,
-            out_filter_multimap_nmax      => 1,
-            out_sam_attr_rgline           => $out_sam_attr_rgline,
-            out_sam_type                  => q{BAM Unsorted},
-            out_sam_unmapped              => q{Within},
-            pe_overlap_nbases_min         => $active_parameter_href->{pe_overlap_nbases_min},
-            quant_mode                    => q{-},
-            stdout_data_type              => q{BAM_Unsorted},
-            thread_number                 => $recipe_resource{core_number},
-            two_pass_mode                 => q{None},
+            align_sj_stitch_mismatch_nmax          => q{5 -1 5 5},
+            align_spliced_mate_map_lmin_over_lmate => q{0.5},
+            chim_junction_overhang_min             => $CHIM_JUNCTION_OVERHANG_MIN,
+            chim_multimap_nmax                     => $CHIM_MULTIMAP_NMAX,
+            chim_out_type                          => q{WithinBAM HardClip},
+            chim_score_drop_max                    => $CHIM_SCORE_DROP_MAX,
+            chim_score_junction_non_gtag           => 0,
+            chim_score_min                         => 1,
+            chim_score_separation                  => 1,
+            chim_segment_min                       => $CHIM_SEGMENT_MIN,
+            chim_segment_read_gap_max              => $CHIM_SEGMENT_READ_GAP_MAX,
+            genome_dir_path                        => $referencefile_dir_path,
+            infile_paths_ref                       => \@fastq_files,
+            out_bam_compression                    => 0,
+            outfile_name_prefix                    => $outfile_path_prefix . $DOT,
+            out_filter_mismatch_nmax               => $OUT_FILTER_MISMATCH_NMAX,
+            out_filter_multimap_nmax               => $OUT_FILTER_MULTIMAP_NMAX,
+            out_sam_attr_rgline                    => $out_sam_attr_rgline,
+            out_sam_type                           => q{BAM Unsorted},
+            out_sam_unmapped                       => q{Within},
+            pe_overlap_nbases_min => $active_parameter_href->{pe_overlap_nbases_min},
+            stdout_data_type      => q{BAM_Unsorted},
+            thread_number         => $recipe{core_number},
+            two_pass_mode         => q{None},
         },
     );
     push @arriba_commands, $PIPE;
 
-    my $star_outfile_path = $outfile_path_prefix . $DOT . q{bam};
+    my $star_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{unsorted} . $DOT . q{bam};
     push @arriba_commands,
       gnu_tee(
         {
@@ -350,11 +344,12 @@ sub analysis_arriba {
               . $UNDERSCORE
               . q{discarded}
               . $outfile_suffix,
-            genome_file_path        => $active_parameter_href->{human_genome_reference},
-            infile_path             => catfile( dirname( devnull() ), q{stdin} ),
-            outfile_path            => $outfile_path,
-            print_fusion_peptide    => 1,
-            print_fusion_transcript => 1,
+            genome_file_path         => $active_parameter_href->{human_genome_reference},
+            infile_path              => catfile( dirname( devnull() ), q{stdin} ),
+            known_fusion_file_path   => $active_parameter_href->{arriba_known_fusion_path},
+            outfile_path             => $outfile_path,
+            protein_domain_file_path => $active_parameter_href->{fusion_protein_domain_path},
+            tag_file_path            => $active_parameter_href->{arriba_known_fusion_path},
         }
       );
 
@@ -369,20 +364,25 @@ sub analysis_arriba {
     say {$filehandle} $NEWLINE;
 
     ## Sort BAM before visualization
-    my $sorted_bam_file = $outfile_path_prefix . $UNDERSCORE . q{sorted} . $DOT . q{bam};
-    sambamba_sort(
+    my $sorted_bam_file = $outfile_path_prefix . $DOT . q{bam};
+    my $thread_memory   = int( $recipe{memory} / $recipe{core_number} );
+    ## Allow for process overhead
+    $thread_memory = int( $thread_memory * $SCALING_FACTOR );
+    samtools_sort(
         {
-            filehandle     => $filehandle,
-            infile_path    => $star_outfile_path,
-            memory_limit   => $recipe_resource{memory} . q{G},
-            outfile_path   => $sorted_bam_file,
-            temp_directory => $temp_directory,
+            filehandle            => $filehandle,
+            infile_path           => $star_outfile_path,
+            max_memory_per_thread => $thread_memory . q{G},
+            outfile_path          => $sorted_bam_file,
+            temp_file_path_prefix => $temp_directory,
+            thread_number         => $recipe{core_number},
         }
     );
     say {$filehandle} $NEWLINE;
 
-    sambamba_index(
+    samtools_index(
         {
+            bai_format  => 1,
             filehandle  => $filehandle,
             infile_path => $sorted_bam_file,
         }
@@ -398,37 +398,10 @@ sub analysis_arriba {
     );
     say {$filehandle} $NEWLINE;
 
-    ## Visualize the fusions
-    my $report_path         = $outfile_path_prefix . $DOT . q{pdf};
-    my $sample_display_name = get_pedigree_sample_id_attributes(
-        {
-            attribute        => q{sample_display_name},
-            sample_id        => $sample_id,
-            sample_info_href => $sample_info_href,
-        }
-    );
-    if ( $sample_display_name and not $use_sample_id_as_display_name ) {
-
-        $report_path = catfile( $outsample_directory,
-            $sample_display_name . $UNDERSCORE . q{arriba_fusions.pdf} );
-    }
-    draw_fusions(
-        {
-            alignment_file_path      => $sorted_bam_file,
-            annotation_file_path     => $active_parameter_href->{transcript_annotation},
-            cytoband_file_path       => $active_parameter_href->{arriba_cytoband_path},
-            filehandle               => $filehandle,
-            fusion_file_path         => $outfile_path,
-            outfile_path             => $report_path,
-            protein_domain_file_path => $active_parameter_href->{arriba_protein_domain_path},
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -440,43 +413,23 @@ sub analysis_arriba {
                 sample_info_href => $sample_info_href,
             }
         );
-        set_recipe_metafile_in_sample_info(
+
+        set_file_path_to_store(
             {
-                infile           => $outfile_name,
-                metafile_tag     => q{report},
-                path             => $report_path,
+                format           => q{meta},
+                id               => $sample_id,
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
-                sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
-
-        my %arriba_store = (
-            $recipe_name  => $outfile_path,
-            arriba_report => $report_path,
-        );
-
-      TAG:
-        while ( my ( $tag, $path ) = each %arriba_store ) {
-
-            set_file_path_to_store(
-                {
-                    format           => q{meta},
-                    id               => $sample_id,
-                    path             => $path,
-                    recipe_name      => $recipe_name,
-                    sample_info_href => $sample_info_href,
-                    tag              => $tag,
-                }
-            );
-        }
 
         submit_recipe(
             {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
-                dependency_method                 => q{sample_to_island},
-                job_id_chain                      => $job_id_chain,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
                 log                               => $log,

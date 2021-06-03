@@ -3,8 +3,6 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     - gzip_fastq
   # Parallel chain (branch)
-  - CHAIN_SPLITFASTQ:
-    - split_fastq_file
   - CHAIN_FASTQ:
     - fastqc_ar
   - CHAIN_MAIN:
@@ -43,7 +41,9 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
     - PARALLEL:
-      - bcftools_mpileup
+      - CHAIN_DEEPVAR:
+        - deepvariant
+        - glnexus_merge
       - GATK_HAPLOTYPECALLER:
         - gatk_haplotypecaller
         - gatk_genotypegvcfs
@@ -55,8 +55,6 @@ CHAIN_ALL:
       - peddy_ar
     - CHAIN_PLINK:
       - plink
-    - CHAIN_VINTEGRITY:
-      - variant_integrity_ar
     - CHAIN_RTEVAL:
       - rtg_vcfeval
     - CHAIN_GATKEVALALL:
@@ -64,7 +62,7 @@ CHAIN_ALL:
   - CHAIN_MAIN:
     - prepareforvariantannotationblock
     - rhocall_ar
-    - vt_ar
+    - bcftools_norm
     - frequency_filter
     - cadd_ar
     - varianteffectpredictor

@@ -1,5 +1,4 @@
 ---
-## Version: 1.0
 custom_default_parameters:
   associated_recipe:
     - mip
@@ -9,6 +8,7 @@ custom_default_parameters:
     - conda_path
     - exome_target_bed
     - infile_dirs
+    - install_config_file
     - pedigree_fam_file
     - picardtools_path
     - reference_dir
@@ -45,7 +45,7 @@ gatk_path:
 human_genome_reference:
   associated_recipe:
     - mip
-    - vt_ar
+    - bcftools_norm
   data_type: SCALAR
   default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
@@ -54,7 +54,7 @@ human_genome_reference:
   type: path
 human_genome_reference_file_endings:
   associated_recipe:
-    - vt_ar
+    - bcftools_norm
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -80,6 +80,8 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    bcftools_norm: 13
+    bcftools_core: 1
     cadd_ar: 13
     dragen_dna_align_vc: 1
     dragen_dna_joint_calling: 1
@@ -94,8 +96,6 @@ recipe_core_number:
     sv_vcfparser: 16
     variant_annotation: 13
     version_collect_ar: 1
-    vt_ar: 13
-    vt_core: 1
   type: mip
 recipe_memory:
   associated_recipe:
@@ -117,6 +117,8 @@ recipe_time:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    bcftools_norm: 10
+    bcftools_core: 10
     cadd_ar: 10
     dragen_dna_align_vc: 5
     dragen_dna_joint_calling: 5
@@ -135,8 +137,6 @@ recipe_time:
     varianteffectpredictor: 10
     vcfparser_ar: 5
     version_collect_ar: 1
-    vt_ar: 10
-    vt_core: 10
   type: mip
 ### Programs
 dragen_dna_align_vc:
@@ -287,6 +287,8 @@ sv_vcfparser:
   default: 1
   file_tag: _parsed
   outfile_suffix: ".vcf"
+  program_executables:
+    - mip
   type: recipe
 sv_vcfparser_add_all_mt_var:
   associated_recipe:
@@ -404,12 +406,6 @@ sv_reformat:
   program_executables:
     - picard
   type: recipe
-sv_rankvariant_binary_file:
-  associated_recipe:
-    - sv_reformat
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
 sv_reformat_remove_genes_file:
   associated_recipe:
     - sv_reformat
@@ -450,56 +446,42 @@ rhocall_frequency_file:
   is_reference: 1
   reference: reference_dir
   type: path
-## VT
-vt_ar:
+## Bcftools norm
+bcftools_norm:
   analysis_mode: case
   associated_recipe:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: _vt
+  file_tag: _norm
   program_executables:
-    - vt
+    - bcftools
     - bgzip
     - tabix
   outfile_suffix: ".vcf"
   type: recipe
-vt_decompose:
+bcftools_normalize:
   associated_recipe:
-    - vt_ar
-    - vt_core
+    - bcftools_norm
+    - bcftools_core
   data_type: SCALAR
   default: 1
   type: recipe_argument
-vt_normalize:
+bcftools_missing_alt_allele:
   associated_recipe:
-    - vt_ar
-    - vt_core
+    - bcftools_norm
   data_type: SCALAR
   default: 1
   type: recipe_argument
-vt_missing_alt_allele:
-  associated_recipe:
-    - vt_ar
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
-vt_uniq:
-  associated_recipe:
-    - vt_ar
-    - vt_core
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
-vt_core:
+bcftools_core:
   analysis_mode: case
   associated_recipe:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: _vt
+  file_tag: _norm
   program_executables:
-    - vt
+    - bcftools
     - bgzip
     - tabix
   type: recipe
@@ -660,6 +642,8 @@ vcfparser_ar:
   default: 1
   file_tag: _parsed
   outfile_suffix: ".vcf"
+  program_executables:
+    - mip
   type: recipe
 vcfparser_add_all_mt_var:
   associated_recipe:

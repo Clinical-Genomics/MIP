@@ -22,17 +22,6 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $DOUBLE_QUOTE $SPACE $TAB };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,24 +29,22 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Bwa}   => [qw{ bwa_mem2_mem }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Program::Bwa} => [qw{ bwa_mem2_mem }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Bwa qw{ bwa_mem2_mem };
 
-diag(   q{Test bwa_mem2_mem from Bwa.pm v}
-      . $MIP::Program::Bwa::VERSION
+diag(   q{Test bwa_mem2_mem from Bwa.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+Readonly my $BASES_TO_PROCESS => 100_000_000;
 
 ## Base arguments
 my @function_base_commands = qw{ bwa-mem2 mem };
@@ -106,6 +93,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    deterministic_alignment => {
+        input           => 1,
+        expected_output => q{-K} . $SPACE . $BASES_TO_PROCESS,
+    },
     infile_path => {
         input           => q{test_infile_1.fastq},
         expected_output => q{test_infile_1.fastq},

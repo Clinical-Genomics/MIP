@@ -21,17 +21,7 @@ use Modern::Perl qw{ 2018 };
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,8 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Language::Shell} => [qw{ build_shebang }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -50,8 +39,7 @@ BEGIN {
 use MIP::Language::Shell qw{ build_shebang };
 use MIP::Test::Writefile qw{ test_write_to_file };
 
-diag(   q{Test build_shebang from Shell.pm v}
-      . $MIP::Language::Shell::VERSION
+diag(   q{Test build_shebang from Shell.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

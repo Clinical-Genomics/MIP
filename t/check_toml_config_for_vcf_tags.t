@@ -22,18 +22,8 @@ use Test::Trap qw{ :stderr:output(systemsafe) };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
+use MIP::Test::Fixtures qw{ test_constants test_log };
 use MIP::Test::Writefile qw{ write_toml_config };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -43,7 +33,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Reference}      => [qw{ check_toml_config_for_vcf_tags }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -51,8 +41,7 @@ BEGIN {
 
 use MIP::Reference qw{ check_toml_config_for_vcf_tags };
 
-diag(   q{Test check_toml_config_for_vcf_tags from Reference.pm v}
-      . $MIP::Reference::VERSION
+diag(   q{Test check_toml_config_for_vcf_tags from Reference.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,11 +50,11 @@ diag(   q{Test check_toml_config_for_vcf_tags from Reference.pm v}
       . $EXECUTABLE_NAME );
 
 # Create log object
-my $log = test_log( { log_name => q{MIP}, no_screen => 0, } );
+test_log( { log_name => q{MIP}, no_screen => 0, } );
 
 my $cluster_reference_path = catdir( dirname($Bin), qw{ t data references } );
-my $toml_template_path     = catfile( $cluster_reference_path,
-    q{grch37_frequency_vcfanno_filter_config_template-v1.0-.toml} );
+my $toml_template_path =
+  catfile( $cluster_reference_path, q{grch37_vcfanno_config_template-v1.0-.toml} );
 my $toml_config_path =
   catfile( $cluster_reference_path, q{grch37_vcfanno_config-v1.0-.toml} );
 
@@ -77,12 +66,22 @@ write_toml_config(
         toml_template_path  => $toml_template_path,
     }
 );
-
 ## Given a toml config with all vcf tags present in vcf
 my %active_parameter_test = (
-    binary_path        => { bcftools => q{bcftools}, },
     variant_annotation => 1,
     vcfanno_config     => $toml_config_path,
+);
+my %test_process_return = (
+    buffers_ref   => [],
+    error_message => undef,
+    stderrs_ref   => [],
+    stdouts_ref   => [q{AF AF_POPMAX}],
+    success       => 1,
+);
+test_constants(
+    {
+        test_process_return_href => \%test_process_return,
+    }
 );
 
 ## Then all is ok
@@ -104,6 +103,12 @@ write_toml_config(
         test_reference_path => $cluster_reference_path,
         toml_config_path    => $toml_config_path,
         toml_template_path  => $toml_template_path,
+    }
+);
+$test_process_return{stdouts_ref} = [];
+test_constants(
+    {
+        test_process_return_href => \%test_process_return,
     }
 );
 

@@ -17,25 +17,14 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Active_parameter qw{ update_with_dynamic_config_parameters };
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Io::Read qw{ read_from_file };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-use MIP::Update::Parameters qw{ update_with_dynamic_config_parameters };
-
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 BEGIN {
 
@@ -45,7 +34,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Vep}            => [qw{ check_vep_plugin }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -53,8 +42,7 @@ BEGIN {
 
 use MIP::Vep qw{ check_vep_plugin };
 
-diag(   q{Test check_vep_plugin from Vep.pm v}
-      . $MIP::Vep::VERSION
+diag(   q{Test check_vep_plugin from Vep.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -62,9 +50,9 @@ diag(   q{Test check_vep_plugin from Vep.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { no_screen => 1, } );
+test_log( { no_screen => 1, } );
 
-## Read config for most up to date format
+## Given a config with vep plugins
 my %rd_dna_config = read_from_file(
     {
         format => q{yaml},
@@ -79,6 +67,7 @@ update_with_dynamic_config_parameters(
         dynamic_parameter_href => \%dynamic_parameter,
     }
 );
+
 ## Given an undefined vep plugin hash
 my %vep_plugin;
 
@@ -89,6 +78,7 @@ my $is_not_ok = check_vep_plugin(
         vep_plugins_dir_path => $rd_dna_config{vep_plugins_dir_path},
     }
 );
+
 ## Then there is nothing to check - return false
 is( $is_not_ok, 0, q{Nothing to check} );
 

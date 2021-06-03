@@ -16,22 +16,11 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_mip_hashes test_log };
 
 BEGIN {
 
@@ -42,7 +31,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Processmanagement::Slurm_processes} =>
           [qw{ slurm_submit_job_case_id_dependency_add_to_sample }],
-        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -52,8 +41,7 @@ use MIP::Processmanagement::Slurm_processes
   qw{ slurm_submit_job_case_id_dependency_add_to_sample };
 
 diag(
-    q{Test slurm_submit_job_case_id_dependency_add_to_sample from Slurm_processes.pm v}
-      . $MIP::Processmanagement::Slurm_processes::VERSION
+    q{Test slurm_submit_job_case_id_dependency_add_to_sample from Slurm_processes.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -86,11 +74,8 @@ slurm_submit_job_case_id_dependency_add_to_sample(
     }
 );
 
-## Then add job_id returned to PAN
-my $expected_return = q{1234};
-is( $job_id{PAN}{PAN}[0], $expected_return, q{Added job_id to PAN } );
-
 ## Then add job_id returned to ALL
+my $expected_return = q{1234};
 is( $job_id{ALL}{ALL}[0], $expected_return, q{Added job_id to ALL } );
 
 ## Then submitted job id added to sample id

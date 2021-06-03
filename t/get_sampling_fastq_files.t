@@ -16,22 +16,11 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_mip_hashes };
 
 BEGIN {
 
@@ -40,17 +29,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Gender}  => [qw{ get_sampling_fastq_files }],
-        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::File_info}      => [qw{ get_sampling_fastq_files }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::Gender qw{ get_sampling_fastq_files };
+use MIP::File_info qw{ get_sampling_fastq_files };
 
-diag(   q{Test get_sampling_fastq_files from Gender.pm v}
-      . $MIP::Parse::Gender::VERSION
+diag(   q{Test get_sampling_fastq_files from File_info.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -61,20 +49,20 @@ diag(   q{Test get_sampling_fastq_files from Gender.pm v}
 ## Given a sample id
 my $sample_id = q{ADM1059A3};
 
-## When no files to sample from
+## Given no files to sample from
 my %file_info;
 
+## When getting sample of fastq file
 my ( $return, ) = get_sampling_fastq_files(
     {
         file_info_sample_href => \%{ $file_info{$sample_id} },
-        infile_paths_ref      => [],
     }
 );
 
 ## Then return undef
 is( $return, undef, q{No file to sample from} );
 
-## When sequence_run_type is interleaved
+## Given an interleaved sequence_run_type
 %file_info = test_mip_hashes(
     {
         mip_hash_name => q{file_info},
@@ -84,10 +72,10 @@ is( $return, undef, q{No file to sample from} );
 push @{ $file_info{$sample_id}{no_direction_infile_prefixes} }, q{ADM1059A3};
 $file_info{$sample_id}{ADM1059A3}{sequence_run_type} = q{interleaved};
 
+## When getting sample of fastq file
 my ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
     {
         file_info_sample_href => \%{ $file_info{$sample_id} },
-        infile_paths_ref      => $file_info{$sample_id}{mip_infiles},
     }
 );
 my @expected_fastq_files = qw{ ADM1059A3.fastq };
@@ -98,14 +86,14 @@ is( $is_interleaved_fastq, 1, q{Is interleaved file} );
 ## Then return fastq file
 is_deeply( \@fastq_files, \@expected_fastq_files, q{Got interleaved fastq file} );
 
-## When sequence_run_type is paired-end
+## Given a paired-end sequence_run_type
 push @{ $file_info{$sample_id}{mip_infiles} }, q{ADM1059A3.fastq};
 $file_info{$sample_id}{ADM1059A3}{sequence_run_type} = q{paired-end};
 
+## When getting sample of fastq file
 ( $is_interleaved_fastq, @fastq_files ) = get_sampling_fastq_files(
     {
         file_info_sample_href => \%{ $file_info{$sample_id} },
-        infile_paths_ref      => $file_info{$sample_id}{mip_infiles},
     }
 );
 push @expected_fastq_files, q{ADM1059A3.fastq};

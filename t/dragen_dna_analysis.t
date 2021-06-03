@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,16 +32,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Dragen} => [qw{ dragen_dna_analysis }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Dragen qw{ dragen_dna_analysis };
 
-diag(   q{Test dragen_dna_analysis from Dragen.pm v}
-      . $MIP::Program::Dragen::VERSION
+diag(   q{Test dragen_dna_analysis from Dragen.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

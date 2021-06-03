@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.02;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       add_qc_data_evaluation_info
@@ -34,12 +30,14 @@ BEGIN {
       add_to_qc_data
       get_qc_data_case_recipe_attributes
       get_qc_data_sample_recipe_attributes
+      get_qc_metric
       get_qc_recipe_data
       get_regexp_qc_data
       parse_qc_recipe_data
       parse_qc_recipe_table_data
       parse_regexp_hash_and_collect
       set_header_metrics_to_qc_data
+      set_metrics_to_store
       set_qc_data_recipe_info
     };
 }
@@ -151,8 +149,7 @@ sub add_qc_data_recipe_info {
     if ( $sample_id and $infile ) {
 
         ## Add to array
-        push @{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe_name}{$key} },
-          $value;
+        push @{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe_name}{$key} }, $value;
         return;
     }
 
@@ -335,6 +332,16 @@ sub add_to_qc_data {
                 value        => $data_metric,
             }
         );
+        set_metrics_to_store(
+            {
+                id           => $sample_id,
+                input        => $infile,
+                metric_name  => $attribute,
+                metric_value => $data_metric,
+                qc_data_href => $qc_data_href,
+                recipe_name  => $recipe,
+            }
+        );
     }
     elsif ( not exists $qc_header_href->{$recipe} ) {
         ## Write array to qc_data for metrics without header
@@ -350,6 +357,16 @@ sub add_to_qc_data {
                     recipe_name  => $recipe,
                     sample_id    => $sample_id,
                     value        => $data_metric,
+                }
+            );
+            set_metrics_to_store(
+                {
+                    id           => $sample_id,
+                    input        => $infile,
+                    metric_name  => $attribute,
+                    metric_value => $data_metric,
+                    qc_data_href => $qc_data_href,
+                    recipe_name  => $recipe,
                 }
             );
         }
@@ -465,6 +482,81 @@ sub get_qc_data_sample_recipe_attributes {
 
     ## Get recipe attribute hash
     return %{ $qc_data_href->{sample}{$sample_id}{$infile}{$recipe_name} };
+}
+
+sub get_qc_metric {
+
+## Function : Get metric and meta data in qc_data hash
+## Returns  : @metrics
+## Arguments: $header       => Metrics table header
+##          : $id           => Id associated with metric (sample_id|case_id)
+##          : $input        => Input source used to generate metric from
+##          : $metric_name  => Name of metric
+##          : $metric_value => Value to store
+##          : $qc_data_href => Qc_data hash {REF}
+##          : $recipe_name  => Recipe to set attributes for
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $header;
+    my $id;
+    my $input;
+    my $metric_name;
+    my $metric_value;
+    my $qc_data_href;
+    my $recipe_name;
+
+    my $tmpl = {
+        header => {
+            store       => \$header,
+            strict_type => 1,
+        },
+        id => {
+            store       => \$id,
+            strict_type => 1,
+        },
+        input => {
+            store       => \$input,
+            strict_type => 1,
+        },
+        metric_name => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$metric_name,
+        },
+        metric_value => {
+            store       => \$metric_value,
+            strict_type => 1,
+        },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @metrics;
+
+    foreach my $metric_href ( @{ $qc_data_href->{metrics} } ) {
+
+        if (    $metric_href->{step} eq $recipe_name
+            and $metric_href->{id} eq $id
+            and $metric_href->{name} eq $metric_name )
+        {
+            push @metrics, $metric_href;
+        }
+    }
+    return @metrics;
 }
 
 sub get_qc_recipe_data {
@@ -644,8 +736,7 @@ sub parse_qc_recipe_data {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Qc_data
-      qw{ add_to_qc_data parse_qc_recipe_table_data set_header_metrics_to_qc_data };
+    use MIP::Qc_data qw{ add_to_qc_data parse_qc_recipe_table_data set_header_metrics_to_qc_data };
 
   REG_EXP_ATTRIBUTE:
     for my $attribute ( keys %{ $regexp_href->{$recipe} } ) {
@@ -787,6 +878,17 @@ sub parse_qc_recipe_table_data {
                         recipe_name       => $recipe,
                         sample_id         => $sample_id,
                         value             => $data_metric,
+                    }
+                );
+                set_metrics_to_store(
+                    {
+                        header       => $regexp_key,
+                        id           => $sample_id,
+                        input        => $infile,
+                        metric_name  => $qc_header,
+                        metric_value => $data_metric,
+                        qc_data_href => $qc_data_href,
+                        recipe_name  => $recipe,
                     }
                 );
             }
@@ -1070,4 +1172,82 @@ sub set_qc_data_recipe_info {
     return;
 }
 
+sub set_metrics_to_store {
+
+## Function : Set metric and meta data in qc_data hash
+## Returns  :
+## Arguments: $header       => Metrics table header
+##          : $id           => Id associated with metric (sample_id|case_id)
+##          : $input        => Input source used to generate metric from
+##          : $metric_name  => Name of metric
+##          : $metric_value => Value to store
+##          : $qc_data_href => Qc_data hash {REF}
+##          : $recipe_name  => Recipe to set attributes for
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $header;
+    my $id;
+    my $input;
+    my $metric_name;
+    my $metric_value;
+    my $qc_data_href;
+    my $recipe_name;
+
+    my $tmpl = {
+        header => {
+            store       => \$header,
+            strict_type => 1,
+        },
+        id => {
+            store       => \$id,
+            strict_type => 1,
+        },
+        input => {
+            store       => \$input,
+            strict_type => 1,
+        },
+        metric_name => {
+            defined     => 1,
+            required    => 1,
+            strict_type => 1,
+            store       => \$metric_name,
+        },
+        metric_value => {
+            store       => \$metric_value,
+            strict_type => 1,
+        },
+        qc_data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_data_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return if ( not defined $metric_value );
+
+    ## Build metric meta data hash
+    my %metric_info = (
+        header => $header,
+        id     => $id,
+        input  => $input,
+        name   => $metric_name,
+        step   => $recipe_name,
+        value  => $metric_value,
+    );
+
+    ## Set metric according to metric info
+    push @{ $qc_data_href->{metrics} }, {%metric_info};
+
+    return;
+}
 1;

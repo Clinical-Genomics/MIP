@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_star_fusion_prerequisites };
@@ -145,11 +141,11 @@ sub build_star_fusion_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mkdir };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Star_fusion qw{ star_fusion_prep_genome_lib };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -158,11 +154,10 @@ sub build_star_fusion_prerequisites {
     Readonly my $PROCESSING_TIME   => 30;
 
     ## Unpack parameters
-    my $job_id_chain    = $parameter_href->{$recipe_name}{chain};
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -182,12 +177,11 @@ sub build_star_fusion_prerequisites {
             directory_id                    => $case_id,
             filehandle                      => $filehandle,
             job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
+            memory_allocation               => $recipe{memory},
             recipe_directory                => $recipe_name,
             recipe_name                     => $recipe_name,
             process_time                    => $PROCESSING_TIME,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            source_environment_commands_ref => $recipe{load_env_ref},
         }
     );
 
@@ -199,9 +193,8 @@ sub build_star_fusion_prerequisites {
     say {$filehandle} q{## Building Star-Fusion dir files};
     ## Get parameters
     my $star_fusion_directory_tmp =
-      catdir( $active_parameter_href->{star_fusion_reference_genome}
-          . $UNDERSCORE
-          . $random_integer );
+      catdir(
+        $active_parameter_href->{star_fusion_reference_genome} . $UNDERSCORE . $random_integer );
 
     # Create temp dir
     gnu_mkdir(
@@ -233,8 +226,7 @@ sub build_star_fusion_prerequisites {
   PREREQ:
     foreach my $suffix ( @{$parameter_build_suffixes_ref} ) {
 
-        my $intended_file_path =
-          $active_parameter_href->{star_fusion_reference_genome} . $suffix;
+        my $intended_file_path = $active_parameter_href->{star_fusion_reference_genome} . $suffix;
 
         ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
         check_exist_and_move_file(
@@ -248,7 +240,7 @@ sub build_star_fusion_prerequisites {
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         submit_recipe(
             {
@@ -257,7 +249,7 @@ sub build_star_fusion_prerequisites {
                 case_id            => $case_id,
                 job_id_href        => $job_id_href,
                 log                => $log,
-                job_id_chain       => $job_id_chain,
+                job_id_chain       => $recipe{job_id_chain},
                 recipe_file_path   => $recipe_file_path,
                 sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
                 submission_profile => $active_parameter_href->{submission_profile},

@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
@@ -22,9 +21,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_capture_file_prerequisites };
@@ -136,12 +132,12 @@ sub build_capture_file_prerequisites {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_resources };
     use MIP::Program::Gnu::Coreutils qw{ gnu_rm gnu_cat gnu_ln };
     use MIP::Language::Shell qw{ check_exist_and_move_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Picardtools qw{ picardtools_createsequencedictionary };
     use MIP::Program::Picardtools qw{ picardtools_intervallisttools };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Constants
@@ -154,11 +150,11 @@ sub build_capture_file_prerequisites {
     ## Unpack parameters
     my $interval_list_suffix        = $parameter_build_suffixes_ref->[0];
     my $padded_interval_list_suffix = $parameter_build_suffixes_ref->[1];
-    my $recipe_mode                 = $active_parameter_href->{$recipe_name};
-    my %recipe_resource             = get_recipe_resources(
+    my %recipe                      = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
-            recipe_name           => q{mip},
+            parameter_href        => $parameter_href,
+            recipe_name           => $recipe_name,
         }
     );
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
@@ -178,10 +174,9 @@ sub build_capture_file_prerequisites {
                 filehandle                      => $filehandle,
                 directory_id                    => $case_id,
                 job_id_href                     => $job_id_href,
-                log                             => $log,
                 recipe_directory                => $recipe_name,
                 recipe_name                     => $recipe_name,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
+                source_environment_commands_ref => $recipe{load_env_ref},
             }
         );
     }
@@ -190,9 +185,7 @@ sub build_capture_file_prerequisites {
     my $random_integer = int rand $MAX_RANDOM_NUMBER;
 
   BED_FILE:
-    foreach
-      my $exome_target_bed_file ( keys %{ $active_parameter_href->{exome_target_bed} } )
-    {
+    foreach my $exome_target_bed_file ( keys %{ $active_parameter_href->{exome_target_bed} } ) {
 
         $log->warn( q{Will try to create required }
               . $exome_target_bed_file
@@ -200,16 +193,14 @@ sub build_capture_file_prerequisites {
               . $recipe_name );
 
         ## Add random integer
-        my $exome_target_bed_file_random =
-          $exome_target_bed_file . $UNDERSCORE . $random_integer;
+        my $exome_target_bed_file_random = $exome_target_bed_file . $UNDERSCORE . $random_integer;
 
         say {$filehandle} q{## CreateSequenceDictionary from reference};
 
         picardtools_createsequencedictionary(
             {
                 filehandle => $filehandle,
-                java_jar =>
-                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_jar   => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx2g},
                 outfile_path         => $exome_target_bed_file_random . $DOT . q{dict},
@@ -223,10 +214,8 @@ sub build_capture_file_prerequisites {
         gnu_cat(
             {
                 filehandle       => $filehandle,
-                infile_paths_ref => [
-                    $exome_target_bed_file_random . $DOT . q{dict},
-                    $exome_target_bed_file
-                ],
+                infile_paths_ref =>
+                  [ $exome_target_bed_file_random . $DOT . q{dict}, $exome_target_bed_file ],
                 stdoutfile_path => $exome_target_bed_file_random . $DOT . q{dict_body},
             }
         );
@@ -254,8 +243,7 @@ sub build_capture_file_prerequisites {
             {
                 filehandle       => $filehandle,
                 infile_paths_ref => \@infile_paths_ref,
-                java_jar =>
-                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx2g},
                 outfile_path         => $interval_list_outfile_path,
@@ -285,16 +273,12 @@ sub build_capture_file_prerequisites {
         say {$filehandle} q{#Create} . $padded_interval_list_suffix;
 
         my $padded_interval_list_outfile_path =
-            $exome_target_bed_file_random
-          . $DOT
-          . q{dict_body_col_5}
-          . $padded_interval_list_suffix;
+          $exome_target_bed_file_random . $DOT . q{dict_body_col_5} . $padded_interval_list_suffix;
         picardtools_intervallisttools(
             {
                 filehandle       => $filehandle,
                 infile_paths_ref => \@infile_paths_ref,
-                java_jar =>
-                  catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+                java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 memory_allocation    => q{Xmx2g},
                 outfile_path         => $padded_interval_list_outfile_path,
@@ -307,10 +291,7 @@ sub build_capture_file_prerequisites {
 
         $intended_file_path = $exome_target_bed_file . $padded_interval_list_suffix;
         $temporary_file_path =
-            $exome_target_bed_file_random
-          . $DOT
-          . q{dict_body_col_5}
-          . $padded_interval_list_suffix;
+          $exome_target_bed_file_random . $DOT . q{dict_body_col_5} . $padded_interval_list_suffix;
 
         ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
         check_exist_and_move_file(
@@ -351,7 +332,7 @@ sub build_capture_file_prerequisites {
 
         close $filehandle;
 
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             submit_recipe(
                 {
@@ -397,8 +378,7 @@ sub _reformat_capture_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Remove unnecessary info and reformat
-    say {$filehandle}
-      q{#Remove target annotations, 'track', 'browse' and keep only 5 columns};
+    say {$filehandle} q{#Remove target annotations, 'track', 'browse' and keep only 5 columns};
 
     ## Execute perl
     print {$filehandle} q?perl -nae '?;
@@ -417,15 +397,15 @@ sub _reformat_capture_file {
 
     ## Else print reformated line to stdout
     print {$filehandle}
-q?else {print @F[0], "\t", (@F[1] + 1), "\t", @F[2], "\t", "+", "\t", "-", "\n";}' ?;
+      q?else {print @F[0], "\t", (@F[1] + 1), "\t", @F[2], "\t", "+", "\t", "-", "\n";}' ?;
 
     ## Infile
     print {$filehandle} $exome_target_bed_file_random . $DOT . q{dict_body} . $SPACE;
 
     ## Write to
     print {$filehandle} q{>} . $SPACE;
-    say   {$filehandle} $exome_target_bed_file_random . $DOT
-      . q{dict_body_col_5.interval_list}, $NEWLINE;
+    say {$filehandle} $exome_target_bed_file_random . $DOT . q{dict_body_col_5.interval_list},
+      $NEWLINE;
 
     return;
 }

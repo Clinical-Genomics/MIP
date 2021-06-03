@@ -5,10 +5,10 @@ use Carp;
 use charnames qw{ :full :short };
 use Cwd qw{ abs_path };
 use English qw{ -no_match_vars };
+use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,24 +17,21 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants qw{ $DOT $FORWARD_SLASH $LOG_NAME $SINGLE_QUOTE };
+use MIP::Constants qw{ $DOT $EMPTY_STR $FORWARD_SLASH $LOG_NAME $SINGLE_QUOTE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.06;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_allowed_temp_directory
       check_filesystem_objects_existance
       check_filesystem_objects_and_index_existance
-      check_gzipped
       get_absolute_path
       get_file_names
       get_file_line_by_line
+      remove_file_path_suffix
     };
 }
 
@@ -128,29 +125,18 @@ sub check_filesystem_objects_existance {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## For potential error messages
-    my $error_msg;
+    use MIP::Validate::Data qw{ %constraint };
 
-    ## Check existance of directory
-    if ( $object_type eq q{directory} ) {
+    my %exists_constraint_map = (
+        directory => q{dir_exists},
+        file      => q{plain_file_exists},
+    );
 
-        ## Check existence of supplied directory
-        ## Directory was found
-        return 1 if ( -d $object_name );
+    my $constraint = $exists_constraint_map{$object_type};
+    return 1 if ( $constraint{$constraint}->($object_name) );
 
-        $error_msg =
-          q{Could not find intended } . $parameter_name . q{ directory: } . $object_name;
-        return ( 0, $error_msg );
-    }
-    ## Then object type must be file
-
-    ## Check existence of supplied file
-    ## File was found
-    return 1 if ( -f $object_name );
-
-    $error_msg =
-      q{Could not find intended } . $parameter_name . q{ file: } . $object_name;
-    return 0, $error_msg;
+    my $error_msg = qq{Could not find intended $parameter_name $object_type: $object_name};
+    return ( 0, $error_msg );
 }
 
 sub check_filesystem_objects_and_index_existance {
@@ -253,35 +239,6 @@ sub check_filesystem_objects_and_index_existance {
         }
     }
     return 1;
-}
-
-sub check_gzipped {
-
-## Function : Check if a file is gzipped.
-## Returns  : "0 (=uncompressed)| 1 (=compressed)"
-## Arguments: $file_name => File name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name;
-
-    my $tmpl = {
-        file_name => {
-            defined     => 1,
-            required    => 1,
-            store       => \$file_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    ## File gzipped
-    return 1 if ( $file_name =~ / [.]gz$ /xms );
-
-    ## File not gzipped
-    return 0;
 }
 
 sub get_absolute_path {
@@ -422,6 +379,47 @@ sub get_file_line_by_line {
 
     my @lines = path($path)->lines_utf8( { chomp => $chomp, } );
     return \@lines;
+}
+
+sub remove_file_path_suffix {
+
+## Function : Parse file suffixes in file path. Removes suffix if matching else return undef
+## Returns  : undef | $file_path_no_suffix
+## Arguments: $file_path         => File path
+##          : $file_suffixes_ref => File suffix to be removed
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+    my $file_suffixes_ref;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+        file_suffixes_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$file_suffixes_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my ( $file_name_nosuffix, $dir, $suffix ) =
+      fileparse( $file_path, @{$file_suffixes_ref} );
+
+    $dir = $dir eq q{./} ? $EMPTY_STR : $dir;
+
+    return $dir . $file_name_nosuffix if ( $file_name_nosuffix and $suffix );
+
+    return;
 }
 
 1;

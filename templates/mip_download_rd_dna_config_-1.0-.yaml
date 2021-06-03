@@ -26,8 +26,8 @@ reference:
   chromograph_cytoband:
     - v1.0
   clinvar:
-    - 20200728
     - 20200905
+    - 20210415
   dbnsfp:
     - 3.5a
     - 4.0b2a
@@ -85,6 +85,7 @@ reference:
     - r2.0.1
     - r2.1.1
     - r2.1.1_sv
+    - r3.0
   gnomad_pli_per_gene:
     - r2.1.1
   hapmap:
@@ -92,27 +93,33 @@ reference:
   human_reference:
     - decoy_5
     - assembly38
+    - assembly38_alt
   manta_call_regions:
     - 1.0
   mills_and_1000g_indels:
     - gold_standard_indels
   rank_model:
-    - v1.30
+    - v0.1
     - v1.31
+    - v1.32
   reduced_penetrance:
     - 2017
   scout_exons:
+    - 200917
     - 201701
   sv_vcfanno_config:
+    - v0.1
     - v1.2
     - v1.3
   svrank_model:
+    - v0.1
     - v1.8
   vcf2cytosure_blacklist_regions:
     - 1.0
   vcfanno_config:
-    - v1.12
-    - v1.13
+    - v0.1
+    - v1.14
+    - v1.15
   vcfanno_functions:
     - v1.0
 reference_feature:
@@ -132,6 +139,10 @@ reference_feature:
         file_index: Homo_sapiens_assembly38.fasta.fai
         outfile: grch38_homo_sapiens_-assembly-.fasta
         outfile_index: grch38_homo_sapiens_-assembly-.fasta.fai
+        url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
+      assembly38_alt:
+        file: Homo_sapiens_assembly38.fasta.64.alt
+        outfile: grch38_homo_sapiens_-assembly-.fasta.alt
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   1000g_indels:
     grch37:
@@ -210,9 +221,7 @@ reference_feature:
         file_index: 1000G_phase1.snps.high_confidence.hg38.vcf.gz.tbi
         outfile: grch38_1000g_snps_high_confidence_-phase1-.vcf.gz
         outfile_index: grch38_1000g_snps_high_confidence_-phase1-.vcf.gz.tbi
-        outfile_decompress: gzip
-        url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
-        user: gsapubftp-anonymous
+        url_prefix: https://storage.googleapis.com/gcp-public-data--broad-references/hg38/v0/
   cadd_offline_annotations:
     grch37:
       v1.6:
@@ -258,14 +267,9 @@ reference_feature:
       v1.6:
         file: whole_genome_SNVs.tsv.gz
         file_check: whole_genome_SNVs.tsv.gz.md5
-        file_index: whole_genome_SNVs.tsv.gz.tbi
-        file_index_check: whole_genome_SNVs.tsv.gz.tbi.md5
         outfile: grch37_cadd_whole_genome_snvs_-v1.6-.tsv.gz
         outfile_check: grch37_cadd_whole_genome_snvs_-v1.6-.tsv.gz.md5
         outfile_check_method: md5sum
-        outfile_index: grch37_cadd_whole_genome_snvs_-v1.6-.tsv.gz.tbi
-        outfile_index_check: grch37_cadd_whole_genome_snvs_-v1.6-.tsv.gz.tbi.md5
-        outfile_index_check_method: md5sum
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh37/
     grch38:
       v1.5:
@@ -283,14 +287,9 @@ reference_feature:
       v1.6:
         file: whole_genome_SNVs.tsv.gz
         file_check: whole_genome_SNVs.tsv.gz.md5
-        file_index: whole_genome_SNVs.tsv.gz.tbi
-        file_index_check: whole_genome_SNVs.tsv.gz.tbi.md5
         outfile: grch38_cadd_whole_genome_snvs_-v1.6-.tsv.gz
         outfile_check: grch38_cadd_whole_genome_snvs_-v1.6-.tsv.gz.md5
         outfile_check_method: md5sum
-        outfile_index: grch38_cadd_whole_genome_snvs_-v1.6-.tsv.gz.tbi
-        outfile_index_check: grch38_cadd_whole_genome_snvs_-v1.6-.tsv.gz.tbi.md5
-        outfile_index_check_method: md5sum
         url_prefix: https://krishna.gs.washington.edu/download/CADD/v1.6/GRCh38/
   chromograph_cytoband:
     grch37:
@@ -311,15 +310,6 @@ reference_feature:
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
   clinvar:
     grch37:
-      20200728:
-        file: clinvar_20200728.vcf.gz
-        file_check: clinvar_20200728.vcf.gz.md5
-        file_index: clinvar_20200728.vcf.gz.tbi
-        outfile: grch37_clinvar_-20200728-.vcf.gz
-        outfile_check: grch37_clinvar_-20200728-.vcf.gz.md5
-        outfile_index: grch37_clinvar_-20200728-.vcf.gz.tbi
-        outfile_check_method: md5sum
-        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2020/
       20200905:
         file: clinvar_20200905.vcf.gz
         file_check: clinvar_20200905.vcf.gz.md5
@@ -329,16 +319,16 @@ reference_feature:
         outfile_index: grch37_clinvar_-20200905-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/archive_2.0/2020/
-    grch38:
-      20200728:
-        file: clinvar_20200728.vcf.gz
-        file_check: clinvar_20200728.vcf.gz.md5
-        file_index: clinvar_20200728.vcf.gz.tbi
-        outfile: grch38_clinvar_-20200728-.vcf.gz
-        outfile_check: grch38_clinvar_-20200728-.vcf.gz.md5
-        outfile_index: grch38_clinvar_-20200728-.vcf.gz.tbi
+      20210415:
+        file: clinvar_20210415.vcf.gz
+        file_check: clinvar_20210415.vcf.gz.md5
+        file_index: clinvar_20210415.vcf.gz.tbi
+        outfile: grch37_clinvar_-20210415-.vcf.gz
+        outfile_check: grch37_clinvar_-20210415-.vcf.gz.md5
+        outfile_index: grch37_clinvar_-20210415-.vcf.gz.tbi
         outfile_check_method: md5sum
-        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2020/
+        url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
+    grch38:
       20200905:
         file: clinvar_20200905.vcf.gz
         file_check: clinvar_20200905.vcf.gz.md5
@@ -348,6 +338,15 @@ reference_feature:
         outfile_index: grch38_clinvar_-20200905-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2020/
+      20210415:
+        file: clinvar_20210415.vcf.gz
+        file_check: clinvar_20210415.vcf.gz.md5
+        file_index: clinvar_20210415.vcf.gz.tbi
+        outfile: grch38_clinvar_-20210415-.vcf.gz
+        outfile_check: grch38_clinvar_-20210415-.vcf.gz.md5
+        outfile_index: grch38_clinvar_-20210415-.vcf.gz.tbi
+        outfile_check_method: md5sum
+        url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
   dbnsfp:
     grch37:
       3.5a:
@@ -405,6 +404,12 @@ reference_feature:
         outfile_index: grch38_variant_-gold_standard_dbsnp-.vcf.gz.tbi
         url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/beta/
         user: gsapubftp-anonymous
+      138:
+        file: Homo_sapiens_assembly38.dbsnp138.vcf
+        file_index: Homo_sapiens_assembly38.dbsnp138.vcf.idx
+        outfile: grch38_dbsnp_-138-.vcf
+        outfile_index: grch38_dbsnp_-138-.vcf.idx
+        url_prefix: https://storage.googleapis.com/gcp-public-data--broad-references/hg38/v0/
       146:
         file: dbsnp_146.hg38.vcf.gz
         file_index: dbsnp_146.hg38.vcf.gz.tbi
@@ -456,8 +461,8 @@ reference_feature:
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/disease_loci/ExpansionHunter-v3.0.1/
       3.1.2:
-        file: variant_catalog_grch38.json
-        file_check: variant_catalog_grch38.json.md5
+        file: variant_catalog_hg38.json
+        file_check: variant_catalog_hg38.json.md5
         outfile: grch38_expansionhunter_variant_catalog_-3.1.2-.json
         outfile_check: grch38_expansionhunter_variant_catalog_-3.1.2-.json.md5
         outfile_check_method: md5sum
@@ -564,9 +569,14 @@ reference_feature:
       20150801:
         file: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz
         file_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.md5
+        file_index: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.tbi
+        file_index_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.tbi.md5
         outfile: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz
         outfile_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.md5
         outfile_check_method: md5sum
+        outfile_index: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.tbi
+        outfile_index_check: grch37_genbank_haplogroup_-2015-08-01-.vcf.gz.tbi.md5
+        outfile_index_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/frequency/
   genomic_superdups:
     grch37:
@@ -685,8 +695,6 @@ reference_feature:
         file_index: gnomad_v2_sv.sites.vcf.gz.tbi
         outfile: grch37_gnomad.genomes_-r2.1.1_sv-.vcf.gz
         outfile_index: grch37_gnomad.genomes_-r2.1.1_sv-.vcf.gz.tbi
-        outfile_decompress: gzip
-        outfile_index_decompress: gzip
         url_prefix: https://storage.googleapis.com/gnomad-public/papers/2019-sv/
     grch38:
       r2.1.1:
@@ -695,6 +703,12 @@ reference_feature:
         outfile: grch38_gnomad.genomes_liftover-r2.1.1-.vcf.gz
         outfile_index: grch38_gnomad.genomes_liftover-r2.1.1-.vcf.gz.tbi
         url_prefix: https://storage.googleapis.com/gnomad-public/release/2.1.1/liftover_grch38/vcf/genomes/
+      r3.0:
+        file: gnomad.genomes.r3.0.sites.vcf.bgz
+        file_index: gnomad.genomes.r3.0.sites.vcf.bgz.tbi
+        outfile: grch38_gnomad.genomes_-r3.0-.vcf.bgz
+        outfile_index: grch38_gnomad.genomes_-r3.0-.vcf.bgz.tbi
+        url_prefix: https://storage.googleapis.com/gnomad-public/release/3.0/vcf/genomes/
   gnomad_pli_per_gene:
     grch37:
       r2.1.1:
@@ -764,18 +778,26 @@ reference_feature:
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   rank_model:
     grch37:
-      v1.30:
-        file: rank_model_-v1.30-.ini
-        file_check: rank_model_-v1.30-.ini.md5
-        outfile: rank_model_-v1.30-.ini
-        outfile_check: rank_model_-v1.30-.ini.md5
-        outfile_check_method: md5sum
-        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
       v1.31:
         file: rank_model_-v1.31-.ini
         file_check: rank_model_-v1.31-.ini.md5
         outfile: rank_model_-v1.31-.ini
         outfile_check: rank_model_-v1.31-.ini.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
+      v1.32:
+        file: rank_model_-v1.32-.ini
+        file_check: rank_model_-v1.32-.ini.md5
+        outfile: rank_model_-v1.32-.ini
+        outfile_check: rank_model_-v1.32-.ini.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
+    grch38:
+      v0.1:
+        file: grch38_rank_model_-v0.1-.ini
+        file_check: grch38_rank_model_-v0.1-.ini.md5
+        outfile: grch38_rank_model_-v0.1-.ini
+        outfile_check: grch38_rank_model_-v0.1-.ini.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
   reduced_penetrance:
@@ -794,6 +816,13 @@ reference_feature:
         outfile: grch37_scout_exons_-2017-01-.bed
         outfile_check: grch37_scout_exons_-2017-01-.bed.md5
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/gene_panel/
+    grch38:
+      200917:
+        file: grch38_scout_exons_-2020-09-17-.bed
+        file_check: grch38_scout_exons_-2020-09-17-.bed.md5
+        outfile: grch38_scout_exons_-2020-09-17-.bed
+        outfile_check: grch378_scout_exons_-2020-09-17-.bed.md5
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/gene_panel/
   sv_vcfanno_config:
     grch37:
       v1.2:
@@ -810,6 +839,14 @@ reference_feature:
         outfile_check: grch37_sv_vcfanno_config_-v1.3-.toml.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
+    grch38:
+      v0.1:
+        file: grch38_sv_vcfanno_config_-v0.1-.toml
+        file_check: grch38_sv_vcfanno_config_-v0.1-.toml.md5
+        outfile: grch38_sv_vcfanno_config_-v0.1-.toml
+        outfile_check: grch38_sv_vcfanno_config_-v0.1-.toml.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
   svrank_model:
     grch37:
       v1.8:
@@ -817,6 +854,14 @@ reference_feature:
         file_check: svrank_model_-v1.8-.ini.md5
         outfile: svrank_model_-v1.8-.ini
         outfile_check: svrank_model_-v1.8-.ini.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
+    grch38:
+      v0.1:
+        file: grch38_sv_rank_model_-v0.1-.ini
+        file_check: grch38_sv_rank_model_-v0.1-.ini.md5
+        outfile: grch38_sv_rank_model_-v0.1-.ini
+        outfile_check: grch38_sv_rank_model_-v0.1-.ini.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
   vcf2cytosure_blacklist_regions:
@@ -830,22 +875,38 @@ reference_feature:
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
   vcfanno_config:
     grch37:
-      v1.12:
-        file: grch37_vcfanno_config_-v1.12-.toml
-        file_check: grch37_vcfanno_config_-v1.12-.toml.md5
-        outfile: grch37_vcfanno_config_-v1.12-.toml
-        outfile_check: grch37_vcfanno_config_-v1.12-.toml.md5
+      v1.14:
+        file: grch37_vcfanno_config_-v1.14-.toml
+        file_check: grch37_vcfanno_config_-v1.14-.toml.md5
+        outfile: grch37_vcfanno_config_-v1.14-.toml
+        outfile_check: grch37_vcfanno_config_-v1.14-.toml.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
-      v1.13:
-        file: grch37_vcfanno_config_-v1.13-.toml
-        file_check: grch37_vcfanno_config_-v1.13-.toml.md5
-        outfile: grch37_vcfanno_config_-v1.13-.toml
-        outfile_check: grch37_vcfanno_config_-v1.13-.toml.md5
+      v1.15:
+        file: grch37_vcfanno_config_-v1.15-.toml
+        file_check: grch37_vcfanno_config_-v1.15-.toml.md5
+        outfile: grch37_vcfanno_config_-v1.15-.toml
+        outfile_check: grch37_vcfanno_config_-v1.15-.toml.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
+    grch38:
+      v0.1:
+        file: grch38_vcfanno_config_-v0.1-.toml
+        file_check: grch38_vcfanno_config_-v0.1-.toml.md5
+        outfile: grch38_vcfanno_config_-v0.1-.toml
+        outfile_check: grch38_vcfanno_config_-v0.1-.toml.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
   vcfanno_functions:
     grch37:
+      v1.0:
+        file: vcfanno_functions_-v1.0-.lua
+        file_check: vcfanno_functions_-v1.0-.lua.md5
+        outfile: vcfanno_functions_-v1.0-.lua
+        outfile_check: vcfanno_functions_-v1.0-.lua.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
+    grch38:
       v1.0:
         file: vcfanno_functions_-v1.0-.lua
         file_check: vcfanno_functions_-v1.0-.lua.md5

@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
 BEGIN {
 
@@ -40,17 +30,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Parse::Gender}  => [qw{ parse_fastq_for_gender }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Recipes::Analysis::Estimate_gender} => [qw{ parse_fastq_for_gender }],
+        q{MIP::Test::Fixtures}                     => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Parse::Gender qw{ parse_fastq_for_gender };
+use MIP::Recipes::Analysis::Estimate_gender qw{ parse_fastq_for_gender };
 
-diag(   q{Test parse_fastq_for_gender from Gender.pm v}
-      . $MIP::Parse::Gender::VERSION
+diag(   q{Test parse_fastq_for_gender from Estimate_gender.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,7 +47,7 @@ diag(   q{Test parse_fastq_for_gender from Gender.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { no_screen => 1 } );
+test_log( { no_screen => 0, } );
 
 ## Given no other gender
 my %active_parameter = test_mip_hashes(

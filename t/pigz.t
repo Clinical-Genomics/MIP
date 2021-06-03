@@ -22,17 +22,6 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,18 +29,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Pigz}  => [qw{ pigz }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Program::Pigz} => [qw{ pigz }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Pigz qw{ pigz };
 
-diag(   q{Test pigz from Pigz v}
-      . $MIP::Program::Pigz::VERSION
+diag(   q{Test pigz from Pigz}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -69,23 +54,14 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = (
-    filehandle => {
-        input           => undef,
-        expected_output => \@function_base_commands,
-    },
-    infile_path => {
-        input           => q{infile_path},
-        expected_output => q{infile_path},
-    },
-);
-
 my %specific_argument = (
     decompress => {
         input           => q{decompress},
         expected_output => q{--decompress},
+    },
+    infile_path => {
+        input           => q{infile_path},
+        expected_output => q{infile_path},
     },
     outfile_path => {
         input           => q{outfile_path},
@@ -121,20 +97,13 @@ my %specific_argument = (
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&pigz;
 
-## Test both base and function specific arguments
-my @arguments = ( \%required_argument, \%specific_argument );
-
-HASHES_OF_ARGUMENTS:
-foreach my $argument_href (@arguments) {
-    my @commands = test_function(
-        {
-            argument_href              => $argument_href,
-            do_test_base_command       => 1,
-            function_base_commands_ref => \@function_base_commands,
-            module_function_cref       => $module_function_cref,
-            required_argument_href     => \%required_argument,
-        }
-    );
-}
+my @commands = test_function(
+    {
+        argument_href              => \%specific_argument,
+        do_test_base_command       => 1,
+        function_base_commands_ref => \@function_base_commands,
+        module_function_cref       => $module_function_cref,
+    }
+);
 
 done_testing();

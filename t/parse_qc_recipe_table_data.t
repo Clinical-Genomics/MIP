@@ -21,17 +21,6 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -39,18 +28,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Qc_data}        => [qw{ parse_qc_recipe_table_data }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Qc_data} => [qw{ parse_qc_recipe_table_data }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Qc_data qw{ parse_qc_recipe_table_data };
 
-diag(   q{Test parse_qc_recipe_table_data from Qc_data.pm v}
-      . $MIP::Qc_data::VERSION
+diag(   q{Test parse_qc_recipe_table_data from Qc_data.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -71,8 +56,8 @@ my $recipe_name    = q{collecthsmetrics};
 my $sample_id      = q{sample_1};
 my $value          = $AT_DROPOUT;
 my %qc_header      = ( $recipe_name => { $regexp_header_key => [$key], } );
-my %qc_recipe_data = ( $recipe_name => { $regexp_key => [$value] } );
-my %regexp         = ( $recipe_name => { $regexp_key => q{a_regexp} } );
+my %qc_recipe_data = ( $recipe_name => { $regexp_key        => [$value] } );
+my %regexp         = ( $recipe_name => { $regexp_key        => q{a_regexp} } );
 
 my $is_ok = parse_qc_recipe_table_data(
     {
@@ -90,11 +75,20 @@ my %expected_qc_data = (
     sample => {
         $sample_id => {
             $infile => {
-                $recipe_name =>
-                  { $regexp_header_key => { $regexp_key => { $key => $value, }, }, },
+                $recipe_name => { $regexp_header_key => { $regexp_key => { $key => $value, }, }, },
             },
         },
     },
+    metrics => [
+        {
+            header => $regexp_key,
+            id     => $sample_id,
+            input  => $infile,
+            name   => $key,
+            value  => $value,
+            step   => $recipe_name,
+        },
+    ],
 );
 
 ## Then sub should return true

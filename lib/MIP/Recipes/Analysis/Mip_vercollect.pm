@@ -7,25 +7,20 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ %CONTAINER_CMD $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_mip_vercollect };
@@ -114,11 +109,10 @@ sub analysis_mip_vercollect {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::File_info qw{ parse_io_outfiles };
     use MIP::Io::Write qw{ write_to_file };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Mip qw{ mip_vercollect };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -128,24 +122,17 @@ sub analysis_mip_vercollect {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Unpack parameters
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
     my %io = parse_io_outfiles(
         {
-            chain_id               => $job_id_chain,
+            chain_id               => $recipe{job_id_chain},
             id                     => $case_id,
             file_info_href         => $file_info_href,
             file_name_prefixes_ref => [$case_id],
@@ -165,49 +152,45 @@ sub analysis_mip_vercollect {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            process_time                    => $recipe_resource{time},
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            set_pipefail          => 0,
         }
     );
+
+    use MIP::Environment::Executable qw{ write_binaries_versions };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_rm };
 
     ### SHELL:
 
-    my $binary_path_file_path = $outfile_path_prefix . $UNDERSCORE . q{binary_paths.yaml};
-
-    ## Writes a YAML hash to file
-    write_to_file(
+    say {$filehandle} q{## Remove potential previous mip version collect file};
+    gnu_rm(
         {
-            data_href => $active_parameter_href->{binary_path},
-            format    => q{yaml},
-            path      => $binary_path_file_path,
-        }
-    );
-    $log->info( q{Wrote: } . $binary_path_file_path );
-
-    my $log_file_path = $outfile_path_prefix . $UNDERSCORE . q{vercollect.log};
-
-    mip_vercollect(
-        {
-            filehandle    => $filehandle,
-            infile_path   => $binary_path_file_path,
-            log_file_path => $log_file_path,
-            outfile_path  => $outfile_path,
+            filehandle  => $filehandle,
+            force       => 1,
+            infile_path => $outfile_path,
         }
     );
     say {$filehandle} $NEWLINE;
 
+    write_binaries_versions(
+        {
+            binary_info_href => \%CONTAINER_CMD,
+            filehandle       => $filehandle,
+            outfile_path     => $outfile_path,
+        }
+    );
+
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -232,7 +215,7 @@ sub analysis_mip_vercollect {
                 base_command         => $profile_base_command,
                 dependency_method    => q{add_to_all},
                 job_dependency_type  => q{afterok},
-                job_id_chain         => $job_id_chain,
+                job_id_chain         => $recipe{job_id_chain},
                 job_id_href          => $job_id_href,
                 job_reservation_name => $active_parameter_href->{job_reservation_name},
                 log                  => $log,

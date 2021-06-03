@@ -22,17 +22,6 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,10 +29,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Mip}   => [qw{ mip_qccollect }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Program::Mip} => [qw{ mip_qccollect }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -51,8 +37,7 @@ BEGIN {
 use MIP::Program::Mip qw{ mip_qccollect };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test mip_qccollect from Mip.pm v}
-      . $MIP::Program::Mip::VERSION
+diag(   q{Test mip_qccollect from Mip.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -134,6 +119,12 @@ my %specific_argument = (
         input           => 1,
         expected_output => q{--skip_evaluation},
     },
+    store_metrics_outfile => {
+        input => catfile(qw{ outcase_directory case_id case_id_metrics_deliverables.yaml }),
+        expected_output => q{--store_metrics_outfile}
+          . $SPACE
+          . catfile(qw{ outcase_directory case_id case_id_metrics_deliverables.yaml }),
+    },
 );
 
 # Coderef - enables generalized use of generate call
@@ -144,13 +135,13 @@ my @arguments = ( \%base_argument, \%specific_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
-    my @commands = test_function(
+    test_function(
         {
             argument_href              => $argument_href,
-            required_argument_href     => \%required_argument,
-            module_function_cref       => $module_function_cref,
             function_base_commands_ref => \@function_base_commands,
             do_test_base_command       => 1,
+            module_function_cref       => $module_function_cref,
+            required_argument_href     => \%required_argument,
         }
     );
 }

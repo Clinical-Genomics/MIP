@@ -22,17 +22,6 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,18 +29,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Stranger} => [qw{ stranger }],
-        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Program::Stranger} => [qw{ stranger }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Stranger qw{ stranger };
 
-diag(   q{Test stranger from Stranger.pm v}
-      . $MIP::Program::Stranger::VERSION
+diag(   q{Test stranger from Stranger.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

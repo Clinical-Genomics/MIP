@@ -21,17 +21,6 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -39,10 +28,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Dependency_tree} => [qw{ get_dependency_subtree }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Dependency_tree} => [qw{ get_dependency_subtree }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -50,8 +36,7 @@ BEGIN {
 use MIP::Dependency_tree qw{ get_dependency_subtree };
 use MIP::Test::Fixtures qw{ test_mip_hashes };
 
-diag(   q{Test get_dependency_subtree from Analysis.pm v}
-      . $MIP::Dependency_tree::VERSION
+diag(   q{Test get_dependency_subtree from Analysis.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -77,8 +62,11 @@ get_dependency_subtree(
 );
 
 ## Then get it
-my %expected_tree =
-  ( CHAIN_QC => [ { PARALLEL => [qw{ preseq_ar rseqc genebody_coverage }] }, ] );
+my %expected_tree = (
+    CHAIN_QC => [
+        { PARALLEL => [qw{ picardtools_collectrnaseqmetrics preseq_ar rseqc genebody_coverage }] },
+    ]
+);
 is_deeply( $dependency_subtree_href, \%expected_tree, q{Get subtree} );
 
 done_testing();

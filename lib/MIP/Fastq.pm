@@ -8,7 +8,6 @@ use File::Spec::Functions qw{ catfile };
 use List::Util qw { any sum };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -18,14 +17,12 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COMMA $EMPTY_STR $LOG_NAME $SPACE $UNDERSCORE };
+use MIP::Constants
+  qw{ $CLOSE_PARENTHESIS $COMMA $EMPTY_STR $LOG_NAME $OPEN_PARENTHESIS $PIPE $PLUS $SPACE $UNDERSCORE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.05;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -33,6 +30,7 @@ BEGIN {
       check_interleaved
       define_mip_fastq_file_features
       get_read_length
+      get_stream_fastq_file_cmd
       parse_fastq_file_header_attributes
       parse_fastq_infiles
       parse_fastq_infiles_format };
@@ -50,8 +48,7 @@ sub casava_header_features {
     my ($arg_href) = @_;
 
     my %casava_header_feature = (
-        q{1.4} =>
-          [qw{ instrument_id run_number flowcell lane tile x_pos y_pos direction }],
+        q{1.4} => [qw{ instrument_id run_number flowcell lane tile x_pos y_pos direction }],
         q{1.8} => [
             qw{ instrument_id run_number flowcell lane tile x_pos y_pos direction filtered control_bit index }
         ],
@@ -97,8 +94,7 @@ sub check_interleaved {
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     ## Select relevant regexps to use
-    my @regexps =
-      qw{ get_fastq_header_v1.8_interleaved get_fastq_header_v1.4_interleaved };
+    my @regexps = qw{ get_fastq_header_v1.8_interleaved get_fastq_header_v1.4_interleaved };
 
     ## Store return from regexp
     my $fastq_read_direction;
@@ -224,8 +220,7 @@ sub define_mip_fastq_file_features {
     my $mip_file_format = join $UNDERSCORE,
       ( $sample_id, $date, $flowcell, $index, q{lane} . $lane );
 
-    my $mip_file_format_with_direction = join $UNDERSCORE,
-      ( $mip_file_format, $direction );
+    my $mip_file_format_with_direction = join $UNDERSCORE, ( $mip_file_format, $direction );
 
     my $original_file_name_prefix = substr $original_file_name, 0,
       index $original_file_name, q{.fastq};
@@ -350,9 +345,7 @@ sub parse_fastq_file_header_attributes {
     if ( not $fastq_info_header_string ) {
 
         $log->fatal( q{Error parsing file header: } . $file_path );
-        $log->fatal(
-            q{Could not detect required sample sequencing run info from fastq file header}
-        );
+        $log->fatal(q{Could not detect required sample sequencing run info from fastq file header});
         $log->fatal(q{Please proved MIP file in MIP file convention format to proceed});
         exit 1;
     }
@@ -447,6 +440,66 @@ sub get_read_length {
 
     ## Return read length
     return $process_return{stdouts_ref}[0];
+}
+
+sub get_stream_fastq_file_cmd {
+
+## Function : Build command for streaming of chunk from fastq file(s)
+## Returns  : @read_files_chunk_cmds
+## Arguments: $fastq_files_ref => Fastq files {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $fastq_files_ref;
+
+    my $tmpl = {
+        fastq_files_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$fastq_files_ref,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Gnu::Coreutils qw{ gnu_head gnu_tail };
+
+    ## Constants
+    Readonly my $BYTE_START_POS => 10_000;
+    Readonly my $BYTE_STOP_POS  => $BYTE_START_POS * 300;
+
+    my @read_files_chunk_cmds;
+
+  FILE:
+    foreach my $file_path ( @{$fastq_files_ref} ) {
+
+        ## Check gzipped status of file path to choose correct cat binary (cat or gzip)
+        ## Also prepend stream character
+        my @cmds = _get_file_read_commands(
+            {
+                file_path => $file_path,
+            }
+        );
+
+        push @cmds, $PIPE;
+
+        ## Start of byte chunk
+        push @cmds, gnu_tail( { number => $PLUS . $BYTE_START_POS, } );
+
+        push @cmds, $PIPE;
+
+        ## End of byte chunk
+        push @cmds, gnu_head( { number => $BYTE_STOP_POS, } );
+
+        $cmds[-1] = $cmds[-1] . $CLOSE_PARENTHESIS;
+
+        ## Join for command line
+        push @read_files_chunk_cmds, join $SPACE, @cmds;
+    }
+    return @read_files_chunk_cmds;
 }
 
 sub parse_fastq_infiles {
@@ -625,15 +678,13 @@ sub parse_fastq_infiles_format {
     }
     if (@missing_feature) {
         $log->warn(qq{Could not detect MIP file name convention for file: $file_name });
-        $log->warn( q{Missing file name feature: } . join $COMMA . $SPACE,
-            @missing_feature );
+        $log->warn( q{Missing file name feature: } . join $COMMA . $SPACE, @missing_feature );
 
         ## Check that file name at least contains sample id
         return if ( $file_name =~ /$sample_id/sxm );
 
         $log->fatal(
-qq{Please check that the file name: $file_name contains the sample_id: $sample_id}
-        );
+            qq{Please check that the file name: $file_name contains the sample_id: $sample_id});
         exit 1;
     }
     ## Check that the sample_id provided and sample_id in infile name match
@@ -661,6 +712,53 @@ sub _fastq_file_name_regexp {
     );
 
     return %fastq_file_name_regexp;
+}
+
+sub _get_file_read_commands {
+
+## Function : Check gzipped status of file path to choose correct cat binary (cat or gzip). Also prepend stream character.
+## Returns  : @read_cmds
+## Arguments: $file_path => Fastq File path to check status for
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_path;
+
+    my $tmpl = {
+        file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cat };
+    use MIP::Program::Gzip qw{ gzip };
+    use MIP::Validate::Data qw{ %constraint };
+
+    my @read_cmds;
+
+    if ( $constraint{is_gzipped}->($file_path) ) {
+        @read_cmds = gzip(
+            {
+                decompress       => 1,
+                infile_paths_ref => [$file_path],
+                stdout           => 1,
+            }
+        );
+    }
+    else {
+
+        @read_cmds = gnu_cat( { infile_paths_ref => [$file_path], } );
+    }
+
+    $read_cmds[0] = q{<} . $OPEN_PARENTHESIS . $read_cmds[0];
+
+    return @read_cmds;
 }
 
 1;

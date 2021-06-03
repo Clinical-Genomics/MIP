@@ -16,22 +16,11 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_mip_hashes test_log };
 
 BEGIN {
 
@@ -42,7 +31,7 @@ BEGIN {
     my %perl_module = (
         q{MIP::Processmanagement::Slurm_processes} =>
           [qw{ slurm_submit_chain_job_ids_dependency_add_to_path }],
-        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_log test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -51,8 +40,7 @@ BEGIN {
 use MIP::Processmanagement::Slurm_processes
   qw{ slurm_submit_chain_job_ids_dependency_add_to_path };
 
-diag( q{Test slurm_submit_chain_job_ids_dependency_add_to_path from Slurm_processes.pm v}
-      . $MIP::Processmanagement::Slurm_processes::VERSION
+diag( q{Test slurm_submit_chain_job_ids_dependency_add_to_path from Slurm_processes.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -78,11 +66,8 @@ slurm_submit_chain_job_ids_dependency_add_to_path(
     }
 );
 
-## Then add job_id returned to PAN
-my @expected_returns = qw{ 1234 };
-is_deeply( \@{ $job_id{PAN}{PAN} }, \@expected_returns, q{Added job_id to PAN } );
-
 ## Then add job_id returned to ALL
+my @expected_returns = qw{ 1234 };
 is_deeply( \@{ $job_id{ALL}{ALL} }, \@expected_returns, q{Added job_id to ALL } );
 
 done_testing();

@@ -1,5 +1,4 @@
 ---
-## Version: 2.1.0
 custom_default_parameters:
   associated_recipe:
     - mip
@@ -11,8 +10,10 @@ custom_default_parameters:
     - bwa_mem2_build_reference
     - exome_target_bed
     - infile_dirs
+    - install_config_file
     - pedigree_fam_file
     - picardtools_path
+    - qccollect_store_metrics_outfile
     - reference_dir
     - reference_info_file
     - rtg_vcfeval_reference_genome
@@ -88,7 +89,7 @@ human_genome_reference:
     - mip
     - picardtools_collecthsmetrics
     - picardtools_collectmultiplemetrics
-    - vt_ar
+    - bcftools_norm
   data_type: SCALAR
   default: grch37_homo_sapiens_-d5-.fasta
   exists_check: file
@@ -107,7 +108,7 @@ human_genome_reference_file_endings:
     - gatk_variantrecalibration
     - picardtools_collecthsmetrics
     - picardtools_collectmultiplemetrics
-    - vt_ar
+    - bcftools_norm
   build_file: 1
   data_type: SCALAR
   exists_check: file
@@ -121,6 +122,8 @@ recipe_core_number:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    bcftools_norm: 1
+    bcftools_core: 1
     bwa_mem: 12
     bwa_mem2: 12
     cadd_ar: 1
@@ -146,12 +149,9 @@ recipe_core_number:
     sacct: 1
     sambamba_depth: 1
     samtools_merge: 2
-    variant_integrity_ar: 1
     varianteffectpredictor: 1
     vcfparser_ar: 1
     version_collect_ar: 1
-    vt_ar: 1
-    vt_core: 1
   type: mip
 set_recipe_core_number:
   associated_recipe:
@@ -191,6 +191,8 @@ recipe_time:
   data_type: HASH
   default:
     analysisrunstatus: 1
+    bcftools_norm: 2
+    bcftools_core: 2
     bwa_mem: 2
     bwa_mem2: 2
     cadd_ar: 2
@@ -217,12 +219,9 @@ recipe_time:
     sacct: 1
     sambamba_depth: 1
     samtools_merge: 2
-    variant_integrity_ar: 1
     varianteffectpredictor: 4
     vcfparser_ar: 1
     version_collect_ar: 1
-    vt_ar: 2
-    vt_core: 2
   type: mip
 set_recipe_time:
   associated_recipe:
@@ -245,12 +244,6 @@ picardtools_path:
     - picardtools_collectmultiplemetrics
   data_type: SCALAR
   type: path
-replace_iupac:
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 0
-  type: mip
 ### Programs
 ## Gzip
 gzip_fastq:
@@ -280,7 +273,7 @@ bwa_mem:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _sorted
   outfile_suffix: ".bam"
   program_executables:
@@ -301,7 +294,7 @@ bwa_mem2:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _sorted
   outfile_suffix: ".bam"
   program_executables:
@@ -332,6 +325,12 @@ bwa_mem_cram:
   default: 0
   type: recipe_argument
 bwa_mem_hla:
+  associated_recipe:
+    - bwa_mem
+  data_type: SCALAR
+  default: 0
+  type: recipe_argument
+bwa_mem_run_bwakit:
   associated_recipe:
     - bwa_mem
   data_type: SCALAR
@@ -760,56 +759,48 @@ gatk_combinevariants_prioritize_caller:
   data_type: SCALAR
   mandatory: no
   type: recipe_argument
-## VT
-vt_ar:
+gatk_combinevariants_callers_to_combine:
+  associated_recipe:
+    - gatk_combinevariantcallsets
+  data_type: ARRAY
+  mandatory: no
+  type: recipe_argument
+## bcftools norm
+bcftools_norm:
   analysis_mode: case
   associated_recipe:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: _vt
+  file_tag: _norm
   program_executables:
-    - vt
+    - bcftools
     - bgzip
     - tabix
   outfile_suffix: ".vcf"
   type: recipe
-vt_decompose:
+bcftools_normalize:
   associated_recipe:
-    - vt_ar
-    - vt_core
+    - bcftools_norm
+    - bcftools_core
   data_type: SCALAR
   default: 1
   type: recipe_argument
-vt_normalize:
+bcftools_missing_alt_allele:
   associated_recipe:
-    - vt_ar
-    - vt_core
+    - bcftools_norm
   data_type: SCALAR
   default: 1
   type: recipe_argument
-vt_missing_alt_allele:
-  associated_recipe:
-    - vt_ar
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
-vt_uniq:
-  associated_recipe:
-    - vt_ar
-    - vt_core
-  data_type: SCALAR
-  default: 1
-  type: recipe_argument
-vt_core:
+bcftools_core:
   analysis_mode: case
   associated_recipe:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: _vt
+  file_tag: _norm
   program_executables:
-    - vt
+    - bcftools
     - bgzip
     - tabix
   type: recipe
@@ -1011,6 +1002,11 @@ vcfparser_ar:
   default: 1
   file_tag: _parsed
   outfile_suffix: ".vcf"
+  program_executables:
+    - bcftools
+    - bgzip
+    - mip
+    - tabix
   type: recipe
 vcfparser_add_all_mt_var:
   associated_recipe:
@@ -1076,16 +1072,6 @@ vcfparser_vep_transcripts:
   default: 1
   type: recipe_argument
 ## Case_check
-variant_integrity_ar:
-  analysis_mode: case
-  associated_recipe:
-    - mip
-  data_type: SCALAR
-  default: 1
-  file_tag: _integrity
-  program_executables:
-    - variant_integrity
-  type: recipe
 rtg_vcfeval:
   analysis_mode: sample
   associated_recipe:
@@ -1165,7 +1151,6 @@ genmod_annotate_regions:
 genmod_models_case_type:
   associated_recipe:
     - rankvariant
-    - variant_integrity_ar
   data_type: SCALAR
   default: ped
   type: recipe_argument
@@ -1224,7 +1209,7 @@ qccollect_regexp_file:
   associated_recipe:
     - qccollect_ar
   data_type: SCALAR
-  default: qc_regexp_-v1.24-.yaml
+  default: qc_regexp_-v1.27-.yaml
   exists_check: file
   is_reference: 1
   reference: reference_dir
@@ -1240,6 +1225,11 @@ qccollect_skip_evaluation:
     - qccollect_ar
   data_type: SCALAR
   default: 0
+  type: recipe_argument
+qccollect_store_metrics_outfile:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
   type: recipe_argument
 ## MultiQC
 multiqc_ar:

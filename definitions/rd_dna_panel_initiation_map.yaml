@@ -27,14 +27,12 @@ CHAIN_ALL:
         - gatk_gathervcfs
         - gatk_variantrecalibration
     - gatk_combinevariantcallsets
-    - CHAIN_VINTEGRITY:
-      - variant_integrity_ar
     - CHAIN_RTEVAL:
       - rtg_vcfeval
     - CHAIN_GATKEVALALL:
       - gatk_variantevalall
   - CHAIN_MAIN:
-    - vt_ar
+    - bcftools_norm
     - variant_annotation
     - frequency_filter
     - cadd_ar

@@ -8,7 +8,6 @@ use File::Basename qw{ dirname fileparse };
 use File::Spec::Functions qw{ catdir catfile devnull };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -18,15 +17,12 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $DOT $LOG_NAME $NEWLINE $PIPE $SPACE };
+use MIP::Constants qw{ $DASH $DOT $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -119,13 +115,12 @@ sub analysis_variant_annotation {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_concat bcftools_index bcftools_view };
     use MIP::Program::Vcfanno qw{ vcfanno };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -149,17 +144,11 @@ sub analysis_variant_annotation {
     my %infile_path        = %{ $io{in}{file_path_href} };
 
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
-    my $job_id_chain         = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -169,7 +158,7 @@ sub analysis_variant_annotation {
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $job_id_chain,
+                chain_id         => $recipe{job_id_chain},
                 id               => $case_id,
                 file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
@@ -184,7 +173,6 @@ sub analysis_variant_annotation {
     my @outfile_paths       = @{ $io{out}{file_paths} };
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my %outfile_path        = %{ $io{out}{file_path_href} };
-    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -194,17 +182,15 @@ sub analysis_variant_annotation {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -215,7 +201,7 @@ sub analysis_variant_annotation {
     ## Create file commands for xargs
     my ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number      => $recipe_resource{core_number},
+            core_number      => $recipe{core_number},
             filehandle       => $filehandle,
             file_path        => $recipe_file_path,
             recipe_info_path => $recipe_info_path,
@@ -227,8 +213,7 @@ sub analysis_variant_annotation {
     foreach my $contig (@contigs_size_ordered) {
 
         ## Get parameters
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
         vcfanno(
             {
@@ -260,7 +245,7 @@ sub analysis_variant_annotation {
     ## Create file commands for xargs
     ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
         {
-            core_number        => $recipe_resource{core_number},
+            core_number        => $recipe{core_number},
             filehandle         => $filehandle,
             file_path          => $recipe_file_path,
             recipe_info_path   => $recipe_info_path,
@@ -272,8 +257,7 @@ sub analysis_variant_annotation {
   CONTIG:
     foreach my $contig (@contigs_size_ordered) {
         ## Get parameters
-        my $stderrfile_path =
-          $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+        my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
         bcftools_index(
             {
@@ -290,21 +274,32 @@ sub analysis_variant_annotation {
 
     say {$filehandle} q{## Concatenate outfiles};
 
+    my $concat_outfile_path = $outfile_path_prefix . $DOT . q{vcf.gz};
     bcftools_concat(
         {
             filehandle       => $filehandle,
             infile_paths_ref => \@outfile_paths,
             output_type      => q{z},
-            outfile_path     => $outfile_path_prefix . $DOT . q{vcf.gz},
+            outfile_path     => $concat_outfile_path,
             rm_dups          => 0,
-            threads          => $recipe_resource{core_number} - 1,
+            threads          => $recipe{core_number} - 1,
         }
     );
     say {$filehandle} $NEWLINE;
 
+    _add_loqusdb_headers(
+        {
+            filehandle          => $filehandle,
+            infile_path         => $concat_outfile_path,
+            outfile_path_prefix => $outfile_path_prefix,
+            outfile_suffix      => $DOT . q{vcf.gz},
+            vcfanno_config_name => $active_parameter_href->{vcfanno_config},
+        }
+    );
+
     bcftools_index(
         {
-            infile_path => $outfile_path_prefix . $DOT . q{vcf.gz},
+            infile_path => $concat_outfile_path,
             filehandle  => $filehandle,
             output_type => q{tbi},
         }
@@ -314,12 +309,12 @@ sub analysis_variant_annotation {
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                path             => $outfile_path_prefix . $DOT . q{vcf.gz},
+                path             => $concat_outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
@@ -327,13 +322,13 @@ sub analysis_variant_annotation {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -428,12 +423,11 @@ sub analysis_variant_annotation_panel {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_index bcftools_view };
     use MIP::Program::Vcfanno qw{ vcfanno };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -456,17 +450,10 @@ sub analysis_variant_annotation_panel {
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path        = $io{in}{file_path};
 
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -476,7 +463,7 @@ sub analysis_variant_annotation_panel {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $case_id,
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => [$infile_name_prefix],
@@ -486,7 +473,8 @@ sub analysis_variant_annotation_panel {
             }
         )
     );
-    my $outfile_path = $io{out}{file_path};
+    my $outfile_path        = $io{out}{file_path};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -495,17 +483,15 @@ sub analysis_variant_annotation_panel {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
     );
 
@@ -533,6 +519,16 @@ sub analysis_variant_annotation_panel {
     );
     say {$filehandle} $NEWLINE;
 
+    _add_loqusdb_headers(
+        {
+            filehandle          => $filehandle,
+            infile_path         => $outfile_path,
+            outfile_path_prefix => $outfile_path_prefix,
+            outfile_suffix      => $DOT . q{vcf.gz},
+            vcfanno_config_name => $active_parameter_href->{vcfanno_config},
+        }
+    );
+
     say {$filehandle} q{## Index outfiles};
 
     bcftools_index(
@@ -547,7 +543,7 @@ sub analysis_variant_annotation_panel {
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -560,13 +556,13 @@ sub analysis_variant_annotation_panel {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -576,6 +572,126 @@ sub analysis_variant_annotation_panel {
         );
     }
     return 1;
+}
+
+sub _add_loqusdb_headers {
+
+## Function : Add relevant loqusDB headers for downstream processing
+## Returns  :
+## Arguments: $filehandle          => Filehandle to write to
+##          : $infile_path         => Infile path to read from
+##          : $outfile_path_prefix => Outfile path
+##          : $outfile_suffix      => Outfile suffix
+##          : $vcfanno_config_name => Name of vcfanno config
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $outfile_path_prefix;
+    my $outfile_suffix;
+    my $vcfanno_config_name;
+
+    my $tmpl = {
+        filehandle  => { store => \$filehandle, },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        outfile_path_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path_prefix,
+            strict_type => 1,
+        },
+        outfile_suffix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_suffix,
+            strict_type => 1,
+        },
+        vcfanno_config_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfanno_config_name,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Io::Read qw{ read_from_file };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Program::Bcftools qw{ bcftools_annotate bcftools_view };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv};
+
+    my $loqusdb_reference_file;
+
+    my %vcfanno_config = read_from_file(
+        {
+            format => q{toml},
+            path   => $vcfanno_config_name,
+        }
+    );
+
+  ANNOTATION:
+    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+
+        $loqusdb_reference_file =
+          $annotation_href->{file} =~ /loqusdb_\w+_\w+-/xsm ? $annotation_href->{file} : undef;
+
+        last ANNOTATION if ($loqusdb_reference_file);
+    }
+
+    ## Nothing to process - skip
+    return if ( not $loqusdb_reference_file );
+
+    say {$filehandle} q{## Add loqusdb headers to output};
+
+    bcftools_view(
+        {
+            filehandle  => $filehandle,
+            header_only => 1,
+            infile_path => $loqusdb_reference_file,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    my $loqusdb_header_path = $outfile_path_prefix . $DOT . q{loqusdb_header};
+    perl_nae_oneliners(
+        {
+            filehandle      => $filehandle,
+            oneliner_name   => q{get_vcf_loqusdb_headers},
+            stdoutfile_path => $loqusdb_header_path,
+            use_container   => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    my $annotate_outfile_path = $outfile_path_prefix . $UNDERSCORE . q{annotated.vcf.gz};
+    bcftools_annotate(
+        {
+            filehandle      => $filehandle,
+            headerfile_path => $loqusdb_header_path,
+            infile_path     => $infile_path,
+            outfile_path    => $annotate_outfile_path,
+            output_type     => q{z},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    gnu_mv(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $annotate_outfile_path,
+            outfile_path => $outfile_path_prefix . $outfile_suffix,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+    return;
 }
 
 1;

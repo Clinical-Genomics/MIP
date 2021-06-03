@@ -5,7 +5,6 @@ use Carp;
 use Cwd;
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -19,14 +18,12 @@ use MooseX::Types::Moose qw{ ArrayRef Bool HashRef Int Str };
 ## MIPs lib/
 use MIP::Constants qw{ $NEWLINE };
 
-our $VERSION = 1.02;
-
 command_short_description(q{MIP qccollect command});
 
 command_long_description(q{Entry point for collecting MIP QC metrics});
 
 command_usage(
-q{qccollect <options> -si [sample_info.yaml] -r [regexp.yaml] -e [eval_metric.yaml] -o [outfile]}
+q{qccollect <options> --sample_info_file [sample_info.yaml] --regexp_file [regexp.yaml] --eval_metric_file [eval_metric.yaml] -o [outfile]}
 );
 
 ## Define, check and get Cli supplied parameters
@@ -45,11 +42,11 @@ sub run {
     my $evaluate_plink_gender = $arg_href->{evaluate_plink_gender};
     my $log_file              = $arg_href->{log_file};
     my $outfile               = $arg_href->{outfile};
-    my $print_regexp          = $arg_href->{print_regexp};
     my $print_regexp_outfile  = $arg_href->{print_regexp_outfile};
     my $regexp_file           = $arg_href->{regexp_file};
     my $sample_info_file      = $arg_href->{sample_info_file};
     my $skip_evaluation       = $arg_href->{skip_evaluation};
+    my $store_metrics_outfile = $arg_href->{store_metrics_outfile};
 
     use MIP::Log::MIP_log4perl qw{ initiate_logger };
     use MIP::Main::Qccollect qw{ mip_qccollect };
@@ -79,6 +76,7 @@ sub run {
             regexp_file           => $regexp_file,
             sample_info_file      => $sample_info_file,
             skip_evaluation       => $skip_evaluation,
+            store_metrics_outfile => $store_metrics_outfile,
         }
     );
     return;
@@ -168,6 +166,16 @@ sub _build_usage {
             isa           => Bool,
         )
     );
+
+    option(
+        q{store_metrics_outfile} => (
+            cmd_tags      => [q{YAML}],
+            documentation => q{Deliverables metric file path},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
     return;
 }
 

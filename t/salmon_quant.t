@@ -22,17 +22,6 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.04;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,18 +29,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Salmon} => [qw{ salmon_quant }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Program::Salmon} => [qw{ salmon_quant }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Salmon qw{ salmon_quant };
 
-diag(   q{Test salmon_quant from Salmon.pm v}
-      . $MIP::Program::Salmon::VERSION
+diag(   q{Test salmon_quant from Salmon.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -93,8 +78,7 @@ my %required_argument = (
         expected_output => q{--output} . $SPACE . catdir(qw{ dir output_dir }),
     },
     read_1_fastq_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ dir hi_r1.fastq.gz }), catfile(qw{ dir hello_r1.fastq.gz }) ],
+        inputs_ref => [ catfile(qw{ dir hi_r1.fastq.gz }), catfile(qw{ dir hello_r1.fastq.gz }) ],
         expected_output => q{-1}
           . $SPACE . q{<(}
           . $READ_FILES_COMMAND
@@ -103,6 +87,10 @@ my %required_argument = (
           . $SPACE
           . catfile(qw{ dir hello_r1.fastq.gz })
           . $SPACE . q{)}
+    },
+    read_files_command => {
+        input           => $READ_FILES_COMMAND,
+        expected_output => $READ_FILES_COMMAND,
     },
 );
 
@@ -120,8 +108,7 @@ my %specific_argument = (
         expected_output => q{--output} . $SPACE . catdir(qw{ dir output_dir }),
     },
     read_1_fastq_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ dir hi_r1.fastq.gz }), catfile(qw{ dir hello_r1.fastq.gz }) ],
+        inputs_ref => [ catfile(qw{ dir hi_r1.fastq.gz }), catfile(qw{ dir hello_r1.fastq.gz }) ],
         expected_output => q{-1}
           . $SPACE . q{<(}
           . $READ_FILES_COMMAND
@@ -132,8 +119,7 @@ my %specific_argument = (
           . $SPACE . q{)}
     },
     read_2_fastq_paths_ref => {
-        inputs_ref =>
-          [ catfile(qw{ dir hi_r2.fastq.gz }), catfile(qw{ dir hello_r2.fastq.gz }) ],
+        inputs_ref => [ catfile(qw{ dir hi_r2.fastq.gz }), catfile(qw{ dir hello_r2.fastq.gz }) ],
         expected_output => q{-2}
           . $SPACE . q{<(}
           . $READ_FILES_COMMAND

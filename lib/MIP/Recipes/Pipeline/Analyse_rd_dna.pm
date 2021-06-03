@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.39;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_dna pipeline_analyse_rd_dna };
@@ -113,12 +109,14 @@ sub parse_rd_dna {
       update_recipe_mode_for_wes
     };
     use MIP::Config qw{ write_mip_config };
+    use MIP::Constants qw{ set_container_constants };
     use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::Environment::Container qw{ parse_containers };
     use MIP::Fastq qw{ parse_fastq_infiles };
     use MIP::File_info qw{ check_parameter_metafiles parse_select_file_contigs };
     use MIP::Gatk qw{ check_gatk_sample_map_paths };
     use MIP::Parameter qw{ get_cache };
-    use MIP::Parse::Gender qw{ parse_fastq_for_gender };
+    use MIP::Recipes::Analysis::Estimate_gender qw{ parse_fastq_for_gender };
     use MIP::Reference qw{ get_select_file_contigs parse_exome_target_bed parse_nist_parameters };
     use MIP::Sample_info qw{ set_parameter_in_sample_info };
     use MIP::Vep qw{
@@ -134,6 +132,16 @@ sub parse_rd_dna {
       qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter
       samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
+    ## Set analysis constants
+    set_container_constants( { active_parameter_href => $active_parameter_href, } );
+
+    parse_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+        }
+    );
 
     my $consensus_analysis_type = get_cache(
         {
@@ -215,7 +223,8 @@ sub parse_rd_dna {
     ## Check that the supplied gatk sample map file paths exists
     check_gatk_sample_map_paths(
         {
-            sample_map_path => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
+            gatk_genotypegvcfs_mode => $active_parameter_href->{gatk_genotypegvcfs},
+            sample_map_path         => $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf},
         }
     );
 
@@ -427,20 +436,23 @@ sub pipeline_analyse_rd_dna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Constants qw{ set_container_constants };
+    use MIP::Analysis
+      qw{ set_rankvariants_ar set_recipe_bwa_mem set_recipe_deepvariant set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type };
     use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
+    use MIP::Parameter qw{ get_cache };
     use MIP::Parse::Reference qw{ parse_references };
-    use MIP::Set::Analysis
-      qw{ set_recipe_bwa_mem set_recipe_gatk_variantrecalibration set_recipe_on_analysis_type set_rankvariants_ar };
 
     ## Recipes
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
-    use MIP::Recipes::Analysis::Bcftools_mpileup qw { analysis_bcftools_mpileup };
+    use MIP::Recipes::Analysis::Bcftools_norm qw{ analysis_bcftools_norm };
+    use MIP::Recipes::Analysis::Bwa_mem qw{ analysis_bwa_mem2 };
     use MIP::Recipes::Analysis::Cadd qw{ analysis_cadd };
     use MIP::Recipes::Analysis::Chanjo_sex_check qw{ analysis_chanjo_sex_check };
     use MIP::Recipes::Analysis::Chromograph
       qw{ analysis_chromograph_cov analysis_chromograph_rhoviz analysis_chromograph_upd };
     use MIP::Recipes::Analysis::Cnvnator qw{ analysis_cnvnator };
+    use MIP::Recipes::Analysis::Deeptrio qw { analysis_deeptrio };
+    use MIP::Recipes::Analysis::Deepvariant qw { analysis_deepvariant };
     use MIP::Recipes::Analysis::Delly_call qw{ analysis_delly_call };
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
     use MIP::Recipes::Analysis::Endvariantannotationblock qw{ analysis_endvariantannotationblock };
@@ -455,6 +467,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
     use MIP::Recipes::Analysis::Gatk_variantevalall qw{ analysis_gatk_variantevalall };
     use MIP::Recipes::Analysis::Gatk_variantevalexome qw{ analysis_gatk_variantevalexome };
+    use MIP::Recipes::Analysis::Glnexus qw{ analysis_glnexus };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
@@ -479,22 +492,18 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge };
     use MIP::Recipes::Analysis::Samtools_subsample_mt qw{ analysis_samtools_subsample_mt };
     use MIP::Recipes::Analysis::Smncopynumbercaller qw{ analysis_smncopynumbercaller };
-    use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
     use MIP::Recipes::Analysis::Star_caller qw{ analysis_star_caller };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets qw{ analysis_sv_combinevariantcallsets };
-    use MIP::Recipes::Analysis::Split_fastq_file qw{ analysis_split_fastq_file };
     use MIP::Recipes::Analysis::Telomerecat qw{ analysis_telomerecat };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
     use MIP::Recipes::Analysis::Tiddit_coverage qw{ analysis_tiddit_coverage };
     use MIP::Recipes::Analysis::Upd qw{ analysis_upd };
     use MIP::Recipes::Analysis::Varg qw{ analysis_varg };
     use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation };
-    use MIP::Recipes::Analysis::Variant_integrity qw{ analysis_variant_integrity };
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs };
-    use MIP::Recipes::Analysis::Vt qw{ analysis_vt };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
 
     ### Pipeline specific checks
@@ -508,9 +517,6 @@ sub pipeline_analyse_rd_dna {
             sample_info_href      => $sample_info_href,
         }
     );
-
-    ## Set analysis constants
-    set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
@@ -540,9 +546,9 @@ sub pipeline_analyse_rd_dna {
     ## Create code reference table for pipeline analysis recipes
     my %analysis_recipe = (
         analysisrunstatus  => \&analysis_analysisrunstatus,
-        bcftools_mpileup   => \&analysis_bcftools_mpileup,
+        bcftools_norm      => \&analysis_bcftools_norm,
         bwa_mem            => undef,                           # Depends on genome build
-        bwa_mem2           => undef,
+        bwa_mem2           => \&analysis_bwa_mem2,
         cadd_ar            => \&analysis_cadd,
         chanjo_sexcheck    => \&analysis_chanjo_sex_check,
         chromograph_cov    => \&analysis_chromograph_cov,
@@ -551,6 +557,8 @@ sub pipeline_analyse_rd_dna {
         ? \&analysis_chromograph_upd
         : undef,                                                        # Depends on pedigree
         cnvnator_ar                 => \&analysis_cnvnator,
+        deeptrio                    => undef,
+        deepvariant                 => \&analysis_deepvariant,
         delly_call                  => \&analysis_delly_call,
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
@@ -565,6 +573,7 @@ sub pipeline_analyse_rd_dna {
         gatk_variantevalall         => \&analysis_gatk_variantevalall,
         gatk_variantevalexome       => \&analysis_gatk_variantevalexome,
         gatk_variantrecalibration   => undef,    # Depends on analysis type and/or number of samples
+        glnexus_merge                      => \&analysis_glnexus,
         gzip_fastq                         => \&analysis_gzip_fastq,
         manta                              => \&analysis_manta,
         markduplicates                     => \&analysis_markduplicates,
@@ -584,7 +593,6 @@ sub pipeline_analyse_rd_dna {
         samtools_merge            => \&analysis_samtools_merge,
         samtools_subsample_mt     => \&analysis_samtools_subsample_mt,
         smncopynumbercaller       => \&analysis_smncopynumbercaller,
-        split_fastq_file          => \&analysis_split_fastq_file,
         star_caller               => \&analysis_star_caller,
         sv_annotate               => \&analysis_sv_annotate,
         sv_combinevariantcallsets => \&analysis_sv_combinevariantcallsets,
@@ -599,28 +607,31 @@ sub pipeline_analyse_rd_dna {
         varg_ar                   => \&analysis_varg,
         varianteffectpredictor    => \&analysis_vep_wgs,
         variant_annotation        => \&analysis_variant_annotation,
-        variant_integrity_ar      => \&analysis_variant_integrity,
         version_collect_ar        => \&analysis_mip_vercollect,
         vcfparser_ar              => \&analysis_mip_vcfparser,
         vcf2cytosure_ar           => \&analysis_vcf2cytosure,
-        vt_ar                     => \&analysis_vt,
     );
 
     ## Special case for rankvariants recipe
     set_rankvariants_ar(
         {
             analysis_recipe_href => \%analysis_recipe,
-            log                  => $log,
             parameter_href       => $parameter_href,
             sample_ids_ref       => $active_parameter_href->{sample_ids},
         }
     );
 
+    my $consensus_analysis_type = get_cache(
+        {
+            parameter_href => $parameter_href,
+            parameter_name => q{consensus_analysis_type},
+        }
+    );
     ## Update which recipe to use depending on consensus analysis type
     set_recipe_on_analysis_type(
         {
             analysis_recipe_href    => \%analysis_recipe,
-            consensus_analysis_type => $parameter_href->{cache}{consensus_analysis_type},
+            consensus_analysis_type => $consensus_analysis_type,
         }
     );
 
@@ -628,8 +639,17 @@ sub pipeline_analyse_rd_dna {
     set_recipe_bwa_mem(
         {
             analysis_recipe_href           => \%analysis_recipe,
-            human_genome_reference_source  => $file_info_href->{human_genome_reference_source},
             human_genome_reference_version => $file_info_href->{human_genome_reference_version},
+            run_bwakit                     => $active_parameter_href->{bwa_mem_run_bwakit},
+        }
+    );
+
+    ## Set deepvariant or deeptrio recipe depending on the presence of parent-child duo or a trio
+    set_recipe_deepvariant(
+        {
+            analysis_recipe_href => \%analysis_recipe,
+            deeptrio_mode        => $active_parameter_href->{deeptrio},
+            sample_info_href     => $sample_info_href,
         }
     );
 
@@ -637,7 +657,6 @@ sub pipeline_analyse_rd_dna {
     set_recipe_gatk_variantrecalibration(
         {
             analysis_recipe_href => \%analysis_recipe,
-            log                  => $log,
             sample_ids_ref       => $active_parameter_href->{sample_ids},
             use_cnnscorevariants => $active_parameter_href->{gatk_cnnscorevariants},
         }
@@ -652,7 +671,6 @@ sub pipeline_analyse_rd_dna {
         ## Skip recipe if not part of dispatch table (such as gzip_fastq)
         next RECIPE if ( not $analysis_recipe{$recipe} );
 
-        ### Analysis recipes
         ## For displaying
         log_display_recipe_for_user(
             {
@@ -694,9 +712,6 @@ sub pipeline_analyse_rd_dna {
                 }
             );
         }
-
-        ## Special case
-        exit if ( $recipe eq q{split_fastq_file} );
     }
     return;
 }

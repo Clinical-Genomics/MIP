@@ -22,17 +22,6 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,24 +29,22 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Salmon} => [qw{ salmon_index }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Program::Salmon} => [qw{ salmon_index }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Salmon qw{ salmon_index };
 
-diag(   q{Test salmon_index from Salmon.pm v}
-      . $MIP::Program::Salmon::VERSION
+diag(   q{Test salmon_index from Salmon.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+Readonly my $CORES => 12;
 
 my @function_base_commands = qw{ salmon index };
 
@@ -83,9 +70,7 @@ my %base_argument = (
 my %required_argument = (
     fasta_path => {
         input           => catfile(qw{ dir transcripts.fasta }),
-        expected_output => q{--transcripts}
-          . $SPACE
-          . catfile(qw{ dir transcripts.fasta }),
+        expected_output => q{--transcripts} . $SPACE . catfile(qw{ dir transcripts.fasta }),
     },
     outfile_path => {
         input           => catfile(qw{ dir index_dir }),
@@ -94,15 +79,29 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    decoy_path => {
+        input           => catfile(qw{ path to decoy.txt }),
+        expected_output => q{--decoy} . $SPACE . catfile(qw{ path to decoy.txt}),
+    },
     fasta_path => {
         input           => catfile(qw{ dir transcripts.fasta }),
-        expected_output => q{--transcripts}
-          . $SPACE
-          . catfile(qw{ dir transcripts.fasta }),
+        expected_output => q{--transcripts} . $SPACE . catfile(qw{ dir transcripts.fasta }),
+    },
+    gencode => {
+        input           => 1,
+        expected_output => q{--gencode},
     },
     outfile_path => {
         input           => catfile(qw{ dir index_dir }),
         expected_output => q{--index} . $SPACE . catfile(qw{ dir index_dir }),
+    },
+    temp_directory => {
+        input           => catdir(qw{ path to temp }),
+        expected_output => q{--tmpdir} . $SPACE . catdir(qw{ path to temp }),
+    },
+    threads => {
+        input           => $CORES,
+        expected_output => q{--threads} . $SPACE . $CORES,
     },
 );
 

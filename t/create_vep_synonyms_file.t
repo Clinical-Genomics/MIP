@@ -17,22 +17,11 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 BEGIN {
 
@@ -42,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::File::Format::Vep} => [qw{ create_vep_synonyms_file }],
-        q{MIP::Test::Fixtures}    => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures}    => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -50,8 +39,7 @@ BEGIN {
 
 use MIP::File::Format::Vep qw{ create_vep_synonyms_file };
 
-diag(   q{Test create_vep_synonyms_file from Vep.pm v}
-      . $MIP::File::Format::Vep::VERSION
+diag(   q{Test create_vep_synonyms_file from Vep.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,7 +47,7 @@ diag(   q{Test create_vep_synonyms_file from Vep.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log          = test_log( { no_screen => 1, } );
+test_log( { no_screen => 1, } );
 my $test_dir     = File::Temp->newdir();
 my $outfile_path = catfile( $test_dir, q{synonyms.tsv} );
 
@@ -68,7 +56,6 @@ my $bad_version = q{not_valid_version};
 
 my $is_ok = create_vep_synonyms_file(
     {
-        log          => $log,
         outfile_path => $outfile_path,
         version      => $bad_version,
     }
@@ -82,7 +69,6 @@ my $valid_version = q{38};
 
 my $ret_outfile_path = create_vep_synonyms_file(
     {
-        log          => $log,
         outfile_path => $outfile_path,
         version      => $valid_version,
     }
@@ -91,4 +77,5 @@ my $ret_outfile_path = create_vep_synonyms_file(
 ## Then return outfile_path for synonyms file
 is( $outfile_path, $ret_outfile_path, q{Return outfile_path if defined synonyms map} );
 ok( -e $outfile_path, q{Created synonyms file} );
+
 done_testing();

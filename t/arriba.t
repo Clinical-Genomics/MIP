@@ -22,17 +22,6 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,18 +29,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Arriba} => [qw{ arriba }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Program::Arriba} => [qw{ arriba }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Arriba qw{ arriba };
 
-diag(   q{Test arriba from Arriba.pm v}
-      . $MIP::Program::Arriba::VERSION
+diag(   q{Test arriba from Arriba.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -125,17 +110,21 @@ my %specific_argument = (
         input           => catfile(qw{ my aligned.bam }),
         expected_output => q{-x} . $SPACE . catfile(qw{ my aligned.bam }),
     },
+    known_fusion_file_path => {
+        input           => catfile(qw{ my known_fusions.tsv}),
+        expected_output => q{-k} . $SPACE . catfile(qw{ my known_fusions.tsv}),
+    },
     outfile_path => {
         input           => catfile(qw{ my fusions.tsv }),
         expected_output => q{-o} . $SPACE . catfile(qw{ my fusions.tsv }),
     },
-    print_fusion_peptide => {
-        input           => 1,
-        expected_output => q{-P},
+    protein_domain_file_path => {
+        input           => catfile(qw{ my proteindomains.gff }),
+        expected_output => q{-p} . $SPACE . catfile(qw{ my proteindomains.gff }),
     },
-    print_fusion_transcript => {
-        input           => 1,
-        expected_output => q{-T},
+    tag_file_path => {
+        input           => catfile(qw{ my tags.tsv }),
+        expected_output => q{-t} . $SPACE . catfile(qw{ my tags.tsv }),
     },
 );
 

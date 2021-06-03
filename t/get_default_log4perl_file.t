@@ -22,17 +22,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $DOT $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,16 +32,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Log::MIP_log4perl} => [qw{ get_default_log4perl_file }],
-        q{MIP::Test::Fixtures}    => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Log::MIP_log4perl qw{ get_default_log4perl_file };
 
-diag(   q{Test get_default_log4perl_file from MIP_log4perl.pm v}
-      . $MIP::Log::MIP_log4perl::VERSION
+diag(   q{Test get_default_log4perl_file from MIP_log4perl.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

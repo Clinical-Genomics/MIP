@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,15 +16,12 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $ASTERISK $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $EMPTY_STR $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.23;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_fusion };
@@ -131,19 +127,18 @@ sub analysis_star_fusion {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File::Format::Star_fusion qw{ create_star_fusion_sample_file };
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles get_sample_fastq_file_lanes };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv gnu_rm };
     use MIP::Program::Star_fusion qw{ star_fusion };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## PREPROCESSING:
 
     ## Star fusion has a fixed sample_prefix
-    Readonly my $STAR_FUSION_PREFIX => q{star-fusion.fusion_predictions.abridged};
+    Readonly my $STAR_FUSION_PREFIX => q{star-fusion.fusion_predictions};
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -152,6 +147,7 @@ sub analysis_star_fusion {
     ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
+            chain_id       => q{MAIN},
             file_info_href => $file_info_href,
             id             => $sample_id,
             parameter_href => $parameter_href,
@@ -163,37 +159,40 @@ sub analysis_star_fusion {
     my @infile_paths = @{ $io{in}{file_paths} };
 
     ## Build outfile_paths
-    my %recipe_attribute = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $outdir_path =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
-    my $outsample_name  = $STAR_FUSION_PREFIX . $recipe_attribute{outfile_suffix};
-    my @file_paths      = catfile( $outdir_path, $outsample_name );
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
 
+    ## Join infile lanes
+    my $lanes_id = join $EMPTY_STR,
+      get_sample_fastq_file_lanes(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+      );
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $recipe_attribute{chain},
+                chain_id               => $recipe{job_id_chain},
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref =>
+                  [ $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id ],
                 id             => $sample_id,
-                file_info_href => $file_info_href,
-                file_paths_ref => \@file_paths,
+                outdata_dir    => $active_parameter_href->{outdata_dir},
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
             }
         )
     );
+    my $outdir_path    = $io{out}{dir_path};
+    my $outfile_path   = $io{out}{file_path};
+    my $outfile_suffix = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -202,19 +201,17 @@ sub analysis_star_fusion {
 # Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            process_time                    => $recipe_resource{time},
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
-            ulimit_n                        => $active_parameter_href->{star_ulimit_n},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            process_time          => $recipe{time},
+            temp_directory        => $temp_directory,
+            ulimit_n              => $active_parameter_href->{star_ulimit_n},
         }
     );
 
@@ -238,27 +235,51 @@ sub analysis_star_fusion {
 
     star_fusion(
         {
-            cpu                   => $recipe_resource{core_number},
+            cpu                   => $recipe{core_number},
             examine_coding_effect => 1,
             filehandle            => $filehandle,
-            fusion_inspector      => q{inspect},
             genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
-            min_junction_reads =>
-              $active_parameter_href->{star_fusion_min_junction_reads},
+            min_junction_reads    => $active_parameter_href->{star_fusion_min_junction_reads},
             output_directory_path => $outdir_path,
             samples_file_path     => $sample_files_path,
         }
     );
     say {$filehandle} $NEWLINE;
 
-    ## Close filehandleS
+    say {$filehandle} q{## Rename outfile};
+    my $star_fusion_outfile_path = catfile( $outdir_path, $STAR_FUSION_PREFIX . $outfile_suffix );
+    gnu_mv(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $star_fusion_outfile_path,
+            outfile_path => $outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    say {$filehandle} q{## Remove intermediary files};
+  FILE_TAG:
+    foreach my $file_tag (qw{ _STARgenome _STARpass1 _starF_checkpoints }) {
+
+        gnu_rm(
+            {
+                filehandle  => $filehandle,
+                force       => 1,
+                infile_path => catdir( $outdir_path, $file_tag ),
+                recursive   => 1,
+            }
+        );
+        print {$filehandle} $NEWLINE;
+    }
+
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                path             => $file_paths[0],
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
@@ -269,7 +290,7 @@ sub analysis_star_fusion {
             {
                 format           => q{meta},
                 id               => $sample_id,
-                path             => $file_paths[0],
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
@@ -277,13 +298,13 @@ sub analysis_star_fusion {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_island},
-                job_id_chain         => $recipe_attribute{chain},
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

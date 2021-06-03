@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,16 +16,12 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ $ASTERISK $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $ASTERISK $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.19;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_star_aln analysis_star_aln_mixed };
@@ -131,14 +126,13 @@ sub analysis_star_aln {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_sample_file_attribute };
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::File_info
+      qw{ get_io_files get_sample_fastq_file_lanes get_sample_file_attribute parse_io_outfiles };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv gnu_rm };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Samtools qw{ samtools_index };
     use MIP::Program::Star qw{ star_aln };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{
       get_rg_header_line
       set_recipe_metafile_in_sample_info
@@ -163,46 +157,42 @@ sub analysis_star_aln {
     );
     my @infile_paths = @{ $io{in}{file_paths} };
 
-    my $recipe_mode = $active_parameter_href->{$recipe_name};
-
-    ## Build outfile_paths
-    my %rec_atr = get_recipe_attributes(
+## Build outfile_paths
+    my %recipe = parse_recipe_prerequisites(
         {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+            recipe_name           => $recipe_name,
         }
     );
-    my $job_id_chain = $rec_atr{chain};
-    my $outsample_directory =
-      catdir( $active_parameter_href->{outdata_dir}, $sample_id, $recipe_name );
-    my $lanes_id            = join $EMPTY_STR, @{ $file_info_href->{$sample_id}{lanes} };
-    my $outfile_tag         = $file_info_href->{$sample_id}{$recipe_name}{file_tag};
-    my $outfile_suffix      = $rec_atr{outfile_suffix};
-    my $outfile_path_prefix = catfile( $outsample_directory,
-        $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id . $outfile_tag );
 
+    ## Join infile lanes
+    my $lanes_id = join $EMPTY_STR,
+      get_sample_fastq_file_lanes(
+        {
+            file_info_href => $file_info_href,
+            sample_id      => $sample_id,
+        }
+      );
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref =>
+                  [ $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id ],
                 id             => $sample_id,
-                file_info_href => $file_info_href,
-                file_paths_ref => [ $outfile_path_prefix . $outfile_suffix ],
+                outdata_dir    => $active_parameter_href->{outdata_dir},
                 parameter_href => $parameter_href,
                 recipe_name    => $recipe_name,
             }
         )
     );
-    my $outfile_name = ${ $io{out}{file_names} }[0];
-    my $outfile_path = $io{out}{file_path};
-
-    my %recipe_resource = get_recipe_resources(
-        {
-            active_parameter_href => $active_parameter_href,
-            recipe_name           => $recipe_name,
-        }
-    );
+    my $outfile_name        = ${ $io{out}{file_names} }[0];
+    my $outfile_path        = $io{out}{file_path};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -211,19 +201,17 @@ sub analysis_star_aln {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
-            ulimit_n                        => $active_parameter_href->{star_ulimit_n},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
+            ulimit_n              => $active_parameter_href->{star_ulimit_n},
         }
     );
 
@@ -293,23 +281,29 @@ sub analysis_star_aln {
         $active_parameter_href->{star_aln_reference_genome}
       . $file_info_href->{star_aln_reference_genome}[0];
 
+    my $out_sam_strand_field =
+      $active_parameter_href->{library_type} eq q{unstranded} ? q{intronMotif} : undef;
     star_aln(
         {
-            align_intron_max        => $active_parameter_href->{align_intron_max},
-            align_mates_gap_max     => $active_parameter_href->{align_mates_gap_max},
-            align_sjdb_overhang_min => $active_parameter_href->{align_sjdb_overhang_min},
-            chim_junction_overhang_min =>
-              $active_parameter_href->{chim_junction_overhang_min},
-            chim_out_type         => $active_parameter_href->{chim_out_type},
-            chim_segment_min      => $active_parameter_href->{chim_segment_min},
-            filehandle            => $filehandle,
-            genome_dir_path       => $referencefile_dir_path,
-            infile_paths_ref      => \@fastq_files,
-            out_sam_attr_rgline   => $out_sam_attr_rgline,
-            outfile_name_prefix   => $outfile_path_prefix . $DOT,
-            pe_overlap_nbases_min => $active_parameter_href->{pe_overlap_nbases_min},
-            thread_number         => $recipe_resource{core_number},
-            two_pass_mode         => $active_parameter_href->{two_pass_mode},
+            align_intron_max           => $active_parameter_href->{align_intron_max},
+            align_mates_gap_max        => $active_parameter_href->{align_mates_gap_max},
+            align_sjdb_overhang_min    => $active_parameter_href->{align_sjdb_overhang_min},
+            chim_junction_overhang_min => $active_parameter_href->{chim_junction_overhang_min},
+            chim_out_type              => $active_parameter_href->{chim_out_type},
+            chim_segment_min           => $active_parameter_href->{chim_segment_min},
+            filehandle                 => $filehandle,
+            genome_dir_path            => $referencefile_dir_path,
+            infile_paths_ref           => \@fastq_files,
+            out_sam_attr_rgline        => $out_sam_attr_rgline,
+            out_sam_strand_field       => $out_sam_strand_field,
+            out_wig_norm               => q{None},
+            out_wig_strand             => q{Unstranded},
+            out_wig_type               => q{wiggle},
+            outfile_name_prefix        => $outfile_path_prefix . $DOT,
+            pe_overlap_nbases_min      => $active_parameter_href->{pe_overlap_nbases_min},
+            quant_mode                 => q{GeneCounts},
+            thread_number              => $recipe{core_number},
+            two_pass_mode              => $active_parameter_href->{two_pass_mode},
         },
     );
     say {$filehandle} $NEWLINE;
@@ -353,7 +347,7 @@ sub analysis_star_aln {
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -378,13 +372,13 @@ sub analysis_star_aln {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -494,14 +488,12 @@ sub analysis_star_aln_mixed {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File_info qw{ get_sample_file_attribute };
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
+    use MIP::File_info qw{ get_io_files get_sample_file_attribute parse_io_outfiles };
     use MIP::Program::Gnu::Coreutils qw{ gnu_mv gnu_rm };
-    use MIP::Parse::File qw{ parse_io_outfiles };
     use MIP::Program::Samtools qw{ samtools_index };
     use MIP::Program::Star qw{ star_aln };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{
       get_rg_header_line
       set_recipe_outfile_in_sample_info
@@ -527,17 +519,10 @@ sub analysis_star_aln_mixed {
         }
     );
     my @infile_paths = @{ $io{in}{file_paths} };
-    my $recipe_mode  = $active_parameter_href->{$recipe_name};
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my %recipe_resource = get_recipe_resources(
+    my %recipe       = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -553,7 +538,7 @@ sub analysis_star_aln_mixed {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $job_id_chain,
+                chain_id               => $recipe{job_id_chain},
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => $file_info_sample{no_direction_infile_prefixes},
@@ -600,20 +585,17 @@ sub analysis_star_aln_mixed {
         ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
         my ( $recipe_file_path, $recipe_info_path ) = setup_script(
             {
-                active_parameter_href           => $active_parameter_href,
-                core_number                     => $recipe_resource{core_number},
-                directory_id                    => $sample_id,
-                filehandle                      => $filehandle,
-                job_id_href                     => $job_id_href,
-                log                             => $log,
-                memory_allocation               => $recipe_resource{memory},
-                recipe_directory                => $recipe_name,
-                recipe_name                     => $recipe_name,
-                process_time                    => $recipe_resource{time},
-                sleep                           => 1,
-                source_environment_commands_ref => $recipe_resource{load_env_ref},
-                temp_directory                  => $temp_directory,
-                ulimit_n => $active_parameter_href->{star_ulimit_n},
+                active_parameter_href => $active_parameter_href,
+                core_number           => $recipe{core_number},
+                directory_id          => $sample_id,
+                filehandle            => $filehandle,
+                job_id_href           => $job_id_href,
+                memory_allocation     => $recipe{memory},
+                recipe_directory      => $recipe_name,
+                recipe_name           => $recipe_name,
+                process_time          => $recipe{time},
+                temp_directory        => $temp_directory,
+                ulimit_n              => $active_parameter_href->{star_ulimit_n},
             }
         );
 
@@ -647,24 +629,28 @@ sub analysis_star_aln_mixed {
                 separator        => $SPACE,
             }
         );
+
+        my $out_sam_strand_field =
+          $active_parameter_href->{library_type} eq q{unstranded}
+          ? q{intronMotif}
+          : undef;
         star_aln(
             {
-                filehandle          => $filehandle,
-                align_intron_max    => $active_parameter_href->{align_intron_max},
-                align_mates_gap_max => $active_parameter_href->{align_mates_gap_max},
-                align_sjdb_overhang_min =>
-                  $active_parameter_href->{align_sjdb_overhang_min},
-                chim_junction_overhang_min =>
-                  $active_parameter_href->{chim_junction_overhang_min},
-                chim_out_type         => $active_parameter_href->{chim_out_type},
-                chim_segment_min      => $active_parameter_href->{chim_segment_min},
-                genome_dir_path       => $referencefile_dir_path,
-                infile_paths_ref      => \@fastq_files,
-                out_sam_attr_rgline   => $out_sam_attr_rgline,
-                outfile_name_prefix   => $outfile_path_prefix . $DOT,
-                pe_overlap_nbases_min => $active_parameter_href->{pe_overlap_nbases_min},
-                thread_number         => $recipe_resource{core_number},
-                two_pass_mode         => $active_parameter_href->{two_pass_mode},
+                filehandle                 => $filehandle,
+                align_intron_max           => $active_parameter_href->{align_intron_max},
+                align_mates_gap_max        => $active_parameter_href->{align_mates_gap_max},
+                align_sjdb_overhang_min    => $active_parameter_href->{align_sjdb_overhang_min},
+                chim_junction_overhang_min => $active_parameter_href->{chim_junction_overhang_min},
+                chim_out_type              => $active_parameter_href->{chim_out_type},
+                chim_segment_min           => $active_parameter_href->{chim_segment_min},
+                genome_dir_path            => $referencefile_dir_path,
+                infile_paths_ref           => \@fastq_files,
+                out_sam_attr_rgline        => $out_sam_attr_rgline,
+                out_sam_strand_field       => $out_sam_strand_field,
+                outfile_name_prefix        => $outfile_path_prefix . $DOT,
+                pe_overlap_nbases_min      => $active_parameter_href->{pe_overlap_nbases_min},
+                thread_number              => $recipe{core_number},
+                two_pass_mode              => $active_parameter_href->{two_pass_mode},
             },
         );
         say {$filehandle} $NEWLINE;
@@ -711,7 +697,7 @@ sub analysis_star_aln_mixed {
         ## Close filehandles
         close $filehandle or $log->logcroak(q{Could not close filehandle});
 
-        if ( $recipe_mode == 1 ) {
+        if ( $recipe{mode} == 1 ) {
 
             ## Collect QC metadata info for later use
             set_recipe_outfile_in_sample_info(
@@ -738,14 +724,13 @@ sub analysis_star_aln_mixed {
 
             submit_recipe(
                 {
-                    base_command      => $profile_base_command,
-                    case_id           => $case_id,
-                    dependency_method => q{sample_to_sample_parallel},
-                    job_id_chain      => $job_id_chain,
-                    job_id_href       => $job_id_href,
-                    job_reservation_name =>
-                      $active_parameter_href->{job_reservation_name},
-                    log => $log,
+                    base_command         => $profile_base_command,
+                    case_id              => $case_id,
+                    dependency_method    => q{sample_to_sample_parallel},
+                    job_id_chain         => $recipe{job_id_chain},
+                    job_id_href          => $job_id_href,
+                    job_reservation_name => $active_parameter_href->{job_reservation_name},
+                    log                  => $log,
                     max_parallel_processes_count_href =>
                       $file_info_href->{max_parallel_processes_count},
                     recipe_file_path     => $recipe_file_path,

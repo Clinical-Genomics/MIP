@@ -16,22 +16,10 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw { :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -39,19 +27,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Update::Parameters} => [qw{ update_dynamic_config_parameters }],
-        q{MIP::Test::Fixtures}     => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Active_parameter} => [qw{ update_dynamic_config_parameters }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Update::Parameters
-  qw{ update_dynamic_config_parameters update_with_dynamic_config_parameters };
+use MIP::Active_parameter qw{ update_dynamic_config_parameters };
 
-diag(   q{Test update_dynamic_config_parameters from Update::Parameters.pm v}
-      . $MIP::Update::Parameters::VERSION
+diag(   q{Test update_dynamic_config_parameters from Active_parameter.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,16 +42,17 @@ diag(   q{Test update_dynamic_config_parameters from Update::Parameters.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Given a dynamic case_id parameter i.e. "case_id!" in active_parameters
 my %active_parameter = (
-    cluster_constant_path  => catfile(qw{ root dir_1 dir_2 case_id! }),
     analysis_constant_path => q{analysis},
     case_id                => q{case_1},
+    cluster_constant_path  => catfile(qw{ root dir_1 dir_2 case_id! }),
 );
 
 ## Given a cluster_constant_path when containing case_id!
 my @dynamic_parameters = qw{ cluster_constant_path analysis_constant_path };
 
-## Loop through all dynamic parameters and update info
+## When looping through all dynamic parameters and updating info
 PARAMETER:
 foreach my $parameter_name (@dynamic_parameters) {
 
@@ -83,9 +67,12 @@ foreach my $parameter_name (@dynamic_parameters) {
 
 ## Then cluster constant path should be updated with supplied case id
 my $updated_cluster_constant_path = catdir(qw{ root dir_1 dir_2 case_1 });
-is(
-    $active_parameter{cluster_constant_path},
-    $updated_cluster_constant_path,
-    q{Updated cluster constant path with case_id}
+my %expected_active_parameter     = (
+    analysis_constant_path => q{analysis},
+    case_id                => q{case_1},
+    cluster_constant_path  => $updated_cluster_constant_path,
 );
+is_deeply( \%active_parameter, \%expected_active_parameter,
+    q{Updated cluster constant path with case_id} );
+
 done_testing();

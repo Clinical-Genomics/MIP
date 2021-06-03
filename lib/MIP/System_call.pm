@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,9 +16,6 @@ use autodie qw{ :all };
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ ipc_cmd_run ipc_open3 };
@@ -60,15 +56,15 @@ sub ipc_cmd_run {
     use IPC::Cmd qw{ run };
 
     # System call
-    my ( $success, $error_message_ref, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref )
-      = run( command => $commands_ref, verbose => $verbose );
+    my ( $success, $error_message, $full_buf_ref, $stdout_buf_ref, $stderr_buf_ref ) =
+      run( command => $commands_ref, verbose => $verbose );
 
     my %process_return = (
-        error_messages_ref => $error_message_ref,
-        buffers_ref        => $full_buf_ref,
-        stdouts_ref        => $stdout_buf_ref,
-        stderrs_ref        => $stderr_buf_ref,
-        success            => $success,
+        error_message => $error_message,
+        buffers_ref   => $full_buf_ref,
+        stdouts_ref   => $stdout_buf_ref,
+        stderrs_ref   => $stderr_buf_ref,
+        success       => $success,
     );
     return %process_return;
 }

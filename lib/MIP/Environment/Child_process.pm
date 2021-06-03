@@ -6,21 +6,17 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
-use MIP::Constants qw{ $SPACE };
+use MIP::Constants qw{ $SPACE $TEST_MODE %TEST_PROCESS_RETURN };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.00;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ child_process };
@@ -67,6 +63,9 @@ sub child_process {
 
     use MIP::System_call qw{ ipc_cmd_run ipc_open3 };
 
+    ## Return mock results if in test mode
+    return %TEST_PROCESS_RETURN if ($TEST_MODE);
+
     my %process_api = (
         open3 => {
             method   => \&ipc_open3,
@@ -81,8 +80,8 @@ sub child_process {
         },
     );
 
-    my %process_return = $process_api{$process_type}{method}
-      ->( { %{ $process_api{$process_type}{arg_href} } } );
+    my %process_return =
+      $process_api{$process_type}{method}->( { %{ $process_api{$process_type}{arg_href} } } );
 
     return %process_return;
 }

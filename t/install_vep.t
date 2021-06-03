@@ -22,17 +22,7 @@ use Test::Trap;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_constants test_log test_mip_hashes };
 
 BEGIN {
 
@@ -42,7 +32,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Install::Vep} => [qw{ install_vep }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -50,8 +40,7 @@ BEGIN {
 
 use MIP::Recipes::Install::Vep qw{ install_vep };
 
-diag(   q{Test install_vep from Vep.pm v}
-      . $MIP::Recipes::Install::Vep::VERSION
+diag(   q{Test install_vep from Vep.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -59,14 +48,9 @@ diag(   q{Test install_vep from Vep.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
+test_log( { no_screen => 1, } );
 
-# For storing info to write
-my $file_content;
-
-## Store file content in memory by using referenced variable
-open my $filehandle, q{>}, \$file_content
-  or croak q{Cannot write to} . $SPACE . $file_content . $COLON . $SPACE . $OS_ERROR;
+test_constants( {} );
 
 ## Given install parameters
 my %active_parameter =
@@ -75,9 +59,7 @@ $active_parameter{reference_dir} = catdir(qw{ reference dir });
 my $is_ok = install_vep(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => $active_parameter{singularity}{vep},
-        container_path        => catfile(q{vep.sif}),
-        filehandle            => $filehandle,
+        container_href        => $active_parameter{container}{vep},
     }
 );
 
@@ -89,9 +71,7 @@ $active_parameter{vep_auto_flag} = q{acf};
 $is_ok = install_vep(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => $active_parameter{singularity}{vep},
-        container_path        => catfile(q{vep.sif}),
-        filehandle            => $filehandle,
+        container_href        => $active_parameter{container}{vep},
     }
 );
 
@@ -104,9 +84,7 @@ trap {
     install_vep(
         {
             active_parameter_href => \%active_parameter,
-            container_href        => $active_parameter{singularity}{vep},
-            container_path        => catfile(q{vep.sif}),
-            filehandle            => $filehandle,
+            container_href        => $active_parameter{container}{vep},
         }
     )
 };
@@ -119,15 +97,35 @@ $active_parameter{vep_auto_flag} = q{a};
 $is_ok = install_vep(
     {
         active_parameter_href => \%active_parameter,
-        container_href        => $active_parameter{singularity}{vep},
-        container_path        => catfile(q{vep.sif}),
-        filehandle            => $filehandle,
+        container_href        => $active_parameter{container}{vep},
     }
 );
 
 ## Then return undef
 is( $is_ok, undef, q{Return on auto flag a} );
 
-close $filehandle;
+## Given a failure during installation
+my %process_return = (
+    buffers_ref   => [],
+    error_message => q{Error message},
+    stderrs_ref   => [],
+    stdouts_ref   => [],
+    success       => 0,
+);
+test_constants( { test_process_return_href => \%process_return } );
+$active_parameter{reference_dir} = catdir(qw{ reference dir });
+$active_parameter{vep_auto_flag} = q{ac};
+
+trap {
+    install_vep(
+        {
+            active_parameter_href => \%active_parameter,
+            container_href        => $active_parameter{container}{vep},
+        }
+    );
+};
+
+## Then die
+is( $trap->leaveby, q{die}, q{Die on failure} );
 
 done_testing();

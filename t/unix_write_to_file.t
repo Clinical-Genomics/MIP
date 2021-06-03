@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,7 +31,6 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Unix::Write_to_file} => [qw{ unix_write_to_file }],
-        q{MIP::Test::Fixtures}      => [qw{ test_standard_cli }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -50,8 +39,7 @@ BEGIN {
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 use MIP::Test::Writefile qw{ test_write_to_file };
 
-diag(   q{Test unix_write_to_file from Write_to_file.pm v}
-      . $MIP::Unix::Write_to_file::VERSION
+diag(   q{Test unix_write_to_file from Write_to_file.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

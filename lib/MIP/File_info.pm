@@ -4,28 +4,25 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname fileparse };
-use File::Spec::Functions qw{ catfile };
+use File::Basename qw{ basename dirname fileparse };
+use File::Spec::Functions qw{ catdir catfile splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw { uniq };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $GENOME_VERSION $LOG_NAME $NEWLINE $SPACE };
+use MIP::Constants qw{ $DOT $EMPTY_STR $GENOME_VERSION $LOG_NAME $NEWLINE $SPACE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -33,10 +30,15 @@ BEGIN {
       add_sample_no_direction_infile_prefixes
       check_parameter_metafiles
       get_consensus_sequence_run_type
+      get_io_files
       get_is_sample_files_compressed
+      get_merged_infile_prefix
+      get_sample_fastq_file_lanes
       get_sample_file_attribute
+      get_sampling_fastq_files
       parse_file_compression_features
       parse_files_compression_status
+      parse_io_outfiles
       parse_sample_fastq_file_attributes
       parse_select_file_contigs
       set_alt_loci_contigs
@@ -44,7 +46,10 @@ BEGIN {
       set_file_tag
       set_human_genome_reference_features
       set_infiles
+      set_io_files
       set_is_sample_files_compressed
+      set_human_genome_reference_features
+      set_merged_infile_prefix
       set_primary_contigs
       set_sample_file_attribute
       set_sample_max_parallel_processes_count
@@ -335,6 +340,200 @@ sub get_consensus_sequence_run_type {
     return $consensus_type;
 }
 
+sub get_io_files {
+
+## Function : Get the io files per chain, id and stream
+## Returns  : %io
+## Arguments: $chain_id       => Chain id
+##          : $file_info_href => File info hash {REF}
+##          : $id             => Id (sample or case)
+##          : $parameter_href => Parameter hash {REF}
+##          : $recipe_name    => Recipe name
+##          : $stream         => Stream (in or out or temp)
+##          : $temp_directory => Temporary directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $file_info_href;
+    my $id;
+    my $parameter_href;
+    my $recipe_name;
+    my $stream;
+    my $temp_directory;
+
+    my $tmpl = {
+        chain_id => {
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in out temp }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Data::Diver qw{ Dive };
+    use List::MoreUtils qw{ before };
+    use MIP::File_info qw{ set_io_files };
+    use MIP::Parameter qw{ get_parameter_attribute };
+
+    ## Constants
+    Readonly my $CHAIN_MAIN         => q{CHAIN_MAIN};
+    Readonly my $UPSTREAM_DIRECTION => q{out};
+
+    ## Unpack
+    $chain_id = $chain_id // get_parameter_attribute(
+        {
+            attribute      => q{chain},
+            parameter_href => $parameter_href,
+            parameter_name => $recipe_name,
+        }
+    );
+
+    ## Not first in chain - return file features
+    if ( Dive( $file_info_href, ( q{io}, $chain_id, $id, $recipe_name, $stream ) ) ) {
+
+        return %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
+    }
+    else {
+        ## First in chain - need to find out stream file features of correct upstream recipe
+
+        ## Unpack
+        my @order_recipes =
+          @{ $parameter_href->{cache}{order_recipes_ref} };
+
+        ## Find upstream recipes starting from (and not including) recipe_name
+        my @upstream_recipes =
+          reverse before { $_ eq $recipe_name } @order_recipes;
+
+      UPSTREAM_RECIPE:
+        foreach my $upstream_recipe (@upstream_recipes) {
+
+            # Get chain id
+            my $upstream_chain_id = $parameter_href->{$upstream_recipe}{chain};
+
+            ## No io file features found in chain and stream
+            next UPSTREAM_RECIPE
+              if (
+                not Dive(
+                    $file_info_href,
+                    ( q{io}, $upstream_chain_id, $id, $upstream_recipe, $UPSTREAM_DIRECTION )
+                )
+              );
+
+            ## PARALLEL CHAIN with multiple recipes
+            # second in chain
+            if ( $upstream_chain_id eq $chain_id ) {
+
+                ## Switch upstream out to recipe in - i.e. inherit from upstream
+                _inherit_upstream_io_files(
+                    {
+                        chain_id           => $chain_id,
+                        id                 => $id,
+                        file_info_href     => $file_info_href,
+                        recipe_name        => $recipe_name,
+                        stream             => $stream,
+                        temp_directory     => $temp_directory,
+                        upstream_direction => $UPSTREAM_DIRECTION,
+                        upstream_chain_id  => $upstream_chain_id,
+                        upstream_recipe    => $upstream_recipe,
+                    }
+                );
+
+                ##  Return set file features
+                return %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
+            }
+
+            ## Do not inherit from other chains than self or MAIN
+            next UPSTREAM_RECIPE if ( $upstream_chain_id ne q{MAIN} );
+
+            ## Found io file features found in chain, id, recipe and stream
+            if (
+                Dive(
+                    $file_info_href,
+                    ( q{io}, $upstream_chain_id, $id, $upstream_recipe, $UPSTREAM_DIRECTION )
+                )
+              )
+            {
+
+                ## Switch upstream out to recipe in - i.e. inherit from upstream
+                _inherit_upstream_io_files(
+                    {
+                        chain_id           => $chain_id,
+                        id                 => $id,
+                        file_info_href     => $file_info_href,
+                        recipe_name        => $recipe_name,
+                        stream             => $stream,
+                        temp_directory     => $temp_directory,
+                        upstream_direction => $UPSTREAM_DIRECTION,
+                        upstream_chain_id  => $upstream_chain_id,
+                        upstream_recipe    => $upstream_recipe,
+                    }
+                );
+
+                ##  Return set file features
+                return %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
+            }
+        }
+    }
+
+    ## At root of initation map - add base
+    # Build infiles path
+    my @base_file_paths =
+      map { catfile( $file_info_href->{$id}{mip_infiles_dir}, $_ ) }
+      @{ $file_info_href->{$id}{mip_infiles} };
+
+    set_io_files(
+        {
+            chain_id       => $CHAIN_MAIN,
+            id             => $id,
+            file_paths_ref => \@base_file_paths,
+            file_info_href => $file_info_href,
+            recipe_name    => $recipe_name,
+            stream         => $stream,
+            temp_directory => $temp_directory,
+        }
+    );
+    return %{ $file_info_href->{io}{$CHAIN_MAIN}{$id}{$recipe_name} };
+}
+
 sub get_is_sample_files_compressed {
 
 ## Function : Get sample files compression status
@@ -374,6 +573,40 @@ sub get_is_sample_files_compressed {
         return $file_info_href->{is_files_compressed}{$sample_id};
     }
     return;
+}
+
+sub get_merged_infile_prefix {
+
+## Function : Get the merged infile prefix for a sample id
+## Returns  : $merged_infile_prefix
+## Arguments: $file_info_href => File info hash {REF}
+##          : $sample_id      => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return $file_info_href->{$sample_id}{merged_infile};
 }
 
 sub get_sample_file_attribute {
@@ -459,6 +692,91 @@ sub get_sample_file_attribute {
     return $stored_attribute;
 }
 
+sub get_sample_fastq_file_lanes {
+
+## Function : Get sample fastq file lanes
+## Returns  :
+## Arguments: $file_info_href => File info hash {REF}
+##          : $sample_id      => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    return @{ $file_info_href->{$sample_id}{lanes} };
+}
+
+sub get_sampling_fastq_files {
+
+## Function : Get sample fastq files. Either single-end, paired-end or interleaved
+## Returns  : $is_interleaved_fastq, @fastq_files
+## Arguments: $file_info_sample_href => File info sample hash
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_sample_href;
+
+    my $tmpl = {
+        file_info_sample_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_sample_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @fastq_files;
+
+    ## Perform per single-end or read pair
+    my $paired_end_tracker = 0;
+
+  INFILE_PREFIX:
+    foreach my $infile_prefix ( @{ $file_info_sample_href->{no_direction_infile_prefixes} } ) {
+
+        push @fastq_files, $file_info_sample_href->{mip_infiles}[$paired_end_tracker];
+
+        my $sequence_run_type = $file_info_sample_href->{$infile_prefix}{sequence_run_type};
+
+        # If second read direction is present
+        if ( $sequence_run_type eq q{paired-end} ) {
+
+            # Increment to collect correct read 2
+            $paired_end_tracker = $paired_end_tracker + 1;
+            push @fastq_files, $file_info_sample_href->{mip_infiles}[$paired_end_tracker];
+        }
+
+        my $is_interleaved_fastq = $sequence_run_type eq q{interleaved} ? 1 : 0;
+
+        ## Only perform once per sample and fastq file(s)
+        return $is_interleaved_fastq, @fastq_files;
+    }
+    return;
+}
+
 sub parse_file_compression_features {
 
 ## Function : Parse file compression features
@@ -498,18 +816,14 @@ sub parse_file_compression_features {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Path qw{ check_gzipped };
+    use MIP::Validate::Data qw{ %constraint };
 
     my %attribute = (
         is_file_compressed => 0,
         read_file_command  => q{cat},
     );
 
-    ## Check if a file is gzipped.
-    my $is_gzipped = check_gzipped( { file_name => $file_name, } );
-
-    ## Gzipped
-    if ($is_gzipped) {
+    if ( $constraint{is_gzipped}->($file_name) ) {
 
         $attribute{is_file_compressed} = 1;
         $attribute{read_file_command}  = q{gzip -d -c};
@@ -595,6 +909,178 @@ sub parse_files_compression_status {
         }
     );
     return;
+}
+
+sub parse_io_outfiles {
+
+## Function : Set and get the io files per chain, id and stream
+## Returns  : %io
+## Arguments: $chain_id               => Chain of recipe
+##          : $file_info_href         => File info hash {REF}
+##          : $file_name_prefixes     => Build outfile using file name prefix
+##          : $file_name_prefixes_ref => Build outfile using file name prefixes {REF}
+##          : $file_paths_ref         => File paths {REF}
+##          : $id                     => Id (sample or case)
+##          : $iterators_ref          => Build outfile using iterator (e.g contigs) {REF}
+##          : $outdata_dir            => Outdata directory
+##          : $parameter_href         => Parameter hash {REF}
+##          : $recipe_name            => Recipe name
+##          : $stream                 => Stream (out)
+##          : $temp_directory         => Temporary directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $file_info_href;
+    my $file_name_prefix;
+    my $file_name_prefixes_ref;
+    my $file_paths_ref;
+    my $id;
+    my $iterators_ref;
+    my $outdata_dir;
+    my $parameter_href;
+    my $recipe_name;
+    my $temp_directory;
+
+    ## Default(s)
+    my $stream;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_name_prefix => {
+            store       => \$file_name_prefix,
+            strict_type => 1,
+        },
+        file_name_prefixes_ref => {
+            default     => [],
+            store       => \$file_name_prefixes_ref,
+            strict_type => 1,
+        },
+        file_paths_ref => {
+            default     => [],
+            store       => \$file_paths_ref,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        iterators_ref => {
+            default     => [],
+            store       => \$iterators_ref,
+            strict_type => 1,
+        },
+        outdata_dir => {
+            store       => \$outdata_dir,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ out }],
+            default     => q{out},
+            store       => \$stream,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File_info qw{ get_io_files set_io_files };
+    use MIP::Parameter qw{ get_recipe_attributes };
+
+    ## Build default @file_paths
+    if ( not @{$file_paths_ref} and $outdata_dir ) {
+
+        my %recipe = get_recipe_attributes(
+            {
+                parameter_href => $parameter_href,
+                recipe_name    => $recipe_name,
+            }
+        );
+        my $outfile_tag    = $recipe{file_tag}       //= $EMPTY_STR;
+        my $outfile_suffix = $recipe{outfile_suffix} //= $EMPTY_STR;
+        my $directory      = catdir( $outdata_dir, $id, $recipe_name );
+
+        ## Default paths with iterators
+        if ( @{$iterators_ref} and $file_name_prefix ) {
+
+            ## Localize as we will mutate elements
+            my @iterators = @{$iterators_ref};
+            foreach my $iterator (@iterators) {
+
+                ## Add "." if not empty string
+                $iterator = $iterator ne $EMPTY_STR ? $DOT . $iterator : $iterator;
+            }
+            @{$file_paths_ref} =
+              map { catfile( $directory, $file_name_prefix . $outfile_tag . $_ . $outfile_suffix ) }
+              @iterators;
+        }
+        ## Default paths without iterators
+        else {
+
+            ## $file_name_prefixes_needs to be set
+            croak q{Missing argument!} if not @{$file_name_prefixes_ref};
+            @{$file_paths_ref} =
+              map { catfile( $directory, $_ . $outfile_tag . $outfile_suffix ) }
+              @{$file_name_prefixes_ref};
+        }
+    }
+
+    ## Set the io files per chain and stream
+    set_io_files(
+        {
+            chain_id       => $chain_id,
+            file_paths_ref => $file_paths_ref,
+            file_info_href => $file_info_href,
+            id             => $id,
+            recipe_name    => $recipe_name,
+            stream         => $stream,
+            temp_directory => $temp_directory,
+        }
+    );
+
+    my %io = get_io_files(
+        {
+            file_info_href => $file_info_href,
+            id             => $id,
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            stream         => $stream,
+        }
+    );
+
+    return %io;
 }
 
 sub parse_sample_fastq_file_attributes {
@@ -1043,8 +1529,8 @@ sub set_human_genome_reference_features {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Constants qw{ set_genome_build_constants };
-    use MIP::File::Path qw{ check_gzipped };
     use MIP::Parameter qw{ set_parameter_build_file_status };
+    use MIP::Validate::Data qw{ %constraint };
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -1093,8 +1579,7 @@ sub set_human_genome_reference_features {
     $file_info_href->{human_genome_reference_name_prefix} =
       fileparse( $human_genome_reference, qr/[.]fasta | [.]fasta[.]gz/xsm );
 
-    $file_info_href->{human_genome_compressed} =
-      check_gzipped( { file_name => $human_genome_reference, } );
+    $file_info_href->{human_genome_compressed} = $constraint{is_gzipped}->($human_genome_reference);
 
     if ( $file_info_href->{human_genome_compressed} ) {
 
@@ -1207,6 +1692,200 @@ sub set_is_sample_files_compressed {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     $file_info_href->{is_files_compressed}{$sample_id} = $compression_status;
+    return;
+}
+
+sub set_io_files {
+
+## Function : Set the io files per chain and stream
+## Returns  : io
+## Arguments: $chain_id       => Chain of recipe
+##          : $id             => Id (sample or case)
+##          : $file_info_href => File info hash {REF}
+##          : $file_paths_ref => File paths {REF}
+##          : $recipe_name    => Recipe name
+##          : $stream         => Stream (in or out or temp)
+##          : $temp_directory => Temporary directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $file_paths_ref;
+    my $recipe_name;
+    my $stream;
+    my $temp_directory;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        file_paths_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$file_paths_ref,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in out temp }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Alias
+    my $io_recipe_href =
+      \%{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
+
+    ## Delete previous record (if any)
+    delete $io_recipe_href->{$stream};
+
+  FILE_PATH:
+    foreach my $file_path ( @{$file_paths_ref} ) {
+
+        my ( $file_name_prefix, $dirs, $suffix ) = fileparse( $file_path, qr/([.][^.]*)*/sxm );
+
+        push @{ $io_recipe_href->{$stream}{file_names} },         basename($file_path);
+        push @{ $io_recipe_href->{$stream}{file_name_prefixes} }, $file_name_prefix;
+        push @{ $io_recipe_href->{$stream}{file_paths} },         $file_path;
+        push @{ $io_recipe_href->{$stream}{file_path_prefixes} },
+          catfile( $dirs, $file_name_prefix );
+
+        ## Collect everything after first dot
+        push @{ $io_recipe_href->{$stream}{file_suffixes} }, $suffix;
+    }
+
+    if ( scalar @{ $io_recipe_href->{$stream}{file_suffixes} } ) {
+
+        _set_io_files_hash(
+            {
+                chain_id       => $chain_id,
+                file_info_href => $file_info_href,
+                id             => $id,
+                recipe_name    => $recipe_name,
+                stream         => $stream,
+            }
+        );
+
+    }
+
+    ## Split relative infile_path to file(s)
+    my ( $infile_path_volume, $file_path_directory ) =
+      splitpath( $file_paths_ref->[0] );
+
+    $io_recipe_href->{$stream}{dir_path} = $file_path_directory;
+    $io_recipe_href->{$stream}{dir_path_prefix} =
+      dirname( $file_paths_ref->[0] );
+
+    ## Collect everything after last dot
+    my ( $filename, $dirs, $suffix ) =
+      fileparse( $file_paths_ref->[0], qr/[.][^.]*/sxm );
+    $io_recipe_href->{$stream}{file_suffix} = $suffix;
+
+    _set_io_files_constant(
+        {
+            chain_id       => $chain_id,
+            file_info_href => $file_info_href,
+            id             => $id,
+            recipe_name    => $recipe_name,
+            stream         => $stream,
+        }
+    );
+
+    return if ( not $temp_directory );
+
+    ## Also set the temporary file features for stream
+    ## Switch to temp dir for path
+    my @file_paths_temp =
+      map { catfile( $temp_directory, $_ ) } @{ $io_recipe_href->{$stream}{file_names} };
+
+    set_io_files(
+        {
+            chain_id       => $chain_id,
+            id             => $id,
+            file_paths_ref => \@file_paths_temp,
+            file_info_href => $file_info_href,
+            recipe_name    => $recipe_name,
+            stream         => q{temp},
+        }
+    );
+    return;
+}
+
+sub set_merged_infile_prefix {
+
+## Function : Set the merged infile prefix for sample id
+## Returns  :
+## Arguments: $file_info_href       => File info hash {REF}
+##          : $merged_infile_prefix => Merged infile prefix
+##          : $sample_id            => Sample id
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_info_href;
+    my $merged_infile_prefix;
+    my $sample_id;
+
+    my $tmpl = {
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        merged_infile_prefix => {
+            defined     => 1,
+            required    => 1,
+            store       => \$merged_infile_prefix,
+            strict_type => 1,
+        },
+        sample_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_id,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    $file_info_href->{$sample_id}{merged_infile} = $merged_infile_prefix;
+
     return;
 }
 
@@ -1350,6 +2029,279 @@ sub set_select_file_contigs {
     ## Set select contig sets
     @{ $file_info_href->{select_file_contigs} } = @{$select_file_contigs_ref};
 
+    return;
+}
+
+sub _inherit_upstream_io_files {
+
+## Function : Switch upstream out to recipe in - i.e. inherit from upstream
+## Returns  : %io
+## Arguments: $chain_id           => Chain id
+##          : $id                 => Id (sample or case)
+##          : $file_info_href     => File info hash {REF}
+##          : $recipe_name        => Recipe name
+##          : $stream             => Stream (in or out or temp)
+##          : $temp_directory     => Temporary directory
+##          : $upstream_direction => Upstream direction
+##          : $upstream_chain_id  => Upstream chain id
+##          : $upstream_recipe    => Upstream recipe
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $recipe_name;
+    my $stream;
+    my $temp_directory;
+    my $upstream_direction;
+    my $upstream_chain_id;
+    my $upstream_recipe;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in out temp }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+        upstream_direction => {
+            defined     => 1,
+            required    => 1,
+            store       => \$upstream_direction,
+            strict_type => 1,
+        },
+        upstream_chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$upstream_chain_id,
+            strict_type => 1,
+        },
+        upstream_recipe => {
+            defined     => 1,
+            required    => 1,
+            store       => \$upstream_recipe,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Switch upstream out to recipe in - i.e. inherit from upstream
+    my @upstream_outfile_paths =
+      @{ $file_info_href->{io}{$upstream_chain_id}{$id}{$upstream_recipe}{$upstream_direction}
+          {file_paths} };
+
+    set_io_files(
+        {
+            chain_id       => $chain_id,
+            id             => $id,
+            file_paths_ref => \@upstream_outfile_paths,
+            file_info_href => $file_info_href,
+            recipe_name    => $recipe_name,
+            stream         => $stream,
+            temp_directory => $temp_directory,
+        }
+    );
+    return;
+}
+
+sub _set_io_files_constant {
+
+## Function : Set the io files per chain and stream for constant features
+## Returns  :
+## Arguments: $chain_id       => Chain of recipe
+##          : $id             => Id (sample or case)
+##          : $file_info_href => File info hash {REF}
+##          : $stream         => Stream (in or out or temp)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $recipe_name;
+    my $stream;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in out temp }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Alias
+    my $io_recipe_href =
+      \%{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
+
+    my %constant_map = (
+        file_name_prefixes => q{file_name_prefix},
+        file_paths         => q{file_path},
+        file_path_prefixes => q{file_path_prefix},
+        file_suffixes      => q{file_constant_suffix},
+    );
+
+  FILE_FEATURE:
+    while ( my ( $file_feature, $file_constant_feature ) = each %constant_map ) {
+
+        ## Get unique suffixes
+        my @uniq_elements =
+          uniq( @{ $io_recipe_href->{$stream}{$file_feature} } );
+
+        next FILE_FEATURE if ( not scalar @uniq_elements == 1 );
+
+        ## Unique - Set file constant suffix
+        $io_recipe_href->{$stream}{$file_constant_feature} =
+          $uniq_elements[0];
+    }
+    return;
+}
+
+sub _set_io_files_hash {
+
+## Function : Set the io hash files per chain, id, recipe and stream
+## Returns  : io
+## Arguments: $chain_id       => Chain of recipe
+##          : $id             => Id (sample or case)
+##          : $file_info_href => File info hash {REF}
+##          : $file_paths_ref => File paths {REF}
+##          : $recipe_name    => Recipe name
+##          : $stream         => Stream (in or out or temp)
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $chain_id;
+    my $id;
+    my $file_info_href;
+    my $recipe_name;
+    my $stream;
+
+    my $tmpl = {
+        chain_id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$chain_id,
+            strict_type => 1,
+        },
+        id => {
+            defined     => 1,
+            required    => 1,
+            store       => \$id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        stream => {
+            allow       => [qw{ in out temp }],
+            defined     => 1,
+            required    => 1,
+            store       => \$stream,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Alias
+    my $io_recipe_href =
+      \%{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} };
+
+    my %file_map = (
+        file_names => q{file_name_href},
+        file_paths => q{file_path_href},
+    );
+
+  FILE_MAP:
+    while ( my ( $array_key, $hash_key ) = each %file_map ) {
+
+      SUFFIX:
+        while ( my ( $file_index, $suffix ) = each @{ $io_recipe_href->{$stream}{file_suffixes} } )
+        {
+
+            my $file = $io_recipe_href->{$stream}{$array_key}[$file_index];
+
+            ## Find iterator string between dots
+            my ($iterator) = $suffix =~ /[.]([^.]+)[.]/sxm;
+
+            next SUFFIX if ( not $iterator );
+
+            $io_recipe_href->{$stream}{$hash_key}{$iterator} = $file;
+        }
+    }
     return;
 }
 

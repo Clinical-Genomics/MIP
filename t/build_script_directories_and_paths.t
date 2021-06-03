@@ -21,17 +21,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $DOT $SPACE $UNDERSCORE };
-use MIP::Test::Fixtures qw{ test_log test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log };
 
 BEGIN {
 
@@ -41,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Script::Setup_script} => [qw{ build_script_directories_and_paths }],
-        q{MIP::Test::Fixtures}       => [qw{ test_log test_standard_cli }],
+        q{MIP::Test::Fixtures}       => [qw{ test_log }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -49,8 +39,7 @@ BEGIN {
 
 use MIP::Script::Setup_script qw{ build_script_directories_and_paths };
 
-diag(   q{Test build_script_directories_and_paths from Setup_script.pm v}
-      . $MIP::Script::Setup_script::VERSION
+diag(   q{Test build_script_directories_and_paths from Setup_script.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -58,7 +47,7 @@ diag(   q{Test build_script_directories_and_paths from Setup_script.pm v}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { no_screen => 1, } );
+test_log( { no_screen => 1, } );
 my $test_dir = tempdir( CLEANUP => 1, );
 
 ## Given recipe dirs and recipe name
@@ -101,8 +90,30 @@ is( $file_path_prefix, $expected_file_path_prefix, q{Built file_path_prefix} );
 my $expected_recipe_directory = catdir( $outdata_dir, $directory_id, $recipe_directory );
 
 ## Then return the directory to write data to
-is( $recipe_data_directory_path, $expected_recipe_directory,
-    q{Built recipe_data_directory_path} );
+is( $recipe_data_directory_path, $expected_recipe_directory, q{Built recipe_data_directory_path} );
+
+## When info_file_id is given
+my $info_file_id = q{test_id};
+
+( $file_info_path, $file_path_prefix, $recipe_data_directory_path ) =
+  build_script_directories_and_paths(
+    {
+        directory_id               => $directory_id,
+        info_file_id               => $info_file_id,
+        outdata_dir                => $outdata_dir,
+        outscript_dir              => $outscript_dir,
+        recipe_data_directory_path => $recipe_data_directory_path,
+        recipe_directory           => $recipe_directory,
+        recipe_mode                => $recipe_mode,
+        recipe_name                => $recipe_name,
+    }
+  );
+
+$expected_file_info_path = catfile( $outdata_dir, $directory_id, $recipe_directory, q{info},
+    $recipe_name . $UNDERSCORE . $info_file_id . $DOT );
+
+## Then return the file info path to write stdout and stderr to
+is( $file_info_path, $expected_file_info_path, q{Built file_info_path with info_file_id} );
 
 ## When recipe mode is two
 $recipe_mode = 2;

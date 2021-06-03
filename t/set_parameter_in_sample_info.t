@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_mip_hashes };
 
 ## Constants
 Readonly my $GENOME_BUILD_VERSION => 37;
@@ -44,7 +34,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Sample_info}    => [qw{ set_parameter_in_sample_info }],
-        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -52,8 +42,7 @@ BEGIN {
 
 use MIP::Sample_info qw{ set_parameter_in_sample_info };
 
-diag(   q{Test set_parameter_in_sample_info from Sample_info.pm v}
-      . $MIP::Sample_info::VERSION
+diag(   q{Test set_parameter_in_sample_info from Sample_info.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -101,9 +90,10 @@ my %expected_sample_info = (
 $expected_sample_info{analysis_type} = $active_parameter{analysis_type};
 %{ $expected_sample_info{expected_coverage} } = %{ $active_parameter{expected_coverage} };
 $expected_sample_info{pedigree_file}{path} = $active_parameter{pedigree_file};
-$expected_sample_info{log_file_dir} = dirname( dirname( $active_parameter{log_file} ) );
-$expected_sample_info{last_log_file_path} = $active_parameter{log_file};
-$expected_sample_info{has_trio}           = 0;
+$expected_sample_info{log_file_dir}        = dirname( dirname( $active_parameter{log_file} ) );
+$expected_sample_info{last_log_file_path}  = $active_parameter{log_file};
+$expected_sample_info{has_trio}            = 0;
+$expected_sample_info{has_duo}             = 0;
 
 ## Then these entries should be set in sample info
 is_deeply( \%sample_info, \%expected_sample_info, q{Set parameter in sample_info} );

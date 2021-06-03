@@ -26,9 +26,6 @@ BEGIN {
     use base qw{ Exporter };
     require Exporter;
 
-    # Set the version for version checking
-    our $VERSION = 1.17;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ gnu_cat
       gnu_chmod
@@ -342,7 +339,8 @@ sub gnu_cut {
 ## Function : Perl wrapper for writing cut command to already open $filehandle or return commands array. Based on cut 8.4
 ## Returns  : @commands
 ## Arguments: $filehandle             => Filehandle to write to
-##          : $infile_path            => Infile paths {REF}
+##          : $delimiter              => Delimiter
+##          : $infile_path            => Infile path
 ##          : $list                   => List of specified fields
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append to stderrinfo to file
@@ -351,6 +349,7 @@ sub gnu_cut {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $delimiter;
     my $filehandle;
     my $list;
     my $infile_path;
@@ -362,13 +361,16 @@ sub gnu_cut {
         filehandle => {
             store => \$filehandle,
         },
+        delimiter => {
+            store       => \$delimiter,
+            strict_type => 1,
+        },
         list => {
             store       => \$list,
             strict_type => 1,
         },
         infile_path => {
             defined     => 1,
-            required    => 1,
             store       => \$infile_path,
             strict_type => 1,
         },
@@ -391,13 +393,20 @@ sub gnu_cut {
     ## Stores commands depending on input parameters
     my @commands = qw{ cut };
 
+    if ($delimiter) {
+
+        push @commands, q{-d} . $SPACE . $delimiter;
+    }
+
     if ($list) {
 
         push @commands, q{-f} . $SPACE . $list;
     }
 
-    ## Infiles
-    push @commands, $infile_path;
+    if ($infile_path) {
+
+        push @commands, $infile_path;
+    }
 
     push @commands,
       unix_standard_streams(
@@ -497,9 +506,8 @@ sub gnu_echo {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Stores commands depending on input parameters
-    my @commands = q{echo};
+    my @commands = qw{ echo };
 
-    ## Options
     if ($enable_interpretation) {
         push @commands, q{-e};
     }
@@ -509,10 +517,8 @@ sub gnu_echo {
     }
 
     ## Strings
-    push @commands,
-      $string_wrapper . join( $EMPTY_STR, @{$strings_ref} ) . $string_wrapper;
+    push @commands, $string_wrapper . join( $EMPTY_STR, @{$strings_ref} ) . $string_wrapper;
 
-    ## Outfile
     if ($outfile_path) {
         push @commands, q{>} . $SPACE . $outfile_path;
     }
@@ -1223,15 +1229,13 @@ sub gnu_sleep {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     # Stores commands depending on input parameters
-    my @commands = q{sleep};
+    my @commands = qw{ sleep };
 
-    ## Options
     if ( defined $seconds_to_sleep ) {
 
         push @commands, $seconds_to_sleep;
     }
 
-    #Redirect stdout to program specific stdout file
     push @commands,
       unix_standard_streams(
         {

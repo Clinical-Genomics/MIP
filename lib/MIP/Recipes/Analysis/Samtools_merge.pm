@@ -9,7 +9,6 @@ use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use POSIX;
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -18,16 +17,12 @@ use warnings qw{ FATAL utf8 };
 use autodie qw{ :all };
 
 ## MIPs lib/
-use MIP::Constants
-  qw{ %ANALYSIS $ASTERISK $DOT $EMPTY_STR $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ %ANALYSIS $ASTERISK $DOT $EMPTY_STR $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.01;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_samtools_merge analysis_samtools_merge_panel };
@@ -148,15 +143,13 @@ sub analysis_samtools_merge {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles set_merged_infile_prefix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Samtools qw{ samtools_merge samtools_view };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_merged_infile_prefix };
 
     ### PREPROCESSING:
 
@@ -176,26 +169,19 @@ sub analysis_samtools_merge {
     );
     my @infile_paths = @{ $io{in}{file_paths} };
 
-    my %rec_atr = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $job_id_chain = $rec_atr{chain};
-    my $recipe_mode  = $active_parameter_href->{$recipe_name};
     my $xargs_file_path_prefix;
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number       = $recipe_resource{core_number};
-    my $memory_allocation = $recipe_resource{memory};
+    my $core_number       = $recipe{core_number};
+    my $memory_allocation = $recipe{memory};
 
     ## Assign suffix
-    my $outfile_suffix = $rec_atr{outfile_suffix};
+    my $outfile_suffix = $recipe{outfile_suffix};
 
     ## Extract lanes
     my $lanes_id = join $EMPTY_STR, @{ $file_info_href->{$sample_id}{lanes} };
@@ -224,7 +210,7 @@ sub analysis_samtools_merge {
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
+                chain_id       => $recipe{job_id_chain},
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 file_paths_ref => \@outfile_paths,
@@ -245,24 +231,21 @@ sub analysis_samtools_merge {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $memory_allocation,
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $memory_allocation,
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
     ## Set helper value for finding merged_infiles downstream
-    my $merged_infile_prefix =
-      $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
+    my $merged_infile_prefix = $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
     set_merged_infile_prefix(
         {
             file_info_href       => $file_info_href,
@@ -295,8 +278,7 @@ sub analysis_samtools_merge {
         foreach my $contig ( @{ $file_info_href->{bam_contigs_size_ordered} } ) {
 
             ## Get parameters
-            my $stderrfile_path =
-              $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
+            my $stderrfile_path = $xargs_file_path_prefix . $DOT . $contig . $DOT . q{stderr.txt};
 
             samtools_merge(
                 {
@@ -320,7 +302,7 @@ sub analysis_samtools_merge {
 
         ## Rename samples
         say {$filehandle}
-q{## Split file into contigs instead of merge to streamline handling of files downstream};
+          q{## Split file into contigs instead of merge to streamline handling of files downstream};
 
         ## Create file commands for xargs
         ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
@@ -354,7 +336,7 @@ q{## Split file into contigs instead of merge to streamline handling of files do
     close $xargsfilehandle;
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         my $qc_outfile_path = $outfile_paths[0];
         set_recipe_outfile_in_sample_info(
@@ -369,13 +351,13 @@ q{## Split file into contigs instead of merge to streamline handling of files do
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -479,14 +461,12 @@ sub analysis_samtools_merge_panel {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles set_merged_infile_prefix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Samtools qw{ samtools_merge samtools_view };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-    use MIP::Set::File qw{ set_merged_infile_prefix };
 
     ### PREPROCESSING:
 
@@ -506,25 +486,18 @@ sub analysis_samtools_merge_panel {
     );
     my @infile_paths = @{ $io{in}{file_paths} };
 
-    my %rec_atr = get_recipe_attributes(
-        {
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
-    my $job_id_chain    = $rec_atr{chain};
-    my $recipe_mode     = $active_parameter_href->{$recipe_name};
-    my %recipe_resource = get_recipe_resources(
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number       = $recipe_resource{core_number};
-    my $memory_allocation = $recipe_resource{memory};
+    my $core_number       = $recipe{core_number};
+    my $memory_allocation = $recipe{memory};
 
     ## Assign suffix
-    my $outfile_suffix = $rec_atr{outfile_suffix};
+    my $outfile_suffix = $recipe{outfile_suffix};
 
     ## Extract lanes
     my $lanes_id = join $EMPTY_STR, @{ $file_info_href->{$sample_id}{lanes} };
@@ -548,7 +521,7 @@ sub analysis_samtools_merge_panel {
         %io,
         parse_io_outfiles(
             {
-                chain_id       => $job_id_chain,
+                chain_id       => $recipe{job_id_chain},
                 id             => $sample_id,
                 file_info_href => $file_info_href,
                 file_paths_ref => [$outfile_path],
@@ -566,23 +539,20 @@ sub analysis_samtools_merge_panel {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $core_number,
-            directory_id                    => $sample_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $memory_allocation,
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
+            active_parameter_href => $active_parameter_href,
+            core_number           => $core_number,
+            directory_id          => $sample_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $memory_allocation,
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
         }
     );
 
     ## Set helper value for finding merged_infiles downstream
-    my $merged_infile_prefix =
-      $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
+    my $merged_infile_prefix = $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id;
     set_merged_infile_prefix(
         {
             file_info_href       => $file_info_href,
@@ -615,8 +585,7 @@ sub analysis_samtools_merge_panel {
     else {
         ## Only 1 infile - rename sample and index instead of merge to streamline handling of filenames downstream
 
-        say {$filehandle}
-          q{## Only one infile, rename to streamline handling of files downstream};
+        say {$filehandle} q{## Only one infile, rename to streamline handling of files downstream};
         samtools_view(
             {
                 filehandle    => $filehandle,
@@ -631,7 +600,7 @@ sub analysis_samtools_merge_panel {
 
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         set_recipe_outfile_in_sample_info(
             {
@@ -645,13 +614,13 @@ sub analysis_samtools_merge_panel {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_sample},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_sample},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,8 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Star_fusion} => [qw{ star_fusion_gtf_file_to_feature_seqs }],
-        q{MIP::Test::Fixtures}       => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -50,8 +39,7 @@ BEGIN {
 use MIP::Program::Star_fusion qw{ star_fusion_gtf_file_to_feature_seqs };
 use MIP::Test::Commands qw{ test_function };
 
-diag(   q{Test star_fusion_gtf_file_to_feature_seqs from Star_fusion.pm v}
-      . $MIP::Program::Star_fusion::VERSION
+diag(   q{Test star_fusion_gtf_file_to_feature_seqs from Star_fusion.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

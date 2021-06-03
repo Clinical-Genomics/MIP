@@ -22,11 +22,9 @@ sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_i
 gatk_genotypegvcfs_ref_gvcf: grch37_gatk_merged_reference_samples.txt
 genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 human_genome_reference: grch37_homo_sapiens_-d5-.fasta
-qccollect_eval_metric_file: qc_eval_metric_-v1.3-.yaml
-qccollect_regexp_file: qc_regexp_-v1.26-.yaml
-rank_model_file: rank_model_-v1.31-.ini
+rank_model_file: rank_model_-v1.32-.ini
 sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
-vcfanno_config: grch37_vcfanno_config_v1.13-.toml
+vcfanno_config: grch37_vcfanno_config_v1.15-.toml
 ### Analysis
 ### Programs
 ## Parameters
@@ -35,6 +33,8 @@ fqf_annotations:
   - GNOMADAF_popmax
   - SWEGENAF
 gatk_combinevariants_prioritize_caller: haplotypecaller
+gatk_combinevariants_callers_to_combine:
+  - gatk_variantrecalibration
 picardtools_path: /usr/picard
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 vep_custom_annotation:
@@ -49,10 +49,10 @@ vep_custom_annotation:
     force_report_coordinates: 0
     key: CLINVAR
     file_type: vcf
-    path: cluster_constant_path!/references/grch37_clinvar_reformated_-20200905-.vcf.gz
+    path: cluster_constant_path!/references/grch37_clinvar_reformated_-20210415-.vcf.gz
     vcf_fields: CLNSIG,CLNVID,CLNREVSTAT
-vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data-100/cache/
-vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins
+vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data-103/cache/
+vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins
 vep_plugin:
   dbNSFP:
     exist_check:
@@ -74,15 +74,15 @@ vep_plugin:
   LoFtool:
     exist_check:
       - type: file
-        path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/LoFtool_scores.txt
+        path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/LoFtool_scores.txt
     parameters:
-      - cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/LoFtool_scores.txt
+      - cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/LoFtool_scores.txt
   MaxEntScan:
     exist_check:
       - type: directory
-        path: cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/fordownload
+        path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/fordownload
     parameters:
-      - cluster_constant_path!/references/ensembl-tools-data-100/cache/Plugins/fordownload
+      - cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/fordownload
       - SWA
       - NCSS
   SpliceAI:

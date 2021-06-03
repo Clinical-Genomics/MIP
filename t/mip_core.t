@@ -20,24 +20,22 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
-use MIP::Check::Modules qw{ check_perl_modules };
+use MIP::Constants qw{ $COMMA $MIP_VERSION $NEWLINE $SPACE };
+use MIP::Language::Perl qw{ check_modules_existance };
 use MIP::Script::Utils qw{ help };
 
 my $VERBOSE = 1;
-our $VERSION = 1.15;
-
 our $USAGE = build_usage( {} );
 
 BEGIN {
 
-    require MIP::Check::Modules;
+    require MIP::Language::Perl;
 
     ## Special case to initiate testing
     my @modules = (q{Test::More});
 
     # Evaluate that all modules required are installed
-    check_perl_modules(
+    check_modules_existance(
         {
             modules_ref  => \@modules,
             program_name => $PROGRAM_NAME,
@@ -101,7 +99,7 @@ GetOptions(
     # Display version number
     q{v|version} => sub {
         done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $VERSION . $NEWLINE;
+        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $MIP_VERSION . $NEWLINE;
         exit;
     },
     q{vb|verbose} => $VERBOSE,
@@ -120,7 +118,6 @@ use TAP::Harness;
 use Cwd;
 
 diag(   q{Test mip_core.t version }
-      . $VERSION
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -297,8 +294,7 @@ sub mip_scripts {
         utility_scripts => [qw{ calculate_af.pl max_af.pl }],
         definitions     => [
             qw{ analyse_parameters.yaml
-              download_rd_dna_parameters.yaml
-              download_rd_rna_parameters.yaml
+              download_parameters.yaml
               install_parameters.yaml
               required_parameters.yaml
               mip_parameters.yaml

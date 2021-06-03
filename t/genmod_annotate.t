@@ -22,17 +22,7 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.01;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -42,22 +32,22 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Genmod} => [qw{ genmod_annotate }],
-        q{MIP::Test::Fixtures}  => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Genmod qw{ genmod_annotate };
 
-diag(   q{Test genmod_annotate from Genmod.pm v}
-      . $MIP::Program::Genmod::VERSION
+diag(   q{Test genmod_annotate from Genmod.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+Readonly my $GENOME_BUILD_VERSION => 38;
 
 ## Base arguments
 my @function_base_commands = qw{ genmod };
@@ -105,6 +95,10 @@ my %specific_argument = (
           . q{--cadd_file}
           . $SPACE
           . catfile(qw{ a test cadd_file_2 }),
+    },
+    genome_build => {
+        input           => $GENOME_BUILD_VERSION,
+        expected_output => q{--genome-build} . $SPACE . $GENOME_BUILD_VERSION,
     },
     infile_path => {
         input           => catfile(qw{ a test infile }),

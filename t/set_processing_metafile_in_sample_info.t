@@ -1,87 +1,44 @@
-#!/usr/bin/env perl
+#! /usr/bin/env perl
 
-use Modern::Perl qw{ 2018 };
-use warnings qw{FATAL utf8};
-use autodie;
-use 5.026;    # Require at least perl 5.18
-use utf8;
-use open qw{ :encoding(UTF-8) :std };
-use charnames qw{ :full :short };
+use 5.026;
 use Carp;
-use English qw{-no_match_vars};
-use Params::Check qw{check allow last_error};
-
-use FindBin qw{$Bin};    # Find directory of script
-use File::Basename qw{dirname basename};
-use File::Spec::Functions qw{catfile catdir devnull};
-use Getopt::Long;
+use charnames qw{ :full :short };
+use English qw{ -no_match_vars };
+use File::Basename qw{ dirname };
+use File::Spec::Functions qw{ catdir catfile };
+use FindBin qw{ $Bin };
+use open qw{ :encoding(UTF-8) :std };
+use Params::Check qw{ allow check last_error };
 use Test::More;
-use Readonly;
+use utf8;
+use warnings qw{ FATAL utf8 };
+
+## CPANM
+use autodie qw { :all };
+use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Script::Utils qw{help};
+use MIP::Constants qw{ $COMMA $SPACE };
 
-our $USAGE = build_usage( {} );
-
-my $VERBOSE = 0;
-our $VERSION = '1.0.0';
-
-## Constants
-Readonly my $COMMA => q{,};
-Readonly my $SPACE => q{ };
-
-###User Options
-GetOptions(
-    'h|help' => sub {
-        done_testing();
-        print {*STDOUT} $USAGE, "\n";
-        exit;
-    },    #Display help text
-    'v|version' => sub {
-        done_testing();
-        print {*STDOUT} "\n" . basename($PROGRAM_NAME) . q{  } . $VERSION, "\n\n";
-        exit;
-    },    #Display version number
-    'vb|verbose' => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
 
 BEGIN {
 
+    use MIP::Test::Fixtures qw{ test_import };
+
 ### Check all internal dependency modules and imports
-    ## Modules with import
-    my %perl_module = ( q{MIP::Script::Utils} => [qw{help}], );
+## Modules with import
+    my %perl_module = (
+        q{MIP::Sample_info} => [qw{ set_processing_metafile_in_sample_info }],
 
-  PERL_MODULES:
-    while ( my ( $module, $module_import ) = each %perl_module ) {
+    );
 
-        use_ok( $module, @{$module_import} )
-          or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
-
-    ## Modules
-    my @modules = (qw{MIP::Sample_info});
-
-  MODULES:
-    for my $module (@modules) {
-
-        require_ok($module) or BAIL_OUT q{Cannot load} . $SPACE . $module;
-    }
+    test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Sample_info qw{set_processing_metafile_in_sample_info};
+use MIP::Sample_info qw{ set_processing_metafile_in_sample_info };
 
-diag(   q{Test set_processing_metafile_in_sample_info from Sample_info.pm v}
-      . $MIP::Sample_info::VERSION
+diag(   q{Test set_processing_metafile_in_sample_info from Sample_info.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -101,9 +58,9 @@ my $path         = catfile( $directory, $metafile );
 ## Family level
 set_processing_metafile_in_sample_info(
     {
-        sample_info_href => \%sample_info,
         metafile_tag     => $metafile_tag,
         path             => $path,
+        sample_info_href => \%sample_info,
     }
 );
 
@@ -118,10 +75,10 @@ my $sample_id = q{test_sample_id};
 
 set_processing_metafile_in_sample_info(
     {
-        sample_info_href => \%sample_info,
-        sample_id        => $sample_id,
         metafile_tag     => $metafile_tag,
         path             => $path,
+        sample_id        => $sample_id,
+        sample_info_href => \%sample_info,
     }
 );
 
@@ -133,39 +90,3 @@ is( $sample_info{sample}{$sample_id}{$metafile_tag}{path},
     $path, q{Assigned correct value to sample level path} );
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-##build_usage
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##Arguments: $program_name
-##         : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            strict_type => 1,
-            store       => \$program_name,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help Display this help message
-    -v/--version Display version
-END_USAGE
-}

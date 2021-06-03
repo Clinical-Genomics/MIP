@@ -8,7 +8,6 @@ use File::Basename qw{ fileparse };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -18,14 +17,11 @@ use autodie qw{ :all };
 use List::MoreUtils qw { all any };
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $COMMA $LOG_NAME $NEWLINE $SPACE };
+use MIP::Constants qw{ $COLON $COMMA $EMPTY_STR $LOG_NAME $NEWLINE $SPACE };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.08;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -39,6 +35,7 @@ BEGIN {
       get_dict_contigs
       get_nist_file
       get_select_file_contigs
+      get_transcript_annotation_file_path
       parse_meta_file_suffixes
       parse_nist_parameters
       parse_nist_files
@@ -59,8 +56,7 @@ sub check_exome_target_bed_suffix {
     ## Flatten argument(s)
     my $path;
 
-    my $tmpl =
-      { path => { defined => 1, required => 1, store => \$path, strict_type => 1, }, };
+    my $tmpl = { path => { defined => 1, required => 1, store => \$path, strict_type => 1, }, };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
@@ -142,8 +138,7 @@ sub check_human_genome_file_endings {
         if ( $file_ending eq q{.dict} ) {
 
             ## Removes ".file_ending" in filename.FILENDING(.gz)
-            my ( $file, $dir_path ) =
-              fileparse( $path, qr/ [.]fasta | [.]fasta[.]gz /sxm );
+            my ( $file, $dir_path ) = fileparse( $path, qr/ [.]fasta | [.]fasta[.]gz /sxm );
             $path = catfile( $dir_path, $file );
         }
 
@@ -162,8 +157,7 @@ sub check_human_genome_file_endings {
         $existence_check_counter = $existence_check_counter + $does_exist;
     }
     ## Files need to be built
-    if ( $existence_check_counter != scalar @{$human_genome_reference_file_endings_ref} )
-    {
+    if ( $existence_check_counter != scalar @{$human_genome_reference_file_endings_ref} ) {
 
         set_parameter_build_file_status {
             (
@@ -456,18 +450,13 @@ sub check_toml_config_for_vcf_tags {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Active_parameter qw{ get_binary_path };
+    use MIP::Environment::Executable qw{ get_executable_base_command };
     use MIP::Io::Read qw{ read_from_file };
     use MIP::Vcfanno qw{ check_toml_annotation_for_tags };
 
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my $bcftools_binary_path = get_binary_path(
-        {
-            active_parameter_href => $active_parameter_href,
-            binary                => q{bcftools},
-        }
-    );
+    my $bcftools_binary_path = get_executable_base_command( { base_command => q{bcftools}, } );
 
     ## TOML parameters
     my %toml = (
@@ -511,12 +500,7 @@ sub check_toml_config_for_vcf_tags {
         foreach my $reference_file ( keys %missing_tag ) {
 
             $log->fatal(
-                $reference_file
-                  . $SPACE
-                  . q{misses required ID(s)}
-                  . $COLON
-                  . $SPACE
-                  . join $SPACE,
+                $reference_file . $SPACE . q{misses required ID(s)} . $COLON . $SPACE . join $SPACE,
                 @{ $missing_tag{$reference_file} }
             );
         }
@@ -576,12 +560,9 @@ sub get_dict_contigs {
     # Save contigs
     my @contigs = split $COMMA, join $COMMA, @{ $return{stdouts_ref} };
 
-    #my @contigs = split $COMMA, join $COMMA, @{$stdout_buf_ref};
-
     return @contigs if (@contigs);
 
-    $log->fatal(
-        q{Could not detect any 'SN:contig_names' in dict file: } . $dict_file_path );
+    $log->fatal( q{Could not detect any 'SN:contig_names' in dict file: } . $dict_file_path );
     exit 1;
 }
 
@@ -677,12 +658,73 @@ sub get_select_file_contigs {
 
     if ( not @contigs ) {
 
-        $log->fatal(
-            q{Could not detect any '##contig' in meta data header in select file: }
+        $log->fatal( q{Could not detect any '##contig' in meta data header in select file: }
               . $select_file_path );
         exit 1;
     }
     return @contigs;
+}
+
+sub get_transcript_annotation_file_path {
+
+## Function : Get transcript annotation file path
+## Returns  : $transcript_annotation_file_path
+## Arguments: $active_parameter_href => Active parameter hash {REF}
+##          : $file_format           => File format
+##          : $file_info_href        => File info hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_format;
+    my $file_info_href;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        file_format => {
+            allow       => [qw{ bed gtf refflat rrna.interval_list }],
+            defined     => 1,
+            required    => 1,
+            store       => \$file_format,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my %transcript_annotaion_suffix = (
+        bed                   => $file_info_href->{transcript_annotation_file_endings}[0],
+        gtf                   => $EMPTY_STR,
+        refflat               => $file_info_href->{transcript_annotation_file_endings}[1],
+        q{rrna.interval_list} => $file_info_href->{transcript_annotation_file_endings}[2],
+    );
+
+    my $transcript_annotation_base = $active_parameter_href->{transcript_annotation};
+    my $transcript_annotation_file_path =
+      $transcript_annotation_base . $transcript_annotaion_suffix{$file_format};
+
+    if ( not $transcript_annotation_file_path =~ / $file_format \z /xms ) {
+
+        $log->logcroak(q{The retrieved annotation file doesn't match the requested file format});
+    }
+
+    return $transcript_annotation_file_path;
 }
 
 sub parse_meta_file_suffixes {
@@ -837,8 +879,7 @@ sub parse_nist_files {
         foreach my $nist_version ( keys %{$nist_href} ) {
 
           NIST_FILE:
-            while ( my ( $nist_id, $file_name ) = each %{ $nist_href->{$nist_version} } )
-            {
+            while ( my ( $nist_id, $file_name ) = each %{ $nist_href->{$nist_version} } ) {
 
                 check_nist_file_name(
                     {
@@ -964,8 +1005,7 @@ sub parse_exome_target_bed {
     my $human_genome_reference_version;
 
     my $tmpl = {
-        exome_target_bed_file_href =>
-          { required => 1, store => \$exome_target_bed_file_href, },
+        exome_target_bed_file_href    => { required => 1, store => \$exome_target_bed_file_href, },
         human_genome_reference_source => {
             defined     => 1,
             required    => 1,
@@ -988,8 +1028,7 @@ sub parse_exome_target_bed {
         my $original_file_name = $exome_target_bed_file;
 
         ## Replace with actual version
-        if ( $exome_target_bed_file =~
-            s/genome_reference_source/$human_genome_reference_source/xsm
+        if ( $exome_target_bed_file =~ s/genome_reference_source/$human_genome_reference_source/xsm
             && $exome_target_bed_file =~ s/_version/$human_genome_reference_version/xsm )
         {
 

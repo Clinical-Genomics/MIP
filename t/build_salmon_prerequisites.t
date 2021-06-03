@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COLON $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_log test_mip_hashes test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.03;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
 BEGIN {
 
@@ -42,17 +32,15 @@ BEGIN {
     my %perl_module = (
         q{MIP::Recipes::Build::Salmon_quant_prerequisites} =>
           [qw{ build_salmon_quant_prerequisites }],
-        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes test_standard_cli }],
+        q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Build::Salmon_quant_prerequisites
-  qw{ build_salmon_quant_prerequisites };
+use MIP::Recipes::Build::Salmon_quant_prerequisites qw{ build_salmon_quant_prerequisites };
 
-diag(   q{Test build_salmon_quant_prerequisites from Salmon_quant_prerequisites.pm v}
-      . $MIP::Recipes::Build::Salmon_quant_prerequisites::VERSION
+diag(   q{Test build_salmon_quant_prerequisites from Salmon_quant_prerequisites.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -92,6 +80,7 @@ my %sample_info;
 ## Special case
 $active_parameter{salmon_quant_reference_genome} = q{human_genome.fastq};
 $active_parameter{transcript_annotation}         = q{grch37_transcripts.gtf};
+$active_parameter{transcript_sequence}           = q{grch37_transcript_sequences.fa};
 
 my $is_ok = build_salmon_quant_prerequisites(
     {

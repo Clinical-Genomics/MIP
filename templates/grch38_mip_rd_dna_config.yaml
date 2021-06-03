@@ -3,7 +3,6 @@
 analysis_constant_path: analysis
 load_env:
   mip_ci:
-    installation: emip
     method: conda
     mip:
 max_cores_per_node: 36
@@ -22,7 +21,6 @@ outscript_dir: cluster_constant_path!/case_id!/analysis_constant_path!/scripts
 sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 ## References
 expansionhunter_variant_catalog_file_path: grch38_expansionhunter_variant_catalog_-4.0.2-.json
-fqf_vcfanno_config: grch38_frequency_vcfanno_filter_config_-v1.3-.toml
 gatk_baserecalibration_known_sites:
   - grch38_dbsnp_-146-.vcf.gz
   - grch38_1000g_snps_high_confidence_-phase1-.vcf.gz
@@ -42,40 +40,47 @@ gatk_varianteval_dbsnp: grch38_variant_-gold_standard_dbsnp-.vcf.gz
 gatk_varianteval_gold: grch38_mills_and_1000g_-gold_standard_indels-.vcf.gz
 genmod_models_reduced_penetrance_file: grch38_cust003-cmms-red-pen_-2017_FAKE-.tsv
 human_genome_reference: grch38_homo_sapiens_-assembly-.fasta
-manta_call_regions_file_path: grch38_manta_call_regions_-1.0-.bed.gz
-nist_call_set_vcf:
-  3.3.2:
-    NA24385: grch38_nist_hg002_-na24385_v3.3.2-.vcf
 nist_call_set_bed:
   3.3.2:
+    NA12878: grch38_nist_hg001_-na12878_v3.3.2-.bed
+    NA24143: grch38_nist_hg004_-na24143_v3.3.2-.bed
     NA24385: grch38_nist_hg002_-na24385_v3.3.2-.bed
-rank_model_file: grch38_rank_model_cmms_-v1.0-.ini
-rhocall_frequency_file: grch38_swegen_freq_fixploidy_-20190204-.tab.gz
-sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
+    NA24631: grch38_nist_hg005_-na24631_v3.3.2-.bed
+nist_call_set_vcf:
+  3.3.2:
+    NA12878: grch38_nist_hg001_-na12878_v3.3.2-.vcf.gz
+    NA24143: grch38_nist_hg004_-na24143_v3.3.2-.vcf.gz
+    NA24385: grch38_nist_hg002_-na24385_v3.3.2-.vcf.gz
+    NA24631: grch38_nist_hg005_-na24631_v3.3.2-.vcf.gz
+rank_model_file: grch38_rank_model_-v0.1-.ini
+rhocall_frequency_file: grch38_gnomad_reformated_-r3.0-.tab.gz
+sambamba_depth_bed: grch38_scout_exons_-2020-09-17-.bed
 sv_genmod_models_reduced_penetrance_file: grch38_cust003-cmms-red-pen_-2017_FAKE-.tsv
-sv_rank_model_file: svrank_model_-v1.8-.ini
+sv_rank_model_file: grch38_sv_rank_model_-v0.1-.ini
 sv_svdb_query_db_files:
   # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
-  grch37_gnomad.genomes_-r2.1.1_sv-.vcf: gnomad_sv|AF|AC|AF|AC|1
-  grch37_mip_sv_svdb_export_-2018-10-09-.vcf: clinical_genomics_mip|AF|OCC|FRQ|OCC|1
-  grch37_svdb_query_decipher_-v1.0.0-.vcf: decipher|AF|OCC|FRQ|OCC
-  grch37_svdb_query_clingen_cgh_benign_-v1.0.0-.vcf: clingen_cgh_benign
-  grch37_svdb_query_clingen_cgh_pathogenic_-v1.0.0-.vcf: clingen_cgh_pathogenic
-  grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi|AF|OCC|FRQ|OCC|1
-  grch37_swegen_concat_sort_-20170830-.vcf: swegen|AF|OCC|FRQ|OCC|1
-qccollect_regexp_file: qc_regexp_-v1.24-.yaml
+  grch38_swegen_concat_sv_-2020-.vcf: swegen|AF|OCC|FRQ|OCC|1
+sv_vcfanno_config: grch38_sv_vcfanno_config_-v0.1-.toml
+vcf2cytosure_exclude_filter: "'swegenAF > 0.05'"
+vcfanno_config: grch38_vcfanno_config_-v0.1-.toml
 ### Analysis
 ## Programs
 ## Parameters
-gatk_combinevariants_prioritize_caller: haplotypecaller
+gatk_combinevariants_prioritize_caller: deepvariant,haplotypecaller
+gatk_combinevariants_callers_to_combine:
+  - gatk_variantrecalibration
+  - glnexus_merge
+gatk_path: /opt/conda/opt/gatk-3.8
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
-rankvariant_binary_file: 1
+picardtools_path: /usr/picard/
 sv_genmod_models_case_type: cmms
-sv_svdb_merge_prioritize: tiddit,cnvnator,manta
 sv_vep_plugin:
   ExACpLI:
-    exists_check: file
-    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+    parameters:
+      - cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
 vep_custom_annotation:
   genomic_superdups_frac_match:
     annotation_type: overlap
@@ -88,29 +93,48 @@ vep_custom_annotation:
     force_report_coordinates: 0
     key: CLINVAR
     file_type: vcf
-    path: cluster_constant_path!/references/grch38_clinvar_reformated_-20200905-.vcf.gz
+    path: cluster_constant_path!/references/grch38_clinvar_reformated_-20210415-.vcf.gz
     vcf_fields: CLNSIG,CLNVID,CLNREVSTAT
-vep_directory_cache: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-99/cache/
-vep_plugins_dir_path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-99/cache/Plugins
+vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data-103/cache/
+vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins
 vep_plugin:
   dbNSFP:
-    exists_check: file
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/grch38_dbnsfp_reformated_-4.1a-.txt.gz
     parameters:
+      - cluster_constant_path!/references/grch38_dbnsfp_reformated_-4.1a-.txt.gz
       - GERP++_RS
       - GERP++_NR
       - phyloP100way_vertebrate
       - phastCons100way_vertebrate
       - REVEL_rankscore
-    path: cluster_constant_path!/references/grch38_dbnsfp_reformated_-4.1a-.txt.gz
   ExACpLI:
-    exists_check: file
-    path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
-  LoFtool:
-    exists_check: file
-    path: cluster_constant_path!/references/ensembl-tools-data-99/cache/Plugins/LoFtool_scores.txt
-  MaxEntScan:
-    exists_check: directory
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
     parameters:
+      - cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
+  LoFtool:
+    exists_check:
+      - type: file
+        path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/LoFtool_scores.txt
+    parameters:
+      - cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/LoFtool_scores.txt
+  MaxEntScan:
+    exist_check:
+      - type: directory
+        path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/fordownload
+    parameters:
+      - cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/fordownload
       - SWA
       - NCSS
-    path: cluster_constant_path!/modules/miniconda/envs/test_env/ensembl-tools-99/cache/Plugin/fordownload
+  SpliceAI:
+    exist_check:
+      - type: file
+        path: cluster_constant_path!/references/grch38_spliceai_scores_raw_indel_-v1.3-.vcf.gz
+      - type: file
+        path: cluster_constant_path!/references/grch38_spliceai_scores_raw_snv_-v1.3-.vcf.gz
+    parameters:
+      - snv=cluster_constant_path!/references/grch38_spliceai_scores_raw_snv_-v1.3-.vcf.gz
+      - indel=cluster_constant_path!/references/grch38_spliceai_scores_raw_indel_-v1.3-.vcf.gz

@@ -8,7 +8,6 @@ use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -25,8 +24,6 @@ BEGIN {
     use base qw{ Exporter };
 
     # Set the version for version checking
-    our $VERSION = 1.00;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ download_RECIPE_NAME };
 
@@ -156,7 +153,6 @@ sub download_RECIPE_NAME {
             directory_id               => q{mip_download},
             filehandle                 => $filehandle,
             job_id_href                => $job_id_href,
-            log                        => $log,
             memory_allocation          => $recipe_resource{memory},
             outdata_dir                => $reference_dir,
             outscript_dir              => $reference_dir,

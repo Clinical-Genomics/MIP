@@ -161,6 +161,32 @@ max_parallel_processes_count:
   ADM1059A1: 0
   ADM1059A2: 0
   ADM1059A3: 0
+primary_contigs:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 21
+  - 22
+  - X
+  - Y
+  - MT
 rtg_vcfeval_reference_genome:
   - _sdf_dir
 salmon_quant_reference_genome:
@@ -220,5 +246,6 @@ sorted_select_file_contigs:
   - Y
   - MT
 transcript_annotation_file_endings:
-  - .refFlat
+  - .bed
+  - .refflat
   - .rrna.interval_list

@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -23,9 +22,6 @@ BEGIN {
 
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.15;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ analysis_gatk_combinevariantcallsets };
@@ -122,12 +118,11 @@ sub analysis_gatk_combinevariantcallsets {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Get::File qw{ get_io_files };
-    use MIP::Get::Parameter qw{ get_recipe_attributes get_recipe_resources };
-    use MIP::Parse::File qw{ parse_io_outfiles };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Gatk qw{ gatk_combinevariants };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -140,32 +135,24 @@ sub analysis_gatk_combinevariantcallsets {
     my @variant_callers;
 
     ## Only process active callers
-  CALLER:
-    foreach my $variant_caller ( @{ $parameter_href->{cache}{variant_callers} } ) {
-        if ( $active_parameter_href->{$variant_caller} ) {
-
-            push @variant_callers, $variant_caller;
+    CALLER:
+      foreach my $variant_caller ( @{ $active_parameter_href->{gatk_combinevariants_callers_to_combine} } ) {
+          if ( $active_parameter_href->{$variant_caller} ) {
+    
+                push @variant_callers, $variant_caller;
+          }
         }
-    }
 
     ## Stores the parallel chains that job ids should be inherited from
     my @parallel_chains;
 
     ## Unpack parameters
-    my $gatk_jar =
-      catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
-    my $job_id_chain = get_recipe_attributes(
-        {
-            attribute      => q{chain},
-            parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-        }
-    );
+    my $gatk_jar = catfile( $active_parameter_href->{gatk_path}, q{GenomeAnalysisTK.jar} );
     my $referencefile_path = $active_parameter_href->{human_genome_reference};
-    my $recipe_mode        = $active_parameter_href->{$recipe_name};
-    my %recipe_resource    = get_recipe_resources(
+    my %recipe             = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
@@ -173,7 +160,7 @@ sub analysis_gatk_combinevariantcallsets {
     ## Set and get the io files per chain, id and stream
     my %io = parse_io_outfiles(
         {
-            chain_id               => $job_id_chain,
+            chain_id               => $recipe{job_id_chain},
             id                     => $case_id,
             file_info_href         => $file_info_href,
             file_name_prefixes_ref => [$case_id],
@@ -193,18 +180,16 @@ sub analysis_gatk_combinevariantcallsets {
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ($recipe_file_path) = setup_script(
         {
-            active_parameter_href           => $active_parameter_href,
-            core_number                     => $recipe_resource{core_number},
-            directory_id                    => $case_id,
-            filehandle                      => $filehandle,
-            job_id_href                     => $job_id_href,
-            log                             => $log,
-            memory_allocation               => $recipe_resource{memory},
-            process_time                    => $recipe_resource{time},
-            recipe_directory                => $recipe_name,
-            recipe_name                     => $recipe_name,
-            source_environment_commands_ref => $recipe_resource{load_env_ref},
-            temp_directory                  => $temp_directory,
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
         }
     );
 
@@ -230,11 +215,18 @@ sub analysis_gatk_combinevariantcallsets {
             }
         );
         my $infile_path_prefix = $sample_io{$stream}{file_path_prefix};
-        my $infile_suffix      = $sample_io{$stream}{file_suffix};
+        my $infile_suffix      = $sample_io{$stream}{file_suffixes}[0];
         my $infile_path        = $infile_path_prefix . $infile_suffix;
 
         ## Only use first part of name
-        my ($variant_caller_prio_tag) = split /_/sxm, $variant_caller;
+        my $variant_caller_prio_tag;
+
+        my %variant_caller_tag_map = (
+            gatk_variantrecalibration => q{haplotypecaller},
+            glnexus_merge             => q{deepvariant},
+        );
+
+        $variant_caller_prio_tag = $variant_caller_tag_map{$variant_caller};
 
         ## Collect both tag and path in the same string
         $file_path{$variant_caller} = $variant_caller_prio_tag . $SPACE . $infile_path;
@@ -260,17 +252,17 @@ sub analysis_gatk_combinevariantcallsets {
 
         gatk_combinevariants(
             {
-                exclude_nonvariants => 1,
-                filehandle          => $filehandle,
+                exclude_nonvariants   => 1,
+                filehandle            => $filehandle,
                 genotype_merge_option =>
                   $active_parameter_href->{gatk_combinevariants_genotype_merge_option},
                 infile_paths_ref     => \@combine_infile_paths,
                 java_jar             => $gatk_jar,
                 java_use_large_pages => $active_parameter_href->{java_use_large_pages},
                 logging_level        => $active_parameter_href->{gatk_logging_level},
-                memory_allocation    => q{Xmx2g},
+                memory_allocation    => q{Xmx20g},
                 outfile_path         => $bcftools_infile_path,
-                prioritize_caller =>
+                prioritize_caller    =>
                   $active_parameter_href->{gatk_combinevariants_prioritize_caller},
                 referencefile_path => $referencefile_path,
                 temp_directory     => $temp_directory,
@@ -300,7 +292,7 @@ sub analysis_gatk_combinevariantcallsets {
     }
     close $filehandle;
 
-    if ( $recipe_mode == 1 ) {
+    if ( $recipe{mode} == 1 ) {
 
         ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
@@ -329,13 +321,13 @@ sub analysis_gatk_combinevariantcallsets {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $job_id_chain,
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 parallel_chains_ref => \@parallel_chains,

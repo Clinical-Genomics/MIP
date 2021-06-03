@@ -7,7 +7,6 @@ use English qw{ -no_match_vars };
 use File::Spec::Functions qw{ catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -21,9 +20,6 @@ use MIP::Constants qw{ $CLOSE_BRACKET $OPEN_BRACKET $SPACE };
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.38;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ parse_rd_rna pipeline_analyse_rd_rna };
@@ -100,13 +96,16 @@ sub parse_rd_rna {
       check_sample_id_in_hash_parameter
       check_sample_id_in_hash_parameter_path
       parse_infiles
+      set_vcfparser_outfile_counter
       write_references
     };
     use MIP::Analysis qw{ broadcast_parameters check_ids_in_dna_vcf
       update_recipe_mode_for_fastq_compatibility
       update_recipe_mode_for_pedigree };
     use MIP::Config qw{ write_mip_config };
+    use MIP::Constants qw{ set_container_constants };
     use MIP::Contigs qw{ update_contigs_for_run };
+    use MIP::Environment::Container qw{ parse_containers };
     use MIP::Fastq qw{ parse_fastq_infiles };
     use MIP::File_info qw{ check_parameter_metafiles };
     use MIP::Parameter qw{ get_cache };
@@ -116,6 +115,16 @@ sub parse_rd_rna {
 
     ## Constants
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
+
+    ## Set analysis constants
+    set_container_constants( { active_parameter_href => $active_parameter_href, } );
+
+    parse_containers(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+        }
+    );
 
     my $consensus_analysis_type = get_cache(
         {
@@ -132,6 +141,9 @@ sub parse_rd_rna {
             parameter_href        => $parameter_href,
         }
     );
+
+    ## Update the expected number of outfiles after fusion_report
+    set_vcfparser_outfile_counter( { active_parameter_href => $active_parameter_href, } );
 
     ## Check sample_id provided in hash parameter is included in the analysis
     check_sample_id_in_hash_parameter(
@@ -358,46 +370,48 @@ sub pipeline_analyse_rd_rna {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Constants qw{ set_container_constants };
+    use MIP::Analysis qw{ set_recipe_star_aln };
+    use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
 
     ## Recipes
-    use MIP::Log::MIP_log4perl qw{ log_display_recipe_for_user };
     use MIP::Recipes::Analysis::Analysisrunstatus qw{ analysis_analysisrunstatus };
     use MIP::Recipes::Analysis::Arriba qw{ analysis_arriba };
     use MIP::Recipes::Analysis::Bcftools_merge qw{ analysis_bcftools_merge };
+    use MIP::Recipes::Analysis::Bcftools_norm qw{ analysis_bcftools_norm_panel };
     use MIP::Recipes::Analysis::Blobfish qw{ analysis_blobfish };
     use MIP::Recipes::Analysis::BootstrapAnn qw{ analysis_bootstrapann };
+    use MIP::Recipes::Analysis::Build_sj_tracks qw{ analysis_build_sj_tracks };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
+    use MIP::Recipes::Analysis::Fusion_report qw{ analysis_fusion_report };
     use MIP::Recipes::Analysis::Gatk_asereadcounter qw{ analysis_gatk_asereadcounter };
-    use MIP::Recipes::Analysis::Gatk_baserecalibration
-      qw{ analysis_gatk_baserecalibration_rna };
+    use MIP::Recipes::Analysis::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration_rna };
     use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
-    use MIP::Recipes::Analysis::Gatk_splitncigarreads
-      qw{ analysis_gatk_splitncigarreads };
-    use MIP::Recipes::Analysis::Gatk_variantfiltration
-      qw{ analysis_gatk_variantfiltration };
+    use MIP::Recipes::Analysis::Gatk_splitncigarreads qw{ analysis_gatk_splitncigarreads };
+    use MIP::Recipes::Analysis::Gatk_variantfiltration qw{ analysis_gatk_variantfiltration };
     use MIP::Recipes::Analysis::Genebody_coverage qw{ analysis_genebody_coverage };
     use MIP::Recipes::Analysis::Gffcompare qw{ analysis_gffcompare };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
-    use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates_rna };
+    use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+    use MIP::Recipes::Analysis::Megafusion qw{ analysis_megafusion };
     use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
+    use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser_panel };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
+    use MIP::Recipes::Analysis::Pdfmerger qw{ analysis_merge_fusion_reports };
     use MIP::Recipes::Analysis::Picardtools_collectrnaseqmetrics
       qw{ analysis_picardtools_collectrnaseqmetrics };
-    use MIP::Recipes::Analysis::Picardtools_mergesamfiles
-      qw{ analysis_picardtools_mergesamfiles };
+    use MIP::Recipes::Analysis::Picardtools_mergesamfiles qw{ analysis_picardtools_mergesamfiles };
     use MIP::Recipes::Analysis::Preseq qw{ analysis_preseq };
     use MIP::Recipes::Analysis::Rseqc qw{ analysis_rseqc };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
     use MIP::Recipes::Analysis::Stringtie qw{ analysis_stringtie };
+    use MIP::Recipes::Analysis::Svdb_merge_fusion qw{ analysis_svdb_merge_fusion };
     use MIP::Recipes::Analysis::Trim_galore qw{ analysis_trim_galore };
     use MIP::Recipes::Analysis::Vcf_ase_reformat qw{ analysis_vcf_ase_reformat};
     use MIP::Recipes::Analysis::Vep qw{ analysis_vep };
     use MIP::Recipes::Build::Rd_rna qw{ build_rd_rna_meta_files };
-    use MIP::Set::Analysis qw{ set_recipe_star_aln };
 
     ### Pipeline specific checks
     parse_rd_rna(
@@ -410,9 +424,6 @@ sub pipeline_analyse_rd_rna {
             sample_info_href      => $sample_info_href,
         }
     );
-
-    ## Set analysis constants
-    set_container_constants( { active_parameter_href => $active_parameter_href, } );
 
     ### Build recipes
     $log->info(q{[Reference check - Reference prerequisites]});
@@ -433,10 +444,13 @@ sub pipeline_analyse_rd_rna {
         analysisrunstatus                => \&analysis_analysisrunstatus,
         arriba_ar                        => \&analysis_arriba,
         bcftools_merge                   => \&analysis_bcftools_merge,
+        bcftools_norm                    => \&analysis_bcftools_norm_panel,
         blobfish                         => \&analysis_blobfish,
         bootstrapann                     => \&analysis_bootstrapann,
+        build_sj_tracks                  => \&analysis_build_sj_tracks,
         dna_vcf_reformat                 => \&analysis_vcf_ase_reformat,
         fastqc_ar                        => \&analysis_fastqc,
+        fusion_report                    => \&analysis_fusion_report,
         gatk_asereadcounter              => \&analysis_gatk_asereadcounter,
         gatk_baserecalibration           => \&analysis_gatk_baserecalibration_rna,
         gatk_haplotypecaller             => \&analysis_gatk_haplotypecaller,
@@ -444,7 +458,9 @@ sub pipeline_analyse_rd_rna {
         gatk_variantfiltration           => \&analysis_gatk_variantfiltration,
         genebody_coverage                => \&analysis_genebody_coverage,
         gffcompare_ar                    => \&analysis_gffcompare,
-        markduplicates                   => \&analysis_markduplicates_rna,
+        markduplicates                   => \&analysis_markduplicates,
+        megafusion_ar                    => \&analysis_megafusion,
+        merge_fusion_reports             => \&analysis_merge_fusion_reports,
         multiqc_ar                       => \&analysis_multiqc,
         picardtools_collectrnaseqmetrics => \&analysis_picardtools_collectrnaseqmetrics,
         picardtools_mergesamfiles        => \&analysis_picardtools_mergesamfiles,
@@ -456,8 +472,10 @@ sub pipeline_analyse_rd_rna {
         star_aln                         => undef,
         star_fusion                      => \&analysis_star_fusion,
         stringtie_ar                     => \&analysis_stringtie,
+        svdb_merge_fusion                => \&analysis_svdb_merge_fusion,
         trim_galore_ar                   => \&analysis_trim_galore,
         varianteffectpredictor           => \&analysis_vep,
+        vcfparser_ar                     => \&analysis_mip_vcfparser_panel,
         version_collect_ar               => \&analysis_mip_vercollect,
     );
 

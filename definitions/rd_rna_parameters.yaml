@@ -1,6 +1,4 @@
 ---
-## Version: 2.1.2
-## HumanGenomeReference
 custom_default_parameters:
   associated_recipe:
     - mip
@@ -8,9 +6,12 @@ custom_default_parameters:
   default:
     - analysis_type
     - conda_path
+    - fusion_select_file
     - infile_dirs
+    - install_config_file
     - pedigree_fam_file
     - picardtools_path
+    - qccollect_store_metrics_outfile
     - reference_dir
     - reference_info_file
     - salmon_quant_reference_genome
@@ -20,6 +21,7 @@ custom_default_parameters:
     - store_file
     - temp_directory
     - transcript_annotation_file_endings
+    - vcfparser_select_file
   type: mip
 human_genome_reference:
   associated_recipe:
@@ -60,9 +62,10 @@ transcript_annotation:
   associated_recipe:
     - arriba_ar
     - blobfish
+    - genebody_coverage
     - gffcompare_ar
     - picardtools_collectrnaseqmetrics
-    - salmon_quant
+    - rseqc
     - star_aln
     - star_fusion
     - stringtie_ar
@@ -73,17 +76,28 @@ transcript_annotation:
   type: path
 transcript_annotation_file_endings:
   associated_recipe:
+    - genebody_coverage
     - picardtools_collectrnaseqmetrics
+    - rseqc
   build_file: 1
   data_type: SCALAR
   exists_check: file
   mandatory: no
   reference: reference_dir
   type: mip
+transcript_sequence:
+  associated_recipe:
+    - salmon_quant
+  data_type: SCALAR
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
 library_type:
   associated_recipe:
     - genebody_coverage
     - picardtools_collectrnaseqmetrics
+    - star_aln
     - stringtie_ar
   data_type: SCALAR
   default: reverse_stranded
@@ -123,34 +137,41 @@ recipe_time:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    arriba_ar: 1
+    arriba_ar: 4
     bcftools_merge: 1
+    bcftools_norm: 2
     blobfish: 1
     bootstrapann: 2
+    build_sj_tracks: 1
     dna_vcf_reformat: 1
     fastqc_ar: 1
+    fusion_report: 1
     gatk_asereadcounter: 2
     gatk_baserecalibration: 5
-    gatk_haplotypecaller: 4
+    gatk_haplotypecaller: 6
     gatk_splitncigarreads: 8
     gatk_variantfiltration: 1
     genebody_coverage: 3
     gffcompare_ar: 1
     gzip_fastq: 2
     markduplicates: 8
+    megafusion_ar: 1
     multiqc_ar: 1
-    picardtools_collectrnaseqmetrics: 1
+    merge_fusion_reports: 1
+    picardtools_collectrnaseqmetrics: 4
     picardtools_mergesamfiles: 2
     preseq_ar: 2
     qccollect_ar: 1
     rseqc: 3
     sacct: 1
     salmon_quant: 5
-    star_aln: 6
-    star_fusion: 8
+    star_aln: 8
+    star_fusion: 16
     stringtie_ar: 2
+    svdb_merge_fusion: 1
     trim_galore_ar: 6
-    varianteffectpredictor: 2
+    varianteffectpredictor: 4
+    vcfparser_ar: 3
     version_collect_ar: 1
   type: mip
 recipe_memory:
@@ -159,19 +180,19 @@ recipe_memory:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    arriba_ar: 3
+    build_sj_tracks: 8
     dna_vcf_reformat: 2
+    fusion_report: 15
     gatk_asereadcounter: 25
     gatk_variantfiltration: 8
-    genebody_coverage: 8
+    genebody_coverage: 16
     multiqc_ar: 10
-    picardtools_collectrnaseqmetrics: 5
+    picardtools_collectrnaseqmetrics: 10
     picardtools_mergesamfiles: 5
     preseq_ar: 8
-    rseqc: 25
+    rseqc: 35
     salmon_quant: 2
     star_aln: 3
-    star_fusion: 3
     stringtie_ar: 2
     trim_galore_ar: 5
     varianteffectpredictor: 12
@@ -185,10 +206,13 @@ recipe_core_number:
     analysisrunstatus: 1
     arriba_ar: 24
     bcftools_merge: 1
+    bcftools_norm: 1
     blobfish: 1
     bootstrapann: 1
+    build_sj_tracks: 1
     dna_vcf_reformat: 1
     fastqc_ar: 0
+    fusion_report: 1
     gatk_asereadcounter: 1
     gatk_baserecalibration: 13
     gatk_haplotypecaller: 13
@@ -197,8 +221,9 @@ recipe_core_number:
     genebody_coverage: 1
     gffcompare_ar: 1
     gzip_fastq: 0
-    multiqc_ar: 1
     markduplicates: 13
+    merge_fusion_reports: 1
+    multiqc_ar: 1
     picardtools_collectrnaseqmetrics: 1
     picardtools_mergesamfiles: 13
     preseq_ar: 1
@@ -207,9 +232,12 @@ recipe_core_number:
     sacct: 1
     salmon_quant: 20
     star_aln: 36
-    star_fusion: 24
+    star_fusion: 36
     stringtie_ar: 36
+    svdb_merge_fusion: 1
+    megafusion_ar: 1
     varianteffectpredictor: 1
+    vcfparser_ar: 1
     version_collect_ar: 1
   type: mip
 picardtools_path:
@@ -274,9 +302,10 @@ salmon_quant:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: quant
+  file_tag: _quant
   outfile_suffix: ".sf"
   program_executables:
+    - pigz
     - salmon
   type: recipe
 salmon_quant_reference_genome:
@@ -289,6 +318,12 @@ salmon_quant_reference_genome:
   mandatory: no
   reference: reference_dir
   type: path
+salmon_quant_gencode_reference:
+  associated_recipe:
+    - salmon_quant
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 ## Blobfish
 blobfish:
   analysis_mode: case
@@ -380,6 +415,21 @@ two_pass_mode:
   data_type: SCALAR
   default: Basic
   type: recipe_argument
+## Build SJ tracks
+build_sj_tracks:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _sj
+  outfile_suffix: ".bigWig"
+  program_executables:
+    - bgzip
+    - perl
+    - tabix
+    - wigToBigWig
+  type: recipe
 ## Star Fusion
 star_fusion:
   analysis_mode: sample
@@ -387,7 +437,7 @@ star_fusion:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: _fusion
+  file_tag: _starfusion
   outfile_suffix: ".tsv"
   program_executables:
     - gtf_file_to_feature_seqs.pl
@@ -437,31 +487,112 @@ arriba_ar:
   outfile_suffix: ".tsv"
   program_executables:
     - arriba
-    - draw_fusions.R
-    - sambamba
+    - samtools
   type: recipe
 arriba_blacklist_path:
   associated_recipe:
     - arriba_ar
   data_type: SCALAR
   type: path
-arriba_cytoband_path:
+arriba_known_fusion_path:
   associated_recipe:
     - arriba_ar
   data_type: SCALAR
   type: path
-arriba_proteindomain_path:
+fusion_report:
+  analysis_mode: sample
   associated_recipe:
-    - arriba_ar
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _report
+  outfile_suffix: ".pdf"
+  program_executables:
+    - perl
+    - draw_fusions.R
+  type: recipe
+fusion_cytoband_path:
+  associated_recipe:
+    - fusion_report
   data_type: SCALAR
   type: path
-arriba_use_sample_id_as_display_name:
+fusion_protein_domain_path:
+  associated_recipe:
+    - arriba_ar
+    - fusion_report
+  data_type: SCALAR
+  type: path
+fusion_select_file:
+  associated_recipe:
+    - fusion_report
+  data_type: SCALAR
+  exists_check: file
+  type: path
+  update_path: absolute_path
+fusion_use_sample_id_as_display_name:
   associated_recipe:
     - arriba_ar
   data_type: SCALAR
   default: 0
   type: mip
+megafusion_ar:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _fusion_comb
+  outfile_suffix: ".vcf"
+  program_executables:
+    - MegaFusion.py
+    - svdb
+  type: recipe
+megafusion_callers:
+  associated_recipe:
+    - megafusion_ar
+  data_type: ARRAY
+  default:
+    - arriba_ar
+    - star_fusion
+  type: mip
+megafusion_arriba_config:
+  associated_recipe:
+    - megafusion_ar
+  data_type: SCALAR
+  default: "/opt/conda/share/MegaFusion/json/Arriba.json"
+  type: path
+  update_path: absolute_path
+megafusion_star_fusion_config:
+  associated_recipe:
+    - megafusion_ar
+  data_type: SCALAR
+  default: "/opt/conda/share/MegaFusion/json/Star_Fusion.json"
+  type: path
+  update_path: absolute_path
+svdb_merge_fusion:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _fusion_report
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - bcftools
+    - svdb
+  type: recipe
 ## Merge bam files
+merge_fusion_reports:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _report
+  outfile_suffix: ".pdf"
+  program_executables:
+    - pdfmerger
+  type: recipe
 picardtools_mergesamfiles:
   analysis_mode: sample
   associated_recipe:
@@ -530,7 +661,7 @@ markduplicates:
   outfile_suffix: ".bam"
   program_executables:
     - picard
-    - sambamba
+    - samtools
   type: recipe
 markduplicates_picardtools_opt_dup_dist:
   associated_recipe:
@@ -610,16 +741,6 @@ rseqc:
     - read_duplication.py
   outfile_suffix: ".txt"
   type: recipe
-rseqc_transcripts_file:
-  associated_recipe:
-    - genebody_coverage
-    - rseqc
-  data_type: SCALAR
-  default: grch37_gencode_annotation_reformated_-v34-.bed
-  exists_check: file
-  is_reference: 1
-  reference: reference_dir
-  type: path
 genebody_coverage:
   analysis_mode: sample
   associated_recipe:
@@ -629,8 +750,8 @@ genebody_coverage:
   file_tag: _genecov
   program_executables:
     - bam2wig.py
-    - wigToBigWig
     - geneBody_coverage2.py
+    - wigToBigWig
   outfile_suffix: ".txt"
   type: recipe
 ## Preseq
@@ -778,6 +899,25 @@ bcftools_merge:
   program_executables:
     - bcftools
   type: recipe
+bcftools_norm:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _norm
+  program_executables:
+    - bcftools
+    - bgzip
+    - tabix
+  outfile_suffix: ".vcf"
+  type: recipe
+bcftools_missing_alt_allele:
+  associated_recipe:
+    - bcftools_norm
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 ## Reformat dna vcf
 dna_vcf_reformat:
   analysis_mode: sample
@@ -869,6 +1009,52 @@ vep_plugins_dir_path:
   mandatory: no
   type: path
   update_path: absolute_path
+vcfparser_ar:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _parsed
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - bcftools
+    - bgzip
+    - mip
+    - tabix
+  type: recipe
+vcfparser_add_all_mt_var:
+  associated_recipe:
+    - vcfparser_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
+vcfparser_outfile_count:
+  associated_recipe:
+    - vcfparser_ar
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
+vcfparser_select_file:
+  associated_recipe:
+    - vcfparser_ar
+  data_type: SCALAR
+  exists_check: file
+  type: path
+  update_path: absolute_path
+vcfparser_select_file_matching_column:
+  associated_recipe:
+    - vcfparser_ar
+  data_type: SCALAR
+  default: 3
+  type: recipe_argument
+vcfparser_vep_transcripts:
+  associated_recipe:
+    - vcfparser_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 ## QCCollect
 qccollect_ar:
   analysis_mode: case
@@ -878,6 +1064,8 @@ qccollect_ar:
   default: 1
   file_tag: _qc_metrics
   outfile_suffix: ".yaml"
+  program_executables:
+    - mip
   type: recipe
 qccollect_eval_metric_file:
   associated_recipe:
@@ -892,7 +1080,7 @@ qccollect_regexp_file:
   associated_recipe:
     - qccollect_ar
   data_type: SCALAR
-  default: qc_regexp_-v1.26-.yaml
+  default: qc_regexp_-v1.27-.yaml
   exists_check: file
   is_reference: 1
   reference: reference_dir
@@ -908,6 +1096,11 @@ qccollect_skip_evaluation:
     - qccollect_ar
   data_type: SCALAR
   default: 0
+  type: recipe_argument
+qccollect_store_metrics_outfile:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
   type: recipe_argument
 ## MultiQC
 multiqc_ar:

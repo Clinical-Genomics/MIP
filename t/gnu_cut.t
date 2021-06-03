@@ -22,17 +22,6 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
-
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -40,18 +29,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Gnu::Coreutils} => [qw{ gnu_cut }],
-        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
-    );
+    my %perl_module = ( q{MIP::Program::Gnu::Coreutils} => [qw{ gnu_cut }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Program::Gnu::Coreutils qw{ gnu_cut };
 
-diag(   q{Test gnu_cut from Coreutils.pm v}
-      . $MIP::Program::Gnu::Coreutils::VERSION
+diag(   q{Test gnu_cut from Coreutils.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -81,16 +66,11 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base_argument and/or %specific_argument
-## to enable testing of each individual argument
-my %required_argument = (
-    infile_path => {
-        input           => q{an_infile.txt},
-        expected_output => q{an_infile.txt},
-    },
-);
-
 my %specific_argument = (
+    delimiter => {
+        input           => q{' '},
+        expected_output => q{-d ' '},
+    },
     infile_path => {
         input           => q{an_infile.txt},
         expected_output => q{an_infile.txt},
@@ -116,7 +96,6 @@ foreach my $argument_href (@arguments) {
             do_test_base_command       => 1,
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
-            required_argument_href     => \%required_argument,
         }
     );
 }

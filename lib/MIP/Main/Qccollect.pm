@@ -26,6 +26,7 @@ use MIP::Io::Read qw{ read_from_file };
 use MIP::Io::Write qw{ write_to_file };
 use MIP::Qccollect qw{ evaluate_analysis };
 use MIP::Qc_data qw{ set_qc_data_recipe_info };
+use MIP::Store qw{ store_metrics };
 
 BEGIN {
 
@@ -49,6 +50,7 @@ sub mip_qccollect {
 ##          : $regexp_file           => Regular expression file
 ##          : $sample_info_file      => Sample info file
 ##          : $skip_evaluation       => Skip evaluation step
+##          : $store_metrics_outfile => Store metrics outfile
 
     my ($arg_href) = @_;
 
@@ -59,6 +61,7 @@ sub mip_qccollect {
     my $regexp_file;
     my $sample_info_file;
     my $skip_evaluation;
+    my $store_metrics_outfile;
 
     my $tmpl = {
         eval_metric_file => {
@@ -89,6 +92,10 @@ sub mip_qccollect {
         },
         skip_evaluation => {
             store       => \$skip_evaluation,
+            strict_type => 1,
+        },
+        store_metrics_outfile => {
+            store       => \$store_metrics_outfile,
             strict_type => 1,
         },
     };
@@ -176,6 +183,15 @@ sub mip_qccollect {
             qc_data_href     => \%qc_data,
             sample_info_href => \%sample_info,
             skip_evaluation  => $skip_evaluation,
+        }
+    );
+
+    ## Writes a qc data metrics to file
+    store_metrics(
+        {
+            qc_data_href          => \%qc_data,
+            sample_info_href      => \%sample_info,
+            store_metrics_outfile => $store_metrics_outfile,
         }
     );
 
@@ -342,12 +358,11 @@ sub case_qc {
 
         relation_check(
             {
-                qc_data_href => $qc_data_href,
+                qc_data_href            => $qc_data_href,
                 relationship_values_ref =>
                   \@{ $qc_data_href->{recipe}{relation_check}{sample_relation_check} },
-                sample_info_href => $sample_info_href,
-                sample_orders_ref =>
-                  \@{ $qc_data_href->{recipe}{pedigree_check}{sample_order} },
+                sample_info_href  => $sample_info_href,
+                sample_orders_ref => \@{ $qc_data_href->{recipe}{pedigree_check}{sample_order} },
             }
         );
     }
@@ -424,9 +439,7 @@ sub sample_qc {
         for my $recipe ( keys %{ $sample_info_href->{sample}{$sample_id}{recipe} } ) {
 
           INFILE:
-            for my $infile (
-                keys %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe} } )
-            {
+            for my $infile ( keys %{ $sample_info_href->{sample}{$sample_id}{recipe}{$recipe} } ) {
 
                 my %attribute = get_sample_info_sample_recipe_attributes(
                     {

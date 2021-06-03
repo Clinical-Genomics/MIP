@@ -189,6 +189,7 @@
 ##reference=file:///seq/references/Homo_sapiens_assembly19/v1/Homo_sapiens_assembly19.fasta
 ##bcftools_viewVersion=1.4.1+htslib-1.4.1
 ##bcftools_viewCommand=view /mnt/hds/proj/cust003/develop/mip_references/grch37_gnomad.genomes_-r2.0.1-.vcf.gz; Date=Wed Oct  4 20:29:41 2017
+##bcftools_normCommand=view /mnt/hds/proj/cust003/develop/mip_references/grch37_gnomad.genomes_-r2.0.1-.vcf.gz; Date=Wed Oct  4 20:29:41 2017
 ##INFO=<ID=OLD_MULTIALLELIC,Number=1,Type=String,Description="Original chr:pos:ref:alt encoding">
 ##INFO=<ID=OLD_VARIANT,Number=.,Type=String,Description="Original chr:pos:ref:alt encoding">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO

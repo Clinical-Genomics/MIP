@@ -21,9 +21,6 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.04;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ decompress_files };
 }
@@ -84,7 +81,7 @@ sub decompress_files {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Parse::File qw{ parse_file_suffix };
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Program::Gzip qw{ gzip };
     use MIP::Program::Tar qw{ tar };
     use MIP::Program::Zip qw{ unzip };
@@ -93,6 +90,14 @@ sub decompress_files {
 
     croak q{Supply infile for tar!} if ( $program eq q{tar} and not $file_path );
 
+    if ( $program eq q{gzip} ) {
+        $outfile_path = remove_file_path_suffix(
+            {
+                file_path         => $outfile_path,
+                file_suffixes_ref => [qw{ .gz}],
+            }
+        );
+    }
     my %decompress_api = (
         gzip => {
             method   => \&gzip,
@@ -101,14 +106,9 @@ sub decompress_files {
                 filehandle       => $filehandle,
                 force            => 1,
                 infile_paths_ref => $file_paths_ref,
-                outfile_path     => parse_file_suffix(
-                    {
-                        file_name   => $outfile_path,
-                        file_suffix => q{.gz},
-                    }
-                ),
-                quiet  => 1,
-                stdout => 1,
+                outfile_path     => $outfile_path,
+                quiet            => 1,
+                stdout           => 1,
             },
         },
         unzip => {

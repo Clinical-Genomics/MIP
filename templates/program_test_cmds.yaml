@@ -30,6 +30,10 @@ cnvnator:
   path: 'cnvnator'
 cyrius:
   execution: 'star_caller.py --help'
+deepvariant:
+  path: 'run_deepvariant'
+deeptrio:
+  path: 'run_deeptrio'
 delly:
   execution: 'delly'
 expansionhunter:
@@ -46,6 +50,8 @@ genmod:
   execution: 'genmod'
 gffcompare:
   execution: 'gffcompare --version'
+glnexus:
+  execution: 'glnexus_cli --help'
 htslib:
   execution: 'bgzip --version'
 manta:
@@ -76,6 +82,8 @@ sambamba:
   execution: 'sambamba --version'
 samtools:
   execution: 'samtools --version'
+smncopynumbercaller:
+  execution: 'smn_caller.py'
 star:
   execution: 'STAR'
 star-fusion:
@@ -98,13 +106,9 @@ upd:
   execution: 'upd'
 varg:
   execution: 'varg --version'
-variant_integrity:
-  execution: 'variant_integrity'
 vcf2cytosure:
   execution: 'vcf2cytosure --version'
 vcfanno:
   execution: 'vcfanno'
 vep:
   execution: 'vep'
-vt:
-  execution: 'vt'

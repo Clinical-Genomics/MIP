@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -17,15 +16,13 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $EQUALS $SPACE };
+use MIP::Environment::Executable qw{ get_executable_base_command };
 use MIP::Unix::Standard_streams qw{ unix_standard_streams };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
     require Exporter;
     use base qw{ Exporter };
-
-    # Set the version for version checking
-    our $VERSION = 1.02;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
@@ -112,8 +109,7 @@ sub rseqc_bam2wig {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ bam2wig.py };
+    my @commands = ( get_executable_base_command( { base_command => q{bam2wig.py}, } ), );
 
     push @commands, q{--input-file} . $EQUALS . $infile_path;
 
@@ -200,8 +196,8 @@ sub rseqc_bam_stat {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ bam_stat.py };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{bam_stat.py}, } ), );
 
     push @commands, q{--input-file} . $EQUALS . $infile_path;
 
@@ -288,8 +284,8 @@ sub rseqc_genebody_coverage2 {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ geneBody_coverage2.py };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{geneBody_coverage2.py}, } ), );
 
     push @commands, q{--input-file} . $EQUALS . $infile_path;
 
@@ -380,8 +376,8 @@ sub rseqc_infer_experiment {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ infer_experiment.py };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{infer_experiment.py}, } ), );
 
     push @commands, q{--input-file} . $EQUALS . $infile_path;
 
@@ -480,8 +476,8 @@ sub rseqc_inner_distance {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ inner_distance.py };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{inner_distance.py}, } ), );
 
     push @commands, q{--input-file} . $EQUALS . $infile_path;
 
@@ -582,8 +578,8 @@ sub rseqc_junction_annotation {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ junction_annotation.py };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{junction_annotation.py}, } ), );
 
     push @commands, q{--input-file} . $EQUALS . $infile_path;
 
@@ -684,8 +680,8 @@ sub rseqc_junction_saturation {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ junction_saturation.py };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{junction_saturation.py}, } ), );
 
     push @commands, q{--input-file} . $EQUALS . $infile_path;
 
@@ -768,8 +764,8 @@ sub rseqc_read_distribution {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ read_distribution.py };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{read_distribution.py}, } ), );
 
     push @commands, q{--input-file} . $EQUALS . $infile_path;
 
@@ -858,8 +854,8 @@ sub rseqc_read_duplication {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
-    my @commands = qw{ read_duplication.py };
+    my @commands =
+      ( get_executable_base_command( { base_command => q{read_duplication.py}, } ), );
 
     push @commands, q{--input-file} . $EQUALS . $infile_path;
 

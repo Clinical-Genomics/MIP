@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $EMPTY_STR $SPACE };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.02;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 BEGIN {
 
@@ -41,16 +31,14 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Analysis}       => [qw{ get_vcf_parser_analysis_suffix }],
-        q{MIP::Test::Fixtures} => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
 use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
 
-diag(   q{Test get_vcf_parser_analysis_suffix from Analysis.pm v}
-      . $MIP::Analysis::VERSION
+diag(   q{Test get_vcf_parser_analysis_suffix from Analysis.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

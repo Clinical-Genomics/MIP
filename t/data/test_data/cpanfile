@@ -1,0 +1,5 @@
+## MIP dependencies
+# Install by running "cpanm --installdeps ." in this directory
+# Module followed by minimum version required
+requires qw{ Array::Utils 0.5 };
+requires qw{ Clone 0.39 };

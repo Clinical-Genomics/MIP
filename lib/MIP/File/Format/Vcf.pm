@@ -6,7 +6,6 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -22,15 +21,13 @@ BEGIN {
     require Exporter;
     use base qw{ Exporter };
 
-    # Set the version for version checking
-    our $VERSION = 1.02;
-
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       check_vcf_variant_line
       convert_to_range
       get_transcript_effects
       parse_vcf_header
+      get_bcftools_norm_command_from_vcf_header
       get_vcf_header_line_by_id
       set_in_consequence_hash
       set_info_key_pairs_in_vcf_record
@@ -40,6 +37,58 @@ BEGIN {
 
 ## Constants
 Readonly my $INFO_COL_NR => 7;
+
+sub get_bcftools_norm_command_from_vcf_header {
+
+## Function : Get vcf header line matching bcftools norm command
+## Returns  :
+## Arguments: $vcf_file_path        => Path to vcf file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $vcf_file_path;
+
+    my $tmpl = {
+        vcf_file_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcf_file_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Environment::Child_process qw{ child_process };
+    use MIP::Environment::Executable qw{ get_executable_base_command };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+
+    my @check_header_cmds;
+    my $bcftools_binary_path = get_executable_base_command( { base_command => q{bcftools}, } );
+
+    ## Stream vcf using bcftools
+    push @check_header_cmds, $bcftools_binary_path . $SPACE . q{view} . $SPACE . $vcf_file_path;
+    push @check_header_cmds, $PIPE;
+
+    ## Assemble perl regexp for detecting keys in vcf
+    push @check_header_cmds,
+      perl_nae_oneliners(
+        {
+            oneliner_name      => q{bcftools_norm_check},
+        }
+      );
+    push @check_header_cmds, $SEMICOLON;
+
+    my %process_return = child_process(
+        {
+            commands_ref => \@check_header_cmds,
+            process_type => q{open3},
+        }
+    );
+
+    return $process_return{stdouts_ref}[0];
+}
 
 sub get_vcf_header_line_by_id {
 
@@ -81,23 +130,11 @@ sub get_vcf_header_line_by_id {
 
     use MIP::Environment::Child_process qw{ child_process };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
-    use MIP::Program::Gnu::Bash qw{ gnu_export gnu_unset };
 
-    ## Export MIP_BIND to bind reference path to htslib sif in proxy bin
-    my @check_header_cmds = gnu_export(
-        {
-                bash_variable => q{MIP_BIND}
-              . $EQUALS
-              . $vcf_file_path
-              . $COLON
-              . $vcf_file_path,
-        }
-    );
-    push @check_header_cmds, $SEMICOLON;
+    my @check_header_cmds;
 
     ## Stream vcf using bcftools
-    push @check_header_cmds,
-      $bcftools_binary_path . $SPACE . q{view} . $SPACE . $vcf_file_path;
+    push @check_header_cmds, $bcftools_binary_path . $SPACE . q{view} . $SPACE . $vcf_file_path;
     push @check_header_cmds, $PIPE;
 
     ## Assemble perl regexp for detecting keys in vcf
@@ -109,9 +146,6 @@ sub get_vcf_header_line_by_id {
         }
       );
     push @check_header_cmds, $SEMICOLON;
-
-    ## Unset MIP_BIND after system parsing
-    push @check_header_cmds, gnu_unset( { bash_variable => q{MIP_BIND}, } );
 
     my %process_return = child_process(
         {

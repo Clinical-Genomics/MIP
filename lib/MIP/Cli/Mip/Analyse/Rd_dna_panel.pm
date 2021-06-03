@@ -3,7 +3,6 @@ package MIP::Cli::Mip::Analyse::Rd_dna_panel;
 use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
-use strict;
 use utf8;
 use warnings;
 use warnings qw{ FATAL utf8 };
@@ -16,8 +15,6 @@ use Moose::Util::TypeConstraints;
 
 ## MIPs lib
 use MIP::Main::Analyse qw{ mip_analyse };
-
-our $VERSION = 1.11;
 
 extends(qw{ MIP::Cli::Mip::Analyse });
 
@@ -98,7 +95,7 @@ sub run {
         # BWA human genome reference file endings
         bwa_build_reference => [qw{ .bwt .ann .amb .pac .sa }],
 
-        bwa_mem2_build_reference => [qw{ .0123 .ann .amb .bwt.2bit.64 .bwt.8bit.32 .pac }],
+        bwa_mem2_build_reference => [qw{ .0123 .ann .amb .bwt.2bit.64 .pac }],
 
         exome_target_bed => [qw{ .interval_list .pad100.interval_list }],
 
@@ -272,14 +269,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
-        q{replace_iupac} => (
-            documentation => q{Replace IUPAC code in alternative alleles with N},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
         q{gzip_fastq} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Gzip fastq files},
@@ -334,6 +323,14 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     option(
         q{bwa_mem_hla} => (
             documentation => q{Apply HLA typing},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{bwa_mem_run_bwakit} => (
+            documentation => q{Use bwakit when aligning to GRCh38},
             is            => q{rw},
             isa           => Bool,
         )
@@ -834,7 +831,16 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
             cmd_flag      => q{gatk_combinevar_prio_cal},
             documentation => q{Prioritization order of variant callers},
             is            => q{rw},
-            isa           => enum( [qw{ gatk }] ),
+            isa           => enum( [qw{ haplotypecaller }] ),
+        )
+    );
+
+    option(
+        q{gatk_combinevariants_callers_to_combine} => (
+            cmd_flag      => q{gatk_combinevar_use_callers},
+            documentation => q{Combine vcf output from these recipes},
+            is            => q{rw},
+            isa           => ArrayRef [ enum( [qw{ gatk_variantrecalibration }] ), ],
         )
     );
 
@@ -886,7 +892,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
     );
 
     option(
-        q{vt_ar} => (
+        q{bcftools_norm} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Decompose and normalize},
             is            => q{rw},
@@ -895,15 +901,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
     );
 
     option(
-        q{vt_decompose} => (
-            documentation => q{Split multi allelic records into single records},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{vt_missing_alt_allele} => (
+        q{bcftools_missing_alt_allele} => (
             documentation => q{Remove missing alternative alleles '*'},
             is            => q{rw},
             isa           => Bool,
@@ -911,16 +909,8 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
     );
 
     option(
-        q{vt_normalize} => (
+        q{bcftools_normalize} => (
             documentation => q{Normalize variants},
-            is            => q{rw},
-            isa           => Bool,
-        )
-    );
-
-    option(
-        q{vt_uniq} => (
-            documentation => q{Remove variant duplicates},
             is            => q{rw},
             isa           => Bool,
         )
@@ -1169,15 +1159,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{variant_integrity_ar} => (
-            cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{QC for samples relationship},
-            is            => q{rw},
-            isa           => enum( [ 0, 1, 2 ] ),
-        )
-    );
-
-    option(
         q{rtg_vcfeval} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Compare concordance with benchmark data set},
@@ -1265,6 +1246,15 @@ q{Regular expression file containing the regular expression to be used for each 
             documentation => q{Skip evaluation step in qccollect},
             is            => q{rw},
             isa           => Bool,
+        )
+    );
+
+    option(
+        q{qccollect_store_metrics_outfile} => (
+            cmd_tags      => [q{Default: {outdata_dir}/{case_id}_metrics_deliverables.yaml}],
+            documentation => q{File containing metrics from this analysis run},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 

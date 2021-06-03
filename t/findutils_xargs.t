@@ -21,17 +21,7 @@ use Readonly;
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Test::Commands qw{ test_function };
-use MIP::Test::Fixtures qw{ test_standard_cli };
 
-my $VERBOSE = 1;
-our $VERSION = 1.00;
-
-$VERBOSE = test_standard_cli(
-    {
-        verbose => $VERBOSE,
-        version => $VERSION,
-    }
-);
 
 ## Constants
 Readonly my $COMMA        => q{,};
@@ -46,8 +36,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Program::Gnu::Findutils} => [qw{ xargs }],
-        q{MIP::Test::Fixtures}          => [qw{ test_standard_cli }],
-    );
+);
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -55,8 +44,7 @@ BEGIN {
 use MIP::Program::Gnu::Findutils qw{xargs};
 use MIP::Test::Commands qw{test_function};
 
-diag(   q{Test xargs from Findutils v}
-      . $MIP::Program::Gnu::Findutils::VERSION
+diag(   q{Test xargs from Findutils}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE

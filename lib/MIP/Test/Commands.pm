@@ -9,7 +9,6 @@ use File::Spec::Functions qw  { catdir };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
-use strict;
 use Test::More;
 use utf8;
 use warnings qw{ FATAL utf8 };
@@ -31,9 +30,6 @@ BEGIN {
 
     use base qw{ Exporter };
     require Exporter;
-
-    # Set the version for version checking
-    our $VERSION = 1.07;
 
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{ build_call test_command test_function };
@@ -100,10 +96,7 @@ sub build_call {
       POSSIBLE_INPUT_NAMES:
         foreach my $input_name (@possible_input_names) {
 
-            if (
-                ref $required_argument_href->{$required_argument}{$input_name} eq
-                q{HASH} )
-            {
+            if ( ref $required_argument_href->{$required_argument}{$input_name} eq q{HASH} ) {
 
                 # Add required_argument
                 push @keys, $required_argument;
@@ -419,14 +412,12 @@ sub test_function {
                 ## Array
                 if ($input_values_ref) {
 
-                    @commands =
-                      $module_function_cref->( { $argument => $input_values_ref, } );
+                    @commands = $module_function_cref->( { $argument => $input_values_ref, } );
                 }
                 elsif ($input_value_href) {
                     ## Hash
 
-                    @commands =
-                      $module_function_cref->( { $argument => $input_value_href, } );
+                    @commands = $module_function_cref->( { $argument => $input_value_href, } );
                 }
                 else {
 
@@ -447,8 +438,8 @@ sub test_function {
             ## Test function_base_command
             _test_base_command(
                 {
-                    base_commands_ref    => [ @commands[ 0 .. $base_commands_index ] ],
-                    do_test_base_command => $do_test_base_command,
+                    base_commands_ref          => [ @commands[ 0 .. $base_commands_index ] ],
+                    do_test_base_command       => $do_test_base_command,
                     expected_base_commands_ref => $function_base_commands_ref,
                     is_self_testing            => $is_self_testing,
                 }
@@ -459,19 +450,14 @@ sub test_function {
 
             if ( exists $is_argument{$expected_return} ) {
 
-                is( $is_argument{$expected_return},
-                    $expected_return, q{Argument: } . $argument );
+                is( $is_argument{$expected_return}, $expected_return, q{Argument: } . $argument );
             }
             else {
               TODO: {
                     local $TODO = q{Self testing should fail in test_function.t}, 1,
                       if ($is_self_testing);
 
-                    is(
-                        join( $SPACE, @commands ),
-                        $expected_return,
-                        q{Argument: } . $argument
-                    );
+                    is( join( $SPACE, @commands ), $expected_return, q{Argument: } . $argument );
                     say {*STDERR} q{#}
                       . $SPACE x $ERROR_MSG_INDENT
                       . q{Command line does not contain expected argument.};
@@ -535,8 +521,7 @@ sub _test_base_command {
     return if ( not $do_test_base_command );
 
     ## Compare base argument string to the expected one
-    if ( ( join $SPACE, @{$base_commands_ref} ) ne
-        ( join $SPACE, @{$expected_base_commands_ref} ) )
+    if ( ( join $SPACE, @{$base_commands_ref} ) ne ( join $SPACE, @{$expected_base_commands_ref} ) )
     {
 
       TODO: {

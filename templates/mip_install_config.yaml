@@ -1,18 +1,14 @@
 ---
-bash_set_errexit: 1
-bash_set_pipefail: 1
-conda:
-  python: 3.7
-pip:
-shell:
-  mip_scripts:
-    version: Your current MIP version
 container:
   arriba:
     executable:
-      arriba: /arriba_v1.2.0/arriba
-      draw_fusions.R: /arriba_v1.2.0/draw_fusions.R
-    uri: docker.io/uhrigs/arriba:1.2.0
+      arriba: /arriba_v2.1.0/arriba
+      draw_fusions.R: /arriba_v2.1.0/draw_fusions.R
+    uri: docker.io/uhrigs/arriba:2.1.0
+  bedtools:
+    executable:
+      bedtools:
+    uri: docker.io/clinicalgenomics/bedtools:2.30.0
   blobfish:
     executable:
       BlobFish.py:
@@ -27,27 +23,16 @@ container:
     uri: docker.io/clinicalgenomics/bwa:0.7.17
   bwakit:
     executable:
-      bwa-postalt.js:
-      fermi2:
-      fermi2.pl:
-      k8:
-      ropebwt2:
+      bwakit: "no_executable_in_image"
       run-bwamem:
-      run-HLA:
-      typeHLA.js:
-      typeHLA.sh:
-      typeHLA-selctg.js:
-      seqtk:
-    uri: docker.io/clinicalgenomics/bwakit:0.7.15
+    uri: docker.io/jemten/bwakit:0.7.17
   bwa-mem2:
     executable:
       bwa-mem2:
-    uri: docker.io/clinicalgenomics/bwa-mem2:2.0
-  bedtools:
-    executable:
-      bedtools:
-    uri: docker.io/clinicalgenomics/bedtools:2.2.29
+    uri: docker.io/clinicalgenomics/bwa-mem2:2.2.1
   cadd:
+    bind_path:
+      CADD.sh: reference_dir!/CADD-scripts/data/annotations:/opt/conda/share/CADD-scripts/data/annotations
     executable:
       CADD.sh:
     uri: docker.io/clinicalgenomics/cadd:1.6
@@ -59,15 +44,32 @@ container:
   chanjo:
     executable:
       chanjo:
-    uri: docker.io/clinicalgenomics/chanjo:4.2.0
+    uri: docker.io/clinicalgenomics/chanjo:4.6
   chromograph:
     executable:
       chromograph:
-    uri: docker.io/clinicalgenomics/chromograph:1.0.1
+    uri: docker.io/clinicalgenomics/chromograph:1.1
   cyrius:
     executable:
       star_caller.py:
-    uri: docker.io/clinicalgenomics/cyrius:1.0
+    uri: docker.io/clinicalgenomics/cyrius:v1.1
+  deepvariant:
+    executable:
+      run_deepvariant: /opt/deepvariant/bin/run_deepvariant
+      make_examples: /opt/deepvariant/bin/make_examples
+      call_variants: /opt/deepvariant/bin/call_variants
+      postprocess_variants: /opt/deepvariant/bin/postprocess_variants
+    gpu_support: 1
+    uri: docker.io/google/deepvariant:1.1.0-gpu
+  deeptrio:
+    executable:
+      run_deeptrio: /opt/deepvariant/bin/deeptrio/run_deeptrio
+    gpu_support: 1
+    uri: docker.io/google/deepvariant:deeptrio-1.1.0-gpu
+  delly:
+    executable:
+      delly:
+    uri: docker.io/clinicalgenomics/delly:0.8.7
   expansionhunter:
     executable:
       ExpansionHunter:
@@ -76,10 +78,6 @@ container:
     executable:
       fastqc:
     uri: docker.io/clinicalgenomics/fastqc:0.11.9
-  delly:
-    executable:
-      delly:
-    uri: docker.io/clinicalgenomics/delly:0.8.1
   gatk:
     executable:
       gatk3: "no_executable_in_image"
@@ -87,7 +85,7 @@ container:
   gatk4:
     executable:
       gatk:
-    uri: docker.io/broadinstitute/gatk:4.1.8.1
+    uri: docker.io/broadinstitute/gatk:4.2.0.0
   genmod:
     executable:
       genmod:
@@ -96,6 +94,10 @@ container:
     executable:
       gffcompare:
     uri: docker.io/clinicalgenomics/gffcompare:0.11.2
+  glnexus:
+    executable:
+      glnexus_cli:
+    uri: quay.io/mlin/glnexus:v1.3.1
   htslib:
     executable:
       bcftools:
@@ -108,18 +110,34 @@ container:
       configManta.py:
       runWorkflow.py: "no_executable_in_image"
     uri: docker.io/clinicalgenomics/manta:1.6.0
+  megafusion:
+    executable:
+      MegaFusion.py: "python /opt/conda/share/MegaFusion/MegaFusion.py"
+    uri: docker.io/clinicalgenomics/megafusion:66a3a80
+  mip:
+    executable:
+      mip:
+    uri: docker.io/clinicalgenomics/mip:10.0.0
   multiqc:
     executable:
       multiqc:
-    uri: docker.io/ewels/multiqc:1.9
+    uri: docker.io/ewels/multiqc:1.10.1
+  perl:
+    executable:
+      perl:
+    uri: docker.io/clinicalgenomics/perl:5.26
   peddy:
     executable:
       peddy: "python -m peddy"
     uri: docker.io/clinicalgenomics/peddy:0.4.3
+  pdfmerger:
+    executable:
+      pdfmerger:
+    uri: docker.io/northwestwitch/pdfmerger:v1.0
   picard:
     executable:
       picard: "no_executable_in_image"
-    uri: docker.io/broadinstitute/picard:2.22.4
+    uri: docker.io/broadinstitute/picard:2.25.0
   plink:
     executable:
       plink2:
@@ -127,7 +145,7 @@ container:
   preseq:
     executable:
       preseq:
-    uri: docker.io/clinicalgenomics/preseq:2.0.3
+    uri: docker.io/clinicalgenomics/preseq:3.1.2
   rhocall:
     executable:
       rhocall:
@@ -143,15 +161,15 @@ container:
       junction_saturation.py:
       read_distribution.py:
       read_duplication.py:
-    uri: docker.io/clinicalgenomics/rseqc:3.0.1
+    uri: docker.io/clinicalgenomics/rseqc:4.0.0
   rtg-tools:
     executable:
       rtg:
-    uri: docker.io/realtimegenomics/rtg-tools:3.10.1
+    uri: docker.io/realtimegenomics/rtg-tools:3.12
   salmon:
     executable:
       salmon:
-    uri: docker.io/clinicalgenomics/salmon:0.12.0
+    uri: docker.io/combinelab/salmon:1.4.0
   sambamba:
     executable:
       sambamba:
@@ -159,11 +177,11 @@ container:
   smncopynumbercaller:
     executable:
       smn_caller.py:
-    uri: docker.io/clinicalgenomics/smncopynumbercaller:4b2c1ad
+    uri: docker.io/clinicalgenomics/smncopynumbercaller:v1.1.1
   star:
     executable:
       STAR:
-    uri: docker.io/clinicalgenomics/star:2.7.4a
+    uri: docker.io/clinicalgenomics/star:2.7.8a
   star-fusion:
     executable:
       blastn:
@@ -175,11 +193,11 @@ container:
       remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
       restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
       STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
-    uri: docker.io/trinityctat/starfusion:1.9.0
+    uri: docker.io/trinityctat/starfusion:1.10.0
   stranger:
     executable:
       stranger:
-    uri: docker.io/clinicalgenomics/stranger:0.7
+    uri: docker.io/clinicalgenomics/stranger:0.7.1
   stringtie:
     executable:
       stringtie:
@@ -187,7 +205,7 @@ container:
   svdb:
     executable:
       svdb:
-    uri: docker.io/jemten/svdb:2.2.0
+    uri: quay.io/biocontainers/svdb:2.4.0--py37h77a2a36_4
   telomerecat:
     executable:
       telomerecat:
@@ -195,11 +213,11 @@ container:
   tiddit:
     executable:
       TIDDIT.py:
-    uri: docker.io/jemten/tiddit:2.8.0
+    uri: docker.io/clinicalgenomics/tiddit:2.12.1
   trim-galore:
     executable:
       trim_galore:
-    uri: library://jemten/mip_containers/trim-galore:0.6.4
+    uri: docker.io/clinicalgenomics/trim_galore:0.6.4
   ucsc:
     executable:
       bedToBigBed:
@@ -209,7 +227,7 @@ container:
   upd:
     executable:
       upd:
-    uri: docker.io/clinicalgenomics/upd:0.1
+    uri: docker.io/clinicalgenomics/upd:0.1.1
   utilities:
     executable:
       gtf2bed:
@@ -218,11 +236,7 @@ container:
   varg:
     executable:
       varg:
-    uri: docker.io/clinicalgenomics/varg:1.2.0
-  variant_integrity:
-    executable:
-      variant_integrity:
-    uri: docker.io/clinicalgenomics/variant_integrity:0.0.4
+    uri: docker.io/clinicalgenomics/varg:1.6.11
   vcfanno:
     executable:
       vcfanno:
@@ -230,19 +244,9 @@ container:
   vep:
     executable:
       vep:
-    uri: docker.io/ensemblorg/ensembl-vep:release_100.2
+    uri: docker.io/ensemblorg/ensembl-vep:release_103.1
   vcf2cytosure:
     executable:
       vcf2cytosure:
     uri: docker.io/jemten/vcf2cytosure:0.5.1
-  vt:
-    executable:
-      vt:
-    uri: docker.io/clinicalgenomics/vt:2015.11.10
-vep_plugins:
-  - dbNSFP
-  - ExACpLI
-  - LoFtool
-  - MaxEntScan
-  - SpliceAI
-vep_auto_flag: cfp
+
