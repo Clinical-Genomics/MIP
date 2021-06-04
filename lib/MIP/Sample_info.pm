@@ -840,7 +840,7 @@ sub set_gene_panel {
     foreach my $line ( split /:/sxm, $ret ) {
 
         # Split each info line into gene panel hash
-        my %gene_panel = ( split /[,=]/sxm, $line );
+        my %gene_panel = ( split /[=]/sxm, $line );
 
         # Gene panel name must exist
         if (    ( defined $gene_panel{gene_panel} )

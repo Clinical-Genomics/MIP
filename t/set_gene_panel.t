@@ -58,10 +58,7 @@ my %sample_info;
 
 my %header_info = (
     $gene_panel => {
-        display_name => q{gene_panel_test},
-        gene_panel   => $gene_panel,
-        updated_at   => q{2016-12-08},
-        version      => q{1.0},
+        gene_panel => $gene_panel,
     }
 );
 
@@ -106,20 +103,14 @@ trap {
 };
 
 ## Then warn
-like(
-    $trap->stderr,
-    qr/Unable \s+ to \s+ write \s+ select_file/xms,
-    q{Throw warning log message}
-);
+like( $trap->stderr, qr/Unable \s+ to \s+ write \s+ select_file/xms, q{Throw warning log message} );
 
 ## Given a file without gene_panel information
 trap {
     set_gene_panel(
         {
-            aggregate_gene_panel_file => catfile(
-                $Bin,
-                qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed }
-            ),
+            aggregate_gene_panel_file =>
+              catfile( $Bin, qw{ data references grch37_agilent_sureselect_targets_cre_-v1-.bed } ),
             aggregate_gene_panels_key => $aggregate_gene_panels_key,
             recipe_name               => $recipe_name_test,
             sample_info_href          => \%sample_info,
