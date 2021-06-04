@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [10.0.1]
 
 - Fix to gene panel regexp
+- Use automated build of MIP
 
 ## [10.0.0]
 
