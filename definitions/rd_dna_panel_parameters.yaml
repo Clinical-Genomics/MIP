@@ -178,6 +178,7 @@ recipe_memory:
     sambamba_depth: 10
     varianteffectpredictor: 7
     vcfparser_ar: 7
+    version_collect_ar: 8
   type: mip
 set_recipe_memory:
   associated_recipe:

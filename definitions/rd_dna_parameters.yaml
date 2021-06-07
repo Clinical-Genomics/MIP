@@ -238,7 +238,6 @@ recipe_memory:
     delly_reformat: 3
     endvariantannotationblock: 8
     expansionhunter: 2
-    variant_annotation: 3
     gatk_baserecalibration: 10
     gatk_combinevariantcallsets: 25
     gatk_gathervcfs: 7
@@ -258,8 +257,10 @@ recipe_memory:
     sv_varianteffectpredictor: 9
     tiddit: 8
     upd_ar: 3
-    vcf2cytosure_ar: 6
+    variant_annotation: 3
     varianteffectpredictor: 7
+    vcf2cytosure_ar: 6
+    version_collect_ar: 8
   type: mip
 set_recipe_memory:
   associated_recipe:

@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - Fix to gene panel regexp
 - Use automated build of MIP
+- Increased memory allocation for version_collect
 
 ## [10.0.0]
 
