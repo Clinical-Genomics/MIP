@@ -72,7 +72,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [SMNCopyNumberCaller] (version: v1.1.1)
 - [STAR-Fusion] (version: 1.10.0)
 - [STAR] (version: 2.7.8a)
-- [Stranger] (version: 0.7)
+- [Stranger] (version: 0.8.0)
 - [StringTie] (version: 2.1.3b)
 - [Svdb] (version: 2.4.0)
 - [Telomerecat] (version: 3.4.0)

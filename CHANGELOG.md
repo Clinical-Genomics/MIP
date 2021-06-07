@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [10.0.1]
+
+### Tools
+stranger: 0.7.1 -> 0.8.0
+
 ## [10.0.0]
 
 - Remove unused recipe split_fastq_file
