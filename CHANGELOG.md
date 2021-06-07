@@ -5,8 +5,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [10.0.1]
 
+- Fix to gene panel regexp
+- Use automated build of MIP
+- Increased memory allocation for version_collect
+
 ### Tools
 stranger: 0.7.1 -> 0.8.0
+
 
 ## [10.0.0]
 

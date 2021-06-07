@@ -110,6 +110,7 @@ recipe_memory:
     sv_reformat: 24
     sv_varianteffectpredictor: 7
     varianteffectpredictor: 7
+    version_collect_ar: 8
   type: mip
 recipe_time:
   associated_recipe:
