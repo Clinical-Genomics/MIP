@@ -111,6 +111,7 @@ sub analysis_glnexus {
     };
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_norm };
     use MIP::Program::Glnexus qw{ glnexus_merge };
@@ -190,8 +191,7 @@ sub analysis_glnexus {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    ## Set infile for bcftools norm for single sample cases
-    my $bcftools_norm_infile_path = $genotype_infile_paths[0];
+    my $bcftools_norm_infile_path;
 
     if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
 
@@ -208,6 +208,17 @@ sub analysis_glnexus {
         print {$filehandle} $PIPE . $SPACE;
 
         $bcftools_norm_infile_path = $DASH;
+    }
+    else {
+
+        ## Set infile for bcftools norm for single sample cases
+        $bcftools_norm_infile_path = remove_file_path_suffix(
+            {
+                file_path         => $genotype_infile_paths[0],
+                file_suffixes_ref => [q{.g.vcf.gz}],
+            }
+        );
+        $bcftools_norm_infile_path .= q{.vcf.gz};
     }
 
     bcftools_norm(
