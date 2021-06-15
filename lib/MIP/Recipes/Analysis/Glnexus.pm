@@ -111,7 +111,6 @@ sub analysis_glnexus {
     };
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_norm };
     use MIP::Program::Glnexus qw{ glnexus_merge };
@@ -138,6 +137,7 @@ sub analysis_glnexus {
 
     ## Get the io infiles per chain and id
     my @genotype_infile_paths;
+    my @genotype_infile_path_prefixes;
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -152,7 +152,8 @@ sub analysis_glnexus {
                 stream         => q{in},
             }
         );
-        push @genotype_infile_paths, $sample_io{in}{file_path};
+        push @genotype_infile_paths,         $sample_io{in}{file_path};
+        push @genotype_infile_path_prefixes, $sample_io{in}{file_path_prefix};
     }
 
     my %io = parse_io_outfiles(
@@ -212,13 +213,7 @@ sub analysis_glnexus {
     else {
 
         ## Set infile for bcftools norm for single sample cases
-        $bcftools_norm_infile_path = remove_file_path_suffix(
-            {
-                file_path         => $genotype_infile_paths[0],
-                file_suffixes_ref => [q{.g.vcf.gz}],
-            }
-        );
-        $bcftools_norm_infile_path .= q{.vcf.gz};
+        $bcftools_norm_infile_path = $genotype_infile_path_prefixes[0] . q{.vcf.gz};
     }
 
     bcftools_norm(
