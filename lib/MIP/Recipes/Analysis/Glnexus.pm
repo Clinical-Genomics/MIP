@@ -137,7 +137,6 @@ sub analysis_glnexus {
 
     ## Get the io infiles per chain and id
     my @genotype_infile_paths;
-    my @genotype_infile_path_prefixes;
 
   SAMPLE_ID:
     foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
@@ -152,8 +151,7 @@ sub analysis_glnexus {
                 stream         => q{in},
             }
         );
-        push @genotype_infile_paths,         $sample_io{in}{file_path};
-        push @genotype_infile_path_prefixes, $sample_io{in}{file_path_prefix};
+        push @genotype_infile_paths, $sample_io{in}{file_path};
     }
 
     my %io = parse_io_outfiles(
@@ -192,34 +190,22 @@ sub analysis_glnexus {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    my $bcftools_norm_infile_path;
-
-    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
-
-        glnexus_merge(
-            {
-                config           => q{DeepVariant_unfiltered},
-                dir              => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
-                filehandle       => $filehandle,
-                infile_paths_ref => \@genotype_infile_paths,
-                memory           => $memory,
-                threads          => $core_number,
-            }
-        );
-        print {$filehandle} $PIPE . $SPACE;
-
-        $bcftools_norm_infile_path = $DASH;
-    }
-    else {
-
-        ## Set infile for bcftools norm for single sample cases
-        $bcftools_norm_infile_path = $genotype_infile_path_prefixes[0] . q{.vcf.gz};
-    }
+    glnexus_merge(
+        {
+            config           => q{DeepVariant_unfiltered},
+            dir              => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
+            filehandle       => $filehandle,
+            infile_paths_ref => \@genotype_infile_paths,
+            memory           => $memory,
+            threads          => $core_number,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
 
     bcftools_norm(
         {
             filehandle     => $filehandle,
-            infile_path    => $bcftools_norm_infile_path,
+            infile_path    => $DASH,
             multiallelic   => q{-},
             outfile_path   => $outfile_path,
             output_type    => q{z},

@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [10.0.2]
 
-- Don't use gvcf for single sample cases in glnexus recipe
+- Glnexus are used regardless of how many samples that are analysed.
 
 ## [10.0.1]
 
@@ -14,8 +14,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Increased memory allocation for version_collect
 
 ### Tools
-stranger: 0.7.1 -> 0.8.0
 
+stranger: 0.7.1 -> 0.8.0
 
 ## [10.0.0]
 
