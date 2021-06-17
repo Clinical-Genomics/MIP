@@ -81,6 +81,7 @@ rd_dna:
     - gatk4
     - genmod
     - glnexus
+    - hmtnote
     - htslib
     - manta
     - mip

@@ -98,6 +98,10 @@ container:
     executable:
       glnexus_cli:
     uri: quay.io/mlin/glnexus:v1.3.1
+  hmtnote:
+    executable:
+      hmtnote:
+    uri: docker.io/clinicalgenomics/hmtnote:0.7.2
   htslib:
     executable:
       bcftools:
