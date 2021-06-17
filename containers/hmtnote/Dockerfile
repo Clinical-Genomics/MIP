@@ -18,4 +18,6 @@ RUN /opt/conda/bin/conda clean -tipsy
 
 RUN pip install --no-cache-dir hmtnote==0.7.2
 
+RUN hmtnote dump
+
 WORKDIR /data/
