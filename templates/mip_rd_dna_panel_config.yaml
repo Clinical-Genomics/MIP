@@ -24,7 +24,7 @@ genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 human_genome_reference: grch37_homo_sapiens_-d5-.fasta
 rank_model_file: rank_model_-v1.32-.ini
 sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
-vcfanno_config: grch37_vcfanno_config_v1.15-.toml
+vcfanno_config: grch37_vcfanno_config_v1.16-.toml
 ### Analysis
 ### Programs
 ## Parameters
