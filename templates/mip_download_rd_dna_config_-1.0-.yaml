@@ -726,8 +726,8 @@ reference_feature:
       r3.1:
         file: gnomad.genomes.v3.1.sites.chrM.vcf.bgz
         file_index: gnomad.genomes.v3.1.sites.chrM.vcf.bgz.tbi
-        outfile: gnomad_genomes_mt_-r3.1-.bgz
-        outfile_index: gnomad_genomes_mt_-r3.1-.bgz.tbi
+        outfile: gnomad_genomes_mt_-r3.1-.vcf.gz
+        outfile_index: gnomad_genomes_mt_-r3.1-.vcf.gz.tbi
         url_prefix: https://storage.googleapis.com/gnomad-public/release/3.1/vcf/genomes/
   gnomad_pli_per_gene:
     grch37:
