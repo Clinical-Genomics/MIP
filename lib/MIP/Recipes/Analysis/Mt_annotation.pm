@@ -201,29 +201,28 @@ sub analysis_mt_annotation {
 
         if ( $contig =~ / MT|M /xsm ) {
 
-            hmtnote_annotate(
-                {
-                    filehandle   => $filehandle,
-                    infile_path  => $infile_path{$contig},
-                    offline      => $active_parameter_href->{hmtnote_offline},
-                    outfile_path => $outfile_path{$contig},
-                }
-            );
-            print {$filehandle} $NEWLINE;
-
             my $outfile_no_suffix = remove_file_path_suffix(
                 {
                     file_path         => $outfile_path{$contig},
                     file_suffixes_ref => [qw{.gz}],
                 }
             );
+            print {$filehandle} $NEWLINE;
 
-            $outfile_path{$contig} = $outfile_no_suffix;
+            hmtnote_annotate(
+                {
+                    filehandle   => $filehandle,
+                    infile_path  => $infile_path{$contig},
+                    offline      => $active_parameter_href->{hmtnote_offline},
+                    outfile_path => $outfile_no_suffix,
+                }
+            );
+            print {$filehandle} $NEWLINE;
 
             htslib_bgzip(
                 {
                     filehandle  => $filehandle,
-                    infile_path => $outfile_path{$contig} . q{.gz},
+                    infile_path => $outfile_no_suffix,
                 }
             );
             print {$filehandle} $NEWLINE;
@@ -231,7 +230,7 @@ sub analysis_mt_annotation {
             htslib_tabix(
                 {
                     filehandle  => $filehandle,
-                    infile_path => $outfile_path{$contig} . q{.gz.tbi},
+                    infile_path => $outfile_path{$contig},
                     preset      => q{vcf},
 
                 }
