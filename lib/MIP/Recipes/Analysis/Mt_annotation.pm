@@ -207,7 +207,6 @@ sub analysis_mt_annotation {
                     file_suffixes_ref => [qw{.gz}],
                 }
             );
-            print {$filehandle} $NEWLINE;
 
             hmtnote_annotate(
                 {
