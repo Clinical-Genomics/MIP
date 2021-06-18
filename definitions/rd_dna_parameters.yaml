@@ -175,6 +175,7 @@ recipe_core_number:
     gzip_fastq: 0
     manta: 36
     markduplicates: 13
+    mt_annotation: 1
     multiqc_ar: 1
     peddy_ar: 4
     picardtools_collecthsmetrics: 1
@@ -245,6 +246,7 @@ recipe_memory:
     gatk_variantrecalibration: 30
     glnexus_merge: 10
     markduplicates: 10
+    mt_annotation: 2
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
     plink: 10
@@ -305,6 +307,7 @@ recipe_time:
     gzip_fastq: 2
     manta: 30
     markduplicates: 20
+    mt_annotation: 1
     multiqc_ar: 5
     peddy_ar: 1
     picardtools_collecthsmetrics: 10
@@ -1548,6 +1551,25 @@ bcftools_core:
     - bgzip
     - tabix
   type: recipe
+mt_annotation:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  outfile_suffix: ".vcf.gz"
+  file_tag: _mt
+  program_executables:
+    - hmtnote
+    - bgzip
+    - tabix
+  type: recipe
+mt_offline:
+  associated_recipe:
+    - mt_annotation
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 variant_annotation:
   analysis_mode: case
   associated_recipe:
