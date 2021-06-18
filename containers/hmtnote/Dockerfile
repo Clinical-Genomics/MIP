@@ -12,10 +12,10 @@ LABEL extra.binaries="HmtNote"
 LABEL maintainer="Clinical-Genomics/MIP"
 
 ## Conda env installation + clean up
-RUN conda install pip python=3.7 && \
-    /opt/conda/bin/conda clean -tipsy
+RUN conda install pip python=3.7
 
-RUN pip install --no-cache-dir hmtnote==0.7.2 && \
+RUN /opt/conda/bin/conda clean -tipsy && \
+    pip install --no-cache-dir hmtnote==0.7.2 && \
     hmtnote dump
 
 WORKDIR /data/
