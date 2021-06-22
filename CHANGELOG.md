@@ -5,7 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [10.0.2]
 
-- Glnexus are used regardless of how many samples that are analysed.
+- Glnexus are used to genotype the gvcf regardless of how many samples that are analysed.
+- Resource bump to the MIP RNA recipe fusion_report
 
 ## [10.0.1]
 
