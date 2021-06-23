@@ -53,7 +53,7 @@ my $file_path = catfile( $test_dir, q{recipe_script.sh} );
 test_log( { log_name => uc q{mip_download}, no_screen => 1, } );
 
 ## Given download parameters for recipe
-my $genome_version    = q{grch38};
+my $genome_version    = q{grch37};
 my $recipe_name       = q{gnomad_mt};
 my $reference_version = q{r3.1};
 my $slurm_mock_cmd    = catfile( $Bin, qw{ data modules slurm-mock.pl } );

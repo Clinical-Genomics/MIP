@@ -414,6 +414,16 @@ sub download_gnomad_mt {
         }
     );
 
+    if ( $genome_version eq q{grch37} ) {
+
+        _reformat_for_grch37(
+            {
+                filehandle  => $filehandle,
+                infile_path => catfile( $reference_dir, $reference_href->{outfile} )
+            }
+        );
+    }
+
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
@@ -961,6 +971,86 @@ sub _annotate_and_calculate_afpopmax {
             infile_path  => catfile( $FORWARD_SLASH, qw{ dev stdin } ),
             outfile_path => $outfile_path,
             output_type  => q{z},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    return;
+}
+
+sub _reformat_for_grch37 {
+
+## Function : Rename chrM to MT for grch37
+## Returns  :
+## Arguments: $filehandle        => Filehandle
+##          : $infile_path       => Path to reformatted file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+
+    my $tmpl = {
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Program::Bcftools qw{ bcftools_view };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
+
+    bcftools_view(
+        {
+            filehandle  => $filehandle,
+            infile_path => $infile_path,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    perl_nae_oneliners(
+        {
+            filehandle    => $filehandle,
+            oneliner_name => q{synonyms_grch38_to_grch37},
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    my $temp_outfile_path = $infile_path . q{_temp.vcf.gz};
+    htslib_bgzip(
+        {
+            filehandle      => $filehandle,
+            write_to_stdout => 1,
+            stdoutfile_path => $temp_outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    gnu_mv(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $temp_outfile_path,
+            outfile_path => $infile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    htslib_tabix(
+        {
+            filehandle  => $filehandle,
+            preset      => q{vcf},
+            infile_path => $infile_path,
         }
     );
     say {$filehandle} $NEWLINE;
