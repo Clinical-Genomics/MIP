@@ -10,6 +10,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - gnomad: r3.0 -> r3.1.1
 - [NEW] gnomad mt: r3.1
 
+## [10.0.2]
+
+- Glnexus are used to genotype the gvcf regardless of how many samples that are analysed.
+- Resource bump to the MIP RNA recipe fusion_report
+
 ## [10.0.1]
 
 - Fix to gene panel regexp
@@ -17,8 +22,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Increased memory allocation for version_collect
 
 ### Tools
-stranger: 0.7.1 -> 0.8.0
 
+stranger: 0.7.1 -> 0.8.0
 
 ## [10.0.0]
 

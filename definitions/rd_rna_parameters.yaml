@@ -212,7 +212,7 @@ recipe_core_number:
     build_sj_tracks: 1
     dna_vcf_reformat: 1
     fastqc_ar: 0
-    fusion_report: 1
+    fusion_report: 2
     gatk_asereadcounter: 1
     gatk_baserecalibration: 13
     gatk_haplotypecaller: 13
