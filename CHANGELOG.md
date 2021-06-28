@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [10.0.3]
+
+- Remove duplicates from Glnexus output
+
 ## [10.0.2]
 
 - Glnexus are used to genotype the gvcf regardless of how many samples that are analysed.

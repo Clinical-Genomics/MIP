@@ -204,13 +204,14 @@ sub analysis_glnexus {
 
     bcftools_norm(
         {
-            filehandle     => $filehandle,
-            infile_path    => $DASH,
-            multiallelic   => q{-},
-            outfile_path   => $outfile_path,
-            output_type    => q{z},
-            reference_path => $active_parameter_href->{human_genome_reference},
-            threads        => $core_number,
+            filehandle        => $filehandle,
+            infile_path       => $DASH,
+            multiallelic      => q{-},
+            outfile_path      => $outfile_path,
+            output_type       => q{z},
+            reference_path    => $active_parameter_href->{human_genome_reference},
+            remove_duplicates => 1,
+            threads           => $core_number,
         }
     );
     say {$filehandle} $NEWLINE;
