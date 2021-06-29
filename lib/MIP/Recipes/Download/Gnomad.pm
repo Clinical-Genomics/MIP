@@ -354,11 +354,9 @@ sub download_gnomad_mt {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
-    use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Script::Setup_script qw{ setup_script };
-
-    ### PREPROCESSING:
 
     ### PREPROCESSING:
 
@@ -982,8 +980,8 @@ sub _reformat_for_grch37 {
 
 ## Function : Rename chrM to MT for grch37
 ## Returns  :
-## Arguments: $filehandle        => Filehandle
-##          : $infile_path       => Path to reformatted file
+## Arguments: $filehandle  => Filehandle
+##          : $infile_path => Path to reformatted file
 
     my ($arg_href) = @_;
 
@@ -1006,9 +1004,9 @@ sub _reformat_for_grch37 {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Language::Perl qw{ perl_nae_oneliners };
     use MIP::Program::Bcftools qw{ bcftools_view };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
 
     bcftools_view(
@@ -1031,8 +1029,8 @@ sub _reformat_for_grch37 {
     htslib_bgzip(
         {
             filehandle      => $filehandle,
-            write_to_stdout => 1,
             stdoutfile_path => $temp_outfile_path,
+            write_to_stdout => 1,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -1049,8 +1047,8 @@ sub _reformat_for_grch37 {
     htslib_tabix(
         {
             filehandle  => $filehandle,
-            preset      => q{vcf},
             infile_path => $infile_path,
+            preset      => q{vcf},
         }
     );
     say {$filehandle} $NEWLINE;
