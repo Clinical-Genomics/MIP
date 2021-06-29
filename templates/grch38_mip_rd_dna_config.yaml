@@ -60,9 +60,9 @@ sv_rank_model_file: grch38_sv_rank_model_-v0.1-.ini
 sv_svdb_query_db_files:
   # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
   grch38_swegen_concat_sv_-2020-.vcf: swegen|AF|OCC|FRQ|OCC|1
-sv_vcfanno_config: grch38_sv_vcfanno_config_-v0.1-.toml
+sv_vcfanno_config: grch38_sv_vcfanno_config_-v0.2-.toml
 vcf2cytosure_exclude_filter: "'swegenAF > 0.05'"
-vcfanno_config: grch38_vcfanno_config_-v0.1-.toml
+vcfanno_config: grch38_vcfanno_config_-v0.2-.toml
 ### Analysis
 ## Programs
 ## Parameters

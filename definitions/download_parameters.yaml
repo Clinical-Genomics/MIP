@@ -251,6 +251,13 @@ gnomad_chrsplit:
     - bgzip
     - tabix
   type: recipe
+gnomad_mt:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 gnomad_pli_per_gene:
   analysis_mode: case
   associated_recipe:
@@ -383,6 +390,7 @@ recipe_core_number:
     giab: 1
     gnomad: 1
     gnomad_chrsplit: 13
+    gnomad_mt: 1
     gnomad_pli_per_gene: 1
     hapmap: 1
     human_reference: 1
@@ -436,6 +444,7 @@ recipe_time:
     giab: 1
     gnomad: 25
     gnomad_chrsplit: 32
+    gnomad_mt: 1
     gnomad_pli_per_gene: 1
     hapmap: 1
     human_reference: 1
