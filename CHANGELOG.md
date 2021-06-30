@@ -5,6 +5,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Develop]
 
+- HmtNote: annotate mitochondrial variants in VCF file
+
+### Tools
+
+HmtNote: 0.7.2
+
 ### References
 
 - gnomad: r3.0 -> r3.1.1
