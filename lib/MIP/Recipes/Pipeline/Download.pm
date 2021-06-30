@@ -96,7 +96,8 @@ sub pipeline_download {
     use MIP::Recipes::Download::Genomic_superdups qw{ download_genomic_superdups };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Recipes::Download::Giab qw{ download_giab };
-    use MIP::Recipes::Download::Gnomad qw{ download_gnomad };
+    use MIP::Recipes::Download::Gnomad
+      qw{ download_gnomad download_gnomad_mt download_gnomad_xargs };
     use MIP::Recipes::Download::Gnomad_pli_per_gene qw{ download_gnomad_pli_per_gene };
     use MIP::Recipes::Download::Hapmap qw{ download_hapmap };
     use MIP::Recipes::Download::Human_reference qw{ download_human_reference };
@@ -138,6 +139,8 @@ sub pipeline_download {
         giab                           => \&download_giab,
         gnomad                         => \&download_gnomad,
         gnomad_pli_per_gene            => \&download_gnomad_pli_per_gene,
+        gnomad_chrsplit                => \&download_gnomad_xargs,
+        gnomad_mt                      => \&download_gnomad_mt,
         hapmap                         => \&download_hapmap,
         human_reference                => \&download_human_reference,
         manta_call_regions             => \&download_manta_call_regions,

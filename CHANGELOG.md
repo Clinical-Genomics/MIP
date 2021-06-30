@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Develop]
+
+### References
+
+- gnomad: r3.0 -> r3.1.1
+- [NEW] gnomad mt: r3.1
+
 ## [10.0.3]
 
 - Remove duplicates from Glnexus output
