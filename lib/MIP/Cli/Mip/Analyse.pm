@@ -312,6 +312,34 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
     );
 
     option(
+        q{set_recipe_core_number} => (
+            cmd_tags      => [q{recipe_name=X(cores)}],
+            documentation => q{Set the number of cores for specific recipe(s)},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{set_recipe_memory} => (
+            cmd_aliases   => [qw{ srm }],
+            cmd_tags      => [q{recipe_name=X(G)}],
+            documentation => q{Set the memory for specific recipe(s)},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
+        q{set_recipe_time} => (
+            cmd_tags      => [q{recipe_name=time(hours)}],
+            documentation => q{Set the time allocation for specific recipe(s)},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
         q{slurm_quality_of_service} => (
             cmd_aliases   => [qw{ qos }],
             documentation => q{SLURM quality of service},

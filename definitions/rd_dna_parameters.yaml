@@ -203,12 +203,6 @@ recipe_core_number:
     version_collect_ar: 1
     vcf2cytosure_ar: 0
   type: mip
-set_recipe_core_number:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 ## GPU number
 recipe_gpu_number:
   associated_recipe:
@@ -261,12 +255,6 @@ recipe_memory:
     varianteffectpredictor: 7
     vcf2cytosure_ar: 6
     version_collect_ar: 8
-  type: mip
-set_recipe_memory:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
   type: mip
 recipe_time:
   associated_recipe:
@@ -337,12 +325,6 @@ recipe_time:
     vcf2cytosure_ar: 20
     vcfparser_ar: 5
     version_collect_ar: 1
-  type: mip
-set_recipe_time:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
   type: mip
 infile_dirs:
   associated_recipe:
