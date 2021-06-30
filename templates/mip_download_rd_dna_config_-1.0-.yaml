@@ -728,14 +728,14 @@ reference_feature:
         file_index: gnomad.genomes.v3.1.sites.chrM.vcf.bgz.tbi
         outfile: grch37_gnomad_genomes_mt_-r3.1-.vcf.gz
         outfile_index: grch37_gnomad_genomes_mt_-r3.1-.vcf.gz.tbi
-        url_prefix: https://storage.googleapis.com/gnomad-public/release/3.1/vcf/genomes/
+        url_prefix: https://storage.googleapis.com/gcp-public-data--gnomad/release/3.1/vcf/genomes/
     grch38:
       r3.1:
         file: gnomad.genomes.v3.1.sites.chrM.vcf.bgz
         file_index: gnomad.genomes.v3.1.sites.chrM.vcf.bgz.tbi
         outfile: grch38_gnomad_genomes_mt_-r3.1-.vcf.gz
         outfile_index: grch38_gnomad_genomes_mt_-r3.1-.vcf.gz.tbi
-        url_prefix: https://storage.googleapis.com/gnomad-public/release/3.1/vcf/genomes/
+        url_prefix: https://storage.googleapis.com/gcp-public-data--gnomad/release/3.1/vcf/genomes/
   gnomad_pli_per_gene:
     grch37:
       r2.1.1:
@@ -860,10 +860,10 @@ reference_feature:
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
       v1.4:
-        file: grch37_sv_frequency_vcfanno_filter_config_-v1.4-.toml
-        file_check: grch37_sv_frequency_vcfanno_filter_config_-v1.4-.toml.md5
-        outfile: grch37_sv_frequency_vcfanno_filter_config_-v1.4-.toml
-        outfile_check: grch37_sv_frequency_vcfanno_filter_config_-v1.4-.toml.md5
+        file: grch37_sv_vcfanno_config_-v1.4-.toml
+        file_check: grch37_sv_vcfanno_config_-v1.4-.toml.md5
+        outfile: grch37_sv_vcfanno_config_-v1.4-.toml
+        outfile_check: grch37_sv_vcfanno_config_-v1.4-.toml.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
     grch38:
