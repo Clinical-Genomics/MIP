@@ -234,7 +234,7 @@ sub analysis_mt_annotation {
 
                 }
             );
-            print {$filehandle} $NEWLINE;
+            say {$filehandle} $NEWLINE;
         }
         else {
 
@@ -254,12 +254,12 @@ sub analysis_mt_annotation {
                     outfile_path => $outfile_path{$contig} . q{.tbi},
                 }
             );
-            print {$filehandle} $NEWLINE;
+            say {$filehandle} $NEWLINE;
 
         }
     }
 
-    ## Close filehandleS
+    ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
@@ -275,13 +275,13 @@ sub analysis_mt_annotation {
 
         submit_recipe(
             {
-                base_command                      => $profile_base_command,
-                case_id                           => $case_id,
-                dependency_method                 => q{sample_to_case},
-                job_id_chain                      => $recipe{job_id_chain},
-                job_id_href                       => $job_id_href,
-                job_reservation_name              => $active_parameter_href->{job_reservation_name},
-                log                               => $log,
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_case},
+                job_id_chain         => $recipe{job_id_chain},
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
