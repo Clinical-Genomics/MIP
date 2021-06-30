@@ -4,7 +4,7 @@ FROM clinicalgenomics/mip_base:2.1
 
 ################## METADATA ######################
 
-LABEL base_image="clinicalgenomics/mip_base:2.1"
+LABEL base-image="clinicalgenomics/mip_base:2.1"
 LABEL version="1"
 LABEL software="HmtNote"
 LABEL software.version="0.7.2"
