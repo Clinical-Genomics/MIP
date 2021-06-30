@@ -10,6 +10,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - gnomad: r3.0 -> r3.1.1
 - [NEW] gnomad mt: r3.1
 
+## [10.0.3]
+
+- Remove duplicates from Glnexus output
+
 ## [10.0.2]
 
 - Glnexus are used to genotype the gvcf regardless of how many samples that are analysed.
