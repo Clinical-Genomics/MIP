@@ -94,6 +94,8 @@ reference:
     - r2.0.1
   gnomad_chrsplit:
     - r3.1.1
+  gnomad_mt:
+    - r3.1
   gnomad_pli_per_gene:
     - r2.1.1
   hapmap:
@@ -570,6 +572,21 @@ reference_feature:
         outfile: grch38_gnomad_reformated_-r3.1.1-.vcf.gz
         outfile_index: grch38_gnomad_reformated_-r3.1.1-.vcf.gz.tbi
         url_prefix: https://storage.googleapis.com/gcp-public-data--gnomad/release/3.1.1/vcf/genomes/
+  gnomad_mt:
+    grch37:
+      r3.1:
+        file: gnomad.genomes.v3.1.sites.chrM.vcf.bgz
+        file_index: gnomad.genomes.v3.1.sites.chrM.vcf.bgz.tbi
+        outfile: grch37_gnomad_genomes_mt_-r3.1-.vcf.gz
+        outfile_index: grch37_gnomad_genomes_mt_-r3.1-.vcf.gz.tbi
+        url_prefix: https://storage.googleapis.com/gnomad-public/release/3.1/vcf/genomes/
+    grch38:
+      r3.1:
+        file: gnomad.genomes.v3.1.sites.chrM.vcf.bgz
+        file_index: gnomad.genomes.v3.1.sites.chrM.vcf.bgz.tbi
+        outfile: grch38_gnomad_genomes_mt_-r3.1-.vcf.gz
+        outfile_index: grch38_gnomad_genomes_mt_-r3.1-.vcf.gz.tbi
+        url_prefix: https://storage.googleapis.com/gnomad-public/release/3.1/vcf/genomes/
   gnomad_pli_per_gene:
     grch37:
       r2.1.1:

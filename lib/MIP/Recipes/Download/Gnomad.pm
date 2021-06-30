@@ -32,7 +32,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ download_gnomad download_gnomad_xargs};
+    our @EXPORT_OK = qw{ download_gnomad download download_gnomad_mt download_gnomad_xargs};
 
 }
 
@@ -248,6 +248,181 @@ sub download_gnomad {
     );
 
     ## Close filehandle
+    close $filehandle or $log->logcroak(q{Could not close filehandle});
+
+    if ( $recipe{mode} == 1 ) {
+
+        ## No upstream or downstream dependencies
+        slurm_submit_job_no_dependency_dead_end(
+            {
+                base_command     => $profile_base_command,
+                job_id_href      => $job_id_href,
+                log              => $log,
+                sbatch_file_name => $recipe_file_path,
+            }
+        );
+    }
+    return 1;
+}
+
+sub download_gnomad_mt {
+
+## Function : Download gnomad mitochondrial
+## Returns  :
+## Arguments: $active_parameter_href => Active parameters for this download hash {REF}
+##          : $genome_version        => Human genome version
+##          : $job_id_href           => The job_id hash {REF}
+##          : $profile_base_command  => Submission profile base command
+##          : $quiet                 => Quiet (no output)
+##          : $recipe_name           => Recipe name
+##          : $reference_href        => Reference hash {REF}
+##          : $reference_version     => Reference version
+##          : $temp_directory        => Temporary directory for recipe
+##          : $verbose               => Verbosity
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $genome_version;
+    my $job_id_href;
+    my $recipe_name;
+    my $reference_href;
+    my $reference_version;
+
+    ## Default(s)
+    my $profile_base_command;
+    my $quiet;
+    my $temp_directory;
+    my $verbose;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        genome_version => {
+            store       => \$genome_version,
+            strict_type => 1,
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
+        quiet => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$quiet,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        reference_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_href,
+            strict_type => 1,
+        },
+        reference_version => {
+            defined     => 1,
+            required    => 1,
+            store       => \$reference_version,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Processmanagement::Slurm_processes qw{ slurm_submit_job_no_dependency_dead_end };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::Recipes::Download::Get_reference qw{ get_reference };
+    use MIP::Script::Setup_script qw{ setup_script };
+
+    ### PREPROCESSING:
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger( uc q{mip_download} );
+
+    ## Unpack parameters
+    my $reference_dir = $active_parameter_href->{reference_dir};
+
+    my %recipe = parse_recipe_prerequisites(
+        {
+            active_parameter_href => $active_parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
+
+    ## Filehandle(s)
+    # Create anonymous filehandle
+    my $filehandle = IO::Handle->new();
+
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
+        {
+            active_parameter_href           => $active_parameter_href,
+            core_number                     => $recipe{core_number},
+            directory_id                    => q{mip_download},
+            filehandle                      => $filehandle,
+            info_file_id                    => $genome_version . $UNDERSCORE . $reference_version,
+            job_id_href                     => $job_id_href,
+            memory_allocation               => $recipe{memory},
+            outdata_dir                     => $reference_dir,
+            outscript_dir                   => $reference_dir,
+            process_time                    => $recipe{time},
+            recipe_data_directory_path      => $active_parameter_href->{reference_dir},
+            recipe_directory                => $recipe_name . $UNDERSCORE . $reference_version,
+            recipe_name                     => $recipe_name,
+            source_environment_commands_ref => $recipe{load_env_ref},
+        }
+    );
+
+    ### SHELL:
+
+    say {$filehandle} q{## } . $recipe_name;
+
+    get_reference(
+        {
+            filehandle     => $filehandle,
+            recipe_name    => $recipe_name,
+            reference_dir  => $reference_dir,
+            reference_href => $reference_href,
+            quiet          => $quiet,
+            verbose        => $verbose,
+        }
+    );
+
+    if ( $genome_version eq q{grch37} ) {
+
+        _reformat_for_grch37(
+            {
+                filehandle  => $filehandle,
+                infile_path => catfile( $reference_dir, $reference_href->{outfile} )
+            }
+        );
+    }
+
+    ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
@@ -794,6 +969,86 @@ sub _annotate_and_calculate_afpopmax {
             infile_path  => catfile( $FORWARD_SLASH, qw{ dev stdin } ),
             outfile_path => $outfile_path,
             output_type  => q{z},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    return;
+}
+
+sub _reformat_for_grch37 {
+
+## Function : Rename chrM to MT for grch37
+## Returns  :
+## Arguments: $filehandle  => Filehandle
+##          : $infile_path => Path to reformatted file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+
+    my $tmpl = {
+        filehandle => {
+            required => 1,
+            store    => \$filehandle,
+        },
+        infile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Language::Perl qw{ perl_nae_oneliners };
+    use MIP::Program::Bcftools qw{ bcftools_view };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_mv };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
+
+    bcftools_view(
+        {
+            filehandle  => $filehandle,
+            infile_path => $infile_path,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    perl_nae_oneliners(
+        {
+            filehandle    => $filehandle,
+            oneliner_name => q{synonyms_grch38_to_grch37},
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    my $temp_outfile_path = $infile_path . q{_temp.vcf.gz};
+    htslib_bgzip(
+        {
+            filehandle      => $filehandle,
+            stdoutfile_path => $temp_outfile_path,
+            write_to_stdout => 1,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    gnu_mv(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $temp_outfile_path,
+            outfile_path => $infile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    htslib_tabix(
+        {
+            filehandle  => $filehandle,
+            infile_path => $infile_path,
+            preset      => q{vcf},
         }
     );
     say {$filehandle} $NEWLINE;

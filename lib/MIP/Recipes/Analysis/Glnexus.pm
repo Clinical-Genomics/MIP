@@ -190,35 +190,41 @@ sub analysis_glnexus {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    ## Set infile for bcftools norm for single sample cases
-    my $bcftools_norm_infile_path = $genotype_infile_paths[0];
+    glnexus_merge(
+        {
+            config           => q{DeepVariant_unfiltered},
+            dir              => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
+            filehandle       => $filehandle,
+            infile_paths_ref => \@genotype_infile_paths,
+            memory           => $memory,
+            threads          => $core_number,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
 
-    if ( scalar @{ $active_parameter_href->{sample_ids} } > 1 ) {
-
-        glnexus_merge(
-            {
-                config           => q{DeepVariant_unfiltered},
-                dir              => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
-                filehandle       => $filehandle,
-                infile_paths_ref => \@genotype_infile_paths,
-                memory           => $memory,
-                threads          => $core_number,
-            }
-        );
-        print {$filehandle} $PIPE . $SPACE;
-
-        $bcftools_norm_infile_path = $DASH;
-    }
-
+    ## Normalize
     bcftools_norm(
         {
             filehandle     => $filehandle,
-            infile_path    => $bcftools_norm_infile_path,
+            infile_path    => $DASH,
             multiallelic   => q{-},
-            outfile_path   => $outfile_path,
-            output_type    => q{z},
+            output_type    => q{u},
             reference_path => $active_parameter_href->{human_genome_reference},
             threads        => $core_number,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    ## Remove duplicates
+    bcftools_norm(
+        {
+            filehandle        => $filehandle,
+            infile_path       => $DASH,
+            outfile_path      => $outfile_path,
+            output_type       => q{z},
+            reference_path    => $active_parameter_href->{human_genome_reference},
+            remove_duplicates => 1,
+            threads           => $core_number,
         }
     );
     say {$filehandle} $NEWLINE;
