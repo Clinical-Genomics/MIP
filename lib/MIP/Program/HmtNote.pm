@@ -56,8 +56,6 @@ sub hmtnote_annotate {
     my $stdinfile_path;
     my $stdoutfile_path;
 
-    ## Default(s)
-
     my $tmpl = {
         filehandle => {
             store => \$filehandle,
