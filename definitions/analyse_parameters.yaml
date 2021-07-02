@@ -168,6 +168,12 @@ project_id:
     - mip
   data_type: SCALAR
   type: mip
+recipe_bind_path:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
 reference_dir:
   associated_recipe:
     - mip
@@ -192,7 +198,19 @@ sample_info_file:
   data_type: SCALAR
   type: path
   update_path: absolute_path
-recipe_bind_path:
+set_recipe_core_number:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+set_recipe_memory:
+  associated_recipe:
+    - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+set_recipe_time:
   associated_recipe:
     - mip
   data_type: HASH
