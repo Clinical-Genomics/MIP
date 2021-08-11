@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [10.1.0]
+- Only store qc_metrics_deliverables path in file store for downstream parsing
+
 ## [10.0.3]
 
 - Remove duplicates from Glnexus output

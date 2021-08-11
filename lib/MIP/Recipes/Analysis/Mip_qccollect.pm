@@ -201,18 +201,16 @@ sub analysis_mip_qccollect {
             }
         );
 
-        if ( defined $active_parameter_href->{qccollect_store_metrics_outfile} ) {
+        set_file_path_to_store(
+            {
+                format           => q{meta},
+                id               => $case_id,
+                path             => $active_parameter_href->{qccollect_store_metrics_outfile},
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
 
-            set_file_path_to_store(
-                {
-                    format           => q{meta},
-                    id               => $case_id,
-                    path             => $active_parameter_href->{qccollect_store_metrics_outfile},
-                    recipe_name      => $recipe_name,
-                    sample_info_href => $sample_info_href,
-                }
-            );
-        }
         submit_recipe(
             {
                 base_command         => $profile_base_command,
