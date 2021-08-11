@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Develop]
 
 - HmtNote: annotate mitochondrial variants in VCF file
+- Introduced the option `--start_after_recipe` to start the pipeline after a given recipe
 
 ### Tools
 
