@@ -35,6 +35,7 @@ sub gnu_awk {
 ##         : $filehandle             => Filehandle to write to
 ##         : $infile_path            => Infile path
 ##         : $outfile_path           => Outfile path
+##         : $script                 => Script to process infile with
 ##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
 ##         : $stdoutfile_path        => Stdoutfile path
@@ -46,6 +47,7 @@ sub gnu_awk {
     my $filehandle;
     my $infile_path;
     my $outfile_path;
+    my $script;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -63,6 +65,10 @@ sub gnu_awk {
         outfile_path => {
             store       => \$outfile_path,
             strict_type => 1,
+        },
+        script => {
+            strict_type => 1,
+            store       => \$script
         },
         stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
         stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
@@ -88,6 +94,11 @@ sub gnu_awk {
     if ($infile_path) {
 
         push @commands, $infile_path;
+    }
+
+    if ($script) {
+
+        push @commands, $script;
     }
 
     ## Outfile

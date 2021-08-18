@@ -134,6 +134,10 @@ my %specific_argument = (
         input           => q{outfile.test},
         expected_output => q{>outfile.test},
     },
+    script => {
+        input           => q{script.test},
+        expected_output => q{script.test},
+    },
 );
 
 ## Coderef - enables generalized use of generate call
