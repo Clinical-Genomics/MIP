@@ -18,7 +18,7 @@ BEGIN {
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ parse_recipes parse_start_with_recipe };
+    our @EXPORT_OK = qw{ parse_recipes parse_initiation_recipe };
 }
 
 sub parse_recipes {
@@ -101,9 +101,9 @@ sub parse_recipes {
     return 1;
 }
 
-sub parse_start_with_recipe {
+sub parse_initiation_recipe {
 
-## Function : Get initiation recipe, downstream dependencies and update recipe modes fo start_with_recipe parameter
+## Function : Get initiation recipe, downstream dependencies and update recipe modes for start_with_recipe/start_after_recipe parameter
 ## Returns  :
 ## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
 ##          : $initiation_file       => Initiation file for pipeline
@@ -139,12 +139,15 @@ sub parse_start_with_recipe {
     use MIP::Parameter qw{ get_cache };
     use MIP::Recipes::Check qw{ check_recipe_exists_in_hash };
 
-    return if ( not defined $active_parameter_href->{start_with_recipe} );
+    my $recipe = $active_parameter_href->{start_with_recipe}
+      // $active_parameter_href->{start_after_recipe};
+
+    return if ( not defined $recipe );
 
     check_recipe_exists_in_hash(
         {
-            parameter_name => $active_parameter_href->{start_with_recipe},
-            query_ref      => \$active_parameter_href->{start_with_recipe},
+            parameter_name => $recipe,
+            query_ref      => \$recipe,
             truth_href     => $parameter_href,
         }
     );
@@ -159,10 +162,13 @@ sub parse_start_with_recipe {
             dependency_tree_href   => $parameter_href->{dependency_tree_href},
             is_recipe_found_ref    => \$is_recipe_found,
             is_chain_found_ref     => \$is_chain_found,
-            recipe                 => $active_parameter_href->{start_with_recipe},
+            recipe                 => $recipe,
             start_with_recipes_ref => \@start_with_recipes,
         }
     );
+
+    ## Shift the initiaion point forward if the pipeline should start after the given recipe
+    shift @start_with_recipes if $active_parameter_href->{start_after_recipe};
 
     my @recipes = get_cache(
         {
@@ -171,7 +177,7 @@ sub parse_start_with_recipe {
         }
     );
 
-    ## Update recipe mode depending on start with flag
+    ## Update recipe mode depending on start with/after flag
     update_recipe_mode_for_start_with_option(
         {
             active_parameter_href  => $active_parameter_href,

@@ -321,6 +321,15 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
     );
 
     option(
+        q{start_after_recipe} => (
+            cmd_aliases   => [qw{ sar }],
+            documentation => q{Start analysis after recipe},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{start_with_recipe} => (
             cmd_aliases   => [qw{ swr }],
             documentation => q{Start analysis with recipe},

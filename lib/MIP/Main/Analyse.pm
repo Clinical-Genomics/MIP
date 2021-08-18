@@ -61,7 +61,7 @@ use MIP::Pedigree qw{ create_fam_file
 };
 use MIP::Pipeline qw{ run_analyse_pipeline };
 use MIP::Processmanagement::Processes qw{ write_job_ids_to_file };
-use MIP::Recipes::Parse qw{ parse_recipes parse_start_with_recipe };
+use MIP::Recipes::Parse qw{ parse_recipes parse_initiation_recipe };
 use MIP::Reference qw{ check_human_genome_file_endings };
 use MIP::Sample_info qw{
   reload_previous_pedigree_info
@@ -211,10 +211,9 @@ sub mip_analyse {
 ## Set default from parameter hash to active_parameter for uninitilized parameters
     set_default(
         {
-            active_parameter_href => $active_parameter_href,
-            custom_default_parameters_ref =>
-              $parameter_href->{custom_default_parameters}{default},
-            parameter_href => $parameter_href,
+            active_parameter_href         => $active_parameter_href,
+            custom_default_parameters_ref => $parameter_href->{custom_default_parameters}{default},
+            parameter_href                => $parameter_href,
         }
     );
 
@@ -237,10 +236,9 @@ sub mip_analyse {
 ## Detect version and source of the human_genome_reference: Source (hg19 or GRCh) and check compression status
     set_human_genome_reference_features(
         {
-            file_info_href => $file_info_href,
-            human_genome_reference =>
-              basename( $active_parameter_href->{human_genome_reference} ),
-            parameter_href => $parameter_href,
+            file_info_href         => $file_info_href,
+            human_genome_reference => basename( $active_parameter_href->{human_genome_reference} ),
+            parameter_href         => $parameter_href,
         }
     );
 
@@ -283,10 +281,9 @@ sub mip_analyse {
         {
             human_genome_reference_file_endings_ref =>
               $file_info_href->{human_genome_reference_file_endings},
-            human_genome_reference_path =>
-              $active_parameter_href->{human_genome_reference},
-            parameter_href => $parameter_href,
-            parameter_name => q{human_genome_reference_file_endings},
+            human_genome_reference_path => $active_parameter_href->{human_genome_reference},
+            parameter_href              => $parameter_href,
+            parameter_name              => q{human_genome_reference_file_endings},
         }
     );
 
@@ -392,7 +389,7 @@ sub mip_analyse {
         }
     );
 
-    parse_start_with_recipe(
+    parse_initiation_recipe(
         {
             active_parameter_href => $active_parameter_href,
             parameter_href        => $parameter_href,
@@ -494,10 +491,8 @@ sub mip_analyse {
         {
             case_id           => $active_parameter_href->{case_id},
             job_id_href       => \%job_id,
-            job_ids_file_path => catfile(
-                $active_parameter_href->{outdata_dir},
-                q{slurm_job_ids} . $DOT . q{yaml}
-            ),
+            job_ids_file_path =>
+              catfile( $active_parameter_href->{outdata_dir}, q{slurm_job_ids} . $DOT . q{yaml} ),
         }
     );
 
