@@ -21,44 +21,8 @@ use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
+use MIP::Constants qw{ $COMMA $NEWLINE $SPACE };
 use MIP::Script::Utils qw{ help };
-
-our $USAGE = build_usage( {} );
-
-my $VERBOSE = 1;
-
-## Constants
-Readonly my $COMMA   => q{,};
-Readonly my $NEWLINE => qq{\n};
-Readonly my $SPACE   => q{ };
-
-### User Options
-GetOptions(
-
-    # Display help text
-    q{h|help} => sub {
-        done_testing();
-        say {*STDOUT} $USAGE;
-        exit;
-    },
-
-    # Display version number
-    q{v|version} => sub {
-        done_testing();
-        say {*STDOUT} $NEWLINE . basename($PROGRAM_NAME) . $SPACE . $NEWLINE;
-        exit;
-    },
-    q{vb|verbose} => $VERBOSE,
-  )
-  or (
-    done_testing(),
-    help(
-        {
-            USAGE     => $USAGE,
-            exit_code => 1,
-        }
-    )
-  );
 
 BEGIN {
 
@@ -158,36 +122,3 @@ foreach my $argument_href (@arguments) {
 }
 
 done_testing();
-
-######################
-####SubRoutines#######
-######################
-
-sub build_usage {
-
-##Function : Build the USAGE instructions
-##Returns  : ""
-##         : $program_name => Name of the script
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $program_name;
-
-    my $tmpl = {
-        program_name => {
-            default     => basename($PROGRAM_NAME),
-            store       => \$program_name,
-            strict_type => 1,
-        },
-    };
-
-    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
-
-    return <<"END_USAGE";
- $program_name [options]
-    -vb/--verbose Verbose
-    -h/--help     Display this help message
-    -v/--version  Display version
-END_USAGE
-}
