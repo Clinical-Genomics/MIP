@@ -175,6 +175,7 @@ recipe_core_number:
     gzip_fastq: 0
     manta: 36
     markduplicates: 13
+    mt_annotation: 1
     multiqc_ar: 1
     peddy_ar: 4
     picardtools_collecthsmetrics: 1
@@ -202,12 +203,6 @@ recipe_core_number:
     varg_ar: 1
     version_collect_ar: 1
     vcf2cytosure_ar: 0
-  type: mip
-set_recipe_core_number:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
   type: mip
 ## GPU number
 recipe_gpu_number:
@@ -245,6 +240,7 @@ recipe_memory:
     gatk_variantrecalibration: 30
     glnexus_merge: 10
     markduplicates: 10
+    mt_annotation: 2
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
     plink: 10
@@ -261,12 +257,6 @@ recipe_memory:
     varianteffectpredictor: 7
     vcf2cytosure_ar: 6
     version_collect_ar: 8
-  type: mip
-set_recipe_memory:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
   type: mip
 recipe_time:
   associated_recipe:
@@ -305,6 +295,7 @@ recipe_time:
     gzip_fastq: 2
     manta: 30
     markduplicates: 20
+    mt_annotation: 1
     multiqc_ar: 5
     peddy_ar: 1
     picardtools_collecthsmetrics: 10
@@ -337,12 +328,6 @@ recipe_time:
     vcf2cytosure_ar: 20
     vcfparser_ar: 5
     version_collect_ar: 1
-  type: mip
-set_recipe_time:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
   type: mip
 infile_dirs:
   associated_recipe:
@@ -1548,6 +1533,25 @@ bcftools_core:
     - bgzip
     - tabix
   type: recipe
+mt_annotation:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  outfile_suffix: ".vcf.gz"
+  file_tag: _mt
+  program_executables:
+    - hmtnote
+    - bgzip
+    - tabix
+  type: recipe
+mt_offline:
+  associated_recipe:
+    - mt_annotation
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 variant_annotation:
   analysis_mode: case
   associated_recipe:

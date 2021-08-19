@@ -75,6 +75,7 @@ CHAIN_ALL:
     - rhocall_ar
     - bcftools_norm
     - variant_annotation
+    - mt_annotation
     - CHAIN_RHOVIZ:
       - rhocall_viz
       - chromograph_rhoviz

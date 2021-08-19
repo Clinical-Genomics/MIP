@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Develop]
+
+- HmtNote: annotate mitochondrial variants in VCF file
+
+### Tools
+
+HmtNote: 0.7.2
+
+### References
+
+- gnomad: r3.0 -> r3.1.1
+- [NEW] gnomad mt: r3.1
+
 ## [10.2.0]
 
 - Introduced the option `--start_after_recipe <recipe_name>` to start the pipeline after a given recipe
