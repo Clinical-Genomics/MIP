@@ -34,12 +34,12 @@ sub analysis_mitodel {
 ## Function : Report mitochondria deletion signatures from WGS data
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id                 => Family id
 ##          : $file_info_href          => File_info hash {REF}
 ##          : $job_id_href             => Job id hash {REF}
 ##          : $parameter_href          => Parameter hash {REF}
 ##          : $profile_base_command    => Submission profile base command
 ##          : $recipe_name             => Recipe name
+##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
@@ -126,7 +126,7 @@ sub analysis_mitodel {
     use MIP::Program::Samtools qw{ samtools_stats };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -206,7 +206,7 @@ sub analysis_mitodel {
             auto_detect_input_format => 1,
             filehandle               => $filehandle,
             infile_path              => $mt_infile_path,
-            insert_size              => 16000,
+            insert_size              => 16_000,
         }
     );
     print {$filehandle} $PIPE . $SPACE;
