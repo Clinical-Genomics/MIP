@@ -16,6 +16,14 @@ HmtNote: 0.7.2
 - gnomad: r3.0 -> r3.1.1
 - [NEW] gnomad mt: r3.1
 
+## [10.2.0]
+
+- Introduced the option `--start_after_recipe <recipe_name>` to start the pipeline after a given recipe
+
+## [10.1.0]
+
+- Only store qc_metrics_deliverables path in file store for downstream parsing
+
 ## [10.0.3]
 
 - Remove duplicates from Glnexus output

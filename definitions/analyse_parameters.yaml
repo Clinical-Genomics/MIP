@@ -222,6 +222,12 @@ slurm_quality_of_service:
   data_type: SCALAR
   default: normal
   type: mip
+start_after_recipe:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  mandatory: no
+  type: mip
 start_with_recipe:
   associated_recipe:
     - mip

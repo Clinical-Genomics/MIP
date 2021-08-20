@@ -30,16 +30,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Parse} => [qw{ parse_start_with_recipe }],
+        q{MIP::Recipes::Parse} => [qw{ parse_initiation_recipe }],
         q{MIP::Test::Fixtures} => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Parse qw{ parse_start_with_recipe };
+use MIP::Recipes::Parse qw{ parse_initiation_recipe };
 
-diag(   q{Test parse_start_with_recipe from Parse.pm}
+diag(   q{Test parse_initiation_recipe from Parse.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -47,15 +47,18 @@ diag(   q{Test parse_start_with_recipe from Parse.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( {} );
+test_log( {} );
 
-## Given no defined start_with_recipe parameter
+## Given no defined start_with_recipe or start_after_recipe parameter
 my %active_parameter;
-my %parameter = ( bwa_mem => { default => 0, }, );
+my %parameter = (
+    bwa_mem        => { default => 0, },
+    markduplicates => { default => 0, },
+);
 my %dependency_tree = test_mip_hashes( { mip_hash_name => q{dependency_tree_dna} } );
 $parameter{dependency_tree_href} = \%dependency_tree;
 
-my $return = parse_start_with_recipe(
+my $return = parse_initiation_recipe(
     {
         active_parameter_href => \%active_parameter,
         parameter_href        => \%parameter,
@@ -68,7 +71,7 @@ is( $return, undef, q{Skip parsing} );
 ## Given start_with_recipe parameter, when defined
 $active_parameter{start_with_recipe} = q{bwa_mem};
 
-my $is_ok = parse_start_with_recipe(
+my $is_ok = parse_initiation_recipe(
     {
         active_parameter_href => \%active_parameter,
         parameter_href        => \%parameter,
@@ -77,5 +80,19 @@ my $is_ok = parse_start_with_recipe(
 
 ## Then return true for successful parsing
 ok( $is_ok, q{Parsed programs from start_with_flag} );
+
+## Given start_after_recipe parameter, when defined
+$active_parameter{start_after_recipe} = q{markduplicates};
+$active_parameter{start_with_recipe}  = undef;
+
+$is_ok = parse_initiation_recipe(
+    {
+        active_parameter_href => \%active_parameter,
+        parameter_href        => \%parameter,
+    },
+);
+
+## Then return true for successful parsing
+ok( $is_ok, q{Parsed programs from start_after_flag} );
 
 done_testing();
