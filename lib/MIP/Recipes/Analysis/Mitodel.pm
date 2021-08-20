@@ -252,6 +252,7 @@ sub analysis_mitodel {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
+                tag              => q{mitodel},
             }
         );
 
