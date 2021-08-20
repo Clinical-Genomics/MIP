@@ -175,6 +175,7 @@ recipe_core_number:
     gzip_fastq: 0
     manta: 36
     markduplicates: 13
+    mitodel: 1
     mt_annotation: 1
     multiqc_ar: 1
     peddy_ar: 4
@@ -240,6 +241,7 @@ recipe_memory:
     gatk_variantrecalibration: 30
     glnexus_merge: 10
     markduplicates: 10
+    mitodel: 2
     mt_annotation: 2
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
@@ -295,6 +297,7 @@ recipe_time:
     gzip_fastq: 2
     manta: 30
     markduplicates: 20
+    mitodel: 2
     mt_annotation: 1
     multiqc_ar: 5
     peddy_ar: 1
@@ -1532,6 +1535,15 @@ bcftools_core:
     - bcftools
     - bgzip
     - tabix
+  type: recipe
+mitodel:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  outfile_suffix: ".txt"
+  file_tag: _mitodel
   type: recipe
 mt_annotation:
   analysis_mode: case
