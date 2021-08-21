@@ -151,13 +151,13 @@ sub analysis_mitodel {
 
     my $mt_infile_path;
 
-    foreach my $chr_suffix ( @{ $io{in}{file_suffixes} } ) {
-        if ( $chr_suffix eq ".MT.bam" ) {
-            $mt_infile_path = $io{in}{file_path_prefix} . $chr_suffix;
+    foreach my $contig ( keys %infile_path ) {
+
+        if ( $contig =~ / MT|M /xsm ) {
+            
+            $mt_infile_path = $infile_path{$contig};
         }
-        elsif ( $chr_suffix eq ".chrM.bam" ) {
-            $mt_infile_path = $io{in}{file_path_prefix} . $chr_suffix;
-        }
+
     }
 
     my %recipe = parse_recipe_prerequisites(
