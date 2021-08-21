@@ -919,7 +919,7 @@ sub samtools_stats {
 
     if ($insert_size) {
 
-        push @commands, q{-i} . $SPACE . $insert_size;
+        push @commands, q{--insert-size} . $SPACE . $insert_size;
     }
 
     if ($remove_overlap) {

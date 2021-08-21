@@ -88,7 +88,7 @@ my %specific_argument = (
     },
     insert_size => {
         input           => q{16000},
-        expected_output => q{-i 16000},
+        expected_output => q{--insert-size 16000},
     },
     outfile_path => {
         input           => q{outpath},

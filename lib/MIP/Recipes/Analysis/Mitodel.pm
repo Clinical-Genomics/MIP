@@ -148,7 +148,17 @@ sub analysis_mitodel {
 
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my %infile_path        = %{ $io{in}{file_path_href} };
-    my $mt_infile_path     = $io{in}{file_path_prefix} . q{.MT.bam};
+
+    my $mt_infile_path;
+
+    foreach my $chr_suffix ( @{ $io{in}{file_suffixes} } ) {
+        if ( $chr_suffix eq ".MT.bam" ) {
+            $mt_infile_path = $io{in}{file_path_prefix} . $chr_suffix;
+        }
+        elsif ( $chr_suffix eq ".chrM.bam" ) {
+            $mt_infile_path = $io{in}{file_path_prefix} . $chr_suffix;
+        }
+    }
 
     my %recipe = parse_recipe_prerequisites(
         {
@@ -221,15 +231,28 @@ sub analysis_mitodel {
     print {$filehandle} $PIPE . $SPACE;
 
     my $awk_statement =
-'($2>=1200 && $2<=15000) {sum=sum+$3} ($2<1200 || $2>15000) {sum_norm=sum_norm+$3} END {print "intermediate discordant ", sum, "normal ", sum_norm, "ratio ppk", sum*1000/(sum_norm+sum)}';
+
+      # identification of read pairs that are separated by >1.2 kb but <15 kb
+      q?($2>=1200 && $2<=15000) {sum=sum+$3}?
+
+      # identification of normal read pairs which are <1.2 kb but >15 kb
+      . q?($2<1200 || $2>15000) {sum_norm=sum_norm+$3}?
+
+      # Add end rule
+      . q?END?
+
+      # ratio of discordant to normal read pairs
+      . q?{print "intermediate discordant ", sum, "normal ", sum_norm, "ratio ppk", sum*1000/(sum_norm+sum)}?;
 
     awk(
         {
-            filehandle => $filehandle,
-            statement  => $awk_statement,
+            filehandle      => $filehandle,
+            statement       => $awk_statement,
+            stdoutfile_path => $outfile_path,
+
         }
     );
-    print {$filehandle} q{>} . $outfile_path;
+    print {$filehandle} $NEWLINE;
 
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
@@ -252,7 +275,6 @@ sub analysis_mitodel {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
-                tag              => q{mitodel},
             }
         );
 
