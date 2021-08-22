@@ -887,7 +887,7 @@ sub samtools_stats {
         },
         insert_size => {
             allow       => qr/ ^\d+$ /sxm,
-            default     => 8000,
+            default     => 16000,
             store       => \$insert_size,
             strict_type => 1,
         },

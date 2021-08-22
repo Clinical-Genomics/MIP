@@ -14,6 +14,7 @@ use warnings qw{ FATAL utf8 };
 
 ## CPANM
 use autodie qw{ :all };
+use List::MoreUtils qw{ first_value };
 use Readonly;
 
 ## MIPs lib/
@@ -147,17 +148,15 @@ sub analysis_mitodel {
     );
 
     my $infile_name_prefix = $io{in}{file_name_prefix};
-    my %infile_path        = %{ $io{in}{file_path_href} };
+    my @infile_paths       = @{ $io{in}{file_paths} };
 
-    my $mt_infile_path;
+    my $infile_path = first_value { / $infile_name_prefix [.]M|chrM /sxm } @infile_paths;
 
-    foreach my $contig ( keys %infile_path ) {
+    if ( not $infile_path ) {
 
-        if ( $contig =~ / MT|M /xsm ) {
-            
-            $mt_infile_path = $infile_path{$contig};
-        }
-
+        $log->warn(
+            qq{Mitochondrial contig is not part of analysis contig set - skipping $recipe_name});
+        return 1;
     }
 
     my %recipe = parse_recipe_prerequisites(
@@ -215,8 +214,9 @@ sub analysis_mitodel {
         {
             auto_detect_input_format => 1,
             filehandle               => $filehandle,
-            infile_path              => $mt_infile_path,
+            infile_path              => $infile_path,
             insert_size              => 16_000,
+            remove_overlap           => 0,
         }
     );
     print {$filehandle} $PIPE . $SPACE;
