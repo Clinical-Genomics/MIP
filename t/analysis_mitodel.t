@@ -62,7 +62,6 @@ my %active_parameter = test_mip_hashes(
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-my $case_id   = $active_parameter{case_id};
 my $sample_id = $active_parameter{sample_ids}[0];
 
 my %file_info = test_mip_hashes(
@@ -106,5 +105,22 @@ my $is_ok = analysis_mitodel(
 
 ## Then return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+
+delete $file_info{io}{TEST}{ADM1059A1}{mitodel}{in}{file_paths}[-1];
+
+$is_ok = analysis_mitodel(
+    {
+        active_parameter_href => \%active_parameter,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_id             => $sample_id,
+        sample_info_href      => \%sample_info,
+    }
+);
+
+ok( $is_ok, qq{ Skipped analysis recipe $recipe_name when no Mitochondrial contig} );
 
 done_testing();
