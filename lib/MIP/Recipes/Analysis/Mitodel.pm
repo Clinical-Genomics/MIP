@@ -173,7 +173,7 @@ sub analysis_mitodel {
         parse_io_outfiles(
             {
                 chain_id               => $recipe{job_id_chain},
-                id                     => $case_id,
+                id                     => $sample_id,
                 file_info_href         => $file_info_href,
                 file_name_prefixes_ref => [$infile_name_prefix],
                 outdata_dir            => $active_parameter_href->{outdata_dir},
@@ -194,7 +194,7 @@ sub analysis_mitodel {
         {
             active_parameter_href => $active_parameter_href,
             core_number           => $recipe{core_number},
-            directory_id          => $case_id,
+            directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
             memory_allocation     => $recipe{memory},
@@ -280,7 +280,7 @@ sub analysis_mitodel {
             {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
-                dependency_method                 => q{sample_to_case},
+                dependency_method                 => q{sample_to_island},
                 job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
@@ -288,7 +288,7 @@ sub analysis_mitodel {
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
-                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                sample_id          => $sample_id,
                 submission_profile => $active_parameter_href->{submission_profile},
             }
         );

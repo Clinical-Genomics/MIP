@@ -1544,6 +1544,8 @@ mitodel:
   default: 1
   outfile_suffix: ".txt"
   file_tag: _mitodel
+  program_executables:
+    - samtools
   type: recipe
 mt_annotation:
   analysis_mode: case

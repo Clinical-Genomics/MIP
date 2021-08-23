@@ -129,7 +129,7 @@ sub parse_rd_dna {
     Readonly my @MIP_VEP_PLUGINS                 => qw{ sv_vep_plugin vep_plugin };
     Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES => qw{ cnvnator_ar delly_reformat tiddit };
     Readonly my @ONLY_WGS_RECIPIES               =>
-      qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter
+      qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter mitodel
       samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
