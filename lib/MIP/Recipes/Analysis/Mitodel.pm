@@ -167,20 +167,18 @@ sub analysis_mitodel {
         }
     );
 
-    my @contig_iterator = qw(MT);
     ## Set and get the io files per chain, id and stream
     %io = (
         %io,
         parse_io_outfiles(
             {
-                chain_id         => $recipe{job_id_chain},
-                id               => $case_id,
-                file_info_href   => $file_info_href,
-                file_name_prefix => $infile_name_prefix,
-                iterators_ref    => \@contig_iterator,
-                outdata_dir      => $active_parameter_href->{outdata_dir},
-                parameter_href   => $parameter_href,
-                recipe_name      => $recipe_name,
+                chain_id               => $recipe{job_id_chain},
+                id                     => $case_id,
+                file_info_href         => $file_info_href,
+                file_name_prefixes_ref => [$infile_name_prefix],
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                recipe_name            => $recipe_name,
             }
         )
     );
