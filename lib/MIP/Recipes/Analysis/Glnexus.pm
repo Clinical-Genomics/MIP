@@ -305,7 +305,7 @@ sub _build_sed_script {
     ## Function : Build sed script to add caller information to vcf
 
     my $header_info =
-      q{##INFO=<ID=FOUND_IN,Number=1,Type=Str,Description="Program that called the variant">};
+      q{##INFO=<ID=FOUND_IN,Number=1,Type=String,Description="Program that called the variant">};
     my $info_tag = q{FOUND_IN=deepvariant};
 
     my $sed_script = $SINGLE_QUOTE
