@@ -6,10 +6,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Develop]
 
 - HmtNote: annotate mitochondrial variants in VCF file
+- Updating to latest and greatest versions
 
 ### Tools
 
 HmtNote: 0.7.2
+htslib: 1.10.2 -> 1.13
+
 
 ### References
 

@@ -108,7 +108,7 @@ container:
       bgzip:
       samtools:
       tabix:
-    uri: docker.io/clinicalgenomics/htslib:1.10.2
+    uri: docker.io/clinicalgenomics/htslib:1.13
   manta:
     executable:
       configManta.py:
@@ -253,4 +253,3 @@ container:
     executable:
       vcf2cytosure:
     uri: docker.io/jemten/vcf2cytosure:0.5.1
-
