@@ -125,7 +125,7 @@ container:
   multiqc:
     executable:
       multiqc:
-    uri: docker.io/ewels/multiqc:1.10.1
+    uri: docker.io/ewels/multiqc:v1.11
   perl:
     executable:
       perl:
