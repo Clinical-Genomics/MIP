@@ -229,12 +229,11 @@ sub analysis_glnexus {
     );
     print {$filehandle} $PIPE . $SPACE;
 
-    ## Add to info filed so that scout can identify the caller
-    my $sed_script = _build_sed_script( {} );
+    ## Add to info field so that scout can identify the caller
     gnu_sed(
         {
             filehandle => $filehandle,
-            script     => $sed_script,
+            script     => _build_sed_script( {} ),
         }
     );
     print {$filehandle} $PIPE . $SPACE;
