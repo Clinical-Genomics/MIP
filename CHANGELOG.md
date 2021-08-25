@@ -13,7 +13,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 HmtNote: 0.7.2
 htslib: 1.10.2 -> 1.13
 cyrius v1.1 -> v1.1.1
-
+gatk 4.2.0.0 -> 4.2.2.0
 
 ### References
 
