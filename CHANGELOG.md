@@ -16,6 +16,7 @@ cyrius v1.1 -> v1.1.1
 gatk 4.2.0.0 -> 4.2.2.0
 glnexus v1.3.1 -> v1.4.1
 multiqc 1.10.1 -> v1.11
+vep release_103.1 -> release_104.3
 
 ### References
 
