@@ -53,7 +53,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [GATK] (version: 3.8.1 and 4.2.2.0)
 - [GENMOD] (version: 3.7.3)
 - [Gffcompare] (version: 0.11.2)
-- [Glnexus] (version: 1.3.1)
+- [Glnexus] (version: v1.4.1)
 - [Htslib] (version: 1.13)
 - [Manta] (version: 1.6.0)
 - [Megafusion] (version: 66a3a80)
