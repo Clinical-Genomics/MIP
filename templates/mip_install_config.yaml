@@ -52,7 +52,7 @@ container:
   cyrius:
     executable:
       star_caller.py:
-    uri: docker.io/clinicalgenomics/cyrius:v1.1
+    uri: docker.io/clinicalgenomics/cyrius:v1.1.1
   deepvariant:
     executable:
       run_deepvariant: /opt/deepvariant/bin/run_deepvariant
