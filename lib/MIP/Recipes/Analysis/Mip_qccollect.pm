@@ -216,7 +216,7 @@ sub analysis_mip_qccollect {
             {
                 format           => q{meta},
                 id               => $case_id,
-                path             => $active_parameter_href->{qccollect_eval_metric_file},
+                path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
                 tag              => q{audit},
