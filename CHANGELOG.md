@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - HmtNote: annotate mitochondrial variants in VCF file
 - Updating to latest and greatest versions
+- Mitochondrial deletion analysis
+- GATK Haplotypecaller has been turned off in favour of Deepvariant
 
 ### Tools
 
