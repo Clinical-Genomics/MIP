@@ -555,22 +555,14 @@ sub parse_limit_qc_output {
 
     return if not $limit_qc_output;
 
-    Readonly my @QC_TO_SKIP => qw{ collectmultiplemetrics variantevalexome };
+    Readonly my @QC_TO_SKIP => qw{ collectmultiplemetrics variantevalall variantevalexome };
 
-    #  comp_overlap_data_header
-    #  count_variants_data_header
-    #  indel_summary_data_header
-    #  multiallelic_summary_data_header
-    #  titv_variant_evaluator_data_header
-    #  variant_summary_header
-    #  validation_report_header
-
-    foreach my $key (@QC_TO_SKIP) {
+    foreach my $delete_key (@QC_TO_SKIP) {
 
         _delete_key(
             {
                 data_href => $qc_href,
-                key       => $key,
+                delete_key       => $delete_key,
             }
         );
     }
@@ -581,14 +573,14 @@ sub _delete_key {
 
 ## Function : Delete key from nested hash
 ## Returns  :
-## Arguments: $data_href => Data {REF}
-##          : $key       => Key
+## Arguments: $data_href  => Data {REF}
+##          : $delete_key => Key to remove
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $data_href;
-    my $key;
+    my $delete_key;
 
     my $tmpl = {
         data_href => {
@@ -598,31 +590,33 @@ sub _delete_key {
             store       => \$data_href,
             strict_type => 1,
         },
-        key => {
-            store       => \$key,
+        delete_key => {
+            store       => \$delete_key,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Copy hash to enable recursive removal of keys
-    my %info = %{$data_href};
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %{ $data_href } ) {
 
-    if ( $info{$key} ) {
+        if ($key eq $delete_key) {
 
-        delete $info{$key};
+            delete $data_href->{$delete_key};
+            return;
+        }
+
+        elsif ( ref $data_href->{$key} eq q{HASH} ) {
+
+            _delete_key(
+                {
+                    data_href => $value,
+                    delete_key       => $delete_key,
+                }
+            );
+        }
     }
-    elsif ( ref $info{$key} eq q{HASH} ) {
-
-        _delete_key(
-            {
-                data_href => $info{$key},
-                key       => $key,
-            }
-        );
-    }
-
     return;
 }
 
