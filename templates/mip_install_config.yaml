@@ -60,12 +60,12 @@ container:
       call_variants: /opt/deepvariant/bin/call_variants
       postprocess_variants: /opt/deepvariant/bin/postprocess_variants
     gpu_support: 1
-    uri: docker.io/google/deepvariant:1.1.0-gpu
+    uri: docker.io/google/deepvariant:1.2.0-gpu
   deeptrio:
     executable:
       run_deeptrio: /opt/deepvariant/bin/deeptrio/run_deeptrio
     gpu_support: 1
-    uri: docker.io/google/deepvariant:deeptrio-1.1.0-gpu
+    uri: docker.io/google/deepvariant:deeptrio-1.2.0-gpu
   delly:
     executable:
       delly:
@@ -197,7 +197,7 @@ container:
       remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
       restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
       STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
-    uri: docker.io/trinityctat/starfusion:1.10.0
+    uri: docker.io/trinityctat/starfusion:1.10.1
   stranger:
     executable:
       stranger:
