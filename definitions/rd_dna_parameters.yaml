@@ -2060,6 +2060,12 @@ qccollect_eval_metric_file:
   is_reference: 1
   reference: reference_dir
   type: path
+qccollect_limit_qc_output:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 qccollect_store_metrics_outfile:
   associated_recipe:
     - qccollect_ar

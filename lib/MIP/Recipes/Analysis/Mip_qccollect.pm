@@ -208,6 +208,18 @@ sub analysis_mip_qccollect {
                 path             => $active_parameter_href->{qccollect_store_metrics_outfile},
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
+                tag              => q{deliverable},
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{meta},
+                id               => $case_id,
+                path             => $active_parameter_href->{qccollect_eval_metric_file},
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+                tag              => q{audit},
             }
         );
 
