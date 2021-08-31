@@ -47,7 +47,7 @@ sub mip_qccollect {
 ## Returns  :
 ## Arguments: $eval_metric_file      => File with evaluation metrics
 ##          : $evaluate_plink_gender => Evaluate plink gender
-##          : $limit_qc_output       => Only print a limited number of qc values
+##          : $limit_qc_output       => Only print a limited number of qc metrics
 ##          : $outfile               => Data metric output file
 ##          : $regexp_file           => Regular expression file
 ##          : $sample_info_file      => Sample info file
@@ -526,7 +526,7 @@ sub parse_limit_qc_output {
 ## Function : Restrict output
 ## Returns  :
 ## Arguments: $limit_qc_output => Remove keys from regexp hash
-##          : $qc_href         => qccollect regexp hash {REF}
+##          : $qc_href         => Qccollect regexp hash {REF}
 
     my ($arg_href) = @_;
 
@@ -555,14 +555,14 @@ sub parse_limit_qc_output {
 
     return if not $limit_qc_output;
 
-    Readonly my @QC_TO_SKIP => qw{ collectmultiplemetrics variantevalall variantevalexome };
+    Readonly my @SKIP_QC_METRICS => qw{ collectmultiplemetrics variantevalall variantevalexome };
 
-    foreach my $delete_key (@QC_TO_SKIP) {
+    foreach my $delete_metric_key (@SKIP_QC_METRICS) {
 
         _delete_key(
             {
-                data_href => $qc_href,
-                delete_key       => $delete_key,
+                data_href  => $qc_href,
+                delete_key => $delete_metric_key,
             }
         );
     }
@@ -599,9 +599,9 @@ sub _delete_key {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
   KEY_VALUE_PAIR:
-    while ( my ( $key, $value ) = each %{ $data_href } ) {
+    while ( my ( $key, $value ) = each %{$data_href} ) {
 
-        if ($key eq $delete_key) {
+        if ( $key eq $delete_key ) {
 
             delete $data_href->{$delete_key};
             return;
@@ -611,8 +611,8 @@ sub _delete_key {
 
             _delete_key(
                 {
-                    data_href => $value,
-                    delete_key       => $delete_key,
+                    data_href  => $value,
+                    delete_key => $delete_key,
                 }
             );
         }
