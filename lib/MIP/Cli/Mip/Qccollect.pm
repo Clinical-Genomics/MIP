@@ -40,6 +40,7 @@ sub run {
     # Flatten argument(s)
     my $eval_metric_file      = $arg_href->{eval_metric_file};
     my $evaluate_plink_gender = $arg_href->{evaluate_plink_gender};
+    my $limit_qc_output       = $arg_href->{limit_qc_output};
     my $log_file              = $arg_href->{log_file};
     my $outfile               = $arg_href->{outfile};
     my $print_regexp_outfile  = $arg_href->{print_regexp_outfile};
@@ -72,6 +73,7 @@ sub run {
         {
             eval_metric_file      => $eval_metric_file,
             evaluate_plink_gender => $evaluate_plink_gender,
+            limit_qc_output       => $limit_qc_output,
             outfile               => $outfile,
             regexp_file           => $regexp_file,
             sample_info_file      => $sample_info_file,
@@ -102,6 +104,14 @@ sub _build_usage {
     option(
         q{evaluate_plink_gender} => (
             documentation => q{Evaluate plink gender},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{limit_qc_output} => (
+            documentation => q{Only print a limited number of qc mettrics},
             is            => q{rw},
             isa           => Bool,
         )

@@ -147,6 +147,7 @@ sub mip_qccollect {
 ## Arguments: $eval_metric_file       => Mip qc evaluation metrics file
 ##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path
+##          : $limit_qc_output        => Limit the qc metrics that is printed to the qc outfile
 ##          : $log_file_path          => Log file path
 ##          : $outfile_path           => Outfile path
 ##          : $regexp_file_path       => Regular expression file
@@ -172,6 +173,7 @@ sub mip_qccollect {
 
     ## Default(s)
     my $skip_evaluation;
+    my $limit_qc_output;
 
     my $tmpl = {
         eval_metric_file => {
@@ -185,6 +187,12 @@ sub mip_qccollect {
             defined     => 1,
             required    => 1,
             store       => \$infile_path,
+            strict_type => 1,
+        },
+        limit_qc_output => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$limit_qc_output,
             strict_type => 1,
         },
         log_file_path => { store => \$log_file_path, strict_type => 1, },
@@ -239,6 +247,10 @@ sub mip_qccollect {
         push @commands, q{--log_file} . $SPACE . $log_file_path;
     }
 
+    if ($limit_qc_output) {
+
+        push @commands, q{--limit_qc_output};
+    }
     push @commands, q{--outfile} . $SPACE . $outfile_path;
 
     push @commands, q{--regexp_file} . $SPACE . $regexp_file_path;
