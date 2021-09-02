@@ -6,12 +6,22 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Develop]
 
 - HmtNote: annotate mitochondrial variants in VCF file
+- Updating to latest and greatest versions
 - Mitochondrial deletion analysis
 - GATK Haplotypecaller has been turned off in favour of Deepvariant
 
 ### Tools
 
+cyrius v1.1 -> v1.1.1
+deepvariant 1.1.0-gpu -> 1.2.0-gpu
+deeptrio 1.1.0-gpu -> 1.2.0-gpu
+gatk 4.2.0.0 -> 4.2.2.0
+glnexus v1.3.1 -> v1.4.1
 HmtNote: 0.7.2
+htslib: 1.10.2 -> 1.13
+multiqc 1.10.1 -> v1.11
+star-fusion 1.10.0 -> 1.10.1
+vep release_103.1 -> release_104.3
 
 ### References
 
