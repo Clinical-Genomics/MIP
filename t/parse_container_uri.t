@@ -86,7 +86,7 @@ $expected_uri = q{docker://quay.io/clinicalgenomics/chanjo:4.2.0};
 is( $uri, $expected_uri, q{Parse quay uri for singularity} );
 
 ## Given a ghcr uri
-my $uri = q{ghcr.io/dnanexus-rnd/glnexus:v1.4.1};
+$uri = q{ghcr.io/dnanexus-rnd/glnexus:v1.4.1};
 ## When container manager is singularity
 parse_container_uri(
     {
@@ -96,7 +96,7 @@ parse_container_uri(
 );
 
 ## Then prepend docker://
-my $expected_uri = q{docker://ghcr.io/dnanexus-rnd/glnexus:v1.4.1};
+$expected_uri = q{docker://ghcr.io/dnanexus-rnd/glnexus:v1.4.1};
 is( $uri, $expected_uri, q{Parse uri for singularity} );
 
 done_testing();
