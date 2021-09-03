@@ -337,7 +337,7 @@ sub parse_container_uri {
 
     return if ( ${$uri_ref} =~ m{ \A docker:[/]{2} }xms );
 
-    if ( ${$uri_ref} =~ /\A quay|docker[.]io /xms ) {
+    if ( ${$uri_ref} =~ /\A ghcr|quay|docker[.]io /xms ) {
 
         ${$uri_ref} = q{docker://} . ${$uri_ref};
     }
