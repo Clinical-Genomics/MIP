@@ -25,8 +25,8 @@ sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_i
 ## References
 human_genome_reference: grch38_homo_sapiens_-gencode_pri-.fasta
 star_fusion_genome_lib_dir: cluster_constant_path!/references/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play/ctat_genome_lib_build_dir
-transcript_annotation: grch38_gencode_annotation_-v37-.gtf
-transcript_sequence: grch38_gencode_transcripts_-v37-.fa
+transcript_annotation: grch38_gencode_annotation_-v38-.gtf
+transcript_sequence: grch38_gencode_transcripts_-v38-.fa
 gatk_haplotypecaller_snp_known_set: grch38_dbsnp_-146-.vcf.gz
 gatk_baserecalibration_known_sites:
   - grch38_1000g_indels_-phase1-.vcf.gz
