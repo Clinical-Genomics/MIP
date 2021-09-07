@@ -18,9 +18,6 @@ ENV PATH="/app:${PATH}"
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
             libc6 \
-            ca-certificates
-
-RUN wget --no-verbose https://github.com/dnanexus-rnd/GLnexus/releases/download/v1.4.1/glnexus_cli
-
-RUN chmod 700 /app/glnexus_cli
-
+            ca-certificates && \
+    wget --no-verbose https://github.com/dnanexus-rnd/GLnexus/releases/download/v1.4.1/glnexus_cli && \
+    chmod 700 /app/glnexus_cli
