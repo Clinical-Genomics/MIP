@@ -27,6 +27,7 @@ vep release_103.1 -> release_104.3
 
 - gnomad: r3.0 -> r3.1.1
 - [NEW] gnomad mt: r3.1
+- clinvvar: 20210415 -> 20210828
 
 ## [10.2.0]
 

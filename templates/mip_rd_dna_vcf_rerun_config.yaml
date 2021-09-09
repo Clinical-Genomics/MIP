@@ -28,7 +28,7 @@ sv_rank_model_file: svrank_model_-v1.8-.ini
 # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
 sv_svdb_query_db_files:
   grch37_gnomad_reformated_-r2.1.1_sv-.vcf.gz: gnomad_sv|AF|AC|AF|AC|1
-  grch37_loqusdb_sv_variants_export-20210416-.vcf: clinical_genomics_loqus|Frq|Obs|Frq|Obs
+  grch37_loqusdb_sv_variants_export-20210907-.vcf: clinical_genomics_loqus|Frq|Obs|Frq|Obs
   grch37_mip_sv_svdb_export_-2018-10-09-.vcf: clinical_genomics_mip|AF|OCC|FRQ|OCC|1
   grch37_svdb_query_decipher_-v1.0.0-.vcf: decipher|AF|OCC|FRQ|OCC
   grch37_svdb_query_clingen_cgh_benign_-v1.0.0-.vcf: clingen_cgh_benign
@@ -36,7 +36,7 @@ sv_svdb_query_db_files:
   grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi|AF|OCC|FRQ|OCC|1
   grch37_swegen_concat_sort_-20170830-.vcf: swegen|AF|OCC|FRQ|OCC|1
 sv_vcfanno_config: grch37_sv_vcfanno_config_-v1.4-.toml
-vcfanno_config: grch37_vcfanno_config_-v1.16-.toml
+vcfanno_config: grch37_vcfanno_config_-v1.17-.toml
 ### Analysis
 ## Programs
 ## Parameters
