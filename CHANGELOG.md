@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [10.2.1]
+
+- Removed frequency filtering for mitochondrial sites
+
 ## [10.2.0]
 
 - Introduced the option `--start_after_recipe <recipe_name>` to start the pipeline after a given recipe

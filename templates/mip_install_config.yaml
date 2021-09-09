@@ -117,7 +117,7 @@ container:
   mip:
     executable:
       mip:
-    uri: docker.io/clinicalgenomics/mip:v10.2.0
+    uri: docker.io/clinicalgenomics/mip:v10.2.1
   multiqc:
     executable:
       multiqc:
@@ -249,4 +249,3 @@ container:
     executable:
       vcf2cytosure:
     uri: docker.io/jemten/vcf2cytosure:0.5.1
-
