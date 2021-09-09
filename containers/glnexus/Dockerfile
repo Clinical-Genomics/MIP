@@ -23,4 +23,4 @@ RUN apt-get update && \
     apt-get purge && \
     rm -rf /var/lib/apt/lists/* && \
     wget --no-verbose https://github.com/dnanexus-rnd/GLnexus/releases/download/v1.4.1/glnexus_cli && \
-    chmod 700 /app/glnexus_cli
+    chmod 755 /app/glnexus_cli
