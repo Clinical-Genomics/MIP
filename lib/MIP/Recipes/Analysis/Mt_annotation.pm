@@ -211,7 +211,7 @@ sub analysis_mt_annotation {
                 {
                     filehandle   => $filehandle,
                     infile_path  => $infile_path{$contig},
-                    offline      => $active_parameter_href->{hmtnote_offline},
+                    offline      => $active_parameter_href->{mt_offline},
                     outfile_path => $outfile_no_suffix,
                 }
             );
@@ -274,13 +274,13 @@ sub analysis_mt_annotation {
 
         submit_recipe(
             {
-                base_command         => $profile_base_command,
-                case_id              => $case_id,
-                dependency_method    => q{sample_to_case},
-                job_id_chain         => $recipe{job_id_chain},
-                job_id_href          => $job_id_href,
-                job_reservation_name => $active_parameter_href->{job_reservation_name},
-                log                  => $log,
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,

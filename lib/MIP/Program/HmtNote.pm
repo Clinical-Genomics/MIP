@@ -67,7 +67,7 @@ sub hmtnote_annotate {
             strict_type => 1,
         },
         offline => {
-            allow       => [ undef, 0, 1 ],
+            allow       => [ 0, 1 ],
             store       => \$offline,
             strict_type => 1,
         },
