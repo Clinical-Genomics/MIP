@@ -51,6 +51,7 @@ test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
 my $recipe_name    = q{mt_annotation};
+my $offline        = q{mt_offline};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -60,6 +61,7 @@ my %active_parameter = test_mip_hashes(
     }
 );
 $active_parameter{$recipe_name}                     = 1;
+$active_parameter{$offline}                         = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};

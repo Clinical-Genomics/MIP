@@ -49,12 +49,14 @@ sub hmtnote_annotate {
     ## Flatten argument(s)
     my $filehandle;
     my $infile_path;
-    my $offline;
     my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
     my $stdoutfile_path;
+
+    ## Default(s)
+    my $offline;
 
     my $tmpl = {
         filehandle => {
@@ -67,7 +69,8 @@ sub hmtnote_annotate {
             strict_type => 1,
         },
         offline => {
-            allow       => [ undef, 0, 1 ],
+            allow       => [ 0, 1 ],
+            default     => 1,
             store       => \$offline,
             strict_type => 1,
         },
