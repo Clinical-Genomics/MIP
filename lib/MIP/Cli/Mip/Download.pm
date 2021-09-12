@@ -148,7 +148,7 @@ sub _build_usage {
     );
 
     option(
-        q{install_config_file} => (
+        q{container_config_file} => (
             documentation => q{File with install configuration parameters in YAML format},
             is            => q{rw},
             isa           => Str,

@@ -4,7 +4,9 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Basename qw{ fileparse };
+use File::Path qw{ make_path };
+use File::Spec::Functions qw{ catfile catdir };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use utf8;
@@ -26,8 +28,11 @@ BEGIN {
     our @EXPORT_OK = qw{
       build_container_cmd
       get_recipe_executable_bind_path
+      parse_container_config
+      parse_container_path
       parse_container_uri
       parse_containers
+      pull_container
       run_container
       set_executable_container_cmd
     };
@@ -280,7 +285,7 @@ sub parse_containers {
 
     %{ $active_parameter_href->{container} } =
       get_install_containers(
-        { install_config_file => $active_parameter_href->{install_config_file}, } );
+        { container_config_file => $active_parameter_href->{container_config_file}, } );
 
     my %dynamic_parameter = ( reference_dir => $active_parameter_href->{reference_dir}, );
     update_with_dynamic_config_parameters(
@@ -302,6 +307,142 @@ sub parse_containers {
     set_container_cmd( { container_cmd_href => \%container_cmd, } );
 
     return 1;
+}
+
+sub parse_container_config {
+
+## Function : Parse container config and write to conda env
+## Returns  :
+## Arguments: $conda_environment_path => Conda environment path
+##          : $container_href         => Container hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $conda_environment_path;
+    my $container_href;
+
+    my $tmpl = {
+        conda_environment_path => {
+            store       => \$conda_environment_path,
+            strict_type => 1,
+        },
+        container_href => {
+            default     => {},
+            store       => \$container_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Config qw{ get_install_containers };
+    use MIP::Io::Write qw{ write_to_file };
+
+    ## Replace the uri with path
+  IMAGE:
+    foreach my $image ( keys %{$container_href} ) {
+
+        if ( $container_href->{$image}{path} ) {
+
+            $container_href->{$image}{uri} = delete $container_href->{$image}{path};
+        }
+    }
+
+    ## Make directory if it doesn't exist
+    my $container_config_dir_path = catdir( $conda_environment_path, qw{ bin templates } );
+
+    make_path($container_config_dir_path);
+
+    ## Fetch possible old config
+    my $container_config_path = catfile( $container_config_dir_path, q{mip_container_config.yaml} );
+    my %container_config      = ( not -e $container_config_path ) ? () : get_install_containers(
+        {
+            container_config_file => $container_config_path,
+        }
+    );
+
+    ## Merge hashes
+    %container_config = ( %container_config, %{$container_href} );
+
+    write_to_file(
+        {
+            data_href => \%container_config,
+            format    => q{yaml},
+            path      => $container_config_path,
+        }
+    );
+    return;
+}
+
+sub parse_container_path {
+
+## Function : Parse container download path
+## Returns  :
+## Arguments: $conda_environment_path   => Conda environment path
+##          : $container_directory_path => Container directory path
+##          : $container_href           => Container hash {REF}
+##          : $container_manager        => Container manager
+##          : $local_install            => Local install switch
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $conda_environment_path;
+    my $container_directory_path;
+    my $container_href;
+    my $container_manager;
+    my $local_install;
+
+    my $tmpl = {
+        conda_environment_path => {
+            store       => \$conda_environment_path,
+            strict_type => 1,
+        },
+        container_directory_path => {
+            store       => \$container_directory_path,
+            strict_type => 1,
+        },
+        container_href => {
+            default     => {},
+            store       => \$container_href,
+            strict_type => 1,
+        },
+        container_manager => {
+            allow       => [qw{ docker singularity }],
+            required    => 1,
+            store       => \$container_manager,
+            strict_type => 1,
+        },
+        local_install => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$local_install,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Don't set variable for docker and unless local singularity installation
+    return if $container_manager eq q{docker};
+    return if not $local_install;
+
+    ## Check for user input and default
+    $container_directory_path = $container_directory_path
+      // catdir( $conda_environment_path, q{bin} );
+
+    make_path($container_directory_path);
+
+    ## Set container outpath
+    $container_href->{path} =
+      catfile( $container_directory_path, fileparse( $container_href->{uri} ) . q{.sif} );
+
+    $log->info( q{Saving image to} . $COLON . $SPACE . $container_href->{path} );
+
+    return;
 }
 
 sub parse_container_uri {
@@ -343,6 +484,107 @@ sub parse_container_uri {
     }
 
     return;
+}
+
+sub pull_container {
+
+## Function : Pull a docker or singularity container
+## Returns  : @commands
+## Arguments: $container_manager      => Container manager
+##          : $container_path         => Path to container
+##          : $filehandle             => Filehandle to write to
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdinfile_path         => Stdinfile path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $container_manager;
+    my $container_uri;
+    my $container_outpath;
+    my $filehandle;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    ## Default(s)
+    my $force;
+
+    my $tmpl = {
+        container_manager => {
+            allow       => [qw{ docker singularity }],
+            required    => 1,
+            store       => \$container_manager,
+            strict_type => 1,
+        },
+        container_outpath => {
+            store       => \$container_outpath,
+            strict_type => 1,
+        },
+        container_uri => {
+            defined     => 1,
+            required    => 1,
+            store       => \$container_uri,
+            strict_type => 1,
+        },
+        filehandle => {
+            store => \$filehandle,
+        },
+        force => {
+            allow       => [ undef, 0, 1 ],
+            default     => 1,
+            store       => \$force,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Program::Singularity qw{ singularity_pull };
+    use MIP::Program::Docker qw{ docker_pull };
+
+    my %container_api = (
+        docker => {
+            arg_href => {
+                filehandle             => $filehandle,
+                image                  => $container_uri,
+                stderrfile_path        => $stderrfile_path,
+                stderrfile_path_append => $stderrfile_path_append,
+                stdoutfile_path        => $stdoutfile_path,
+            },
+            method => \&docker_pull,
+        },
+        singularity => {
+            arg_href => {
+                container_uri          => $container_uri,
+                filehandle             => $filehandle,
+                force                  => $force,
+                outfile_path           => $container_outpath,
+                stderrfile_path        => $stderrfile_path,
+                stderrfile_path_append => $stderrfile_path_append,
+                stdoutfile_path        => $stdoutfile_path,
+            },
+            method => \&singularity_pull,
+        },
+    );
+
+    my @commands = $container_api{$container_manager}{method}
+      ->( { %{ $container_api{$container_manager}{arg_href} } } );
+
+    return @commands;
 }
 
 sub run_container {

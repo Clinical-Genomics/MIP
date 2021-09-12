@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 
+use 5.026;
 use Carp;
 use open qw{ :encoding(UTF-8) :std };
 use charnames qw{ :full :short };
@@ -154,6 +155,29 @@ my %process_return = child_process(
 
 ok( $process_return{success}, q{Executed install} );
 
+## When given option to pull singularity images for local installation
+push @{$cmds_ref}, q{--singularity_local_install};
+%process_return = child_process(
+    {
+        commands_ref => $cmds_ref,
+        process_type => q{ipc_cmd_run},
+        verbose      => $verbose,
+    }
+);
+## Then return OK
+ok( $process_return{success}, q{Executed local singularity install} );
+
+## When given option to pull images using docker
+push @{$cmds_ref}, qw{ --container_manager docker };
+%process_return = child_process(
+    {
+        commands_ref => $cmds_ref,
+        process_type => q{ipc_cmd_run},
+        verbose      => $verbose,
+    }
+);
+## Then return OK
+ok( $process_return{success}, q{Executed docker install} );
 ## Remove paths
 path($log_file_path)->remove;
 path( catdir( $conda_path, q{envs}, $environment_name ) )->remove_tree;

@@ -124,7 +124,7 @@ custom_default_parameters:
     - mip
   data_type: ARRAY
   default:
-    - install_config_file
+    - container_config_file
     - reference_dir
     - temp_directory
   type: mip
@@ -281,7 +281,7 @@ human_reference:
   program_executables:
     - samtools
   type: recipe
-install_config_file:
+container_config_file:
   associated_recipe:
     - mip
   data_type: SCALAR

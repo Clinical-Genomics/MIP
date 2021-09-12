@@ -55,7 +55,8 @@ sub install_containers {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::Environment::Child_process qw{ child_process };
-    use MIP::Environment::Container qw{ parse_container_uri run_container };
+    use MIP::Environment::Container
+      qw{ parse_container_config parse_container_path parse_container_uri pull_container };
     use MIP::Recipes::Install::Vep qw{ install_vep };
 
     ## Retrieve logger object
@@ -70,7 +71,7 @@ sub install_containers {
   CONTAINER:
     foreach my $container ( keys %{$container_href} ) {
 
-        $log->info( q{Caching image} . $COLON . $SPACE . $container );
+        $log->info( q{Pulling image} . $COLON . $SPACE . $container );
 
         parse_container_uri(
             {
@@ -79,14 +80,23 @@ sub install_containers {
             }
         );
 
-        ## Get command for caching image
-        my @container_commands = run_container(
+        parse_container_path(
             {
-                container_cmds_ref => [qw{ ls }],
-                container_path     => $container_href->{$container}{uri},
-                container_manager  => $CONTAINER_MANAGER,
-                stderrfile_path    => $stderr_file_path,
-                stdoutfile_path    => devnull(),
+                conda_environment_path   => $active_parameter_href->{conda_environment_path},
+                container_directory_path => $active_parameter_href->{container_directory_path},
+                container_href           => $container_href->{$container},
+                container_manager        => $CONTAINER_MANAGER,
+                local_install            => $active_parameter_href->{singularity_local_install},
+            }
+        );
+
+        ## Get command for caching image
+        my @container_commands = pull_container(
+            {
+                container_uri     => $container_href->{$container}{uri},
+                container_manager => $CONTAINER_MANAGER,
+                container_outpath => $container_href->{$container}{path},
+                stderrfile_path   => $stderr_file_path,
             }
         );
 
@@ -99,7 +109,7 @@ sub install_containers {
 
         if ( not $process_return{success} ) {
 
-            $log->fatal(qq{$CONTAINER_MANAGER failed to cache $container});
+            $log->fatal(qq{$CONTAINER_MANAGER failed to pull $container});
             $log->logdie( $process_return{error_message} );
         }
 
@@ -114,6 +124,15 @@ sub install_containers {
             );
         }
     }
+
+    ## Parse and write container config to MIP env
+    parse_container_config(
+        {
+            container_href         => $container_href,
+            conda_environment_path => $active_parameter_href->{conda_environment_path},
+        }
+    );
+
     return 1;
 }
 

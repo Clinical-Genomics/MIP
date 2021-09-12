@@ -8,7 +8,7 @@ custom_default_parameters:
     - conda_path
     - fusion_select_file
     - infile_dirs
-    - install_config_file
+    - container_config_file
     - pedigree_fam_file
     - picardtools_path
     - qccollect_store_metrics_outfile

@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Updating to latest and greatest versions
 - Mitochondrial deletion analysis
 - GATK Haplotypecaller has been turned off in favour of Deepvariant
+- Introduces possibility to store singularity images locally as a .sif file
 
 ### Tools
 
