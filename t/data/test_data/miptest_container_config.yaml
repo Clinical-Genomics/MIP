@@ -105,7 +105,6 @@ hmtnote:
   uri: docker.io/clinicalgenomics/hmtnote:0.7.2
 htslib:
   executable:
-    bcftools: ~
     bgzip: ~
     samtools: ~
     tabix: ~
