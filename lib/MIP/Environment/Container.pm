@@ -27,6 +27,7 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       build_container_cmd
+      check_installed_containers
       get_recipe_executable_bind_path
       parse_container_config
       parse_container_path
@@ -247,6 +248,68 @@ sub get_recipe_executable_bind_path {
     return %recipe_executable_bind_path;
 }
 
+sub check_installed_containers {
+
+## Function : Parse containers to set executable command based on current container manager
+## Returns  :
+## Arguments: $container_href => Map of containers {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $container_href;
+
+    my $tmpl = {
+        container_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$container_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::File::Path qw{ check_filesystem_objects_existance };
+    use MIP::Validate::Data qw{ %constraint };
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    my @error_messages;
+
+  CONTAINER:
+    while ( my ( $container, $container_param_href ) = each %{$container_href} ) {
+
+        ## Only run check for .sif file
+        next CONTAINER if ( not $constraint{is_sif}->( $container_param_href->{uri} ) );
+
+        my ( $ok, $error_message ) = check_filesystem_objects_existance(
+            {
+                object_name    => $container_param_href->{uri},
+                parameter_name => $container,
+                object_type    => q{executable_file},
+            }
+        );
+
+        next CONTAINER if $ok;
+
+        push @error_messages, $error_message;
+    }
+
+    return 1 if ( @error_messages == 0 );
+
+  ERROR_MESSAGE:
+    foreach my $error_message (@error_messages) {
+
+        $log->fatal($error_message);
+    }
+
+    $log->fatal(q{Please install missing image files});
+    exit 1;
+}
+
 sub parse_containers {
 
 ## Function : Parse containers to set executable command based on current container manager
@@ -286,6 +349,12 @@ sub parse_containers {
     %{ $active_parameter_href->{container} } =
       get_install_containers(
         { container_config_file => $active_parameter_href->{container_config_file}, } );
+
+    check_installed_containers(
+        {
+            container_href => $active_parameter_href->{container},
+        }
+    );
 
     my %dynamic_parameter = ( reference_dir => $active_parameter_href->{reference_dir}, );
     update_with_dynamic_config_parameters(

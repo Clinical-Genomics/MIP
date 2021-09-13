@@ -115,7 +115,7 @@ sub check_filesystem_objects_existance {
             strict_type => 1,
         },
         object_type => {
-            allow       => [qw{ directory file }],
+            allow       => [qw{ directory executable_file file }],
             defined     => 1,
             required    => 1,
             store       => \$object_type,
@@ -128,8 +128,9 @@ sub check_filesystem_objects_existance {
     use MIP::Validate::Data qw{ %constraint };
 
     my %exists_constraint_map = (
-        directory => q{dir_exists},
-        file      => q{plain_file_exists},
+        directory       => q{dir_exists},
+        file            => q{plain_file_exists},
+        executable_file => q{file_is_executable},
     );
 
     my $constraint = $exists_constraint_map{$object_type};

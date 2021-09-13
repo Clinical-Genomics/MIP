@@ -162,7 +162,7 @@ while ( my ( $pedigree, $pedigree_path ) = each %pedigree ) {
 }
 
 ## Clean-up
-#remove_tree( catfile( $cluster_constant_path, qw{ 643594-miptest analysis } ) );
+remove_tree( catfile( $cluster_constant_path, qw{ 643594-miptest analysis } ) );
 
 GENOME_BUILD:
 foreach my $genome_build (@genome_builds) {
