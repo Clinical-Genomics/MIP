@@ -69,7 +69,7 @@ my %container = (
     },
 );
 
-## Then everything is OK
+## Then sif's exists and are executable
 my $ok = check_installed_containers(
     {
         container_href => \%container,

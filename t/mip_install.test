@@ -164,7 +164,7 @@ push @{$cmds_ref}, q{--singularity_local_install};
         verbose      => $verbose,
     }
 );
-## Then return OK
+## Then return true
 ok( $process_return{success}, q{Executed local singularity install} );
 
 ## When given option to pull images using docker
