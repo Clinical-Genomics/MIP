@@ -408,6 +408,9 @@ sub parse_container_config {
     use MIP::Config qw{ get_install_containers };
     use MIP::Io::Write qw{ write_to_file };
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
     ## Replace the uri with path
   IMAGE:
     foreach my $image ( keys %{$container_href} ) {
@@ -434,6 +437,7 @@ sub parse_container_config {
     ## Merge hashes
     %container_config = ( %container_config, %{$container_href} );
 
+    $log->info( q{Writing container config to} . $COLON . $SPACE . $container_config_path );
     write_to_file(
         {
             data_href => \%container_config,
