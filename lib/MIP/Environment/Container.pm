@@ -285,15 +285,15 @@ sub check_installed_containers {
         ## Only run check for .sif file
         next CONTAINER if ( not $constraint{is_sif}->( $container_param_href->{uri} ) );
 
-        my ( $ok, $error_message ) = check_filesystem_objects_existance(
+        my ( $is_ok, $error_message ) = check_filesystem_objects_existance(
             {
                 object_name    => $container_param_href->{uri},
-                parameter_name => $container,
                 object_type    => q{executable_file},
+                parameter_name => $container,
             }
         );
 
-        next CONTAINER if $ok;
+        next CONTAINER if $is_ok;
 
         push @error_messages, $error_message;
     }
