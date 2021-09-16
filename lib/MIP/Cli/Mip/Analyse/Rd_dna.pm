@@ -169,6 +169,23 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
+        q{mt_annotation} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{MT annotation vcf},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{mt_annotation_offline} => (
+            documentation => q{MT variants using offline-mode},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{gatk_disable_auto_index_and_file_lock} => (
             cmd_flag      => q{gatk_dis_auto_ind_fl},
             documentation => q{Disable auto index creation and locking when reading rods},
@@ -198,15 +215,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         q{recipe_core_number} => (
             cmd_tags      => [q{recipe_name=X(cores)}],
             documentation => q{Set the number of cores for each recipe},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
-        q{set_recipe_core_number} => (
-            cmd_tags      => [q{recipe_name=X(cores)}],
-            documentation => q{Set the number of cores for specific recipe(s)},
             is            => q{rw},
             isa           => HashRef,
         )
@@ -248,16 +256,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         )
     );
 
-    option(
-        q{set_recipe_memory} => (
-            cmd_aliases   => [qw{ srm }],
-            cmd_tags      => [q{recipe_name=X(G)}],
-            documentation => q{Set the memory for specific recipe(s)},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
     has(
         q{recipe_time} => (
             cmd_tags      => [q{recipe_name=time(hours)}],
@@ -267,14 +265,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         )
     );
 
-    option(
-        q{set_recipe_time} => (
-            cmd_tags      => [q{recipe_name=time(hours)}],
-            documentation => q{Set the time allocation for specific recipe(s)},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
     option(
         q{infile_dirs} => (
             cmd_aliases   => [qw{ ifd }],
@@ -1407,6 +1397,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
         q{gatk_combinevariants_callers_to_combine} => (
             cmd_flag      => q{gatk_combinevar_use_callers},
             documentation => q{Combine vcf output from these recipes},
+            cmd_tags      => [q{Defaults: glnexus_merge}],
             is            => q{rw},
             isa           => ArrayRef [ enum( [qw{ gatk_variantrecalibration glnexus_merge }] ), ],
         )

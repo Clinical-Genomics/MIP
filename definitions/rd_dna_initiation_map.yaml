@@ -18,6 +18,8 @@ CHAIN_ALL:
     - CHAIN_TCOV:
       - tiddit_coverage
       - chromograph_cov
+    - CHAIN_MTDEL:
+      - mitodel
     - CHAIN_SBCOV:
       - sambamba_depth
     - CHAIN_SMN:
@@ -75,6 +77,7 @@ CHAIN_ALL:
     - rhocall_ar
     - bcftools_norm
     - variant_annotation
+    - mt_annotation
     - CHAIN_RHOVIZ:
       - rhocall_viz
       - chromograph_rhoviz

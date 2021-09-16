@@ -25,7 +25,7 @@ genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 human_genome_reference: grch37_homo_sapiens_-d5-.fasta
 rank_model_file: rank_model_-v1.32-.ini
 sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
-sv_vcfanno_config: grch37_sv_vcfanno_config_-v1.3-.toml
+sv_vcfanno_config: grch37_sv_vcfanno_config_-v1.4-.toml
 sv_genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 sv_rank_model_file: svrank_model_-v1.8-.ini
 sv_svdb_query_db_files:
@@ -39,7 +39,7 @@ sv_svdb_query_db_files:
   grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi|AF|OCC|FRQ|OCC|1
   grch37_swegen_concat_sort_-20170830-.vcf: swegen|AF|OCC|FRQ|OCC|1
 vcf2cytosure_blacklist: grch37_cytosure_blacklist_-1.0-.bed
-vcfanno_config: grch37_vcfanno_config_-v1.15-.toml
+vcfanno_config: grch37_vcfanno_config_-v1.16-.toml
 ### Analysis
 ### Programs
 ## Parameters
@@ -47,10 +47,6 @@ fqf_annotations:
   - GNOMADAF
   - GNOMADAF_popmax
   - SWEGENAF
-gatk_combinevariants_prioritize_caller: deepvariant,haplotypecaller
-gatk_combinevariants_callers_to_combine:
-  - gatk_variantrecalibration
-  - glnexus_merge
 gatk_path: /usr
 picardtools_path: /usr/picard
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml

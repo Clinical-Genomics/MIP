@@ -16,7 +16,6 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ :all };
 use Modern::Perl qw{ 2018 };
-use Readonly;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
@@ -29,14 +28,14 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Program::Samtools} => [qw{ samtools_stats }], );
+    my %perl_module = ( q{MIP::Program::HmtNote} => [qw{ hmtnote_annotate }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Program::Samtools qw{ samtools_stats };
+use MIP::Program::HmtNote qw{ hmtnote_annotate };
 
-diag(   q{Test samtools_stats from Samtools.pm}
+diag(   q{Test hmtnote_annotate from HmtNote.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -44,10 +43,8 @@ diag(   q{Test samtools_stats from Samtools.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-use MIP::Program::Samtools qw{ samtools_stats };
-
 ## Base arguments
-my @function_base_commands = qw{ samtools };
+my @function_base_commands = qw{ hmtnote };
 
 my %base_argument = (
     filehandle => {
@@ -68,53 +65,47 @@ my %base_argument = (
     },
 );
 
-## Can be duplicated with %base and/or %specific to enable testing of each individual argument
+## Can be duplicated with %base_argument and/or %specific_argument
+## to enable testing of each individual argument
 my %required_argument = (
-    filehandle => {
-        input           => undef,
-        expected_output => \@function_base_commands,
-    },
     infile_path => {
-        input           => q{infile.test},
-        expected_output => q{infile.test},
+        input           => q{myfile.vcf},
+        expected_output => q{myfile.vcf},
+    },
+    outfile_path => {
+        input           => q{outfile.vcf},
+        expected_output => q{outfile.vcf},
     },
 );
 
-## Specific arguments
 my %specific_argument = (
-    auto_detect_input_format => {
+    offline => {
         input           => 1,
-        expected_output => q{-s},
+        expected_output => q{--offline},
     },
-    insert_size => {
-        input           => q{16000},
-        expected_output => q{--insert-size 16000},
+    infile_path => {
+        input           => q{myfile.vcf},
+        expected_output => q{myfile.vcf},
     },
     outfile_path => {
-        input           => q{outpath},
-        expected_output => q{> outpath},
-    },
-    remove_overlap => {
-        input           => 1,
-        expected_output => q{--remove-overlaps},
-    },
-    regions_ref => {
-        inputs_ref      => [qw{1:1000000-2000000 2:1000-5000}],
-        expected_output => q{1:1000000-2000000 2:1000-5000},
+        input           => q{outfile.vcf},
+        expected_output => q{outfile.vcf},
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&samtools_stats;
+my $module_function_cref = \&hmtnote_annotate;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
 
+ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {
 
     my @commands = test_function(
         {
             argument_href              => $argument_href,
+            do_test_base_command       => 1,
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
             required_argument_href     => \%required_argument,

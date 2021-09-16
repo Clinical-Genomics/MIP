@@ -153,12 +153,6 @@ recipe_core_number:
     vcfparser_ar: 1
     version_collect_ar: 1
   type: mip
-set_recipe_core_number:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
 ## Memory per parallel process/core
 recipe_memory:
   associated_recipe:
@@ -179,12 +173,6 @@ recipe_memory:
     varianteffectpredictor: 7
     vcfparser_ar: 7
     version_collect_ar: 8
-  type: mip
-set_recipe_memory:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
   type: mip
 recipe_time:
   associated_recipe:
@@ -223,12 +211,6 @@ recipe_time:
     varianteffectpredictor: 4
     vcfparser_ar: 1
     version_collect_ar: 1
-  type: mip
-set_recipe_time:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
   type: mip
 infile_dirs:
   associated_recipe:
@@ -1206,6 +1188,12 @@ qccollect_eval_metric_file:
   is_reference: 1
   reference: reference_dir
   type: path
+qccollect_limit_qc_output:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 qccollect_regexp_file:
   associated_recipe:
     - qccollect_ar

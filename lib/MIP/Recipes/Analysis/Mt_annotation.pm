@@ -1,4 +1,4 @@
-package MIP::Recipes::Analysis::Glnexus;
+package MIP::Recipes::Analysis::Mt_annotation;
 
 use 5.026;
 use Carp;
@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
 
 BEGIN {
 
@@ -25,13 +25,13 @@ BEGIN {
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ analysis_glnexus };
+    our @EXPORT_OK = qw{ analysis_mt_annotation };
 
 }
 
-sub analysis_glnexus {
+sub analysis_mt_annotation {
 
-## Function : Merges gvcfs from DeepVariant to generate a cohort vcf.
+## Function : Annotate your mitochondrial variants here, add'l info field
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -109,16 +109,17 @@ sub analysis_glnexus {
             strict_type => 1,
         },
     };
+
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
-    use MIP::Program::Bcftools qw{ bcftools_norm };
-    use MIP::Program::Glnexus qw{ glnexus_merge };
-    use MIP::Program::Gnu::Software::Gnu_sed qw{ gnu_sed };
+    use MIP::File::Path qw { remove_file_path_suffix };
+    use MIP::Program::Gnu::Coreutils qw { gnu_cp };
+    use MIP::Program::HmtNote qw{ hmtnote_annotate };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -126,47 +127,50 @@ sub analysis_glnexus {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    my %recipe = parse_recipe_prerequisites(
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $case_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            stream         => q{in},
+        }
+    );
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my %infile_path        = %{ $io{in}{file_path_href} };
+
+    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
+    my %recipe               = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
             parameter_href        => $parameter_href,
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe{core_number};
-    my $memory      = $recipe{memory};
 
-    ## Get the io infiles per chain and id
-    my @genotype_infile_paths;
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
-        ## Get the io infiles per chain and id
-        my %sample_io = get_io_files(
+    ## Set and get the io files per chain, id and stream
+    %io = (
+        %io,
+        parse_io_outfiles(
             {
-                id             => $sample_id,
-                file_info_href => $file_info_href,
-                parameter_href => $parameter_href,
-                recipe_name    => $recipe_name,
-                stream         => q{in},
+                chain_id         => $recipe{job_id_chain},
+                id               => $case_id,
+                file_info_href   => $file_info_href,
+                file_name_prefix => $infile_name_prefix,
+                iterators_ref    => \@contigs_size_ordered,
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                recipe_name      => $recipe_name,
             }
-        );
-        push @genotype_infile_paths, $sample_io{in}{file_path};
-    }
-
-    my %io = parse_io_outfiles(
-        {
-            chain_id               => $recipe{job_id_chain},
-            id                     => $case_id,
-            file_info_href         => $file_info_href,
-            file_name_prefixes_ref => [$case_id],
-            outdata_dir            => $active_parameter_href->{outdata_dir},
-            parameter_href         => $parameter_href,
-            recipe_name            => $recipe_name,
-        }
+        )
     );
-    my $outfile_path = $io{out}{file_path};
+
+    my @outfile_paths       = @{ $io{out}{file_paths} };
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my %outfile_path        = %{ $io{out}{file_path_href} };
+    my $outfile_suffix      = $io{out}{file_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -176,11 +180,11 @@ sub analysis_glnexus {
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
+            core_number           => $recipe{core_number},
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $memory,
+            memory_allocation     => $recipe{memory},
             process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
@@ -191,89 +195,78 @@ sub analysis_glnexus {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    glnexus_merge(
-        {
-            config           => q{DeepVariant_unfiltered},
-            dir              => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
-            filehandle       => $filehandle,
-            infile_paths_ref => \@genotype_infile_paths,
-            memory           => $memory,
-            threads          => $core_number,
+    say {$filehandle} q{## Copying non-MT variant files and annotating mt vcfs};
+    foreach my $contig ( keys %infile_path ) {
+
+        if ( $contig =~ / MT|M /xsm ) {
+
+            my $outfile_no_suffix = remove_file_path_suffix(
+                {
+                    file_path         => $outfile_path{$contig},
+                    file_suffixes_ref => [qw{.gz}],
+                }
+            );
+
+            hmtnote_annotate(
+                {
+                    filehandle   => $filehandle,
+                    infile_path  => $infile_path{$contig},
+                    offline      => $active_parameter_href->{mt_offline},
+                    outfile_path => $outfile_no_suffix,
+                }
+            );
+            print {$filehandle} $NEWLINE;
+
+            htslib_bgzip(
+                {
+                    filehandle  => $filehandle,
+                    infile_path => $outfile_no_suffix,
+                }
+            );
+            print {$filehandle} $NEWLINE;
+
+            htslib_tabix(
+                {
+                    filehandle  => $filehandle,
+                    infile_path => $outfile_path{$contig},
+                    preset      => q{vcf},
+
+                }
+            );
+            say {$filehandle} $NEWLINE;
         }
-    );
-    print {$filehandle} $PIPE . $SPACE;
+        else {
 
-    ## Normalize
-    bcftools_norm(
-        {
-            filehandle     => $filehandle,
-            infile_path    => $DASH,
-            multiallelic   => q{-},
-            output_type    => q{u},
-            reference_path => $active_parameter_href->{human_genome_reference},
-            threads        => $core_number,
-        }
-    );
-    print {$filehandle} $PIPE . $SPACE;
+            gnu_cp(
+                {
+                    filehandle   => $filehandle,
+                    infile_path  => $infile_path{$contig},
+                    outfile_path => $outfile_path{$contig},
+                }
+            );
+            print {$filehandle} $NEWLINE;
 
-    ## Remove duplicates
-    bcftools_norm(
-        {
-            filehandle        => $filehandle,
-            infile_path       => $DASH,
-            output_type       => q{v},
-            reference_path    => $active_parameter_href->{human_genome_reference},
-            remove_duplicates => 1,
-            threads           => $core_number,
-        }
-    );
-    print {$filehandle} $PIPE . $SPACE;
-
-    ## Add to info field so that scout can identify the caller
-    gnu_sed(
-        {
-            filehandle => $filehandle,
-            script     => _build_sed_script( {} ),
-        }
-    );
-    print {$filehandle} $PIPE . $SPACE;
-
-    htslib_bgzip(
-        {
-            filehandle      => $filehandle,
-            stdoutfile_path => $outfile_path,
-            threads         => $core_number,
+            gnu_cp(
+                {
+                    filehandle   => $filehandle,
+                    infile_path  => $infile_path{$contig} . q{.tbi},
+                    outfile_path => $outfile_path{$contig} . q{.tbi},
+                }
+            );
+            say {$filehandle} $NEWLINE;
 
         }
-    );
-    say {$filehandle} $NEWLINE;
-
-    htslib_tabix {
-        (
-            filehandle  => $filehandle,
-            infile_path => $outfile_path,
-        )
-    };
+    }
 
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
     if ( $recipe{mode} == 1 ) {
 
+        ## Collect QC metadata info for later use
         set_recipe_outfile_in_sample_info(
             {
-                path             => $outfile_path,
-                recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        set_file_path_to_store(
-            {
-                format           => q{vcf},
-                id               => $case_id,
-                path             => $outfile_path,
-                path_index       => $outfile_path . q{.tbi},
+                path             => $outfile_paths[0],
                 recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
@@ -284,10 +277,10 @@ sub analysis_glnexus {
                 base_command                      => $profile_base_command,
                 case_id                           => $case_id,
                 dependency_method                 => q{sample_to_case},
-                log                               => $log,
                 job_id_chain                      => $recipe{job_id_chain},
                 job_id_href                       => $job_id_href,
                 job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
@@ -297,27 +290,6 @@ sub analysis_glnexus {
         );
     }
     return 1;
-}
-
-sub _build_sed_script {
-
-    ## Function : Build sed script to add caller information to vcf
-
-    my $header_info =
-      q{##INFO=<ID=FOUND_IN,Number=1,Type=String,Description="Program that called the variant">};
-    my $info_tag = q{FOUND_IN=deepvariant};
-
-    my $sed_script = $SINGLE_QUOTE
-      ## Find first occurence of ##INFO
-      . q{0,/^##INFO.*/}
-
-      ## Prepend header to line
-      . q{s//} . $header_info . q{\n&/; }
-
-      ## Append new info tag to all INFO columns (8th)
-      . q{s/[^\t]*/&;} . $info_tag . q{/8} . $SINGLE_QUOTE;
-
-    return $sed_script;
 }
 
 1;

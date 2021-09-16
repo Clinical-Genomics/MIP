@@ -19,6 +19,7 @@ use warnings qw{ FATAL utf8 };
 ## CPANM
 use autodie qw{ open close :all };
 use Modern::Perl qw{ 2018 };
+use Readonly;
 
 ## MIPs lib/
 use MIP::Constants qw{ $LOG_NAME };
@@ -46,6 +47,7 @@ sub mip_qccollect {
 ## Returns  :
 ## Arguments: $eval_metric_file      => File with evaluation metrics
 ##          : $evaluate_plink_gender => Evaluate plink gender
+##          : $limit_qc_output       => Only print a limited number of qc metrics
 ##          : $outfile               => Data metric output file
 ##          : $regexp_file           => Regular expression file
 ##          : $sample_info_file      => Sample info file
@@ -57,6 +59,7 @@ sub mip_qccollect {
     ## Flatten argument(s)
     my $eval_metric_file;
     my $evaluate_plink_gender;
+    my $limit_qc_output;
     my $outfile;
     my $regexp_file;
     my $sample_info_file;
@@ -76,6 +79,10 @@ sub mip_qccollect {
             defined     => 1,
             required    => 1,
             store       => \$outfile,
+            strict_type => 1,
+        },
+        limit_qc_output => {
+            store       => \$limit_qc_output,
             strict_type => 1,
         },
         regexp_file => {
@@ -192,6 +199,13 @@ sub mip_qccollect {
             qc_data_href          => \%qc_data,
             sample_info_href      => \%sample_info,
             store_metrics_outfile => $store_metrics_outfile,
+        }
+    );
+
+    parse_limit_qc_output(
+        {
+            limit_qc_output => $limit_qc_output,
+            qc_href         => \%qc_data,
         }
     );
 
@@ -502,6 +516,105 @@ sub sample_qc {
                     );
                 }
             }
+        }
+    }
+    return;
+}
+
+sub parse_limit_qc_output {
+
+## Function : Restrict output
+## Returns  :
+## Arguments: $limit_qc_output => Remove keys from regexp hash
+##          : $qc_href         => Qccollect regexp hash {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $limit_qc_output;
+    my $qc_href;
+
+    my $tmpl = {
+        limit_qc_output => {
+            store       => \$limit_qc_output,
+            strict_type => 1,
+        },
+        qc_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$qc_href,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Delete surplus metrics
+    delete $qc_href->{metrics};
+
+    return if not $limit_qc_output;
+
+    Readonly my @SKIP_QC_METRICS => qw{ collectmultiplemetrics variantevalall variantevalexome };
+
+    foreach my $delete_metric_key (@SKIP_QC_METRICS) {
+
+        _delete_key(
+            {
+                data_href  => $qc_href,
+                delete_key => $delete_metric_key,
+            }
+        );
+    }
+    return;
+}
+
+sub _delete_key {
+
+## Function : Delete key from nested hash
+## Returns  :
+## Arguments: $data_href  => Data {REF}
+##          : $delete_key => Key to remove
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $data_href;
+    my $delete_key;
+
+    my $tmpl = {
+        data_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$data_href,
+            strict_type => 1,
+        },
+        delete_key => {
+            store       => \$delete_key,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+  KEY_VALUE_PAIR:
+    while ( my ( $key, $value ) = each %{$data_href} ) {
+
+        if ( $key eq $delete_key ) {
+
+            delete $data_href->{$delete_key};
+            return;
+        }
+
+        elsif ( ref $data_href->{$key} eq q{HASH} ) {
+
+            _delete_key(
+                {
+                    data_href  => $value,
+                    delete_key => $delete_key,
+                }
+            );
         }
     }
     return;
