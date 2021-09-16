@@ -28,6 +28,10 @@ vep release_103.1 -> release_104.3
 - gnomad: r3.0 -> r3.1.1
 - [NEW] gnomad mt: r3.1
 
+## [10.2.1]
+
+- Removed frequency filtering for mitochondrial sites
+
 ## [10.2.0]
 
 - Introduced the option `--start_after_recipe <recipe_name>` to start the pipeline after a given recipe
