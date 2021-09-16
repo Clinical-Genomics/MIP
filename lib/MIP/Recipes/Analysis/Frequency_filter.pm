@@ -144,6 +144,7 @@ sub analysis_frequency_filter {
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_index bcftools_view };
+    use MIP::Program::Gnu::Coreutils qw { gnu_cp };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
@@ -254,17 +255,32 @@ sub analysis_frequency_filter {
             }
         );
 
-        bcftools_view(
-            {
-                exclude                => $exclude_filter,
-                filehandle             => $xargsfilehandle,
-                infile_path            => $infile_path{$contig},
-                outfile_path           => $outfile_path{$contig},
-                output_type            => q{z},
-                stderrfile_path_append => $stderrfile_path,
-            }
-        );
-        print {$xargsfilehandle} $SEMICOLON . $SPACE;
+        if ( not $contig =~ / MT|M /xsm ) {
+
+            bcftools_view(
+                {
+                    exclude                => $exclude_filter,
+                    filehandle             => $xargsfilehandle,
+                    infile_path            => $infile_path{$contig},
+                    outfile_path           => $outfile_path{$contig},
+                    output_type            => q{z},
+                    stderrfile_path_append => $stderrfile_path,
+                }
+            );
+            print {$xargsfilehandle} $SEMICOLON . $SPACE;
+        }
+        else {
+
+            gnu_cp(
+                {
+                    filehandle             => $xargsfilehandle,
+                    infile_path            => $infile_path{$contig},
+                    outfile_path           => $outfile_path{$contig},
+                    stderrfile_path_append => $stderrfile_path,
+                }
+            );
+            print {$xargsfilehandle} $SEMICOLON . $SPACE;
+        }
 
         bcftools_index(
             {
