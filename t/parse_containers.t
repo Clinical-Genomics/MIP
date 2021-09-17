@@ -59,12 +59,11 @@ my %parameter = test_mip_hashes(
 );
 
 ## Given an installation config
-my $install_config_path =
-  catfile( $Bin, qw{ data test_data install_active_parameters.yaml } );
+my $container_config_path = catfile( $Bin, qw{ data test_data miptest_container_config.yaml } );
 
 ## Given a container manager and an install config
-$active_parameter{install_config_file} = $install_config_path;
-$active_parameter{container_manager}   = q{singularity};
+$active_parameter{container_config_file} = $container_config_path;
+$active_parameter{container_manager}     = q{singularity};
 
 ## When parsing containers
 my $is_ok = parse_containers(

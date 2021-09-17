@@ -155,7 +155,7 @@ q{Check analysis output and sets the analysis run status flag to finished in sam
     );
 
     option(
-        q{install_config_file} => (
+        q{container_config_file} => (
             documentation => q{File with install configuration parameters in YAML format},
             is            => q{rw},
             isa           => Str,

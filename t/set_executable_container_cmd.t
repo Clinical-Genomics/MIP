@@ -61,9 +61,9 @@ my %parameter = test_mip_hashes(
 );
 
 ## Given an installation config
-my $install_config_path = catfile( $Bin, qw{ data test_data install_active_parameters.yaml } );
+my $container_config_path = catfile( $Bin, qw{ data test_data miptest_container_config.yaml } );
 $active_parameter{container} =
-  { get_install_containers( { install_config_file => $install_config_path, } ) };
+  { get_install_containers( { container_config_file => $container_config_path, } ) };
 
 ## Given a container manager and some bind paths
 my $container_manager = q{singularity};
@@ -79,7 +79,7 @@ my %container_cmd = set_executable_container_cmd(
 );
 
 my $expected_arriba_cmd =
-q{singularity exec --bind reference_dir!/a_dir:opt/conda/share/a_dir docker://docker.io/uhrigs/arriba:1.2.0 /arriba_v1.2.0/arriba};
+q{singularity exec --bind reference_dir!/a_dir:opt/conda/share/a_dir docker://docker.io/uhrigs/arriba:2.1.0 /arriba_v2.1.0/arriba};
 
 ## Then return command for how to execute arriba using singularity
 is( $container_cmd{arriba}, $expected_arriba_cmd, q{Set singularity cmd for executable} );
@@ -98,7 +98,7 @@ $container_manager = q{docker};
 );
 
 my $expected_arriba_docker_cmd =
-q{docker run --volume reference_dir!/a_dir:opt/conda/share/a_dir --rm --entrypoint "" docker://docker.io/uhrigs/arriba:1.2.0 /arriba_v1.2.0/arriba};
+q{docker run --volume reference_dir!/a_dir:opt/conda/share/a_dir --rm --entrypoint "" docker://docker.io/uhrigs/arriba:2.1.0 /arriba_v2.1.0/arriba};
 
 ## Then return command for how to execute arriba using docker
 is( $container_cmd{arriba}, $expected_arriba_docker_cmd, q{Set docker cmd for executable} );

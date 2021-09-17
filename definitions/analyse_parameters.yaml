@@ -84,7 +84,7 @@ case_id:
     - mip
   data_type: SCALAR
   type: mip
-install_config_file:
+container_config_file:
   associated_recipe:
     - mip
   data_type: SCALAR

@@ -79,6 +79,16 @@ sub _build_usage {
     );
 
     option(
+        q{container_directory_path} => (
+            cmd_tags      => [q{Default: "<conda_path>/<env>/bin"}],
+            documentation =>
+              q{Save singularity images to directory. Requires singularity_local_install option},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
         q{environment_name} => (
             cmd_aliases   => [qw{ envn }],
             cmd_flag      => q{environment_name},
@@ -139,6 +149,17 @@ sub _build_usage {
                     ]
                 ),
             ],
+            required => 0,
+        ),
+    );
+
+    option(
+        q{singularity_local_install} => (
+            cmd_tags      => [q{Default: off}],
+            documentation =>
+q{Save singularity images to sif and update run instructions for offline mip execution},
+            is       => q{rw},
+            isa      => Bool,
             required => 0,
         ),
     );
