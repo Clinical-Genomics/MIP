@@ -213,7 +213,15 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
 
     option(
         q{sv_fqa_annotations} => (
-            documentation => q{Frequency annotations to use when filtering },
+            documentation => q{Frequency annotations to use},
+            is            => q{rw},
+            isa           => ArrayRef,
+        )
+    );
+
+    option(
+        q{sv_fqa_filter} => (
+            documentation => q{Frequency annotations to use when filtering},
             is            => q{rw},
             isa           => ArrayRef,
         )

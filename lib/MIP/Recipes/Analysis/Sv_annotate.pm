@@ -5,7 +5,8 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catfile splitpath };
+use File::Spec::Functions qw{ catfile devnull splitpath };
+use List::Util qw{ first };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
 use utf8;
@@ -128,7 +129,7 @@ sub analysis_sv_annotate {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
-    use MIP::Program::Gnu::Coreutils qw(gnu_mv);
+    use MIP::Program::Gnu::Coreutils qw( gnu_cat gnu_mv gnu_tee );
     use MIP::Io::Read qw{ read_from_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools
@@ -162,8 +163,7 @@ sub analysis_sv_annotate {
     my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-    my $consensus_analysis_type = $parameter_href->{cache}{consensus_analysis_type};
-    my $sequence_dict_file      = catfile( $reference_dir,
+    my $sequence_dict_file = catfile( $reference_dir,
         $file_info_href->{human_genome_reference_name_prefix} . $DOT . q{dict} );
     my %recipe = parse_recipe_prerequisites(
         {
@@ -211,11 +211,6 @@ sub analysis_sv_annotate {
             temp_directory        => $temp_directory,
         }
     );
-
-    ## Split to enable submission to &sample_info_qc later
-    my ( $volume, $directory, $stderr_file ) =
-      splitpath( $recipe_info_path . $DOT . q{stderr.txt} );
-    my $stderrfile_path = $recipe_info_path . $DOT . q{stderr.txt};
 
     ### SHELL:
 
@@ -304,124 +299,111 @@ sub analysis_sv_annotate {
         say {$filehandle} $NEWLINE;
     }
 
-    ## Alternative file tag
-    my $outfile_alt_file_tag = $alt_file_tag . $UNDERSCORE . q{sorted};
-
-    ## Writes sbatch code to supplied filehandle to sort variants in vcf format
+    ## Always sort the vcf, garantees an output file that's in sync with the IO hash
+    my $sort_infile_path =
+        $alt_file_tag eq $EMPTY_STR
+      ? $infile_path
+      : $outfile_path_prefix . $alt_file_tag . $outfile_suffix;
+    my $sort_outfile_path = $outfile_path;
     sort_vcf(
         {
             active_parameter_href => $active_parameter_href,
             filehandle            => $filehandle,
-            infile_paths_ref      => [ $outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
-            outfile               => $outfile_path_prefix . $outfile_alt_file_tag . $outfile_suffix,
+            infile_paths_ref      => [$sort_infile_path],
+            outfile               => $sort_outfile_path,
             sequence_dict_file    => $sequence_dict_file,
         }
     );
     say {$filehandle} $NEWLINE;
 
-    $alt_file_tag = $outfile_alt_file_tag;
-
-    ## Remove FILTER ne PASS and on frequency
+    ## Remove FILTER ne PASS and filter on frequency
     if ( $active_parameter_href->{sv_frequency_filter} ) {
+
+        say {$filehandle} q{## Remove FILTER ne PASS, annotate and remove common variants};
+        bcftools_view(
+            {
+                apply_filters_ref => [qw{ PASS }],
+                filehandle        => $filehandle,
+                infile_path       => $sort_outfile_path,
+                output_type       => q{v},
+            }
+        );
+        print {$filehandle} $PIPE . $SPACE;
+
+        vcfanno(
+            {
+                filehandle           => $filehandle,
+                infile_path          => catfile( dirname( devnull() ), q{stdout} ),
+                toml_configfile_path => $active_parameter_href->{sv_vcfanno_config},
+            }
+        );
+        print {$filehandle} $PIPE . $SPACE;
+
+        ## Gnu tee to split into one unfiltered vcf and one filtered
+        $alt_file_tag .= $UNDERSCORE . q{anno};
+        my $anno_outfile_path = $outfile_path_prefix . $alt_file_tag . $outfile_suffix;
+        gnu_tee(
+            {
+                filehandle        => $filehandle,
+                outfile_paths_ref => [$anno_outfile_path],
+            }
+        );
+        print {$filehandle} $PIPE . $SPACE;
 
         ## Build the exclude filter command
         my $exclude_filter = _build_bcftools_filter(
             {
                 annotations_ref               => \@svdb_query_annotations,
+                fqf_annotations_ref           => $active_parameter_href->{sv_fqa_filters},
                 fqf_bcftools_filter_threshold =>
                   $active_parameter_href->{fqf_bcftools_filter_threshold},
+                vcfanno_file_toml => $active_parameter_href->{sv_vcfanno_config},
             }
         );
 
-        say {$filehandle} q{## Remove FILTER ne PASS and frequency over threshold};
-        bcftools_view(
-            {
-                apply_filters_ref => [qw{ PASS }],
-                exclude           => $exclude_filter,
-                filehandle        => $filehandle,
-                infile_path       => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
-                outfile_path      => $outfile_path_prefix
-                  . $alt_file_tag
-                  . $UNDERSCORE . q{filt}
-                  . $outfile_suffix,
-                output_type => q{v},
-            }
-        );
-        say {$filehandle} $NEWLINE;
+        ## Don't filter MT varaints
+        my $mt_contig  = first { $_ =~ / MT | chrM /xms } @{ $file_info_href->{contigs} };
+        my $target_exp = $mt_contig ? q{^} . $mt_contig : undef;
 
         ## Update file tag
-        $alt_file_tag .= $UNDERSCORE . q{filt};
-    }
+        $alt_file_tag .= $UNDERSCORE . q{filter};
 
-    ## Remove common variants
-    if ( $active_parameter_href->{sv_frequency_filter} ) {
-
-        say {$filehandle} q{## Remove common variants};
-        vcfanno(
-            {
-                filehandle             => $filehandle,
-                infile_path            => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
-                luafile_path           => $active_parameter_href->{vcfanno_functions},
-                stderrfile_path_append => $stderrfile_path,
-                toml_configfile_path   => $active_parameter_href->{sv_vcfanno_config},
-            }
-        );
-        print {$filehandle} $PIPE . $SPACE;
-
-        ## Update file tag
-        $alt_file_tag .= $UNDERSCORE . q{bcftools_filter};
-
-        my %vcfanno_config = read_from_file(
-            {
-                format => q{toml},
-                path   => $active_parameter_href->{sv_vcfanno_config},
-            }
-        );
-
-        ## Store vcfanno annotations
-        my @vcfanno_annotations;
-
-      ANNOTATION:
-        foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
-
-            push @vcfanno_annotations, @{ $annotation_href->{names} };
-        }
-        ## Build the exclude filter command
-        my $exclude_filter = _build_bcftools_filter(
-            {
-                annotations_ref               => \@vcfanno_annotations,
-                fqf_bcftools_filter_threshold =>
-                  $active_parameter_href->{fqf_bcftools_filter_threshold},
-            }
-        );
-
+        ## Outfile path depends on wheter the MT contig is part of the analysis
+        my $filtered_anno_outfile_path =
+          $mt_contig ? $outfile_path_prefix . $alt_file_tag . $outfile_suffix : $outfile_path;
         bcftools_filter(
             {
-                exclude                => $exclude_filter,
-                filehandle             => $filehandle,
-                infile_path            => $DASH,
-                outfile_path           => $outfile_path_prefix . $alt_file_tag . $outfile_suffix,
-                output_type            => q{v},
-                stderrfile_path_append => $stderrfile_path,
+                exclude      => $exclude_filter,
+                filehandle   => $filehandle,
+                infile_path  => $DASH,
+                outfile_path => $filtered_anno_outfile_path,
+                output_type  => q{v},
+                targets      => $target_exp,
             }
         );
         say {$filehandle} $NEWLINE;
-    }
 
-    ## Then we have something to rename
-    if ( $alt_file_tag ne $EMPTY_STR ) {
+        if ($mt_contig) {
 
-        ## Writes sbatch code to supplied filehandle to sort variants in vcf format
-        sort_vcf(
-            {
-                active_parameter_href => $active_parameter_href,
-                filehandle            => $filehandle,
-                infile_paths_ref      => [ $outfile_path_prefix . $alt_file_tag . $outfile_suffix ],
-                outfile               => $outfile_path,
-                sequence_dict_file    => $sequence_dict_file,
-            }
-        );
-        say {$filehandle} $NEWLINE;
+            ## Concatenate filtered varaint file with unfiltered MT variants
+            my @mt_variants_cmds = bcftools_view(
+                {
+                    infile_path => $anno_outfile_path,
+                    no_header   => 1,
+                    targets     => $mt_contig,
+                }
+            );
+
+            say {$filehandle} q{## Concatenate filtered varaints with unfiltered MT variants};
+            my $stream_mt_variant_cmd = q{<(} . join( $SPACE, @mt_variants_cmds ) . q{)};
+            gnu_cat(
+                {
+                    filehandle       => $filehandle,
+                    infile_paths_ref => [ $filtered_anno_outfile_path, $stream_mt_variant_cmd ],
+                    stdoutfile_path  => $outfile_path,
+                }
+            );
+        }
     }
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
@@ -460,22 +442,20 @@ sub _build_bcftools_filter {
 
 ## Function : Build the exclude filter command
 ## Returns  :
-## Arguments: $fqf_bcftools_filter_threshold => Exclude variants with frequency above filter threshold
-##          : $annotations_ref               => Annotations to use in filtering
+## Arguments: $annotations_ref               => Annotations to use in filtering
+##          : $fqf_annotaions_ref            => Frequency annotation to use in filtering
+##          : $fqf_bcftools_filter_threshold => Exclude variants with frequency above filter threshold
+##          : $vcfanno_file_toml             => Toml config file
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $fqf_bcftools_filter_threshold;
     my $annotations_ref;
+    my $fqf_annotations_ref;
+    my $fqf_bcftools_filter_threshold;
+    my $vcfanno_file_toml;
 
     my $tmpl = {
-        fqf_bcftools_filter_threshold => {
-            defined     => 1,
-            required    => 1,
-            store       => \$fqf_bcftools_filter_threshold,
-            strict_type => 1,
-        },
         annotations_ref => {
             default     => [],
             defined     => 1,
@@ -483,9 +463,45 @@ sub _build_bcftools_filter {
             store       => \$annotations_ref,
             strict_type => 1,
         },
+        fqf_annotations_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$fqf_annotations_ref,
+            strict_type => 1,
+        },
+        fqf_bcftools_filter_threshold => {
+            defined     => 1,
+            required    => 1,
+            store       => \$fqf_bcftools_filter_threshold,
+            strict_type => 1,
+        },
+        vcfanno_file_toml => {
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfanno_file_toml,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use Array::Utils qw{ intersect };
+
+    my %vcfanno_config = read_from_file(
+        {
+            format => q{toml},
+            path   => $vcfanno_file_toml,
+        }
+    );
+
+  ANNOTATION:
+    foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
+
+        push @{$annotations_ref}, @{ $annotation_href->{names} };
+    }
+
+    @{$fqf_annotations_ref} = intersect( @{$fqf_annotations_ref}, @{$annotations_ref} );
 
     my $exclude_filter;
     my $threshold = $SPACE . q{>} . $SPACE . $fqf_bcftools_filter_threshold . $SPACE;

@@ -69,13 +69,13 @@ $active_parameter{recipe_time}{$recipe_name}        = 1;
 my $case_id = $active_parameter{case_id};
 $active_parameter{sv_frequency_filter}           = 1;
 $active_parameter{fqf_bcftools_filter_threshold} = $FREQ_CUTOFF;
-$active_parameter{sv_vcfanno_config}             = catfile( $Bin,
-    qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml } );
+$active_parameter{sv_vcfanno_config} =
+  catfile( $Bin, qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml } );
 $active_parameter{sv_svdb_query} = 1;
 $active_parameter{sv_svdb_query_db_files} =
   { a_file =>
-q{a_file|out_frequency_tag|out_allele_coiunt_tag|in_frequency_tag|in_allele_coiunt_tag|1},
-  };
+      q{a_file|out_frequency_tag|out_allele_coiunt_tag|in_frequency_tag|in_allele_coiunt_tag|1}, };
+@{ $active_parameter{sv_fqa_filters} } = (qw{ out_frequency_tag GNOMADAF });
 
 my %file_info = test_mip_hashes(
     {
@@ -94,11 +94,11 @@ my %parameter = test_mip_hashes(
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $case_id,
-        parameter_href    => \%parameter,
-        recipe_name       => $recipe_name,
-        step              => q{vcf},
+        file_info_href => \%file_info,
+        id             => $case_id,
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{vcf},
     }
 );
 

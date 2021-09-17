@@ -913,6 +913,16 @@ sv_fqa_annotations:
     - GNOMADAF
     - GNOMADAF_POPMAX
   type: recipe_argument
+sv_fqa_filters:
+  associated_recipe:
+    - sv_annotate
+  data_type: ARRAY
+  default:
+    - GNOMADAF
+    - GNOMADAF_POPMAX
+    - gnomad_sv
+    - clinical_genomics_loqus
+  type: recipe_argument
 sv_bcftools_view_filter:
   associated_recipe:
     - sv_annotate
