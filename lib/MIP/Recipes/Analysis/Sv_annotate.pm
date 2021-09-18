@@ -333,7 +333,8 @@ sub analysis_sv_annotate {
         vcfanno(
             {
                 filehandle           => $filehandle,
-                infile_path          => catfile( dirname( devnull() ), q{stdout} ),
+                infile_path          => catfile( dirname( devnull() ), q{stdin} ),
+                processes            => $recipe{core_number},
                 toml_configfile_path => $active_parameter_href->{sv_vcfanno_config},
             }
         );

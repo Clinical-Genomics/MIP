@@ -192,7 +192,7 @@ recipe_core_number:
     samtools_subsample_mt: 1
     smncopynumbercaller: 4
     star_caller: 4
-    sv_annotate: 1
+    sv_annotate: 2
     sv_combinevariantcallsets: 1
     sv_rankvariant: 16
     sv_reformat: 1
