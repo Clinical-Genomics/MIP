@@ -911,7 +911,7 @@ sv_fqa_annotations:
   data_type: ARRAY
   default:
     - GNOMADAF
-    - GNOMADAF_POPMAX
+    - GNOMADAF_popmax
   type: recipe_argument
 sv_fqa_filters:
   associated_recipe:
@@ -919,7 +919,7 @@ sv_fqa_filters:
   data_type: ARRAY
   default:
     - GNOMADAF
-    - GNOMADAF_POPMAX
+    - GNOMADAF_popmax
     - gnomad_sv
     - clinical_genomics_loqus
   type: recipe_argument

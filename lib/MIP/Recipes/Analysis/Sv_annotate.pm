@@ -510,7 +510,7 @@ sub _build_bcftools_filter {
     $exclude_filter =
         $DOUBLE_QUOTE
       . q{INFO/}
-      . join( $threshold . $PIPE . $SPACE . q{INFO/}, @{$annotations_ref} )
+      . join( $threshold . $PIPE . $SPACE . q{INFO/}, @{$fqf_annotations_ref} )
       . $threshold
       . $DOUBLE_QUOTE;
     return $exclude_filter;
