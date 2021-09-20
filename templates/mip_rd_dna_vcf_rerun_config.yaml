@@ -44,7 +44,7 @@ fqf_annotations:
   - GNOMADAF
   - GNOMADAF_popmax
   - SWEGENAF
-sv_fqa_annotations:
+sv_fqa_vcfanno_filters:
   - GNOMADAF
   - GNOMADAF_POPMAX
   - SWEGENAF

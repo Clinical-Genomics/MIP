@@ -132,8 +132,7 @@ sub analysis_sv_annotate {
     use MIP::Program::Gnu::Coreutils qw( gnu_cat gnu_mv gnu_tee );
     use MIP::Io::Read qw{ read_from_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Bcftools
-      qw{ bcftools_annotate bcftools_filter bcftools_view bcftools_view_and_index_vcf };
+    use MIP::Program::Bcftools qw{ bcftools_filter bcftools_view };
     use MIP::Program::Genmod qw{ genmod_annotate };
     use MIP::Program::Picardtools qw{ sort_vcf };
     use MIP::Program::Svdb qw{ svdb_query };
@@ -355,7 +354,7 @@ sub analysis_sv_annotate {
         my $exclude_filter = _build_bcftools_filter(
             {
                 annotations_ref               => \@svdb_query_annotations,
-                fqf_annotations_ref           => $active_parameter_href->{sv_fqa_filters},
+                fqf_annotations_ref           => $active_parameter_href->{sv_fqa_vcfanno_filters},
                 fqf_bcftools_filter_threshold =>
                   $active_parameter_href->{fqf_bcftools_filter_threshold},
                 vcfanno_file_toml => $active_parameter_href->{sv_vcfanno_config},
@@ -488,6 +487,7 @@ sub _build_bcftools_filter {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use Array::Utils qw{ intersect };
+    use List::MoreUtils qw{ uniq };
 
     my %vcfanno_config = read_from_file(
         {
@@ -496,13 +496,16 @@ sub _build_bcftools_filter {
         }
     );
 
+    my @vcfanno_annotations;
+
   ANNOTATION:
     foreach my $annotation_href ( @{ $vcfanno_config{annotation} } ) {
 
-        push @{$annotations_ref}, @{ $annotation_href->{names} };
+        push @vcfanno_annotations, @{ $annotation_href->{names} };
     }
 
-    @{$fqf_annotations_ref} = intersect( @{$fqf_annotations_ref}, @{$annotations_ref} );
+    @{$fqf_annotations_ref} = intersect( @{$fqf_annotations_ref}, @vcfanno_annotations );
+    @{$fqf_annotations_ref} = uniq( @{$fqf_annotations_ref}, @{$annotations_ref} );
 
     my $exclude_filter;
     my $threshold = $SPACE . q{>} . $SPACE . $fqf_bcftools_filter_threshold . $SPACE;

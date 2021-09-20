@@ -66,7 +66,7 @@ vcfanno_config: grch38_vcfanno_config_-v0.2-.toml
 ### Analysis
 ## Programs
 ## Parameters
-sv_fqa_annotations:
+sv_fqa_vcfanno_filters:
   - GNOMADAF
   - GNOMADAF_POPMAX
   - SWEGENAF

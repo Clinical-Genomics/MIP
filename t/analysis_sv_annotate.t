@@ -75,7 +75,7 @@ $active_parameter{sv_svdb_query} = 1;
 $active_parameter{sv_svdb_query_db_files} =
   { a_file =>
       q{a_file|out_frequency_tag|out_allele_coiunt_tag|in_frequency_tag|in_allele_coiunt_tag|1}, };
-@{ $active_parameter{sv_fqa_filters} } = (qw{ out_frequency_tag GNOMADAF });
+@{ $active_parameter{sv_fqa_vcfanno_filters} } = (qw{ out_frequency_tag GNOMADAF });
 
 my %file_info = test_mip_hashes(
     {

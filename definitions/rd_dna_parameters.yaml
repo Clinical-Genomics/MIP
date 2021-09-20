@@ -905,23 +905,13 @@ sv_annotate:
     - bcftools
     - svdb
   type: recipe
-sv_fqa_annotations:
+sv_fqa_vcfanno_filters:
   associated_recipe:
     - sv_annotate
   data_type: ARRAY
   default:
     - GNOMADAF
     - GNOMADAF_popmax
-  type: recipe_argument
-sv_fqa_filters:
-  associated_recipe:
-    - sv_annotate
-  data_type: ARRAY
-  default:
-    - GNOMADAF
-    - GNOMADAF_popmax
-    - gnomad_sv
-    - clinical_genomics_loqus
   type: recipe_argument
 sv_bcftools_view_filter:
   associated_recipe:
