@@ -353,11 +353,11 @@ sub analysis_sv_annotate {
         ## Build the exclude filter command
         my $exclude_filter = _build_bcftools_filter(
             {
-                annotations_ref               => \@svdb_query_annotations,
-                fqf_annotations_ref           => $active_parameter_href->{sv_fqa_vcfanno_filters},
                 fqf_bcftools_filter_threshold =>
                   $active_parameter_href->{fqf_bcftools_filter_threshold},
-                vcfanno_file_toml => $active_parameter_href->{sv_vcfanno_config},
+                svdb_filters_ref    => \@svdb_query_annotations,
+                vcfanno_file_toml   => $active_parameter_href->{sv_vcfanno_config},
+                vcfanno_filters_ref => $active_parameter_href->{sv_fqa_vcfanno_filters},
             }
         );
 
@@ -442,38 +442,31 @@ sub _build_bcftools_filter {
 
 ## Function : Build the exclude filter command
 ## Returns  :
-## Arguments: $annotations_ref               => Annotations to use in filtering
-##          : $fqf_annotaions_ref            => Frequency annotation to use in filtering
-##          : $fqf_bcftools_filter_threshold => Exclude variants with frequency above filter threshold
+## Arguments: $fqf_bcftools_filter_threshold => Exclude variants with frequency above filter threshold
+##          : $svdb_filters_ref              => Annotations to use in filtering
 ##          : $vcfanno_file_toml             => Toml config file
+##          : $vcfanno_filters_ref           => Frequency annotation to use when filtering annotations from vcfanno
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $annotations_ref;
-    my $fqf_annotations_ref;
     my $fqf_bcftools_filter_threshold;
+    my $svdb_filters_ref;
     my $vcfanno_file_toml;
+    my $vcfanno_filters_ref;
 
     my $tmpl = {
-        annotations_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$annotations_ref,
-            strict_type => 1,
-        },
-        fqf_annotations_ref => {
-            default     => [],
-            defined     => 1,
-            required    => 1,
-            store       => \$fqf_annotations_ref,
-            strict_type => 1,
-        },
         fqf_bcftools_filter_threshold => {
             defined     => 1,
             required    => 1,
             store       => \$fqf_bcftools_filter_threshold,
+            strict_type => 1,
+        },
+        svdb_filters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$svdb_filters_ref,
             strict_type => 1,
         },
         vcfanno_file_toml => {
@@ -482,12 +475,21 @@ sub _build_bcftools_filter {
             store       => \$vcfanno_file_toml,
             strict_type => 1,
         },
+        vcfanno_filters_ref => {
+            default     => [],
+            defined     => 1,
+            required    => 1,
+            store       => \$vcfanno_filters_ref,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use Array::Utils qw{ intersect };
+    use Array::Utils qw{ array_minus };
     use List::MoreUtils qw{ uniq };
+
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
 
     my %vcfanno_config = read_from_file(
         {
@@ -504,8 +506,24 @@ sub _build_bcftools_filter {
         push @vcfanno_annotations, @{ $annotation_href->{names} };
     }
 
-    @{$fqf_annotations_ref} = intersect( @{$fqf_annotations_ref}, @vcfanno_annotations );
-    @{$fqf_annotations_ref} = uniq( @{$fqf_annotations_ref}, @{$annotations_ref} );
+    ## Check if all annotations in vcfanno_filters are present vcfanno_annotations;
+    my @missing_annotations = array_minus( @{$vcfanno_filters_ref}, @vcfanno_annotations );
+
+    if (@missing_annotations) {
+
+        $log->warn(
+            q{The following vcfanno frequency filters aren't part of the vcfanno annotations:}
+              . $SPACE
+              . join $SPACE,
+            @missing_annotations
+        );
+        $log->warn(
+q{This might lead to unexpected results. Update the parameter sv_fqa_vcfanno_filters or update your vcfanno file for structural variants}
+        );
+    }
+
+    ## Check for overlapping tags
+    my @frequency_filters = uniq( @{$vcfanno_filters_ref}, @{$svdb_filters_ref} );
 
     my $exclude_filter;
     my $threshold = $SPACE . q{>} . $SPACE . $fqf_bcftools_filter_threshold . $SPACE;
@@ -513,7 +531,7 @@ sub _build_bcftools_filter {
     $exclude_filter =
         $DOUBLE_QUOTE
       . q{INFO/}
-      . join( $threshold . $PIPE . $SPACE . q{INFO/}, @{$fqf_annotations_ref} )
+      . join( $threshold . $PIPE . $SPACE . q{INFO/}, @frequency_filters )
       . $threshold
       . $DOUBLE_QUOTE;
     return $exclude_filter;
