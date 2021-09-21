@@ -385,7 +385,7 @@ sub analysis_sv_annotate {
 
         if ($mt_contig) {
 
-            ## Concatenate filtered varaint file with unfiltered MT variants
+            ## Concatenate filtered variant file with unfiltered MT variants
             my @mt_variants_cmds = bcftools_view(
                 {
                     infile_path => $anno_outfile_path,
