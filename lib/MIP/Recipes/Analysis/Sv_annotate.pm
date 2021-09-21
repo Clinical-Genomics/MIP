@@ -361,7 +361,7 @@ sub analysis_sv_annotate {
             }
         );
 
-        ## Don't filter MT varaints
+        ## Don't filter MT variants
         my $mt_contig  = first { $_ =~ / MT | chrM /xms } @{ $file_info_href->{contigs} };
         my $target_exp = $mt_contig ? q{^} . $mt_contig : undef;
 
