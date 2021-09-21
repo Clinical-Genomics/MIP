@@ -68,7 +68,7 @@ vcfanno_config: grch38_vcfanno_config_-v0.2-.toml
 ## Parameters
 sv_fqa_vcfanno_filters:
   - GNOMADAF
-  - GNOMADAF_POPMAX
+  - GNOMADAF_popmax
   - SWEGENAF
   - swegen
 gatk_path: /opt/conda/opt/gatk-3.8

@@ -49,7 +49,7 @@ fqf_annotations:
   - SWEGENAF
 sv_fqa_vcfanno_filters:
   - GNOMADAF
-  - GNOMADAF_POPMAX
+  - GNOMADAF_popmax
   - gnomad_svAF
   - clinical_genomics_loqusFrq
 gatk_path: /usr

@@ -168,7 +168,7 @@ sv_fqa_vcfanno_filters:
   data_type: ARRAY
   default:
     - GNOMADAF
-    - GNOMADAF_POPMAX
+    - GNOMADAF_popmax
   type: recipe_argument
 sv_bcftools_view_filter:
   associated_recipe:

@@ -46,7 +46,7 @@ fqf_annotations:
   - SWEGENAF
 sv_fqa_vcfanno_filters:
   - GNOMADAF
-  - GNOMADAF_POPMAX
+  - GNOMADAF_popmax
   - SWEGENAF
   - swegen
 picardtools_path: /usr/picard

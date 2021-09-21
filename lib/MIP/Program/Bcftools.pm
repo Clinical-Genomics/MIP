@@ -1097,7 +1097,7 @@ sub bcftools_mpileup {
         stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
         targets                => {
-            store       => $targets,
+            store       => \$targets,
             strict_type => 1,
         },
         threads => {
