@@ -49,10 +49,10 @@ vep_custom_annotation:
     force_report_coordinates: 0
     key: CLINVAR
     file_type: vcf
-    path: cluster_constant_path!/references/grch37_clinvar_reformated_-20210415-.vcf.gz
+    path: cluster_constant_path!/references/grch37_clinvar_reformated_-20210828-.vcf.gz
     vcf_fields: CLNSIG,CLNVID,CLNREVSTAT
-vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data-103/cache/
-vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins
+vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data-104/cache/
+vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data-104/cache/Plugins
 vep_plugin:
   dbNSFP:
     exist_check:
@@ -74,15 +74,15 @@ vep_plugin:
   LoFtool:
     exist_check:
       - type: file
-        path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/LoFtool_scores.txt
+        path: cluster_constant_path!/references/ensembl-tools-data-104/cache/Plugins/LoFtool_scores.txt
     parameters:
-      - cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/LoFtool_scores.txt
+      - cluster_constant_path!/references/ensembl-tools-data-104/cache/Plugins/LoFtool_scores.txt
   MaxEntScan:
     exist_check:
       - type: directory
-        path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/fordownload
+        path: cluster_constant_path!/references/ensembl-tools-data-104/cache/Plugins/fordownload
     parameters:
-      - cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/fordownload
+      - cluster_constant_path!/references/ensembl-tools-data-104/cache/Plugins/fordownload
       - SWA
       - NCSS
   SpliceAI:
