@@ -27,7 +27,7 @@ reference:
     - v1.0
   clinvar:
     - 20210415
-    - 20210828
+    - 20210919
   dbnsfp:
     - 3.5a
     - 4.0b2a
@@ -323,13 +323,13 @@ reference_feature:
         outfile_index: grch37_clinvar_-20210415-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
-      20210828:
-        file: clinvar_20210828.vcf.gz
-        file_check: clinvar_20210828.vcf.gz.md5
-        file_index: clinvar_20210828.vcf.gz.tbi
-        outfile: grch37_clinvar_-20210828-.vcf.gz
-        outfile_check: grch37_clinvar_-20210828-.vcf.gz.md5
-        outfile_index: grch37_clinvar_-20210828-.vcf.gz.tbi
+      20210919:
+        file: clinvar_20210919.vcf.gz
+        file_check: clinvar_20210919.vcf.gz.md5
+        file_index: clinvar_20210919.vcf.gz.tbi
+        outfile: grch37_clinvar_-20210919-.vcf.gz
+        outfile_check: grch37_clinvar_-20210919-.vcf.gz.md5
+        outfile_index: grch37_clinvar_-20210919-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly
     grch38:
