@@ -798,7 +798,7 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
-        q{sv_fqa_annotations} => (
+        q{sv_fqa_vcfanno_filters} => (
             documentation => q{Frequency annotations to use when filtering },
             is            => q{rw},
             isa           => ArrayRef,

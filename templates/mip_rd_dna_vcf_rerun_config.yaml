@@ -44,6 +44,11 @@ fqf_annotations:
   - GNOMADAF
   - GNOMADAF_popmax
   - SWEGENAF
+sv_fqa_vcfanno_filters:
+  - GNOMADAF
+  - GNOMADAF_popmax
+  - SWEGENAF
+  - swegen
 picardtools_path: /usr/picard
 sv_genmod_models_case_type: cmms
 sv_vep_plugin:
