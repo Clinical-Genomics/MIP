@@ -90,7 +90,9 @@ GetOptions(
 ok( can_run(q{mip}), q{Checking can run mip} );
 
 Readonly my $DRY_RUN_MODE => 2;
-my @genome_builds = qw{ grch37 grch38 };
+
+#my @genome_builds = qw{ grch37 grch38 };
+my @genome_builds = qw{ grch37 };
 
 ## Update path in toml config
 GENOME_BUILD:
