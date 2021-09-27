@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -114,7 +114,9 @@ sub analysis_mt_annotation {
 
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::File::Path qw { remove_file_path_suffix };
+    use MIP::Program::Bcftools qw{ bcftools_view };
     use MIP::Program::Gnu::Coreutils qw { gnu_cp };
+    use MIP::Program::Gnu::Software::Gnu_sed qw { gnu_sed };
     use MIP::Program::HmtNote qw{ hmtnote_annotate };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
@@ -167,10 +169,10 @@ sub analysis_mt_annotation {
         )
     );
 
-    my @outfile_paths       = @{ $io{out}{file_paths} };
-    my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my %outfile_path        = %{ $io{out}{file_path_href} };
-    my $outfile_suffix      = $io{out}{file_suffix};
+    my @outfile_paths = @{ $io{out}{file_paths} };
+    my %outfile_path  = %{ $io{out}{file_path_href} };
+    my %outfile_name  = %{ $io{out}{file_name_href} };
+    my $outdir_path   = $io{out}{dir_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -202,25 +204,60 @@ sub analysis_mt_annotation {
 
             my $outfile_no_suffix = remove_file_path_suffix(
                 {
-                    file_path         => $outfile_path{$contig},
+                    file_path         => $outfile_name{$contig},
                     file_suffixes_ref => [qw{.gz}],
                 }
             );
+            my $temp_outfile_path =
+              catfile( $active_parameter_href->{temp_directory}, $outfile_no_suffix );
 
+            ## Hmtnote inserts whitespace in the INFO field which violates the VCF v4.2 specification
+            say {$filehandle} q{## Annotate MT variants};
             hmtnote_annotate(
                 {
                     filehandle   => $filehandle,
                     infile_path  => $infile_path{$contig},
                     offline      => $active_parameter_href->{mt_offline},
-                    outfile_path => $outfile_no_suffix,
+                    outfile_path => $temp_outfile_path,
                 }
             );
             print {$filehandle} $NEWLINE;
 
+            say {$filehandle} q{## Remove whitespace from vcf};
+            my $outfile_path_no_suffix = catfile( $outdir_path, $outfile_no_suffix );
+            bcftools_view(
+                {
+                    filehandle   => $filehandle,
+                    header_only  => 1,
+                    infile_path  => $temp_outfile_path,
+                    outfile_path => $outfile_path_no_suffix,
+                }
+            );
+            print {$filehandle} $NEWLINE;
+
+            bcftools_view(
+                {
+                    filehandle  => $filehandle,
+                    infile_path => $temp_outfile_path,
+                    no_header   => 1,
+                }
+            );
+            print {$filehandle} $PIPE . $SPACE;
+
+            gnu_sed(
+                {
+                    filehandle             => $filehandle,
+                    script                 => q{'s/ /_/g'},
+                    stdoutfile_path_append => $outfile_path_no_suffix,
+                }
+            );
+            print {$filehandle} $NEWLINE;
+
+            say {$filehandle} q{## Compress and index};
             htslib_bgzip(
                 {
                     filehandle  => $filehandle,
-                    infile_path => $outfile_no_suffix,
+                    infile_path => $outfile_path_no_suffix,
                 }
             );
             print {$filehandle} $NEWLINE;
