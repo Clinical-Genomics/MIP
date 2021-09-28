@@ -258,7 +258,7 @@ sub analysis_mt_annotation {
                 {
                     filehandle  => $filehandle,
                     force       => 1,
-                    infile_path => $outfile_no_suffix,
+                    infile_path => $outfile_path_no_suffix,
                 }
             );
             print {$filehandle} $NEWLINE;
