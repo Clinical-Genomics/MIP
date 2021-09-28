@@ -257,7 +257,8 @@ sub analysis_mt_annotation {
             htslib_bgzip(
                 {
                     filehandle  => $filehandle,
-                    infile_path => $outfile_path_no_suffix,
+                    force       => 1,
+                    infile_path => $outfile_no_suffix,
                 }
             );
             print {$filehandle} $NEWLINE;

@@ -77,13 +77,13 @@ CHAIN_ALL:
     - rhocall_ar
     - bcftools_norm
     - variant_annotation
-    - mt_annotation
     - CHAIN_RHOVIZ:
       - rhocall_viz
       - chromograph_rhoviz
     - CHAIN_UPD:
       - upd_ar
       - chromograph_upd
+    - mt_annotation
     - frequency_filter
     - cadd_ar
     - varianteffectpredictor
