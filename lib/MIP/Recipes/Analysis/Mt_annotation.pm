@@ -220,6 +220,7 @@ sub analysis_mt_annotation {
             htslib_bgzip(
                 {
                     filehandle  => $filehandle,
+                    force       => 1,
                     infile_path => $outfile_no_suffix,
                 }
             );
