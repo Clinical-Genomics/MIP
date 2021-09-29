@@ -117,6 +117,10 @@ sub define_qc_metrics_to_store {
             analysis_mode => q{sample},
             recipe_name   => q{collectmultiplemetricsinsertsize},
         },
+        MEDIAN_TARGET_COVERAGE => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collecthsmetrics}
+        },
         PCT_INTERGENIC_BASES => {
             analysis_mode => q{sample},
             recipe_name   => q{collectrnaseqmetrics},
