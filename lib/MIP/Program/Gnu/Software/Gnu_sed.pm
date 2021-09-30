@@ -1,5 +1,6 @@
 package MIP::Program::Gnu::Software::Gnu_sed;
 
+use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
@@ -10,7 +11,6 @@ use warnings;
 use warnings qw{ FATAL utf8 };
 
 ## CPANM
-use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
@@ -34,13 +34,14 @@ sub gnu_sed {
 
 ##Function : Perl wrapper for writing sed recipe to already open $filehandle or return commands array. Based on sed 4.2.1.
 ##Returns  : "@commands"
-##Arguments: $filehandle       => Filehandle to write to
-##         : $infile_path      => Infile path
-##         : $inplace_edit     => Edit file in place
-##         : $outfile_path     => Outfile path
+##Arguments: $filehandle             => Filehandle to write to
+##         : $infile_path            => Infile path
+##         : $inplace_edit           => Edit file in place
+##         : $script                 => Script to edit infile stream
+##         : $stderrfile_path        => Stderrfile path
 ##         : $stderrfile_path_append => Append stderr info to file
-##         : $stderrfile_path  => Stderrfile path
-##         : $script           => Script to edit infile stream
+##         : $stdoutfile_path        => Stdoutfile path
+##         : $stdoutfile_path_append => Append stdout info to file path
 
     my ($arg_href) = @_;
 
@@ -48,10 +49,11 @@ sub gnu_sed {
     my $filehandle;
     my $infile_path;
     my $inplace_edit;
-    my $outfile_path;
-    my $stderrfile_path;
     my $script;
+    my $stderrfile_path;
     my $stderrfile_path_append;
+    my $stdoutfile_path;
+    my $stdoutfile_path_append;
 
     my $tmpl = {
         filehandle => {
@@ -67,21 +69,25 @@ sub gnu_sed {
             store       => \$inplace_edit,
             strict_type => 1,
         },
-        outfile_path => {
+        script => {
             strict_type => 1,
-            store       => \$outfile_path
+            store       => \$script
         },
         stderrfile_path => {
             strict_type => 1,
             store       => \$stderrfile_path
         },
-        script => {
-            strict_type => 1,
-            store       => \$script
-        },
         stderrfile_path_append => {
             strict_type => 1,
             store       => \$stderrfile_path_append
+        },
+        stdoutfile_path => {
+            strict_type => 1,
+            store       => \$stdoutfile_path
+        },
+        stdoutfile_path_append => {
+            strict_type => 1,
+            store       => \$stdoutfile_path_append
         },
     };
 
@@ -90,27 +96,17 @@ sub gnu_sed {
     ##Stores commands depending on input parameters
     my @commands = q{sed};
 
-    ## Options
     if ($inplace_edit) {
 
         push @commands, q{-i};
     }
-
     if ($script) {
 
         push @commands, $script;
     }
-
-    ## Infile
     if ($infile_path) {
 
         push @commands, $infile_path;
-    }
-
-    ## Outfile
-    if ($outfile_path) {
-
-        push @commands, q{>} . $SPACE . $outfile_path;
     }
 
     push @commands,
@@ -118,9 +114,10 @@ sub gnu_sed {
         {
             stderrfile_path        => $stderrfile_path,
             stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+            stdoutfile_path_append => $stdoutfile_path_append,
         }
       );
-
     unix_write_to_file(
         {
             commands_ref => \@commands,
