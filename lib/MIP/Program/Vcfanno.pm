@@ -36,6 +36,7 @@ sub vcfanno {
 ##          : $filehandle             => Filehandle to write to
 ##          : $infile_path            => Infile path to read from
 ##          : $luafile_path           => Optional path to a file containing custom javascript functions to be used as ops
+##          : $processes              => Processes to use
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -48,6 +49,7 @@ sub vcfanno {
     my $filehandle;
     my $infile_path;
     my $luafile_path;
+    my $processes;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -61,8 +63,13 @@ sub vcfanno {
             strict_type => 1,
         },
         filehandle   => { store => \$filehandle, },
-        infile_path  => { store => \$infile_path, strict_type => 1, },
+        infile_path  => { store => \$infile_path,  strict_type => 1, },
         luafile_path => { store => \$luafile_path, strict_type => 1, },
+        processes    => {
+            allow       => qr/\A \d+ \z/xms,
+            store       => \$processes,
+            strict_type => 1,
+        },
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -94,6 +101,10 @@ sub vcfanno {
     if ($ends) {
 
         push @commands, q{-ends};
+    }
+    if ($processes) {
+
+        push @commands, q{-p} . $SPACE . $processes;
     }
 
     push @commands, $toml_configfile_path;

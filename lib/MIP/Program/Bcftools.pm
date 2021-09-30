@@ -210,6 +210,7 @@ sub bcftools_base {
 ##          : $regions_ref       => Regions to process {REF}
 ##          : $samples_file_path => File of samples to annotate
 ##          : $samples_ref       => Samples to include or exclude if prefixed with "^"
+##          : $targets           => Select target. Logical complement can be requested with "^" prefix
 ##          : $threads           => Extra compression threds in addition to main thread
 
     my ($arg_href) = @_;
@@ -223,6 +224,7 @@ sub bcftools_base {
     my $regions_ref;
     my $samples_file_path;
     my $samples_ref;
+    my $targets;
     my $threads;
 
     my $tmpl = {
@@ -261,6 +263,10 @@ sub bcftools_base {
             store       => \$samples_ref,
             strict_type => 1,
         },
+        targets => {
+            store       => \$targets,
+            strict_type => 1,
+        },
         threads => {
             allow       => [ undef, qr{\A \d+ \z}xms ],
             store       => \$threads,
@@ -296,6 +302,11 @@ sub bcftools_base {
     if ($output_type) {
 
         push @commands, q{--output-type} . $SPACE . $output_type;
+    }
+
+    if ($targets) {
+
+        push @commands, q{--targets} . $SPACE . $targets;
     }
 
     if ($threads) {
@@ -579,7 +590,7 @@ sub bcftools_concat {
 
 sub bcftools_filter {
 
-## Function : Perl wrapper for writing bcftools filter recipe to $filehandle or return commands array. Based on bcftools 1.6.
+## Function : Perl wrapper for writing bcftools filter recipe to $filehandle or return commands array. Based on bcftools 1.13.
 ## Returns  : @commands
 ## Arguments: $filehandle             => Filehandle to write to
 ##          : $exclude                => Exclude sites for which the expression is true
@@ -587,7 +598,7 @@ sub bcftools_filter {
 ##          : $include                => Include only sites for which the expression is true
 ##          : $indel_gap              => Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
 ##          : $infile_path            => Infile paths
-##          : $outfile_path           => Outfile path to write to
+##          : $outfile_path           => Outfile path to write to/view
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $regions_ref            => Regions to process {REF}
 ##          : $samples_file_path      => File of samples to annotate
@@ -597,6 +608,8 @@ sub bcftools_filter {
 ##          : $stdoutfile_path        => Stdoutfile path
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
+##          : $targets                => Select target. Logical complement can be requested with "^" prefix
+##          : $threads                => Extra compression threds in addition to main thread
 
     my ($arg_href) = @_;
 
@@ -616,6 +629,8 @@ sub bcftools_filter {
     my $stdoutfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
+    my $targets;
+    my $threads;
 
     ## Default(s)
     my $output_type;
@@ -690,6 +705,15 @@ sub bcftools_filter {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        targets => {
+            store       => \$targets,
+            strict_type => 1,
+        },
+        threads => {
+            allow       => [ undef, qr{\A \d+ \z}xms ],
+            store       => \$threads,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -706,6 +730,8 @@ sub bcftools_filter {
             regions_ref       => $regions_ref,
             samples_file_path => $samples_file_path,
             samples_ref       => $samples_ref,
+            targets           => $targets,
+            threads           => $threads,
         }
     );
 
@@ -975,7 +1001,7 @@ sub bcftools_merge {
 
 sub bcftools_mpileup {
 
-## Function : Perl wrapper for writing bcftools mpileup recipe to $filehandle. Based on bcftools 1.6 (using htslib 1.6).
+## Function : Perl wrapper for writing bcftools mpileup recipe to $filehandle. Based on bcftools 1.13 (using htslib 1.13).
 ## Returns  : @commands
 ##          : $adjust_mq                        => Adjust mapping quality
 ##          : $filehandle                       => Sbatch filehandle to write to
@@ -991,6 +1017,8 @@ sub bcftools_mpileup {
 ##          : $stderrfile_path                  => Stderrfile path
 ##          : $stderrfile_path_append           => Stderrfile path append
 ##          : $stdoutfile_path                  => Stdoutfile file path to write to
+##          : $targets                          => Select target. Logical complement can be requested with "^" prefix
+##          : $threads                          => Extra compression threds in addition to main thread
 
     my ($arg_href) = @_;
 
@@ -1006,6 +1034,8 @@ sub bcftools_mpileup {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $targets;
+    my $threads;
 
     ## Default(s)
     my $adjust_mq;
@@ -1066,6 +1096,15 @@ sub bcftools_mpileup {
         stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
         stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
+        targets                => {
+            store       => \$targets,
+            strict_type => 1,
+        },
+        threads => {
+            allow       => [ undef, qr{\A \d+ \z}xms ],
+            store       => \$threads,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1082,6 +1121,8 @@ sub bcftools_mpileup {
             output_type       => $output_type,
             samples_file_path => $samples_file_path,
             samples_ref       => $samples_ref,
+            targets           => $targets,
+            threads           => $threads,
         }
     );
 
@@ -2058,6 +2099,7 @@ sub bcftools_view {
 ##          : $stderrfile_path        => Stderr file path to write to
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile file path to write to
+##          : $targets                => Select target. Logical complement can be requested with "^" prefix
 ##          : $threads                => Number of threads to use
 ##          : $types                  => Comma separated variant types to include (snps|indels|mnps|other), based on based on REF,ALT
 
@@ -2084,6 +2126,7 @@ sub bcftools_view {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $targets;
     my $threads;
     my $types;
 
@@ -2143,7 +2186,11 @@ sub bcftools_view {
         stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
         stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
         stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
-        threads                => {
+        targets                => {
+            store       => \$targets,
+            strict_type => 1,
+        },
+        threads => {
             allow       => qr/ \A \d+ \z /xms,
             store       => \$threads,
             strict_type => 1,
@@ -2168,6 +2215,7 @@ sub bcftools_view {
             regions_ref       => $regions_ref,
             samples_file_path => $samples_file_path,
             samples_ref       => $samples_ref,
+            targets           => $targets,
         }
     );
 

@@ -18,6 +18,8 @@ CHAIN_ALL:
     - CHAIN_TCOV:
       - tiddit_coverage
       - chromograph_cov
+    - CHAIN_MTDEL:
+      - mitodel
     - CHAIN_SBCOV:
       - sambamba_depth
     - CHAIN_SMN:
@@ -81,6 +83,7 @@ CHAIN_ALL:
     - CHAIN_UPD:
       - upd_ar
       - chromograph_upd
+    - mt_annotation
     - frequency_filter
     - cadd_ar
     - varianteffectpredictor

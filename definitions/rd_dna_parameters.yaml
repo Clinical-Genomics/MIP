@@ -10,7 +10,7 @@ custom_default_parameters:
     - bwa_mem2_build_reference
     - exome_target_bed
     - infile_dirs
-    - install_config_file
+    - container_config_file
     - pedigree_fam_file
     - picardtools_path
     - qccollect_store_metrics_outfile
@@ -175,6 +175,8 @@ recipe_core_number:
     gzip_fastq: 0
     manta: 36
     markduplicates: 13
+    mitodel: 1
+    mt_annotation: 1
     multiqc_ar: 1
     peddy_ar: 4
     picardtools_collecthsmetrics: 1
@@ -190,7 +192,7 @@ recipe_core_number:
     samtools_subsample_mt: 1
     smncopynumbercaller: 4
     star_caller: 4
-    sv_annotate: 1
+    sv_annotate: 2
     sv_combinevariantcallsets: 1
     sv_rankvariant: 16
     sv_reformat: 1
@@ -202,12 +204,6 @@ recipe_core_number:
     varg_ar: 1
     version_collect_ar: 1
     vcf2cytosure_ar: 0
-  type: mip
-set_recipe_core_number:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
   type: mip
 ## GPU number
 recipe_gpu_number:
@@ -245,6 +241,8 @@ recipe_memory:
     gatk_variantrecalibration: 30
     glnexus_merge: 10
     markduplicates: 10
+    mitodel: 2
+    mt_annotation: 2
     picardtools_collecthsmetrics: 8
     picardtools_collectmultiplemetrics: 8
     plink: 10
@@ -261,12 +259,6 @@ recipe_memory:
     varianteffectpredictor: 7
     vcf2cytosure_ar: 6
     version_collect_ar: 8
-  type: mip
-set_recipe_memory:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
   type: mip
 recipe_time:
   associated_recipe:
@@ -305,6 +297,8 @@ recipe_time:
     gzip_fastq: 2
     manta: 30
     markduplicates: 20
+    mitodel: 2
+    mt_annotation: 1
     multiqc_ar: 5
     peddy_ar: 1
     picardtools_collecthsmetrics: 10
@@ -337,12 +331,6 @@ recipe_time:
     vcf2cytosure_ar: 20
     vcfparser_ar: 5
     version_collect_ar: 1
-  type: mip
-set_recipe_time:
-  associated_recipe:
-    - mip
-  data_type: HASH
-  mandatory: no
   type: mip
 infile_dirs:
   associated_recipe:
@@ -535,7 +523,7 @@ gatk_baserecalibration:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _brecal
   outfile_suffix: ".bam"
   program_executables:
@@ -917,13 +905,13 @@ sv_annotate:
     - bcftools
     - svdb
   type: recipe
-sv_fqa_annotations:
+sv_fqa_vcfanno_filters:
   associated_recipe:
     - sv_annotate
   data_type: ARRAY
   default:
     - GNOMADAF
-    - GNOMADAF_POPMAX
+    - GNOMADAF_popmax
   type: recipe_argument
 sv_bcftools_view_filter:
   associated_recipe:
@@ -1204,7 +1192,7 @@ gatk_haplotypecaller:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _haptc
   outfile_suffix: ".vcf"
   program_executables:
@@ -1275,7 +1263,7 @@ gatk_genotypegvcfs:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _gent
   outfile_suffix: ".vcf"
   program_executables:
@@ -1300,7 +1288,7 @@ gatk_gathervcfs:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: ""
   outfile_suffix: ".vcf"
   program_executables:
@@ -1318,7 +1306,7 @@ gatk_variantrecalibration:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _vrecal
   program_executables:
     - bcftools
@@ -1471,12 +1459,15 @@ gatk_combinevariants_prioritize_caller:
   associated_recipe:
     - gatk_combinevariantcallsets
   data_type: SCALAR
+  default: deepvariant
   mandatory: no
   type: recipe_argument
 gatk_combinevariants_callers_to_combine:
   associated_recipe:
     - gatk_combinevariantcallsets
   data_type: ARRAY
+  default:
+    - glnexus_merge
   mandatory: no
   type: recipe_argument
 prepareforvariantannotationblock:
@@ -1548,6 +1539,36 @@ bcftools_core:
     - bgzip
     - tabix
   type: recipe
+mitodel:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  outfile_suffix: ".txt"
+  file_tag: _mitodel
+  program_executables:
+    - samtools
+  type: recipe
+mt_annotation:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  outfile_suffix: ".vcf.gz"
+  file_tag: _mt
+  program_executables:
+    - hmtnote
+    - bgzip
+    - tabix
+  type: recipe
+mt_offline:
+  associated_recipe:
+    - mt_annotation
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 variant_annotation:
   analysis_mode: case
   associated_recipe:
@@ -2039,6 +2060,12 @@ qccollect_eval_metric_file:
   is_reference: 1
   reference: reference_dir
   type: path
+qccollect_limit_qc_output:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 qccollect_store_metrics_outfile:
   associated_recipe:
     - qccollect_ar

@@ -23,7 +23,6 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
@@ -91,6 +90,10 @@ my %specific_argument = (
     luafile_path => {
         input           => catfile(qw{ a test luafile }),
         expected_output => q{-lua} . $SPACE . catfile(qw{ a test luafile }),
+    },
+    processes => {
+        input           => 2,
+        expected_output => q{-p 2},
     },
     toml_configfile_path => {
         input           => catfile(qw{ a test tomlfile }),

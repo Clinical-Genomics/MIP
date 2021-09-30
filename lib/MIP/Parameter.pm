@@ -901,15 +901,15 @@ sub set_custom_default_to_active_parameter {
 
     use MIP::Active_parameter qw{
       set_default_analysis_type
+      set_default_container_config_file
       set_default_human_genome
       set_default_infile_dirs
-      set_default_install_config_file
       set_default_pedigree_fam_file
       set_default_program_test_file
+      set_default_qccollect_store_metrics_outfile
       set_default_reference_dir
       set_default_reference_info_file
       set_default_store_file
-      set_default_qccollect_store_metrics_outfile
       set_default_temp_directory
       set_default_transcript_annotation
       set_default_uninitialized_parameter
@@ -938,6 +938,13 @@ sub set_custom_default_to_active_parameter {
                 parameter_name        => $parameter_name,
             },
         },
+        container_config_file => {
+            method   => \&set_default_container_config_file,
+            arg_href => {
+                active_parameter_href => $active_parameter_href,
+                parameter_name        => $parameter_name,
+            },
+        },
         exome_target_bed => {
             method   => \&_set_default_capture_kit,
             arg_href => {
@@ -956,13 +963,6 @@ sub set_custom_default_to_active_parameter {
             method   => \&set_default_infile_dirs,
             arg_href => {
                 active_parameter_href => $active_parameter_href,
-            },
-        },
-        install_config_file => {
-            method   => \&set_default_install_config_file,
-            arg_href => {
-                active_parameter_href => $active_parameter_href,
-                parameter_name        => $parameter_name,
             },
         },
         pedigree_fam_file => {

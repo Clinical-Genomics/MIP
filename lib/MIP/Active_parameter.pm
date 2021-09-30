@@ -50,9 +50,9 @@ BEGIN {
       remove_sample_id_from_gender
       set_conda_paths
       set_default_analysis_type
+      set_default_container_config_file
       set_default_human_genome
       set_default_infile_dirs
-      set_default_install_config_file
       set_default_parameter
       set_default_pedigree_fam_file
       set_default_program_test_file
@@ -2215,7 +2215,7 @@ sub set_include_y {
     return;
 }
 
-sub set_default_install_config_file {
+sub set_default_container_config_file {
 
 ## Function : Set default install config file to active parameters
 ## Returns  :
@@ -2242,7 +2242,7 @@ sub set_default_install_config_file {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Build default for mip install config
-    my $path = catfile( $Bin, qw{ templates mip_install_config.yaml } );
+    my $path = catfile( $Bin, qw{ templates mip_container_config.yaml } );
 
     $active_parameter_href->{$parameter_name} = $path;
     return;

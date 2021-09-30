@@ -83,6 +83,7 @@ my $cmds_ref = [
     $sample_info_file,          q{--evaluate_plink_gender},
     q{--store_metrics_outfile}, $store_metrics_outfile,
     q{--outfile},               $outfile,
+    q{--limit_qc_output}
 ];
 
 my %process_return = child_process(

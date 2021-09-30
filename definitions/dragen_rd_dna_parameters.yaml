@@ -8,7 +8,7 @@ custom_default_parameters:
     - conda_path
     - exome_target_bed
     - infile_dirs
-    - install_config_file
+    - container_config_file
     - pedigree_fam_file
     - picardtools_path
     - reference_dir
@@ -194,13 +194,13 @@ sv_annotate:
     - bcftools
     - svdb
   type: recipe
-sv_fqa_annotations:
+sv_fqa_vcfanno_filters:
   associated_recipe:
     - sv_annotate
   data_type: ARRAY
   default:
     - GNOMADAF
-    - GNOMADAF_POPMAX
+    - GNOMADAF_popmax
   type: recipe_argument
 sv_bcftools_view_filter:
   associated_recipe:

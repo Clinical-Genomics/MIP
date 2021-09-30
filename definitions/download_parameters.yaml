@@ -124,7 +124,7 @@ custom_default_parameters:
     - mip
   data_type: ARRAY
   default:
-    - install_config_file
+    - container_config_file
     - reference_dir
     - temp_directory
   type: mip
@@ -240,6 +240,24 @@ gnomad:
     - tabix
     - vcfanno
   type: recipe
+gnomad_chrsplit:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  program_executables:
+    - bcftools
+    - bgzip
+    - tabix
+  type: recipe
+gnomad_mt:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 gnomad_pli_per_gene:
   analysis_mode: case
   associated_recipe:
@@ -263,7 +281,7 @@ human_reference:
   program_executables:
     - samtools
   type: recipe
-install_config_file:
+container_config_file:
   associated_recipe:
     - mip
   data_type: SCALAR
@@ -371,6 +389,8 @@ recipe_core_number:
     genomic_superdups: 1
     giab: 1
     gnomad: 1
+    gnomad_chrsplit: 13
+    gnomad_mt: 1
     gnomad_pli_per_gene: 1
     hapmap: 1
     human_reference: 1
@@ -423,6 +443,8 @@ recipe_time:
     genomic_superdups: 1
     giab: 1
     gnomad: 25
+    gnomad_chrsplit: 32
+    gnomad_mt: 1
     gnomad_pli_per_gene: 1
     hapmap: 1
     human_reference: 1
