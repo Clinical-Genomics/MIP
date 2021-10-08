@@ -103,11 +103,11 @@ sub define_qc_metrics_to_store {
     my %store_metrics = (
         AT_DROPOUT => {
             analysis_mode => q{sample},
-            recipe_name   => q{picardtools_collecthsmetrics},
+            recipe_name   => q{collecthsmetrics},
         },
         FOLD_80_BASE_PENALTY => {
             analysis_mode => q{sample},
-            recipe_name   => q{picardtools_collecthsmetrics},
+            recipe_name   => q{collecthsmetrics},
         },
         fraction_duplicates => {
             analysis_mode => q{sample},
@@ -115,7 +115,7 @@ sub define_qc_metrics_to_store {
         },
         GC_DROPOUT => {
             analysis_mode => q{sample},
-            recipe_name   => q{picardtools_collecthsmetrics},
+            recipe_name   => q{collecthsmetrics},
         },
         gender => {
             analysis_mode => q{sample},
@@ -147,27 +147,27 @@ sub define_qc_metrics_to_store {
         },
         PCT_OFF_BAIT => {
             analysis_mode => q{sample},
-            recipe_name   => q{picardtools_collecthsmetrics},
+            recipe_name   => q{collecthsmetrics},
         },
         PCT_TARGET_BASES_10X => {
             analysis_mode => q{sample},
-            recipe_name   => q{picardtools_collecthsmetrics},
+            recipe_name   => q{collecthsmetrics},
         },
         PCT_TARGET_BASES_20X => {
             analysis_mode => q{sample},
-            recipe_name   => q{picardtools_collecthsmetrics},
+            recipe_name   => q{collecthsmetrics},
         },
         PCT_TARGET_BASES_30x => {
             analysis_mode => q{sample},
-            recipe_name   => q{picardtools_collecthsmetrics},
+            recipe_name   => q{collecthsmetrics},
         },
         PCT_TARGET_BASES_50x => {
             analysis_mode => q{sample},
-            recipe_name   => q{picardtools_collecthsmetrics},
+            recipe_name   => q{collecthsmetrics},
         },
         PCT_TARGET_BASES_100x => {
             analysis_mode => q{sample},
-            recipe_name   => q{picardtools_collecthsmetrics},
+            recipe_name   => q{collecthsmetrics},
         },
         percentage_mapped_reads => {
             analysis_mode => q{sample},
