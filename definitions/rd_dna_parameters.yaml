@@ -1670,7 +1670,7 @@ fqf_bcftools_filter_threshold:
   associated_recipe:
     - frequency_filter
   data_type: SCALAR
-  default: 0.40
+  default: 0.70
   type: recipe_argument
 cadd_ar:
   analysis_mode: case
