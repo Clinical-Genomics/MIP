@@ -38,7 +38,7 @@ BEGIN {
     our $VERSION = q{2.1.10};
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ mip_qccollect };
+    our @EXPORT_OK = qw{ mip_qccollect parse_limit_qc_output };
 }
 
 sub mip_qccollect {

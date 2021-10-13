@@ -20,7 +20,7 @@ use Modern::Perl qw{ 2018 };
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
-use MIP::Test::Fixtures qw{ test_mip_hashes };
+use MIP::Test::Fixtures qw{ test_log test_mip_hashes };
 
 BEGIN {
 
@@ -30,7 +30,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Environment::Container} => [qw{ parse_containers }],
-        q{MIP::Test::Fixtures}         => [qw{ test_mip_hashes }],
+        q{MIP::Test::Fixtures}         => [qw{ test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -45,6 +45,8 @@ diag(   q{Test parse_containers from Container.pm}
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+test_log( {} );
 
 my %active_parameter = test_mip_hashes(
     {
