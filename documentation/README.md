@@ -29,7 +29,7 @@ PMID:25495354
 
 ## Overview
 
-**N.B. MIP is being rewritten in NextFlow as a part of the [nf-core](https://nf-co.re/) project. This repo will mainly receive bugfixes as we are focusing our resources on the new pipeline.**  
+**MIP is being rewritten in NextFlow as a part of the [nf-core](https://nf-co.re/) project. This repo will mainly receive bugfixes as we are focusing our resources on the new pipeline.**  
 **You can follow the progress here :point_right: [raredisease](https://github.com/nf-core/raredisease).**
 
 MIP performs whole genome or target region analysis of sequenced single-end and/or paired-end reads from the Illumina platform in fastq\(.gz\) format to generate annotated ranked potential disease causing variants.
