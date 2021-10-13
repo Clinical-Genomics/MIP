@@ -14,6 +14,13 @@ MIP enables identification of potential disease causing variants from sequencing
 ## Citing MIP
 
 ```
+Integration of whole genome sequencing into a healthcare setting: high diagnostic rates across multiple clinical entities in 3219 rare disease patients
+Stranneheim H, Lagerstedt-Robinson K, Magnusson M, Kvarnung M, Nilsson D, Lesko N, Engvall M, Anderlid BM, Arnell H, Johansson CB, Barbaro M, Björck E, Bruhn H, Eisfeldt J, Freyer C, Grigelioniene G, Gustavsson P, Hammarsjö A, Hellström-Pigg M, Iwarsson E, Jemt A, Laaksonen M, Enoksson SL, Malmgren H, Naess K, Nordenskjöld M, Oscarson M, Pettersson M, Rasi C, Rosenbaum A, Sahlin E, Sardh E, Stödberg T, Tesi B, Tham E, Thonberg H, Töhönen V, von Döbeln U, Vassiliou D, Vonlanthen S, Wikström AC, Wincent J, Winqvist O, Wredenberg A, Ygberg S, Zetterström RH, Marits P, Soller MJ, Nordgren A, Wirta V, Lindstrand A, Wedell A.
+Genome Med. 2021 Mar 17;13(1):40. doi: 10.1186/s13073-021-00855-5.
+PMID: 33726816; PMCID: PMC7968334.
+```
+
+```
 Rapid pulsed whole genome sequencing for comprehensive acute diagnostics of inborn errors of metabolism
 Stranneheim H, Engvall M, Naess K, Lesko N, Larsson P, Dahlberg M, Andeer R, Wredenberg A, Freyer C, Barbaro M, Bruhn H, Emahazion T, Magnusson M, Wibom R, Zetterström RH, Wirta V, von Döbeln U, Wedell A.
 BMC Genomics. 2014 Dec 11;15(1):1090. doi: 10.1186/1471-2164-15-1090.
@@ -21,6 +28,9 @@ PMID:25495354
 ```
 
 ## Overview
+
+**N.B. MIP is being rewritten in NextFlow as a part of the [nf-core](https://nf-co.re/) project. This repo will mainly receive bugfixes as we are focusing our resources on the new pipeline.**  
+**You can follow the progress here :point_right: [raredisease](https://github.com/nf-core/raredisease).**
 
 MIP performs whole genome or target region analysis of sequenced single-end and/or paired-end reads from the Illumina platform in fastq\(.gz\) format to generate annotated ranked potential disease causing variants.
 
