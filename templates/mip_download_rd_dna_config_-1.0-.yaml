@@ -27,7 +27,7 @@ reference:
     - v1.0
   clinvar:
     - 20210415
-    - 20210919
+    - 20211010
   dbnsfp:
     - 3.5a
     - 4.0b2a
@@ -323,25 +323,16 @@ reference_feature:
         outfile_index: grch37_clinvar_-20210415-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
-      20210919:
-        file: clinvar_20210919.vcf.gz
-        file_check: clinvar_20210919.vcf.gz.md5
-        file_index: clinvar_20210919.vcf.gz.tbi
-        outfile: grch37_clinvar_-20210919-.vcf.gz
-        outfile_check: grch37_clinvar_-20210919-.vcf.gz.md5
-        outfile_index: grch37_clinvar_-20210919-.vcf.gz.tbi
+      20211010:
+        file: clinvar_20211010.vcf.gz
+        file_check: clinvar_20211010.vcf.gz.md5
+        file_index: clinvar_20211010.vcf.gz.tbi
+        outfile: grch37_clinvar_-20211010-.vcf.gz
+        outfile_check: grch37_clinvar_-20211010-.vcf.gz.md5
+        outfile_index: grch37_clinvar_-20211010-.vcf.gz.tbi
         outfile_check_method: md5sum
-        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly
+        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
     grch38:
-      20200905:
-        file: clinvar_20200905.vcf.gz
-        file_check: clinvar_20200905.vcf.gz.md5
-        file_index: clinvar_20200905.vcf.gz.tbi
-        outfile: grch38_clinvar_-20200905-.vcf.gz
-        outfile_check: grch38_clinvar_-20200905-.vcf.gz.md5
-        outfile_index: grch38_clinvar_-20200905-.vcf.gz.tbi
-        outfile_check_method: md5sum
-        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/archive_2.0/2020/
       20210415:
         file: clinvar_20210415.vcf.gz
         file_check: clinvar_20210415.vcf.gz.md5
@@ -349,6 +340,15 @@ reference_feature:
         outfile: grch38_clinvar_-20210415-.vcf.gz
         outfile_check: grch38_clinvar_-20210415-.vcf.gz.md5
         outfile_index: grch38_clinvar_-20210415-.vcf.gz.tbi
+        outfile_check_method: md5sum
+        url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
+      20211010:
+        file: clinvar_20211010.vcf.gz
+        file_check: clinvar_20211010.vcf.gz.md5
+        file_index: clinvar_20211010.vcf.gz.tbi
+        outfile: grch38_clinvar_-20211010-.vcf.gz
+        outfile_check: grch38_clinvar_-20211010-.vcf.gz.md5
+        outfile_index: grch38_clinvar_-20211010-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
   dbnsfp:
