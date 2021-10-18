@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catdir catfile };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use utf8;
@@ -308,7 +308,7 @@ sub analysis_plink {
             filehandle     => $filehandle,
             max_mem        => $sort_memory . q{G},
             output_type    => q{v},
-            temp_directory => $temp_directory,
+            temp_directory => catdir( $temp_directory, q{bcftools_sort} ),
         }
     );
     print {$filehandle} $PIPE . $SPACE;

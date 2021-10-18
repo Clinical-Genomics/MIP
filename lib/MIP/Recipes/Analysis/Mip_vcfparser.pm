@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Spec::Functions qw{ catfile };
+use File::Spec::Functions qw{ catdir catfile };
 use List::Util qw{ any };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -639,13 +639,15 @@ sub analysis_mip_vcfparser_panel {
 
     say {$filehandle} q{## Prepare file for vcfparser};
     my $bcftools_outfile_path = catfile( $outdir_path, $infile_name_prefix . q{.vcf.gz} );
+    my $sort_memory           = $recipe{memory} - 1;
     bcftools_sort(
         {
             filehandle     => $filehandle,
             infile_path    => $infile_path,
+            max_mem        => $sort_memory . q{G},
             outfile_path   => $bcftools_outfile_path,
             output_type    => q{z},
-            temp_directory => $temp_directory,
+            temp_directory => catdir( $temp_directory, q{bcftools_sort} ),
         }
     );
     say {$filehandle} $NEWLINE;
