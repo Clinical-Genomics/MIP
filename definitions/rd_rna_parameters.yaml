@@ -142,14 +142,14 @@ recipe_time:
     bcftools_norm: 2
     blobfish: 1
     bootstrapann: 2
-    build_sj_tracks: 1
+    build_sj_tracks: 2
     dna_vcf_reformat: 1
     fastqc_ar: 1
-    fusion_report: 1
-    gatk_asereadcounter: 2
+    fusion_report: 2
+    gatk_asereadcounter: 3
     gatk_baserecalibration: 5
     gatk_haplotypecaller: 6
-    gatk_splitncigarreads: 8
+    gatk_splitncigarreads: 12
     gatk_variantfiltration: 1
     genebody_coverage: 3
     gffcompare_ar: 1
@@ -160,14 +160,14 @@ recipe_time:
     merge_fusion_reports: 1
     picardtools_collectrnaseqmetrics: 4
     picardtools_mergesamfiles: 2
-    preseq_ar: 2
+    preseq_ar: 3
     qccollect_ar: 1
     rseqc: 3
     sacct: 1
     salmon_quant: 5
     star_aln: 8
     star_fusion: 16
-    stringtie_ar: 2
+    stringtie_ar: 4
     svdb_merge_fusion: 1
     trim_galore_ar: 6
     varianteffectpredictor: 4
@@ -180,7 +180,7 @@ recipe_memory:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    build_sj_tracks: 8
+    build_sj_tracks: 12
     dna_vcf_reformat: 2
     fusion_report: 15
     gatk_asereadcounter: 25
