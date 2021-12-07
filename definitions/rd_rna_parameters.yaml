@@ -149,15 +149,15 @@ recipe_time:
     gatk_asereadcounter: 3
     gatk_baserecalibration: 5
     gatk_haplotypecaller: 6
-    gatk_splitncigarreads: 12
+    gatk_splitncigarreads: 16
     gatk_variantfiltration: 1
     genebody_coverage: 3
     gffcompare_ar: 1
     gzip_fastq: 2
     markduplicates: 8
     megafusion_ar: 1
-    multiqc_ar: 1
     merge_fusion_reports: 1
+    multiqc_ar: 1
     picardtools_collectrnaseqmetrics: 4
     picardtools_mergesamfiles: 2
     preseq_ar: 3
@@ -165,7 +165,7 @@ recipe_time:
     rseqc: 3
     sacct: 1
     salmon_quant: 5
-    star_aln: 8
+    star_aln: 12
     star_fusion: 16
     stringtie_ar: 4
     svdb_merge_fusion: 1
@@ -223,6 +223,7 @@ recipe_core_number:
     gffcompare_ar: 1
     gzip_fastq: 0
     markduplicates: 13
+    megafusion_ar: 1
     merge_fusion_reports: 1
     multiqc_ar: 1
     picardtools_collectrnaseqmetrics: 1
@@ -236,7 +237,6 @@ recipe_core_number:
     star_fusion: 36
     stringtie_ar: 36
     svdb_merge_fusion: 1
-    megafusion_ar: 1
     varianteffectpredictor: 1
     vcfparser_ar: 1
     version_collect_ar: 1
