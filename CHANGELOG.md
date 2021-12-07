@@ -15,7 +15,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Tools
 
 cyrius v1.1 -> v1.1.1
-deepvariant 1.1.0-gpu -> 1.2.0-gpu
 deeptrio 1.1.0-gpu -> 1.2.0-gpu
 gatk 4.2.0.0 -> 4.2.2.0
 glnexus v1.3.1 -> v1.4.1
