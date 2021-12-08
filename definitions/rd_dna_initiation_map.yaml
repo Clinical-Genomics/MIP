@@ -54,6 +54,9 @@ CHAIN_ALL:
     - PARALLEL:
       - CHAIN_DEEPVAR:
         - deepvariant
+        - gatk_collectreadcounts
+        - gatk_denoisereadcounts
+        - gens_generatedata
         - deeptrio
         - glnexus_merge
       - GATK_HAPLOTYPECALLER:

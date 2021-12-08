@@ -58,6 +58,8 @@ gatk_logging_level:
   associated_recipe:
     - gatk_baserecalibration
     - gatk_combinevariantcallsets
+    - gatk_collectreadcounts
+    - gatk_denoisereadcounts
     - gatk_gathervcfs
     - gatk_genotypegvcfs
     - gatk_haplotypecaller
@@ -137,6 +139,34 @@ human_genome_reference_file_endings:
   mandatory: no
   reference: reference_dir
   type: path
+gens_intervals_ref:
+  associated_recipe:
+    - gatk_collectreadcounts
+  data_type: SCALAR
+  default: data/targets_preprocessed_100bp.interval_list
+  exists_check: file
+  type: path
+gens_panel_of_normals_female_ref:
+  associated_recipe:
+    - gatk_denoisereadcounts
+  data_type: SCALAR
+  default: data/pons/female/female_pon_100bp.hdf5
+  exists_check: file
+  type: path
+gens_panel_of_normals_male_ref:
+  associated_recipe:
+    - gatk_denoisereadcounts
+  data_type: SCALAR
+  default: data/pons/male/male_pon_100bp.hdf5
+  exists_check: file
+  type: path
+gens_gnomad_positions_ref:
+  associated_recipe:
+    - gens_generatedata
+  data_type: SCALAR
+  default: data/gnomad.genomes.r2.1.1.sites.5percent.pos.txt
+  exists_check: file
+  type: path
 #### Bash
 recipe_core_number:
   associated_recipe:
@@ -165,12 +195,15 @@ recipe_core_number:
     frequency_filter: 13
     gatk_baserecalibration: 13
     gatk_combinevariantcallsets: 1
+    gatk_collectreadcounts: 1
+    gatk_denoisereadcounts: 1
     gatk_gathervcfs: 1
     gatk_genotypegvcfs: 1
     gatk_haplotypecaller: 16
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
     gatk_variantrecalibration: 1
+    gens_generatedata: 1
     glnexus_merge: 16
     gzip_fastq: 0
     manta: 36
@@ -236,9 +269,12 @@ recipe_memory:
     expansionhunter: 2
     gatk_baserecalibration: 10
     gatk_combinevariantcallsets: 25
+    gatk_collectreadcounts: 120
+    gatk_denoisereadcounts: 120
     gatk_gathervcfs: 7
     gatk_genotypegvcfs: 12
     gatk_variantrecalibration: 30
+    gens_generatedata: 7
     glnexus_merge: 10
     markduplicates: 10
     mitodel: 2
@@ -287,12 +323,15 @@ recipe_time:
     frequency_filter: 2
     gatk_baserecalibration: 20
     gatk_combinevariantcallsets: 2
+    gatk_collectreadcounts: 1
+    gatk_denoisereadcounts: 1
     gatk_genotypegvcfs: 10
     gatk_gathervcfs: 2
     gatk_haplotypecaller: 30
     gatk_variantevalall: 2
     gatk_variantevalexome: 2
     gatk_variantrecalibration: 10
+    gens_generatedata: 4
     glnexus_merge: 5
     gzip_fastq: 2
     manta: 30
@@ -1186,6 +1225,48 @@ sv_reformat_remove_genes_file:
   mandatory: no
   reference: reference_dir
   type: path
+## GATK CollectReadCounts
+gatk_collectreadcounts:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".hdf5"
+  program_executables:
+    - gatk
+  type: recipe
+## GATK DenoiseReadCounts
+gatk_denoisereadcounts:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".tsv"
+  program_executables:
+    - gatk
+  type: recipe
+## gens_generate_data.pl
+gens_generatedata:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".bed.gz"
+  program_executables:
+    - generate_gens_data.pl
+  type: recipe
+gens_generatedata_vcf_source_recipe:
+  associated_recipe:
+    - gens_generatedata
+  data_type: SCALAR
+  default: glnexus_merge
+  type: recipe_argument
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample

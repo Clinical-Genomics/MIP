@@ -37,6 +37,8 @@ BEGIN {
       gatk_combinevariants
       gatk_common_options
       gatk_concatenate_variants
+      gatk_collectreadcounts
+      gatk_denoisereadcounts
       gatk_gatherbqsrreports
       gatk_gathervcfscloud
       gatk_genomicsdbimport
@@ -1651,6 +1653,301 @@ sub gatk_concatenate_variants {
     }
     say {$filehandle} $NEWLINE;
     return;
+}
+
+sub gatk_collectreadcounts {
+
+## Function : Perl wrapper for writing GATK collectreadcounts recipe to $filehandle. Based on GATK 4.2.0.0.
+## Returns  : @commands
+## Arguments: $filehandle                                    => Sbatch filehandle to write to
+##          : $infile_path                                   => Infile paths
+##          : $intervals_ref                                 => One or more genomic intervals over which to operate {REF}
+##          : $java_use_large_pages                          => Use java large pages
+##          : $memory_allocation                             => Memory allocation to run Gatk
+##          : $outfile_path                                  => Outfile path
+##          : $read_filters_ref                              => Filters to apply to reads before analysis {REF}
+##          : $stderrfile_path                               => Stderrfile path
+##          : $temp_directory                                => Redirect tmp files to java temp
+##          : $verbosity                                     => Set the minimum level of logging
+##          : $xargs_mode                                    => Set if the program will be executed via xargs
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $intervals_ref;
+    my $memory_allocation;
+    my $outfile_path;
+    my $read_filters_ref;
+    my $stderrfile_path;
+    my $temp_directory;
+
+    ## Default(s)
+    my $java_use_large_pages;
+    my $verbosity;
+    my $xargs_mode;
+
+    my $tmpl = {
+        filehandle => {
+            store => \$filehandle,
+        },
+        infile_path => {
+            allow       => qr/ (?: bam | sam | cram )$ /xms,
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        intervals_ref => {
+            defined     => 1,
+            required    => 1,
+            store       => \$intervals_ref,
+            strict_type => 1,
+        },
+        java_use_large_pages => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => {
+            store       => \$memory_allocation,
+            strict_type => 1,
+        },
+        outfile_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_path,
+            strict_type => 1,
+        },
+        read_filters_ref => {
+            default     => [],
+            store       => \$read_filters_ref,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+        verbosity => {
+            allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$verbosity,
+            strict_type => 1,
+        },
+        xargs_mode => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$xargs_mode,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
+
+    gatk_java_options(
+        {
+            commands_ref         => \@commands,
+            java_use_large_pages => $java_use_large_pages,
+            memory_allocation    => $memory_allocation,
+            xargs_mode           => $xargs_mode,
+        }
+    );
+
+    ## Add tool command
+    push @commands, q{CollectReadCounts};
+
+    push @commands, q{--input} . $SPACE . $infile_path;
+
+    gatk_common_options(
+        {
+            commands_ref       => \@commands,
+            read_filters_ref   => $read_filters_ref,
+            temp_directory     => $temp_directory,
+            verbosity          => $verbosity,
+        }
+    );
+
+    push @commands, q{--intervals} . $SPACE . $intervals_ref;
+
+    push @commands, q{--interval-merging-rule OVERLAPPING_ONLY};
+
+    push @commands, q{--output} . $SPACE . $outfile_path;
+
+    push @commands,
+    unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+        }
+    );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
+}
+
+
+
+sub gatk_denoisereadcounts {
+
+## Function : Perl wrapper for writing GATK denoisereadcounts recipe to $filehandle. Based on GATK 4.2.0.0.
+## Returns  : @commands
+## Arguments: $filehandle                                    => Sbatch filehandle to write to
+##          : $infile_path                                   => Infile paths
+##          : $java_use_large_pages                          => Use java large pages
+##          : $memory_allocation                             => Memory allocation to run Gatk
+##          : $outfile_denoised_path                         => Outfile path
+##          : $outfile_standardized_path                     => Outfile path
+##          : $panel_of_normals_ref                          => 
+##          : $read_filters_ref                              => Filters to apply to reads before analysis {REF}
+##          : $stderrfile_path                               => Stderrfile path
+##          : $temp_directory                                => Redirect tmp files to java temp
+##          : $verbosity                                     => Set the minimum level of logging
+##          : $xargs_mode                                    => Set if the program will be executed via xargs
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $infile_path;
+    my $memory_allocation;
+    my $outfile_denoised_path;
+    my $outfile_standardized_path;
+    my $panel_of_normals_ref;
+    my $read_filters_ref;
+    my $stderrfile_path;
+    my $temp_directory;
+
+    ## Default(s)
+    my $java_use_large_pages;
+    my $verbosity;
+    my $xargs_mode;
+
+    my $tmpl = {
+        filehandle => {
+            store => \$filehandle,
+        },
+        infile_path => {
+            allow       => qr/ (?: hdf5 )$ /xms,
+            defined     => 1,
+            required    => 1,
+            store       => \$infile_path,
+            strict_type => 1,
+        },
+        java_use_large_pages => {
+            allow       => [ 0, 1 ],
+            default     => 0,
+            store       => \$java_use_large_pages,
+            strict_type => 1,
+        },
+        memory_allocation => {
+            store       => \$memory_allocation,
+            strict_type => 1,
+        },
+        outfile_denoised_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_denoised_path,
+            strict_type => 1,
+        },
+        outfile_standardized_path => {
+            defined     => 1,
+            required    => 1,
+            store       => \$outfile_standardized_path,
+            strict_type => 1,
+        },
+        panel_of_normals_ref => {
+            defined     => 1,
+            required    => 1,
+            store       => \$panel_of_normals_ref,
+            strict_type => 1,
+        },
+        read_filters_ref => {
+            default     => [],
+            store       => \$read_filters_ref,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+        verbosity => {
+            allow       => [qw{ INFO ERROR FATAL }],
+            default     => q{INFO},
+            store       => \$verbosity,
+            strict_type => 1,
+        },
+        xargs_mode => {
+            allow       => [ undef, 0, 1 ],
+            default     => 0,
+            store       => \$xargs_mode,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
+
+    gatk_java_options(
+        {
+            commands_ref         => \@commands,
+            java_use_large_pages => $java_use_large_pages,
+            memory_allocation    => $memory_allocation,
+            xargs_mode           => $xargs_mode,
+        }
+    );
+
+    ## Add tool command
+    push @commands, q{DenoiseReadCounts};
+
+    push @commands, q{--input} . $SPACE . $infile_path;
+
+    push @commands, q{--count-panel-of-normals} . $SPACE . $panel_of_normals_ref;
+
+    gatk_common_options(
+        {
+            commands_ref       => \@commands,
+            read_filters_ref   => $read_filters_ref,
+            temp_directory     => $temp_directory,
+            verbosity          => $verbosity,
+        }
+    );
+
+    push @commands, q{--standardized-copy-ratios} . $SPACE . $outfile_standardized_path;
+    push @commands, q{--denoised-copy-ratios} . $SPACE . $outfile_denoised_path;
+
+    push @commands,
+    unix_standard_streams(
+        {
+            stderrfile_path => $stderrfile_path,
+        }
+    );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+        }
+    );
+    return @commands;
 }
 
 sub gatk_gatherbqsrreports {
