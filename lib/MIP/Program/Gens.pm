@@ -38,8 +38,6 @@ sub gens_generatedata {
 ##          : $infile_vcf_path                               => Infile path
 ##          : $outfile_prefix                                => Outfile prefix
 ##          : $stderrfile_path                               => Stderrfile path
-##          : $verbosity                                     => Set the minimum level of logging
-##          : $xargs_mode                                    => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
@@ -50,10 +48,6 @@ sub gens_generatedata {
     my $infile_vcf_path;
     my $outfile_prefix;
     my $stderrfile_path;
-
-    ## Default(s)
-    my $verbosity;
-    my $xargs_mode;
 
     my $tmpl = {
         filehandle => {
@@ -87,18 +81,6 @@ sub gens_generatedata {
         },
         stderrfile_path => {
             store       => \$stderrfile_path,
-            strict_type => 1,
-        },
-        verbosity => {
-            allow       => [qw{ INFO ERROR FATAL }],
-            default     => q{INFO},
-            store       => \$verbosity,
-            strict_type => 1,
-        },
-        xargs_mode => {
-            allow       => [ undef, 0, 1 ],
-            default     => 0,
-            store       => \$xargs_mode,
             strict_type => 1,
         },
     };

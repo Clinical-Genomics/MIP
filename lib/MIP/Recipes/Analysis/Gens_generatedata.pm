@@ -44,7 +44,6 @@ sub analysis_gens_generatedata {
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
-##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
@@ -61,7 +60,6 @@ sub analysis_gens_generatedata {
     my $case_id;
     my $profile_base_command;
     my $temp_directory;
-    my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
@@ -126,12 +124,6 @@ sub analysis_gens_generatedata {
             store       => \$temp_directory,
             strict_type => 1,
         },
-        xargs_file_counter => {
-            allow       => qr{ \A\d+\z }xsm,
-            default     => 0,
-            store       => \$xargs_file_counter,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -142,7 +134,6 @@ sub analysis_gens_generatedata {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gens qw{ gens_generatedata };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -180,8 +171,7 @@ sub analysis_gens_generatedata {
     my $infile_vcf_suffix      = $vcf_io{out}{file_suffixes}[0];
     my $infile_vcf_path        = $infile_vcf_path_prefix . $infile_vcf_suffix;
 
-    my $analysis_type      = $active_parameter_href->{analysis_type}{$sample_id};
-    my $xargs_file_path_prefix;
+    my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
 
     ## Get module parameters
     my %recipe = parse_recipe_prerequisites(
@@ -191,7 +181,6 @@ sub analysis_gens_generatedata {
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe{core_number};
 
     ## Outpaths
     ## Set and get the io files per chain, id and stream
@@ -209,7 +198,6 @@ sub analysis_gens_generatedata {
             }
         )
     );
-
     my $outfile_path_prefix = $io{out}{file_path_prefix};
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_suffix      = $io{out}{file_suffix};
@@ -219,13 +207,12 @@ sub analysis_gens_generatedata {
     ## Filehandles
     # Create anonymous filehandle
     my $filehandle      = IO::Handle->new();
-    my $xargsfilehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
+            core_number           => $recipe{core_number},
             directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
@@ -242,35 +229,20 @@ sub analysis_gens_generatedata {
     ## Gens generatedata
     say {$filehandle} q{## Gens generatedata};
 
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            core_number        => $core_number,
-            filehandle         => $filehandle,
-            file_path          => $recipe_file_path,
-            recipe_info_path   => $recipe_info_path,
-            xargsfilehandle    => $xargsfilehandle,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
     ## generate_gens_data.pl
-    my $stderrfile_path = $xargs_file_path_prefix . $DOT . q{stderr.txt};
+    my $stderrfile_path = $recipe_file_path . $DOT . q{stderr.txt};
     gens_generatedata(
         {
-            filehandle                  => $xargsfilehandle,
+            filehandle                  => $filehandle,
             gnomad_positions_ref        => $active_parameter_href->{gens_gnomad_positions_ref},
             infile_tsv_path             => $infile_tsv_path,
             infile_vcf_path             => $infile_vcf_path,
             outfile_prefix              => $outfile_name_prefix,
             stderrfile_path             => $stderrfile_path,
-            verbosity                   => $active_parameter_href->{gatk_logging_level},
-            xargs_mode                  => 1,
         }
     );
 
     close $filehandle;
-    close $xargsfilehandle;
 
     ## Set input files for next module
     set_io_files(

@@ -48,7 +48,6 @@ sub analysis_gatk_collectreadcounts {
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
 ##          : $temp_directory          => Temporary directory
-##          : $xargs_file_counter      => The xargs file counter
 
     my ($arg_href) = @_;
 
@@ -65,7 +64,6 @@ sub analysis_gatk_collectreadcounts {
     my $case_id;
     my $profile_base_command;
     my $temp_directory;
-    my $xargs_file_counter;
 
     my $tmpl = {
         active_parameter_href => {
@@ -130,12 +128,6 @@ sub analysis_gatk_collectreadcounts {
             store       => \$temp_directory,
             strict_type => 1,
         },
-        xargs_file_counter => {
-            allow       => qr{ \A\d+\z }xsm,
-            default     => 0,
-            store       => \$xargs_file_counter,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -146,7 +138,6 @@ sub analysis_gatk_collectreadcounts {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_collectreadcounts };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
@@ -167,22 +158,11 @@ sub analysis_gatk_collectreadcounts {
         }
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
-
-    my %bam_io = get_io_files(
-        {
-            id             => $sample_id,
-            file_info_href => $file_info_href,
-            parameter_href => $parameter_href,
-            recipe_name    => q{markduplicates},
-            stream         => q{out},
-        }
-    );
-    my $infile_path_prefix = $bam_io{out}{file_path_prefix};
-    my $infile_suffix      = $bam_io{out}{file_suffixes}[0];
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_suffix      = $io{in}{file_suffix};
     my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-    my $analysis_type      = $active_parameter_href->{analysis_type}{$sample_id};
-    my $xargs_file_path_prefix;
+    my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
 
     ## Get module parameters
     my %recipe = parse_recipe_prerequisites(
@@ -192,7 +172,6 @@ sub analysis_gatk_collectreadcounts {
             recipe_name           => $recipe_name,
         }
     );
-    my $core_number = $recipe{core_number};
 
     ## Outpaths
     ## Set and get the io files per chain, id and stream
@@ -210,21 +189,19 @@ sub analysis_gatk_collectreadcounts {
             }
         )
     );
-
     my $outfile_name_prefix = $io{out}{file_name_prefix};
     my $outfile_path        = $io{out}{file_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
 
     ## Filehandles
     # Create anonymous filehandle
-    my $filehandle      = IO::Handle->new();
-    my $xargsfilehandle = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
+            core_number           => $recipe{core_number},
             directory_id          => $sample_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
@@ -241,34 +218,11 @@ sub analysis_gatk_collectreadcounts {
     ## GATK CollectReadCounts
     say {$filehandle} q{## GATK CollectReadCounts};
 
-    my $process_memory_allocation = $JAVA_MEMORY_ALLOCATION + $JAVA_GUEST_OS_MEMORY;
-
-    # Constrain parallelization to match available memory
-    my $parallel_processes = get_parallel_processes(
-        {
-            core_number               => $core_number,
-            process_memory_allocation => $process_memory_allocation,
-            recipe_memory_allocation  => $recipe{memory},
-        }
-    );
-
-    ## Create file commands for xargs
-    ( $xargs_file_counter, $xargs_file_path_prefix ) = xargs_command(
-        {
-            core_number        => $parallel_processes,
-            filehandle         => $filehandle,
-            file_path          => $recipe_file_path,
-            recipe_info_path   => $recipe_info_path,
-            xargsfilehandle    => $xargsfilehandle,
-            xargs_file_counter => $xargs_file_counter,
-        }
-    );
-
     ## GATK CollectReadCounts
-    my $stderrfile_path = $xargs_file_path_prefix . $DOT . q{stderr.txt};
+    my $stderrfile_path = $recipe_file_path . $DOT . q{stderr.txt};
     gatk_collectreadcounts(
         {
-            filehandle              => $xargsfilehandle,
+            filehandle              => $filehandle,
             infile_path             => $infile_path,
             intervals_ref           => $active_parameter_href->{gens_intervals_ref},
             java_use_large_pages    => $active_parameter_href->{java_use_large_pages},
@@ -277,12 +231,11 @@ sub analysis_gatk_collectreadcounts {
             stderrfile_path         => $stderrfile_path,
             temp_directory          => $temp_directory,
             verbosity               => $active_parameter_href->{gatk_logging_level},
-            xargs_mode              => 1,
+            xargs_mode              => 0,
         }
     );
 
     close $filehandle;
-    close $xargsfilehandle;
 
     ## Set input files for next module
     set_io_files(
