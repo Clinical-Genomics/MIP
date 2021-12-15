@@ -143,29 +143,37 @@ gens_intervals_ref:
   associated_recipe:
     - gatk_collectreadcounts
   data_type: SCALAR
-  default: data/targets_preprocessed_100bp.interval_list
+  default: gens_targets_preprocessed_100bp.interval_list
   exists_check: file
+  is_reference: 1
+  reference: reference_dir
   type: path
 gens_panel_of_normals_female_ref:
   associated_recipe:
     - gatk_denoisereadcounts
   data_type: SCALAR
-  default: data/pons/female/female_pon_100bp.hdf5
+  default: gens_female_pon_100bp.hdf5
   exists_check: file
+  is_reference: 1
+  reference: reference_dir
   type: path
 gens_panel_of_normals_male_ref:
   associated_recipe:
     - gatk_denoisereadcounts
   data_type: SCALAR
-  default: data/pons/male/male_pon_100bp.hdf5
+  default: gens_male_pon_100bp.hdf5
   exists_check: file
+  is_reference: 1
+  reference: reference_dir
   type: path
 gens_gnomad_positions_ref:
   associated_recipe:
     - gens_generatedata
   data_type: SCALAR
-  default: data/gnomad.genomes.r2.1.1.sites.5percent.pos.txt
+  default: gnomad.genomes.r2.1.1.sites.5percent.pos.txt
   exists_check: file
+  is_reference: 1
+  reference: reference_dir
   type: path
 #### Bash
 recipe_core_number:
