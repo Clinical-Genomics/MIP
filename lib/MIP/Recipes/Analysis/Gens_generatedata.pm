@@ -237,7 +237,7 @@ sub analysis_gens_generatedata {
             gnomad_positions_ref        => $active_parameter_href->{gens_gnomad_positions_ref},
             infile_tsv_path             => $infile_tsv_path,
             infile_vcf_path             => $infile_vcf_path,
-            outfile_prefix              => $outfile_name_prefix,
+            outfile_prefix              => $outfile_path_prefix,
             stderrfile_path             => $stderrfile_path,
         }
     );
