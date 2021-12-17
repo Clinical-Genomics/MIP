@@ -99,7 +99,7 @@ sub test_add_io_for_recipe {
             strict_type => 1,
         },
         step => {
-            allow       => [qw{ fastq bam vcf }],
+            allow       => [qw{ fastq bam vcf vcf.gz hdf5 tsv }],
             default     => q{fastq},
             store       => \$step,
             strict_type => 1,
@@ -142,6 +142,39 @@ sub test_add_io_for_recipe {
         @{ $parameter_href->{cache}{order_recipes_ref} } = @order_recipes;
         $parameter_href->{$recipe_name}{outfile_suffix} =
           $outfile_suffix ? $outfile_suffix : q{.vcf};
+    }
+    if ( $step eq q{vcf.gz} ) {
+
+        %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} } = test_mip_hashes(
+            {
+                mip_hash_name => q{io_vcf_gz},
+            }
+        );
+        @{ $parameter_href->{cache}{order_recipes_ref} } = @order_recipes;
+        $parameter_href->{$recipe_name}{outfile_suffix} =
+          $outfile_suffix ? $outfile_suffix : q{.vcf.gz};
+    }
+    if ( $step eq q{hdf5} ) {
+
+        %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} } = test_mip_hashes(
+            {
+                mip_hash_name => q{io_hdf5},
+            }
+        );
+        @{ $parameter_href->{cache}{order_recipes_ref} } = @order_recipes;
+        $parameter_href->{$recipe_name}{outfile_suffix} =
+          $outfile_suffix ? $outfile_suffix : q{.hdf5};
+    }
+    if ( $step eq q{tsv} ) {
+
+        %{ $file_info_href->{io}{$chain_id}{$id}{$recipe_name} } = test_mip_hashes(
+            {
+                mip_hash_name => q{io_tsv},
+            }
+        );
+        @{ $parameter_href->{cache}{order_recipes_ref} } = @order_recipes;
+        $parameter_href->{$recipe_name}{outfile_suffix} =
+          $outfile_suffix ? $outfile_suffix : q{.tsv};
     }
     return;
 }
@@ -275,6 +308,9 @@ sub test_mip_hashes {
                   io
                   io_bam
                   io_vcf
+                  io_vcf_gz
+                  io_hdf5
+                  io_tsv
                   job_id
                   pedigree
                   primary_contig
@@ -315,6 +351,9 @@ sub test_mip_hashes {
         io               => catfile( $Bin, qw{ data test_data io.yaml } ),
         io_bam           => catfile( $Bin, qw{ data test_data io_bam.yaml } ),
         io_vcf           => catfile( $Bin, qw{ data test_data io_vcf.yaml } ),
+        io_vcf_gz        => catfile( $Bin, qw{ data test_data io_vcf_gz.yaml } ),
+        io_hdf5          => catfile( $Bin, qw{ data test_data io_hdf5.yaml } ),
+        io_tsv           => catfile( $Bin, qw{ data test_data io_tsv.yaml } ),
         job_id           => catfile( $Bin, qw{ data test_data job_id.yaml } ),
         pedigree         => catfile( $Bin, qw{ data test_data pedigree_wes.yaml } ),
         primary_contig   => catfile( $Bin, qw{ data test_data primary_contig.yaml } ),
