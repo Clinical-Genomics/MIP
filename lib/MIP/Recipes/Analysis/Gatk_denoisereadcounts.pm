@@ -32,7 +32,7 @@ BEGIN {
 
 ## Constants
 Readonly my $JAVA_GUEST_OS_MEMORY          => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
-Readonly my $JAVA_MEMORY_ALLOCATION        => 112;
+Readonly my $JAVA_MEMORY_ALLOCATION        => 38;
 
 sub analysis_gatk_denoisereadcounts {
 

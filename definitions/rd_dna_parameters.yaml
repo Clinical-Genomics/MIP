@@ -277,8 +277,8 @@ recipe_memory:
     expansionhunter: 2
     gatk_baserecalibration: 10
     gatk_combinevariantcallsets: 25
-    gatk_collectreadcounts: 120
-    gatk_denoisereadcounts: 120
+    gatk_collectreadcounts: 12
+    gatk_denoisereadcounts: 42
     gatk_gathervcfs: 7
     gatk_genotypegvcfs: 12
     gatk_variantrecalibration: 30
