@@ -51,10 +51,6 @@ my %base_argument = (
         input           => undef,
         expected_output => \@function_base_commands,
     },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
@@ -68,7 +64,7 @@ my %required_argument = (
         input           => catfile(qw{ dir outfile.hdf5 }),
         expected_output => q{--output } . catfile(qw{ dir outfile.hdf5 }),
     },
-    intervals_ref => {
+    intervals => {
         input           => catfile(qw{reference_dir targets_preprocessed.interval_list }),
         expected_output => q{--intervals }
           . catfile(qw{reference_dir targets_preprocessed.interval_list }),

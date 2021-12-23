@@ -1659,14 +1659,14 @@ sub gatk_collectreadcounts {
 
 ## Function : Perl wrapper for writing GATK collectreadcounts recipe to $filehandle. Based on GATK 4.2.0.0.
 ## Returns  : @commands
-## Arguments: $filehandle                                    => Sbatch filehandle to write to
-##          : $infile_path                                   => Infile paths
-##          : $intervals                                     => Path to file with precomputed intervals
-##          : $java_use_large_pages                          => Use java large pages
-##          : $memory_allocation                             => Memory allocation to run Gatk
-##          : $outfile_path                                  => Outfile path
-##          : $temp_directory                                => Redirect tmp files to java temp
-##          : $verbosity                                     => Set the minimum level of logging
+## Arguments: $filehandle           => Sbatch filehandle to write to
+##          : $infile_path          => Infile paths
+##          : $intervals            => Path to file with precomputed intervals
+##          : $java_use_large_pages => Use java large pages
+##          : $memory_allocation    => Memory allocation to run Gatk
+##          : $outfile_path         => Outfile path
+##          : $temp_directory       => Redirect tmp files to java temp
+##          : $verbosity            => Set the minimum level of logging
 
     my ($arg_href) = @_;
 

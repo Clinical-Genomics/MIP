@@ -51,10 +51,6 @@ my %base_argument = (
         input           => undef,
         expected_output => \@function_base_commands,
     },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
 );
 
 ## Can be duplicated with %base_argument and/or %specific_argument
@@ -72,7 +68,7 @@ my %required_argument = (
         input           => catfile(qw{ dir outfile.tsv }),
         expected_output => q{--standardized-copy-ratios } . catfile(qw{ dir outfile.tsv }),
     },
-    panel_of_normals_ref => {
+    panel_of_normals => {
         input           => catfile(qw{reference_dir gens_pon.hdf5 }),
         expected_output => q{--count-panel-of-normals }
           . catfile(qw{reference_dir gens_pon.hdf5 }),

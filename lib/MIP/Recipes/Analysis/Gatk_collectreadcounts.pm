@@ -215,14 +215,14 @@ sub analysis_gatk_collectreadcounts {
     ## GATK CollectReadCounts
     gatk_collectreadcounts(
         {
-            filehandle              => $filehandle,
-            infile_path             => $infile_path,
-            intervals               => $active_parameter_href->{gens_intervals},
-            java_use_large_pages    => $active_parameter_href->{java_use_large_pages},
-            memory_allocation       => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            outfile_path            => $outfile_path,
-            temp_directory          => $temp_directory,
-            verbosity               => $active_parameter_href->{gatk_logging_level},
+            filehandle           => $filehandle,
+            infile_path          => $infile_path,
+            intervals            => $active_parameter_href->{gens_intervals},
+            java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+            memory_allocation    => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            outfile_path         => $outfile_path,
+            temp_directory       => $temp_directory,
+            verbosity            => $active_parameter_href->{gatk_logging_level},
         }
     );
 
