@@ -31,8 +31,8 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $JAVA_GUEST_OS_MEMORY          => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
-Readonly my $JAVA_MEMORY_ALLOCATION        => 38;
+Readonly my $JAVA_GUEST_OS_MEMORY   => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
+Readonly my $JAVA_MEMORY_ALLOCATION => 38;
 
 sub analysis_gatk_denoisereadcounts {
 
@@ -223,22 +223,22 @@ sub analysis_gatk_denoisereadcounts {
         }
     );
 
-    my $panel_of_normals_ref;
-    $panel_of_normals_ref = $active_parameter_href->{gens_panel_of_normals_female_ref} if($sample_id_sex eq q{female});
-    $panel_of_normals_ref = $active_parameter_href->{gens_panel_of_normals_male_ref}   if($sample_id_sex eq q{male});
+    my $panel_of_normals;
+    $panel_of_normals = $active_parameter_href->{gens_panel_of_normals_female} if($sample_id_sex eq q{female});
+    $panel_of_normals = $active_parameter_href->{gens_panel_of_normals_male}   if($sample_id_sex eq q{male});
 
     ## GATK denoisereadcounts
     gatk_denoisereadcounts(
         {
-            filehandle                  => $filehandle,
-            infile_path                 => $infile_path,
-            java_use_large_pages        => $active_parameter_href->{java_use_large_pages},
-            memory_allocation           => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
-            outfile_denoised_path       => $outfile_denoised_path,
-            outfile_standardized_path   => $outfile_path,
-            panel_of_normals_ref        => $panel_of_normals_ref,
-            temp_directory              => $temp_directory,
-            verbosity                   => $active_parameter_href->{gatk_logging_level},
+            filehandle                => $filehandle,
+            infile_path               => $infile_path,
+            java_use_large_pages      => $active_parameter_href->{java_use_large_pages},
+            memory_allocation         => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
+            outfile_denoised_path     => $outfile_denoised_path,
+            outfile_standardized_path => $outfile_path,
+            panel_of_normals          => $panel_of_normals,
+            temp_directory            => $temp_directory,
+            verbosity                 => $active_parameter_href->{gatk_logging_level},
         }
     );
 

@@ -32,22 +32,20 @@ sub gens_generatedata {
 
 ## Function : Perl wrapper for writing generate_gens_data.pl recipe to $filehandle.
 ## Returns  : @commands
-## Arguments: $filehandle                                    => Sbatch filehandle to write to
-##          : $gnomad_positions_ref                          => 
-##          : $infile_tsv_path                               => Infile path
-##          : $infile_vcf_path                               => Infile path
-##          : $outfile_prefix                                => Outfile prefix
-##          : $stderrfile_path                               => Stderrfile path
+## Arguments: $filehandle       => Sbatch filehandle to write to
+##          : $gnomad_positions => Positions of common SNVs
+##          : $infile_tsv_path  => Infile path
+##          : $infile_vcf_path  => Infile path
+##          : $outfile_prefix   => Outfile prefix
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $filehandle;
-    my $gnomad_positions_ref;
+    my $gnomad_positions;
     my $infile_tsv_path;
     my $infile_vcf_path;
     my $outfile_prefix;
-    my $stderrfile_path;
 
     my $tmpl = {
         filehandle => {
@@ -56,7 +54,7 @@ sub gens_generatedata {
         gnomad_positions => {
             defined     => 1,
             required    => 1,
-            store       => \$gnomad_positions_ref,
+            store       => \$gnomad_positions,
             strict_type => 1,
         },
         infile_tsv_path => {
@@ -79,10 +77,6 @@ sub gens_generatedata {
             store       => \$outfile_prefix,
             strict_type => 1,
         },
-        stderrfile_path => {
-            store       => \$stderrfile_path,
-            strict_type => 1,
-        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -92,14 +86,7 @@ sub gens_generatedata {
     push @commands, $infile_tsv_path;
     push @commands, $infile_vcf_path;
     push @commands, $outfile_prefix;
-    push @commands, $gnomad_positions_ref;
-
-    push @commands,
-    unix_standard_streams(
-        {
-            stderrfile_path => $stderrfile_path,
-        }
-    );
+    push @commands, $gnomad_positions;
 
     unix_write_to_file(
         {

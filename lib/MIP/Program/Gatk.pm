@@ -1661,32 +1661,26 @@ sub gatk_collectreadcounts {
 ## Returns  : @commands
 ## Arguments: $filehandle                                    => Sbatch filehandle to write to
 ##          : $infile_path                                   => Infile paths
-##          : $intervals_ref                                 => One or more genomic intervals over which to operate {REF}
+##          : $intervals                                     => Path to file with precomputed intervals
 ##          : $java_use_large_pages                          => Use java large pages
 ##          : $memory_allocation                             => Memory allocation to run Gatk
 ##          : $outfile_path                                  => Outfile path
-##          : $read_filters_ref                              => Filters to apply to reads before analysis {REF}
-##          : $stderrfile_path                               => Stderrfile path
 ##          : $temp_directory                                => Redirect tmp files to java temp
 ##          : $verbosity                                     => Set the minimum level of logging
-##          : $xargs_mode                                    => Set if the program will be executed via xargs
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $filehandle;
     my $infile_path;
-    my $intervals_ref;
+    my $intervals;
     my $memory_allocation;
     my $outfile_path;
-    my $read_filters_ref;
-    my $stderrfile_path;
     my $temp_directory;
 
     ## Default(s)
     my $java_use_large_pages;
     my $verbosity;
-    my $xargs_mode;
 
     my $tmpl = {
         filehandle => {
@@ -1699,10 +1693,10 @@ sub gatk_collectreadcounts {
             store       => \$infile_path,
             strict_type => 1,
         },
-        intervals_ref => {
+        intervals => {
             defined     => 1,
             required    => 1,
-            store       => \$intervals_ref,
+            store       => \$intervals,
             strict_type => 1,
         },
         java_use_large_pages => {
@@ -1721,15 +1715,6 @@ sub gatk_collectreadcounts {
             store       => \$outfile_path,
             strict_type => 1,
         },
-        read_filters_ref => {
-            default     => [],
-            store       => \$read_filters_ref,
-            strict_type => 1,
-        },
-        stderrfile_path => {
-            store       => \$stderrfile_path,
-            strict_type => 1,
-        },
         temp_directory => {
             store       => \$temp_directory,
             strict_type => 1,
@@ -1738,12 +1723,6 @@ sub gatk_collectreadcounts {
             allow       => [qw{ INFO ERROR FATAL }],
             default     => q{INFO},
             store       => \$verbosity,
-            strict_type => 1,
-        },
-        xargs_mode => {
-            allow       => [ undef, 0, 1 ],
-            default     => 0,
-            store       => \$xargs_mode,
             strict_type => 1,
         },
     };
@@ -1757,7 +1736,6 @@ sub gatk_collectreadcounts {
             commands_ref         => \@commands,
             java_use_large_pages => $java_use_large_pages,
             memory_allocation    => $memory_allocation,
-            xargs_mode           => $xargs_mode,
         }
     );
 
@@ -1769,24 +1747,16 @@ sub gatk_collectreadcounts {
     gatk_common_options(
         {
             commands_ref       => \@commands,
-            read_filters_ref   => $read_filters_ref,
             temp_directory     => $temp_directory,
             verbosity          => $verbosity,
         }
     );
 
-    push @commands, q{--intervals} . $SPACE . $intervals_ref;
+    push @commands, q{--intervals} . $SPACE . $intervals;
 
     push @commands, q{--interval-merging-rule OVERLAPPING_ONLY};
 
     push @commands, q{--output} . $SPACE . $outfile_path;
-
-    push @commands,
-    unix_standard_streams(
-        {
-            stderrfile_path => $stderrfile_path,
-        }
-    );
 
     unix_write_to_file(
         {
@@ -1809,9 +1779,7 @@ sub gatk_denoisereadcounts {
 ##          : $memory_allocation                             => Memory allocation to run Gatk
 ##          : $outfile_denoised_path                         => Outfile path
 ##          : $outfile_standardized_path                     => Outfile path
-##          : $panel_of_normals_ref                          => 
-##          : $read_filters_ref                              => Filters to apply to reads before analysis {REF}
-##          : $stderrfile_path                               => Stderrfile path
+##          : $panel_of_normals                              => Panel to scale read counts against
 ##          : $temp_directory                                => Redirect tmp files to java temp
 ##          : $verbosity                                     => Set the minimum level of logging
 ##          : $xargs_mode                                    => Set if the program will be executed via xargs
@@ -1824,15 +1792,12 @@ sub gatk_denoisereadcounts {
     my $memory_allocation;
     my $outfile_denoised_path;
     my $outfile_standardized_path;
-    my $panel_of_normals_ref;
-    my $read_filters_ref;
-    my $stderrfile_path;
+    my $panel_of_normals;
     my $temp_directory;
 
     ## Default(s)
     my $java_use_large_pages;
     my $verbosity;
-    my $xargs_mode;
 
     my $tmpl = {
         filehandle => {
@@ -1870,16 +1835,7 @@ sub gatk_denoisereadcounts {
         panel_of_normals => {
             defined     => 1,
             required    => 1,
-            store       => \$panel_of_normals_ref,
-            strict_type => 1,
-        },
-        read_filters_ref => {
-            default     => [],
-            store       => \$read_filters_ref,
-            strict_type => 1,
-        },
-        stderrfile_path => {
-            store       => \$stderrfile_path,
+            store       => \$panel_of_normals,
             strict_type => 1,
         },
         temp_directory => {
@@ -1890,12 +1846,6 @@ sub gatk_denoisereadcounts {
             allow       => [qw{ INFO ERROR FATAL }],
             default     => q{INFO},
             store       => \$verbosity,
-            strict_type => 1,
-        },
-        xargs_mode => {
-            allow       => [ undef, 0, 1 ],
-            default     => 0,
-            store       => \$xargs_mode,
             strict_type => 1,
         },
     };
@@ -1909,7 +1859,6 @@ sub gatk_denoisereadcounts {
             commands_ref         => \@commands,
             java_use_large_pages => $java_use_large_pages,
             memory_allocation    => $memory_allocation,
-            xargs_mode           => $xargs_mode,
         }
     );
 
@@ -1918,12 +1867,11 @@ sub gatk_denoisereadcounts {
 
     push @commands, q{--input} . $SPACE . $infile_path;
 
-    push @commands, q{--count-panel-of-normals} . $SPACE . $panel_of_normals_ref;
+    push @commands, q{--count-panel-of-normals} . $SPACE . $panel_of_normals;
 
     gatk_common_options(
         {
             commands_ref       => \@commands,
-            read_filters_ref   => $read_filters_ref,
             temp_directory     => $temp_directory,
             verbosity          => $verbosity,
         }
@@ -1931,13 +1879,6 @@ sub gatk_denoisereadcounts {
 
     push @commands, q{--standardized-copy-ratios} . $SPACE . $outfile_standardized_path;
     push @commands, q{--denoised-copy-ratios} . $SPACE . $outfile_denoised_path;
-
-    push @commands,
-    unix_standard_streams(
-        {
-            stderrfile_path => $stderrfile_path,
-        }
-    );
 
     unix_write_to_file(
         {

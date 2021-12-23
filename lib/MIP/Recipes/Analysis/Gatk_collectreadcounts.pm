@@ -31,8 +31,8 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $JAVA_GUEST_OS_MEMORY          => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
-Readonly my $JAVA_MEMORY_ALLOCATION        => 8;
+Readonly my $JAVA_GUEST_OS_MEMORY   => $ANALYSIS{JAVA_GUEST_OS_MEMORY};
+Readonly my $JAVA_MEMORY_ALLOCATION => 8;
 
 sub analysis_gatk_collectreadcounts {
 
@@ -185,7 +185,7 @@ sub analysis_gatk_collectreadcounts {
             }
         )
     );
-    my $outfile_path        = $io{out}{file_path};
+    my $outfile_path = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -217,7 +217,7 @@ sub analysis_gatk_collectreadcounts {
         {
             filehandle              => $filehandle,
             infile_path             => $infile_path,
-            intervals_ref           => $active_parameter_href->{gens_intervals_ref},
+            intervals               => $active_parameter_href->{gens_intervals},
             java_use_large_pages    => $active_parameter_href->{java_use_large_pages},
             memory_allocation       => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path            => $outfile_path,

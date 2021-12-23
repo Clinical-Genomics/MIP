@@ -180,23 +180,23 @@ sub analysis_gens_generatedata {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $recipe{job_id_chain},
-                id                     => $sample_id,
-                file_info_href         => $file_info_href,
+                chain_id         => $recipe{job_id_chain},
+                id               => $sample_id,
+                file_info_href   => $file_info_href,
                 file_name_prefix => $infile_name_prefix,
-                iterators_ref => [qw{ baf cov }],
-                outdata_dir            => $active_parameter_href->{outdata_dir},
-                parameter_href         => $parameter_href,
-                recipe_name            => $recipe_name,
+                iterators_ref    => [qw{ baf cov }],
+                outdata_dir      => $active_parameter_href->{outdata_dir},
+                parameter_href   => $parameter_href,
+                recipe_name      => $recipe_name,
             }
         )
     );
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my %outfile_path = %{ $io{out}{file_path_href} };
+    my %outfile_path        = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
-    my $filehandle      = IO::Handle->new();
+    my $filehandle = IO::Handle->new();
 
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
@@ -222,11 +222,11 @@ sub analysis_gens_generatedata {
     ## generate_gens_data.pl
     gens_generatedata(
         {
-            filehandle                  => $filehandle,
-            gnomad_positions_ref        => $active_parameter_href->{gens_gnomad_positions_ref},
-            infile_tsv_path             => $infile_tsv_path,
-            infile_vcf_path             => $infile_vcf_path,
-            outfile_prefix              => $outfile_path_prefix,
+            filehandle       => $filehandle,
+            gnomad_positions => $active_parameter_href->{gens_gnomad_positions},
+            infile_tsv_path  => $infile_tsv_path,
+            infile_vcf_path  => $infile_vcf_path,
+            outfile_prefix   => $outfile_path_prefix,
         }
     );
 
@@ -247,13 +247,13 @@ sub analysis_gens_generatedata {
 
         submit_recipe(
             {
-                base_command                      => $profile_base_command,
-                case_id                           => $case_id,
-                dependency_method                 => q{sample_to_island},
-                job_id_chain                      => $recipe{job_id_chain},
-                job_id_href                       => $job_id_href,
-                job_reservation_name              => $active_parameter_href->{job_reservation_name},
-                log                               => $log,
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_island},
+                job_id_chain         => $recipe{job_id_chain},
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
