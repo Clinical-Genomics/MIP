@@ -128,9 +128,7 @@ sub analysis_gens_generatedata {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_parallel_processes };
-    use MIP::File_info qw{ get_io_files set_io_files parse_io_outfiles };
-    use MIP::Gatk qw{ get_gatk_intervals };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gens qw{ gens_generatedata };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
@@ -170,8 +168,6 @@ sub analysis_gens_generatedata {
     my $infile_vcf_path_prefix = $vcf_io{out}{file_path_prefix};
     my $infile_vcf_suffix      = $vcf_io{out}{file_suffixes}[0];
     my $infile_vcf_path        = $infile_vcf_path_prefix . $infile_vcf_suffix;
-
-    my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
 
     ## Get module parameters
     my %recipe = parse_recipe_prerequisites(
@@ -243,18 +239,6 @@ sub analysis_gens_generatedata {
     );
 
     close $filehandle;
-
-    ## Set input files for next module
-    set_io_files(
-        {
-            chain_id       => $recipe{job_id_chain},
-            id             => $sample_id,
-            file_info_href => $file_info_href,
-            file_paths_ref => [$outfile_baf_path, $outfile_cov_path],
-            recipe_name    => $recipe_name,
-            stream         => q{out},
-        }
-    );
 
     if ( $recipe{mode} == 1 ) {
 

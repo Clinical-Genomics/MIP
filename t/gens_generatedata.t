@@ -78,14 +78,11 @@ my %required_argument = (
     },
 );
 
-my %specific_argument = (
-);
-
 ## Coderef - enables generalized use of generate call
 my $module_function_cref = \&gens_generatedata;
 
 ## Test both base and function specific arguments
-my @arguments = ( \%base_argument, \%specific_argument );
+my @arguments = ( \%base_argument );
 
 ARGUMENT_HASH_REF:
 foreach my $argument_href (@arguments) {

@@ -1799,7 +1799,6 @@ sub gatk_collectreadcounts {
 }
 
 
-
 sub gatk_denoisereadcounts {
 
 ## Function : Perl wrapper for writing GATK denoisereadcounts recipe to $filehandle. Based on GATK 4.2.0.0.
