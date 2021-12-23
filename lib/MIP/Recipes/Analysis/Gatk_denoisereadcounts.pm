@@ -132,9 +132,7 @@ sub analysis_gatk_denoisereadcounts {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    use MIP::Cluster qw{ get_parallel_processes };
-    use MIP::File_info qw{ get_io_files set_io_files parse_io_outfiles };
-    use MIP::Gatk qw{ get_gatk_intervals };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gatk qw{ gatk_denoisereadcounts };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
@@ -159,10 +157,7 @@ sub analysis_gatk_denoisereadcounts {
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path        = $infile_path_prefix . $infile_suffix;
-
-    my $analysis_type = $active_parameter_href->{analysis_type}{$sample_id};
+    my $infile_path = $io{in}{file_path};
 
     ## Get module parameters
     my %recipe = parse_recipe_prerequisites(
@@ -233,7 +228,6 @@ sub analysis_gatk_denoisereadcounts {
     $panel_of_normals_ref = $active_parameter_href->{gens_panel_of_normals_male_ref}   if($sample_id_sex eq q{male});
 
     ## GATK denoisereadcounts
-    my $stderrfile_path = $recipe_file_path . $DOT . q{stderr.txt};
     gatk_denoisereadcounts(
         {
             filehandle                  => $filehandle,
@@ -243,26 +237,12 @@ sub analysis_gatk_denoisereadcounts {
             outfile_denoised_path       => $outfile_denoised_path,
             outfile_standardized_path   => $outfile_path,
             panel_of_normals_ref        => $panel_of_normals_ref,
-            stderrfile_path             => $stderrfile_path,
             temp_directory              => $temp_directory,
             verbosity                   => $active_parameter_href->{gatk_logging_level},
-            xargs_mode                  => 0,
         }
     );
 
     close $filehandle;
-
-    ## Set input files for next module
-    set_io_files(
-        {
-            chain_id       => $recipe{job_id_chain},
-            id             => $sample_id,
-            file_info_href => $file_info_href,
-            file_paths_ref => [$outfile_path],
-            recipe_name    => $recipe_name,
-            stream         => q{out},
-        }
-    );
 
     if ( $recipe{mode} == 1 ) {
 

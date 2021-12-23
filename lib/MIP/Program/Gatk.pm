@@ -1799,7 +1799,6 @@ sub gatk_collectreadcounts {
 }
 
 
-
 sub gatk_denoisereadcounts {
 
 ## Function : Perl wrapper for writing GATK denoisereadcounts recipe to $filehandle. Based on GATK 4.2.0.0.
@@ -1868,7 +1867,7 @@ sub gatk_denoisereadcounts {
             store       => \$outfile_standardized_path,
             strict_type => 1,
         },
-        panel_of_normals_ref => {
+        panel_of_normals => {
             defined     => 1,
             required    => 1,
             store       => \$panel_of_normals_ref,

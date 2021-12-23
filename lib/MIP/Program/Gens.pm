@@ -53,7 +53,7 @@ sub gens_generatedata {
         filehandle => {
             store => \$filehandle,
         },
-        gnomad_positions_ref => {
+        gnomad_positions => {
             defined     => 1,
             required    => 1,
             store       => \$gnomad_positions_ref,

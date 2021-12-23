@@ -48,7 +48,7 @@ diag(   q{Test analysis_gatk_denoisereadcounts from Gatk_denoisereadcounts.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
+test_log( { no_screen => 1, } );
 
 ## Given analysis parameters
 my $recipe_name    = q{gatk_denoisereadcounts};
