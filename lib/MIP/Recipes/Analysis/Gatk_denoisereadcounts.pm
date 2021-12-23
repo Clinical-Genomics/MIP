@@ -157,8 +157,7 @@ sub analysis_gatk_denoisereadcounts {
     );
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path        = $infile_path_prefix . $infile_suffix;
+    my $infile_path = $io{in}{file_path};
 
     ## Get module parameters
     my %recipe = parse_recipe_prerequisites(
@@ -229,7 +228,6 @@ sub analysis_gatk_denoisereadcounts {
     $panel_of_normals_ref = $active_parameter_href->{gens_panel_of_normals_male_ref}   if($sample_id_sex eq q{male});
 
     ## GATK denoisereadcounts
-    my $stderrfile_path = $recipe_file_path . $DOT . q{stderr.txt};
     gatk_denoisereadcounts(
         {
             filehandle                  => $filehandle,
@@ -239,7 +237,6 @@ sub analysis_gatk_denoisereadcounts {
             outfile_denoised_path       => $outfile_denoised_path,
             outfile_standardized_path   => $outfile_path,
             panel_of_normals_ref        => $panel_of_normals_ref,
-            stderrfile_path             => $stderrfile_path,
             temp_directory              => $temp_directory,
             verbosity                   => $active_parameter_href->{gatk_logging_level},
         }

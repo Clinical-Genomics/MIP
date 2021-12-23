@@ -213,7 +213,6 @@ sub analysis_gatk_collectreadcounts {
     say {$filehandle} q{## GATK CollectReadCounts};
 
     ## GATK CollectReadCounts
-    my $stderrfile_path = $recipe_file_path . $DOT . q{stderr.txt};
     gatk_collectreadcounts(
         {
             filehandle              => $filehandle,
@@ -222,7 +221,6 @@ sub analysis_gatk_collectreadcounts {
             java_use_large_pages    => $active_parameter_href->{java_use_large_pages},
             memory_allocation       => q{Xmx} . $JAVA_MEMORY_ALLOCATION . q{g},
             outfile_path            => $outfile_path,
-            stderrfile_path         => $stderrfile_path,
             temp_directory          => $temp_directory,
             verbosity               => $active_parameter_href->{gatk_logging_level},
         }

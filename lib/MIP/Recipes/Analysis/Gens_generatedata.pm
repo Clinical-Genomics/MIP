@@ -152,9 +152,7 @@ sub analysis_gens_generatedata {
         }
     );
     my $infile_name_prefix     = $io{in}{file_name_prefix};
-    my $infile_tsv_path_prefix = $io{in}{file_path_prefix};
-    my $infile_tsv_suffix      = $io{in}{file_suffixes}[0];
-    my $infile_tsv_path        = $infile_tsv_path_prefix . $infile_tsv_suffix;
+    my $infile_tsv_path =$io{in}{file_path};
 
     my %vcf_io = get_io_files(
         {
@@ -165,9 +163,7 @@ sub analysis_gens_generatedata {
             stream         => q{out},
         }
     );
-    my $infile_vcf_path_prefix = $vcf_io{out}{file_path_prefix};
-    my $infile_vcf_suffix      = $vcf_io{out}{file_suffixes}[0];
-    my $infile_vcf_path        = $infile_vcf_path_prefix . $infile_vcf_suffix;
+    my $infile_vcf_path = $vcf_io{out}{file_path};
 
     ## Get module parameters
     my %recipe = parse_recipe_prerequisites(
@@ -187,7 +183,8 @@ sub analysis_gens_generatedata {
                 chain_id               => $recipe{job_id_chain},
                 id                     => $sample_id,
                 file_info_href         => $file_info_href,
-                file_name_prefixes_ref => [$infile_name_prefix],
+                file_name_prefix => $infile_name_prefix,
+                iterators_ref => [qw{ baf cov }],
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
@@ -195,10 +192,7 @@ sub analysis_gens_generatedata {
         )
     );
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_name_prefix = $io{out}{file_name_prefix};
-    my $outfile_suffix      = $io{out}{file_suffix};
-    my $outfile_baf_path    = $outfile_path_prefix . $DOT . q{baf} . $DOT . q{bed} . $DOT . q{gz};
-    my $outfile_cov_path    = $outfile_path_prefix . $DOT . q{cov} . $DOT . q{bed} . $DOT . q{gz};
+    my %outfile_path = %{ $io{out}{file_path_href} };
 
     ## Filehandles
     # Create anonymous filehandle
@@ -226,7 +220,6 @@ sub analysis_gens_generatedata {
     say {$filehandle} q{## Gens generatedata};
 
     ## generate_gens_data.pl
-    my $stderrfile_path = $recipe_file_path . $DOT . q{stderr.txt};
     gens_generatedata(
         {
             filehandle                  => $filehandle,
@@ -234,7 +227,6 @@ sub analysis_gens_generatedata {
             infile_tsv_path             => $infile_tsv_path,
             infile_vcf_path             => $infile_vcf_path,
             outfile_prefix              => $outfile_path_prefix,
-            stderrfile_path             => $stderrfile_path,
         }
     );
 
@@ -246,7 +238,7 @@ sub analysis_gens_generatedata {
         set_recipe_outfile_in_sample_info(
             {
                 infile           => $infile_vcf_path,
-                path             => $outfile_baf_path, ## TODO: how to set both outfiles? run this function twice?
+                path             => $outfile_path{baf}, ## TODO: how to set both outfiles? run this function twice?
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
