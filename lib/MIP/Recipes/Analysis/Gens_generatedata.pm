@@ -132,7 +132,7 @@ sub analysis_gens_generatedata {
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Gens qw{ gens_generatedata };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -238,12 +238,28 @@ sub analysis_gens_generatedata {
         set_recipe_outfile_in_sample_info(
             {
                 infile           => $infile_vcf_path,
-                path             => $outfile_path{baf}, ## TODO: how to set both outfiles? run this function twice?
+                path             => $outfile_path{baf},
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }
         );
+
+      FILE_TAG:
+        foreach my $file_tag ( keys %outfile_path ) {
+
+            set_file_path_to_store(
+                {
+                    format           => q{bed},
+                    id               => $sample_id,
+                    path             => $outfile_path{$file_tag},
+                    recipe_name      => $recipe_name,
+                    sample_info_href => $sample_info_href,
+                    tag              => $file_tag,
+                }
+            );
+
+        }
 
         submit_recipe(
             {
