@@ -221,6 +221,27 @@ genomic_superdups:
     - bgzip
     - tabix
   type: recipe
+gens_gnomad_positions:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+gens_intervals:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
+gens_pons:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  type: recipe
 giab:
   analysis_mode: case
   associated_recipe:
@@ -387,6 +408,9 @@ recipe_core_number:
     gencode_annotation: 1
     gencode_transcript: 1
     genomic_superdups: 1
+    gens_gnomad_positions: 1
+    gens_intervals: 1
+    gens_pons: 1
     giab: 1
     gnomad: 1
     gnomad_chrsplit: 13
@@ -441,6 +465,9 @@ recipe_time:
     gencode_annotation: 1
     gencode_transcript: 1
     genomic_superdups: 1
+    gens_gnomad_positions: 1
+    gens_intervals: 1
+    gens_pons: 1
     giab: 1
     gnomad: 25
     gnomad_chrsplit: 32

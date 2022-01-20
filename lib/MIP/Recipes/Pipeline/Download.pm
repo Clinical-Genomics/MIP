@@ -94,6 +94,9 @@ sub pipeline_download {
     use MIP::Recipes::Download::Gencode_annotation qw{ download_gencode_annotation };
     use MIP::Recipes::Download::Gencode_transcript qw{ download_gencode_transcript };
     use MIP::Recipes::Download::Genomic_superdups qw{ download_genomic_superdups };
+    use MIP::Recipes::Download::Gens_gnomad_positions qw{ download_gens_gnomad_positions };
+    use MIP::Recipes::Download::Gens_intervals qw{ download_gens_intervals };
+    use MIP::Recipes::Download::Gens_pons qw{ download_gens_pons };
     use MIP::Recipes::Download::Get_reference qw{ get_reference };
     use MIP::Recipes::Download::Giab qw{ download_giab };
     use MIP::Recipes::Download::Gnomad
@@ -136,6 +139,9 @@ sub pipeline_download {
         gencode_annotation             => \&download_gencode_annotation,
         gencode_transcript             => \&download_gencode_transcript,
         genomic_superdups              => \&download_genomic_superdups,
+        gens_gnomad_positions          => \&download_gens_gnomad_positions
+        gens_intervals                 => \&download_gens_intervals,
+        gens_pons                      => \&download_gens_pons,
         giab                           => \&download_giab,
         gnomad                         => \&download_gnomad,
         gnomad_pli_per_gene            => \&download_gnomad_pli_per_gene,
