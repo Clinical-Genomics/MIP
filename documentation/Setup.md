@@ -27,7 +27,7 @@ MIP comes with an install application, which will install all necessary programs
 You only need to install the dependencies that are required for the recipes that you want to run. If you have not installed a dependency for a module, MIP will tell you what dependencies you need to install and exit.
 
 **Extra CPANM modules**
-You can speed up, for instance, the Readonly module by also installing the companion module Readonly::XS. No change to the code is required and the Readonly module will call the Readonly::XS module if available.  
+You can speed up, for instance, the Readonly module by also installing the companion module Readonly::XS. No change to the code is required and the Readonly module will call the Readonly::XS module if available.
 
 ### **Programs**
 
@@ -43,7 +43,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [BWAKit] (version: 0.7.17)
 - [CADD] (version: 1.6)
 - [Chanjo] (version: 4.6.0)
-- [Chromograph] (version: 1.1)
+- [Chromograph] (version: 1.1.4)
 - [Cnvnator] (version: 0.4.1)
 - [Cyrius] (version: v1.1)
 - [Expansionhunter] (version 4.0.2)
@@ -154,7 +154,7 @@ Corresponding MIP references:
  - grch37_gatk_merged_reference_samples.txt
 
 ## Gene panel for the clinical test
-MIP will split the variants into two sets (clinical a.k.a "selected" and research) based on gene coordinates and hgnc_id, which is recorded in gene_panels.bed file(s) using MIPs own vcfparser. A template for grch37 can be found in MIPs dir under `templates/gene_panels.bed`.  
+MIP will split the variants into two sets (clinical a.k.a "selected" and research) based on gene coordinates and hgnc_id, which is recorded in gene_panels.bed file(s) using MIPs own vcfparser. A template for grch37 can be found in MIPs dir under `templates/gene_panels.bed`.
 
 #### SpliceAI - Splicing predicition
 Annotations for all possible substitutions, 1 base insertions and 1-4 base deletions. Available from https://basespace.illumina.com/s/5u6ThOblecrh
@@ -190,7 +190,7 @@ Corresponding MIP references:
 [MultiQC]: https://github.com/ewels/MultiQC
 [Pdfmerger]: https://github.com/northwestwitch/pdfmerger
 [Peddy]: https://github.com/brentp/peddy
-[Pedigree file]: ../templates/643594-miptest_pedigree.yaml  
+[Pedigree file]: ../templates/643594-miptest_pedigree.yaml
 [PicardTools]: http://broadinstitute.github.io/picard/
 [PLINK]: https://www.cog-genomics.org/plink2
 [Preseq]: http://smithlabresearch.org/software/preseq/
@@ -211,7 +211,7 @@ Corresponding MIP references:
 [Telomerecat]: https://github.com/cancerit/telomerecat
 [Tiddit]: https://github.com/J35P312/TIDDIT
 [Upd]: https://github.com/bjhall/upd
-[Varg]: https://github.com/Clinical-Genomics/varg  
+[Varg]: https://github.com/Clinical-Genomics/varg
 [Vcf2cytosure]: https://github.com/NBISweden/vcf2cytosure
 [Vcfanno]: https://github.com/brentp/vcfanno
 [VEP]: https://github.com/Ensembl/ensembl-vep
