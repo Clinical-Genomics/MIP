@@ -5,9 +5,9 @@ FROM clinicalgenomics/mip_base:2.1
 ################## METADATA ######################
 
 LABEL base_image="clinicalgenomics/mip_base:2.1"
-LABEL version="11"
+LABEL version="12"
 LABEL software="chromograph"
-LABEL software.version="1.1"
+LABEL software.version="1.1.4"
 LABEL extra.binaries="chromograph"
 LABEL maintainer="Clinical-Genomics/MIP"
 
@@ -17,20 +17,20 @@ RUN apt-get update --fix-missing && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN conda install pip python=3.7 matplotlib
+RUN conda install pip python=3.9 matplotlib
 
 ## Clean up after conda
 RUN /opt/conda/bin/conda clean -ya
 
 ## Download release
-RUN wget --no-verbose https://github.com/mikaell/chromograph/archive/refs/tags/v1.1.zip -O /opt/conda/share/chromograph-1.1.zip
+RUN wget --no-verbose https://github.com/mikaell/chromograph/archive/refs/tags/v1.1.4.zip -O /opt/conda/share/chromograph-1.1.4.zip
 
 ## Extract
-RUN unzip -o /opt/conda/share/chromograph-1.1.zip -d /opt/conda/share/ && \
-    rm /opt/conda/share/chromograph-1.1.zip
+RUN unzip -o /opt/conda/share/chromograph-1.1.4.zip -d /opt/conda/share/ && \
+    rm /opt/conda/share/chromograph-1.1.4.zip
 
 ## Move to chromograph directory
-RUN cd /opt/conda/share/chromograph-1.1 && \
+RUN cd /opt/conda/share/chromograph-1.1.4 && \
     python -m pip install --no-cache-dir .
 
 WORKDIR /data/
