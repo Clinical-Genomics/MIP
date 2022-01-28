@@ -184,7 +184,7 @@ recipe_memory:
     dna_vcf_reformat: 2
     fusion_report: 15
     gatk_asereadcounter: 25
-    gatk_splitncigarreads: 16
+    gatk_splitncigarreads: 20
     gatk_variantfiltration: 8
     genebody_coverage: 16
     multiqc_ar: 10
