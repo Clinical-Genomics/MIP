@@ -131,10 +131,10 @@ sub analysis_endvariantannotationblock {
 
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
-    use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Bcftools qw{ bcftools_concat };
+    use MIP::Program::Gnu::Software::Gnu_grep qw{ gnu_grep };
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
-    use MIP::Program::Gatk qw{ gatk_concatenate_variants };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_file_path_to_store
       set_recipe_metafile_in_sample_info };
@@ -235,18 +235,17 @@ sub analysis_endvariantannotationblock {
             $metafile_tag   = q{clinical};
         }
 
-        ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
-        gatk_concatenate_variants(
+        my @infile_paths =
+          map { $infile_path_prefix . $DOT . $_ . $infile_postfix } @concat_contigs;
+        bcftools_concat(
             {
-                active_parameter_href => $active_parameter_href,
-                elements_ref          => \@concat_contigs,
-                filehandle            => $filehandle,
-                infile_prefix         => $infile_path_prefix,
-                infile_postfix        => $infile_postfix,
-                outfile_path_prefix   => $outfile_path_prefix,
-                outfile_suffix        => $analysis_suffix,
+                filehandle       => $filehandle,
+                infile_paths_ref => \@infile_paths,
+                outfile_path     => $outfile_path_prefix . $analysis_suffix,
+                rm_dups          => 0,
             }
         );
+        say {$filehandle} $NEWLINE;
 
         ## Remove variants in hgnc_id list from vcf
         if ( $active_parameter_href->{endvariantannotationblock_remove_genes_file} ) {

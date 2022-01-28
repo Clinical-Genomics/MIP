@@ -21,16 +21,13 @@ use Modern::Perl qw{ 2018 };
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Config}         => [qw{ get_install_containers }],
-);
+    my %perl_module = ( q{MIP::Config} => [qw{ get_install_containers }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -46,12 +43,10 @@ diag(   q{Test get_install_containers from Config.pm}
       . $EXECUTABLE_NAME );
 
 ## Given an installation config
-my $install_config_path =
-  catfile( $Bin, qw{ data test_data install_active_parameters.yaml } );
+my $container_config_path = catfile( $Bin, qw{ data test_data miptest_container_config.yaml } );
 
 ## When getting containers from install config file
-my %container =
-  get_install_containers( { install_config_file => $install_config_path, } );
+my %container = get_install_containers( { container_config_file => $container_config_path, } );
 
 ## Then return container info from installation config
 my %expected_container = (
@@ -60,10 +55,10 @@ my %expected_container = (
             arriba => q{reference_dir!/a_dir:opt/conda/share/a_dir}
         },
         executable => {
-            arriba            => q{/arriba_v1.2.0/arriba},
-            q{draw_fusions.R} => q{/arriba_v1.2.0/draw_fusions.R},
+            arriba            => q{/arriba_v2.1.0/arriba},
+            q{draw_fusions.R} => q{/arriba_v2.1.0/draw_fusions.R},
         },
-        uri => q{docker.io/uhrigs/arriba:1.2.0},
+        uri => q{docker.io/uhrigs/arriba:2.1.0},
     },
 );
 

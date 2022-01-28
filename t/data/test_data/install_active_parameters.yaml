@@ -92,6 +92,10 @@ container:
     executable:
       genmod: ~
     uri: docker.io/clinicalgenomics/genmod:3.7.3
+  gens_preproc:
+    executable:
+      generate_gens_data.pl: ~
+    uri: docker.io/raysloks/gens_preproc:1.0.0
   gffcompare:
     executable:
       gffcompare: ~
@@ -240,8 +244,8 @@ custom_default_parameters:
   - program_test_file
   - select_programs
   - skip_programs
-environment_name: mip_install_test
-log_file: <user_path>/MIP/mip_install_test.log
+environment_name: mip_ci
+log_file: <user_path>/MIP/mip_ci.log
 mip: 1
 pipelines:
   - rd_dna
@@ -264,6 +268,7 @@ rd_dna:
   - gatk
   - gatk4
   - genmod
+  - gens_preproc
   - glnexus
   - htslib
   - manta
@@ -310,7 +315,7 @@ rd_rna:
   - ucsc
   - utilities
   - vep
-reference_dir: /Users/andersjemt/aj/MIP/t/data/mip_install_test
+reference_dir: <user_path>/MIP/t/data/mip_ci
 sbatch_mode: '0'
 select_programs:
   - bedtools
@@ -329,6 +334,7 @@ select_programs:
   - gatk
   - gatk4
   - genmod
+  - gens_preproc
   - glnexus
   - htslib
   - manta

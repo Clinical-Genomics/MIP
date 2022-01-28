@@ -711,7 +711,7 @@ sub read_sv_infile_vcf {
             ## Test Frequency filter
             _test_frequency_filter_in_vcf_header(
                 {
-                    fqf_annotations_ref => $active_parameter_href->{sv_fqa_annotations},
+                    fqf_annotations_ref => $active_parameter_href->{sv_fqa_vcfanno_filters},
                     recipe_mode         => $active_parameter_href->{sv_annotate},
                     toml_file_path      => $active_parameter_href->{sv_vcfanno_config},
                     vcf_header_href     => \%vcf_header,

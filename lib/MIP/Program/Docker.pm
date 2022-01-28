@@ -23,7 +23,77 @@ BEGIN {
     use base qw{ Exporter };
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw{ docker_run };
+    our @EXPORT_OK = qw{ docker_pull docker_run };
+}
+
+sub docker_pull {
+
+## Function : Perl wrapper for pulling docker images Based on Docker 19.03.8
+## Returns  : @commands
+## Arguments: $filehandle             => Filehandle to write to
+##          : $image                  => Image to pull
+##          : $stderrfile_path        => Stderrfile path
+##          : $stderrfile_path_append => Append stderr info to file path
+##          : $stdoutfile_path        => Stdoutfile path
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filehandle;
+    my $image;
+    my $stderrfile_path;
+    my $stderrfile_path_append;
+    my $stdoutfile_path;
+
+    my $tmpl = {
+        filehandle => {
+            store => \$filehandle,
+        },
+        image => {
+            defined     => 1,
+            required    => 1,
+            store       => \$image,
+            strict_type => 1,
+        },
+        stderrfile_path => {
+            store       => \$stderrfile_path,
+            strict_type => 1,
+        },
+        stderrfile_path_append => {
+            store       => \$stderrfile_path_append,
+            strict_type => 1,
+        },
+        stdoutfile_path => {
+            store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    ## Stores commands depending on input parameters
+    my @commands = qw{ docker pull };
+
+    push @commands, $image;
+
+    push @commands,
+      unix_standard_streams(
+        {
+            stderrfile_path        => $stderrfile_path,
+            stderrfile_path_append => $stderrfile_path_append,
+            stdoutfile_path        => $stdoutfile_path,
+        }
+      );
+
+    unix_write_to_file(
+        {
+            commands_ref => \@commands,
+            filehandle   => $filehandle,
+            separator    => $SPACE,
+
+        }
+    );
+    return @commands;
 }
 
 sub docker_run {

@@ -8,7 +8,7 @@ custom_default_parameters:
     - conda_path
     - fusion_select_file
     - infile_dirs
-    - install_config_file
+    - container_config_file
     - pedigree_fam_file
     - picardtools_path
     - qccollect_store_metrics_outfile
@@ -1076,6 +1076,12 @@ qccollect_eval_metric_file:
   is_reference: 1
   reference: reference_dir
   type: path
+qccollect_limit_qc_output:
+  associated_recipe:
+    - qccollect_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 qccollect_regexp_file:
   associated_recipe:
     - qccollect_ar

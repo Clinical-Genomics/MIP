@@ -103,11 +103,19 @@ sub define_qc_metrics_to_store {
     my %store_metrics = (
         AT_DROPOUT => {
             analysis_mode => q{sample},
-            recipe_name   => q{picardtools_collectmultiplemetrics},
+            recipe_name   => q{collecthsmetrics},
+        },
+        FOLD_80_BASE_PENALTY => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collecthsmetrics},
         },
         fraction_duplicates => {
             analysis_mode => q{sample},
             recipe_name   => q{markduplicates},
+        },
+        GC_DROPOUT => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collecthsmetrics},
         },
         gender => {
             analysis_mode => q{sample},
@@ -116,6 +124,10 @@ sub define_qc_metrics_to_store {
         MEAN_INSERT_SIZE => {
             analysis_mode => q{sample},
             recipe_name   => q{collectmultiplemetricsinsertsize},
+        },
+        MEAN_TARGET_COVERAGE => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collecthsmetrics}
         },
         MEDIAN_TARGET_COVERAGE => {
             analysis_mode => q{sample},
@@ -132,6 +144,30 @@ sub define_qc_metrics_to_store {
         PCT_MRNA_BASES => {
             analysis_mode => q{sample},
             recipe_name   => q{collectrnaseqmetrics},
+        },
+        PCT_OFF_BAIT => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collecthsmetrics},
+        },
+        PCT_TARGET_BASES_10X => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collecthsmetrics},
+        },
+        PCT_TARGET_BASES_20X => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collecthsmetrics},
+        },
+        PCT_TARGET_BASES_30x => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collecthsmetrics},
+        },
+        PCT_TARGET_BASES_50x => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collecthsmetrics},
+        },
+        PCT_TARGET_BASES_100x => {
+            analysis_mode => q{sample},
+            recipe_name   => q{collecthsmetrics},
         },
         percentage_mapped_reads => {
             analysis_mode => q{sample},
