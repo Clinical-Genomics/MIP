@@ -49,6 +49,7 @@ sub star_fusion {
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
+##          : $temp_directory         => Temporary directory
 
     my ($arg_href) = @_;
 
@@ -66,6 +67,7 @@ sub star_fusion {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $temp_directory;
 
     ## Default(s)
     my $examine_coding_effect;
@@ -132,6 +134,10 @@ sub star_fusion {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        temp_directory => {
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -174,6 +180,11 @@ q{Error: You must either specify the fastq file paths or a splice junction datab
 
     if ( defined $min_junction_reads ) {
         push @commands, q{--min_junction_reads} . $SPACE . $min_junction_reads;
+    }
+
+    if ($temp_directory) {
+        push @commands, q{--tmpdir} . $SPACE . $temp_directory;
+        push @commands, q{--outTmpDir} . $SPACE . $temp_directory;
     }
 
     push @commands, q{--output_dir} . $SPACE . $output_directory_path;
@@ -261,11 +272,8 @@ sub star_fusion_gtf_file_to_feature_seqs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = (
-        get_executable_base_command(
-            { base_command => q{gtf_file_to_feature_seqs.pl}, }
-        ),
-    );
+    my @commands =
+      ( get_executable_base_command( { base_command => q{gtf_file_to_feature_seqs.pl}, } ), );
 
     push @commands, q{--gtf_file} . $SPACE . $gtf_path;
 

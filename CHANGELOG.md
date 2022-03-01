@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [10.2.4]
+
+- Use temp directory with Star-Fusion
+- Resource bump for RNA
+
 ## [10.2.3]
 
 - Updates Chromograph to version 1.1.4

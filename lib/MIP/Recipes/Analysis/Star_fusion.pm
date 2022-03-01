@@ -179,8 +179,8 @@ sub analysis_star_fusion {
         %io,
         parse_io_outfiles(
             {
-                chain_id               => $recipe{job_id_chain},
-                file_info_href         => $file_info_href,
+                chain_id       => $recipe{job_id_chain},
+                file_info_href => $file_info_href,
                 file_name_prefixes_ref =>
                   [ $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id ],
                 id             => $sample_id,
@@ -242,6 +242,7 @@ sub analysis_star_fusion {
             min_junction_reads    => $active_parameter_href->{star_fusion_min_junction_reads},
             output_directory_path => $outdir_path,
             samples_file_path     => $sample_files_path,
+            temp_directory        => $temp_directory,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -298,13 +299,13 @@ sub analysis_star_fusion {
 
         submit_recipe(
             {
-                base_command                      => $profile_base_command,
-                case_id                           => $case_id,
-                dependency_method                 => q{sample_to_sample},
-                job_id_chain                      => $recipe{job_id_chain},
-                job_id_href                       => $job_id_href,
-                job_reservation_name              => $active_parameter_href->{job_reservation_name},
-                log                               => $log,
+                base_command         => $profile_base_command,
+                case_id              => $case_id,
+                dependency_method    => q{sample_to_sample},
+                job_id_chain         => $recipe{job_id_chain},
+                job_id_href          => $job_id_href,
+                job_reservation_name => $active_parameter_href->{job_reservation_name},
+                log                  => $log,
                 max_parallel_processes_count_href =>
                   $file_info_href->{max_parallel_processes_count},
                 recipe_file_path   => $recipe_file_path,
