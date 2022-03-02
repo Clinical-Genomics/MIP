@@ -87,6 +87,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    aln_temp_directory => {
+        input           => catfile(qw{ temp directory }),
+        expected_output => q{--outTmpDir} . $SPACE . catfile(qw{ temp directory }),
+    },
     cpu => {
         input           => $CPU,
         expected_output => q{--CPU} . $SPACE . $CPU,
@@ -98,6 +102,10 @@ my %specific_argument = (
     fusion_inspector => {
         input           => q{inspect},
         expected_output => q{--FusionInspector inspect},
+    },
+    fusion_temp_directory => {
+        input           => catfile(qw{ temp directory }),
+        expected_output => q{--tmpdir} . $SPACE . catfile(qw{ temp directory }),
     },
     genome_lib_dir_path => {
         input           => catfile(qw{ dir genome_lib_dir_path }),
@@ -118,10 +126,6 @@ my %specific_argument = (
     sjdb_path => {
         input           => catfile(qw{ dir junctions.tab }),
         expected_output => q{-J} . $SPACE . catfile(qw{ dir junctions.tab }),
-    },
-    temp_directory => {
-        input           => catfile(qw{ temp directory }),
-        expected_output => q{--tmpdir} . $SPACE . catfile(qw{ temp directory }),
     },
 );
 

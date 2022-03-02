@@ -142,7 +142,7 @@ recipe_time:
     bcftools_norm: 2
     blobfish: 1
     bootstrapann: 2
-    build_sj_tracks: 1
+    build_sj_tracks: 2
     dna_vcf_reformat: 1
     fastqc_ar: 1
     fusion_report: 4
@@ -167,7 +167,7 @@ recipe_time:
     salmon_quant: 5
     star_aln: 12
     star_fusion: 24
-    stringtie_ar: 2
+    stringtie_ar: 6
     svdb_merge_fusion: 1
     trim_galore_ar: 6
     varianteffectpredictor: 4
