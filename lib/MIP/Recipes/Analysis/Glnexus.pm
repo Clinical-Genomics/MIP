@@ -190,13 +190,16 @@ sub analysis_glnexus {
 
     say {$filehandle} q{## } . $recipe_name;
 
+    ## Limit memory allocation for glnexus
+    Readonly my $FIFTY => 50;
+    my $glnexus_memory = $memory - $FIFTY;
     glnexus_merge(
         {
             config           => q{DeepVariant_unfiltered},
             dir              => catdir( $active_parameter_href->{temp_directory}, q{glnexus} ),
             filehandle       => $filehandle,
             infile_paths_ref => \@genotype_infile_paths,
-            memory           => $memory,
+            memory           => $glnexus_memory,
             threads          => $core_number,
         }
     );
