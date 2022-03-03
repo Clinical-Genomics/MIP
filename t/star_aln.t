@@ -46,18 +46,22 @@ diag(   q{Test star_aln from Star.pm}
       . $EXECUTABLE_NAME );
 
 ## Constants
-Readonly my $ALIGN_INTRON_MAX           => 100_000;
-Readonly my $ALIGN_MATES_GAP_MAX        => 100_000;
-Readonly my $ALIGN_SJDB_OVERHANG_MIN    => 10;
-Readonly my $CHIM_JUNCTION_OVERHANG_MIN => 12;
-Readonly my $CHIM_SCORE_DROP_MAX        => 30;
-Readonly my $CHIM_SEGMENT_MIN           => 12;
-Readonly my $CHIM_SEGMENT_READ_GAP_MAX  => 3;
-Readonly my $LIMIT_BAM_SORT_RAM         => 315_321_372_30;
-Readonly my $MINUS_ONE                  => -1;
-Readonly my $PE_OVERLAP_NBASES_MIN      => 10;
-Readonly my $THREAD_NUMBER              => 16;
-Readonly my $THREE                      => 3;
+Readonly my $ALIGN_INTRON_MAX            => 100_000;
+Readonly my $ALIGN_MATES_GAP_MAX         => 100_000;
+Readonly my $ALIGN_SJDB_OVERHANG_MIN     => 10;
+Readonly my $CHIM_JUNCTION_OVERHANG_MIN  => 12;
+Readonly my $CHIM_MULTIMAP_SCORE_RANGE   => 3;
+Readonly my $CHIM_NONCHIM_SCORE_DROP_MIN => 10;
+Readonly my $CHIM_SCORE_DROP_MAX         => 30;
+Readonly my $CHIM_SEGMENT_MIN            => 12;
+Readonly my $CHIM_SEGMENT_READ_GAP_MAX   => 3;
+Readonly my $LIMIT_BAM_SORT_RAM          => 315_321_372_30;
+Readonly my $MINUS_ONE                   => -1;
+Readonly my $PE_OVERLAP_MMP              => 0.1;
+Readonly my $PE_OVERLAP_NBASES_MIN       => 10;
+Readonly my $THREAD_NUMBER               => 16;
+Readonly my $THREE                       => 3;
+Readonly my $ALIGN_SPLICED_MATEMAP_LMIN  => 30;
 
 my @function_base_commands = qw{ STAR };
 
@@ -104,6 +108,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    align_insertion_flush => {
+        input           => q{Right},
+        expected_output => q{--alignInsertionFlush} . $SPACE . q{Right},
+    },
     align_intron_max => {
         input           => $ALIGN_INTRON_MAX,
         expected_output => q{--alignIntronMax} . $SPACE . $ALIGN_INTRON_MAX,
@@ -120,6 +128,10 @@ my %specific_argument = (
         input           => q{5 -1 5 5},
         expected_output => q{--alignSJstitchMismatchNmax 5 -1 5 5},
     },
+    align_spliced_mate_map_lmin => {
+        input           => $ALIGN_SPLICED_MATEMAP_LMIN,
+        expected_output => q{--alignSplicedMateMapLmin} . $SPACE . $ALIGN_SPLICED_MATEMAP_LMIN,
+    },
     align_spliced_mate_map_lmin_over_lmate => {
         input           => q{0.5},
         expected_output => q{--alignSplicedMateMapLminOverLmate 0.5},
@@ -131,6 +143,19 @@ my %specific_argument = (
     chim_multimap_nmax => {
         input           => 1,
         expected_output => q{--chimMultimapNmax 1},
+    },
+    chim_multimap_score_range => {
+        input           => $CHIM_MULTIMAP_SCORE_RANGE,
+        expected_output => q{--chimMultimapScoreRange} . $SPACE . $CHIM_MULTIMAP_SCORE_RANGE,
+
+    },
+    chim_nonchim_score_drop_min => {
+        input           => $CHIM_NONCHIM_SCORE_DROP_MIN,
+        expected_output => q{--chimNonchimScoreDropMin} . $SPACE . $CHIM_NONCHIM_SCORE_DROP_MIN,
+    },
+    chim_out_junction_format => {
+        input           => 1,
+        expected_output => q{--chimOutJunctionFormat 1},
     },
     chim_out_type => {
         input           => q{WithinBAM},
@@ -215,6 +240,10 @@ my %specific_argument = (
     out_wig_type => {
         input           => q{wiggle},
         expected_output => q{--outWigType} . $SPACE . q{wiggle},
+    },
+    pe_overlap_mmp => {
+        input           => $PE_OVERLAP_MMP,
+        expected_output => q{--peOverlapMMp} . $SPACE . $PE_OVERLAP_MMP,
     },
     pe_overlap_nbases_min => {
         input           => $PE_OVERLAP_NBASES_MIN,

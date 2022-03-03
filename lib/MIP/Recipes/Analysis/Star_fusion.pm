@@ -147,16 +147,15 @@ sub analysis_star_fusion {
     ## Get the io infiles per chain and id
     my %io = get_io_files(
         {
-            chain_id       => q{MAIN},
             file_info_href => $file_info_href,
             id             => $sample_id,
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
-            temp_directory => $temp_directory,
         }
     );
-    my @infile_paths = @{ $io{in}{file_paths} };
+    my $infile_path        = $io{in}{file_path};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
 
     ## Build outfile_paths
     my %recipe = parse_recipe_prerequisites(
@@ -167,26 +166,17 @@ sub analysis_star_fusion {
         }
     );
 
-    ## Join infile lanes
-    my $lanes_id = join $EMPTY_STR,
-      get_sample_fastq_file_lanes(
-        {
-            file_info_href => $file_info_href,
-            sample_id      => $sample_id,
-        }
-      );
     %io = (
         %io,
         parse_io_outfiles(
             {
                 chain_id               => $recipe{job_id_chain},
                 file_info_href         => $file_info_href,
-                file_name_prefixes_ref =>
-                  [ $sample_id . $UNDERSCORE . q{lanes} . $UNDERSCORE . $lanes_id ],
-                id             => $sample_id,
-                outdata_dir    => $active_parameter_href->{outdata_dir},
-                parameter_href => $parameter_href,
-                recipe_name    => $recipe_name,
+                file_name_prefixes_ref => [$infile_path_prefix],
+                id                     => $sample_id,
+                outdata_dir            => $active_parameter_href->{outdata_dir},
+                parameter_href         => $parameter_href,
+                recipe_name            => $recipe_name,
             }
         )
     );
@@ -220,20 +210,6 @@ sub analysis_star_fusion {
     ## Star-fusion
     say {$filehandle} q{## Performing fusion transcript detections using } . $recipe_name;
 
-    ## Create sample file
-    my $sample_files_path = catfile( $outdir_path, $sample_id . q{_file.txt} );
-    create_star_fusion_sample_file(
-        {
-            filehandle        => $filehandle,
-            file_info_href    => $file_info_href,
-            infile_paths_ref  => \@infile_paths,
-            samples_file_path => $sample_files_path,
-            sample_id         => $sample_id,
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
-    my $star_aln_tmpdir    = catdir( $temp_directory, q{star_aln} );
     my $star_fusion_tmpdir = catdir( $temp_directory, q{star_fusion} );
     star_fusion(
         {
@@ -243,8 +219,7 @@ sub analysis_star_fusion {
             genome_lib_dir_path   => $active_parameter_href->{star_fusion_genome_lib_dir},
             min_junction_reads    => $active_parameter_href->{star_fusion_min_junction_reads},
             output_directory_path => $outdir_path,
-            samples_file_path     => $sample_files_path,
-            aln_temp_directory    => $star_aln_tmpdir,
+            sjdb_path             => $infile_path,
             fusion_temp_directory => $star_fusion_tmpdir,
         }
     );
@@ -263,7 +238,7 @@ sub analysis_star_fusion {
 
     say {$filehandle} q{## Remove intermediary files};
   FILE_TAG:
-    foreach my $file_tag (qw{ _STARgenome _STARpass1 _starF_checkpoints }) {
+    foreach my $file_tag (qw{ _starF_checkpoints }) {
 
         gnu_rm(
             {

@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [10.2.4]
 
+- Split Star fusion alignment and detection into two recipes
 - Use temp directory with Star-Fusion
 - Resource bump for RNA
 - Limit memory for glnexus
