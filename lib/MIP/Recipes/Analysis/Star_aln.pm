@@ -904,7 +904,6 @@ sub analysis_star_fusion_aln {
             }
         )
     );
-    my $outdir_path         = $io{out}{dir_path};
     my $outfile_name        = ${ $io{out}{file_names} }[0];
     my $outfile_path        = $io{out}{file_path};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
@@ -1048,7 +1047,7 @@ sub analysis_star_fusion_aln {
     gnu_mv(
         {
             filehandle   => $filehandle,
-            infile_path  => catfile( $outdir_path, q{Chimeric.out.junction} ),
+            infile_path  => $outfile_path_prefix . $DOT . q{Chimeric.out.junction},
             outfile_path => $outfile_path,
         }
     );
