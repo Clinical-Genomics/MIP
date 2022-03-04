@@ -166,8 +166,8 @@ recipe_time:
     sacct: 1
     salmon_quant: 5
     star_aln: 12
-    star_fusion: 30
-    star_fusion_aln: 6
+    star_fusion: 36
+    star_fusion_aln: 12
     stringtie_ar: 6
     svdb_merge_fusion: 1
     trim_galore_ar: 6
