@@ -155,7 +155,7 @@ sub analysis_star_fusion {
         }
     );
     my $infile_path        = $io{in}{file_path};
-    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_name_prefix = $io{in}{file_name_prefix};
 
     ## Build outfile_paths
     my %recipe = parse_recipe_prerequisites(
@@ -172,7 +172,7 @@ sub analysis_star_fusion {
             {
                 chain_id               => $recipe{job_id_chain},
                 file_info_href         => $file_info_href,
-                file_name_prefixes_ref => [$infile_path_prefix],
+                file_name_prefixes_ref => [$infile_name_prefix],
                 id                     => $sample_id,
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
