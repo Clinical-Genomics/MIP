@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Use temp directory with Star-Fusion
 - Resource bump for RNA
 - Limit memory for glnexus
+- Use non-gpu version of Deepvariant by default
 
 ## [10.2.3]
 
