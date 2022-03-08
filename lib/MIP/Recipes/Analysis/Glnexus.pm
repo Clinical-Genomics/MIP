@@ -191,8 +191,8 @@ sub analysis_glnexus {
     say {$filehandle} q{## } . $recipe_name;
 
     ## Limit memory allocation for glnexus
-    Readonly my $FIFTY => 50;
-    my $glnexus_memory = $memory - $FIFTY;
+    Readonly my $REDUCE_GLNEXUS_MEMORY => 50;
+    my $glnexus_memory = $memory - $REDUCE_GLNEXUS_MEMORY;
     glnexus_merge(
         {
             config           => q{DeepVariant_unfiltered},

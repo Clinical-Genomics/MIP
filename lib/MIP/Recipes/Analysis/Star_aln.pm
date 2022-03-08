@@ -748,16 +748,16 @@ sub analysis_star_fusion_aln {
 
 ## Function : Alignment of fastq files using star aln
 ## Returns  :
-## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
-##          : $case_id                 => Family id
-##          : $file_info_href          => File_info hash {REF}
-##          : $job_id_href             => Job id hash {REF}
-##          : $parameter_href          => Parameter hash {REF}
-##          : $profile_base_command    => Submission profile base command
-##          : $recipe_name             => Program name
-##          : $sample_id               => Sample id
-##          : $sample_info_href        => Info on samples and case hash {REF}
-##          : $temp_directory          => Temporary directory
+## Arguments: $active_parameter_href => Active parameters for this analysis hash {REF}
+##          : $case_id               => Family id
+##          : $file_info_href        => File_info hash {REF}
+##          : $job_id_href           => Job id hash {REF}
+##          : $parameter_href        => Parameter hash {REF}
+##          : $profile_base_command  => Submission profile base command
+##          : $recipe_name           => Program name
+##          : $sample_id             => Sample id
+##          : $sample_info_href      => Info on samples and case hash {REF}
+##          : $temp_directory        => Temporary directory
 
     my ($arg_href) = @_;
 

@@ -44,7 +44,6 @@ sub star_fusion {
 ##          : $fusion_inspector       => Run FusionInspector in either inspect or validate mode
 ##          : $fusion_temp_directory  => Temporary directory
 ##          : $genome_lib_dir_path    => Path to the directory containing the genome library
-##          :
 ##          : $min_junction_reads     => Minimum number of reads spanning the junction {REF}
 ##          : $output_directory_path  => output directory path
 ##          : $samples_file_path      => Sample file path
