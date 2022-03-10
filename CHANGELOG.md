@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [10.2.4]
+
+- Split Star-Fusion alignment and detection into two recipes
+- Use temp directory with Star-Fusion
+- Resource bump for RNA
+- Limit memory for glnexus
+- Use non-gpu version of Deepvariant by default
+
 ## [10.2.3]
 
 - Updates Chromograph to version 1.1.4

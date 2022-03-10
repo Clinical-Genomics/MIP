@@ -87,6 +87,11 @@ sub build_container_cmd {
     my @container_constant_bind_path = @CONTAINER_BIND_PATHS;
     my %container_cmd;
 
+    my @gpu_executables =
+      exists $active_parameter_href->{gpu_capable_executables}
+      ? @{ $active_parameter_href->{gpu_capable_executables} }
+      : [];
+
   CONTAINER_NAME:
     foreach my $container_name ( keys %{$container_href} ) {
 
@@ -96,11 +101,6 @@ sub build_container_cmd {
                 uri_ref           => \$container_href->{$container_name}{uri},
             }
         );
-
-        my @gpu_executables =
-          exists $active_parameter_href->{gpu_capable_executables}
-          ? @{ $active_parameter_href->{gpu_capable_executables} }
-          : [];
 
       EXECUTABLE:
         while ( my ( $executable_name, $executable_path ) =
@@ -119,7 +119,7 @@ sub build_container_cmd {
 
             my $gpu_switch;
             if ( any { $_ eq $executable_name } @gpu_executables ) {
-                $gpu_switch = 1;
+                $gpu_switch = $container_href->{$container_name}{gpu_support} ? 1 : 0;
             }
 
             my @cmds = run_container(
