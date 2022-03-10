@@ -23,16 +23,13 @@ use Test::Trap;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Star_fusion} => [qw{ star_fusion }],
-);
+    my %perl_module = ( q{MIP::Program::Star_fusion} => [qw{ star_fusion }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -77,9 +74,7 @@ my %base_argument = (
 my %required_argument = (
     genome_lib_dir_path => {
         input           => catfile(qw{ dir genome_lib_dir_path }),
-        expected_output => q{--genome_lib_dir}
-          . $SPACE
-          . catfile(qw{ dir genome_lib_dir_path }),
+        expected_output => q{--genome_lib_dir} . $SPACE . catfile(qw{ dir genome_lib_dir_path }),
     },
     output_directory_path => {
         input           => catfile(qw{ dir }),
@@ -92,6 +87,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    aln_temp_directory => {
+        input           => catfile(qw{ temp directory }),
+        expected_output => q{--outTmpDir} . $SPACE . catfile(qw{ temp directory }),
+    },
     cpu => {
         input           => $CPU,
         expected_output => q{--CPU} . $SPACE . $CPU,
@@ -104,11 +103,13 @@ my %specific_argument = (
         input           => q{inspect},
         expected_output => q{--FusionInspector inspect},
     },
+    fusion_temp_directory => {
+        input           => catfile(qw{ temp directory }),
+        expected_output => q{--tmpdir} . $SPACE . catfile(qw{ temp directory }),
+    },
     genome_lib_dir_path => {
         input           => catfile(qw{ dir genome_lib_dir_path }),
-        expected_output => q{--genome_lib_dir}
-          . $SPACE
-          . catfile(qw{ dir genome_lib_dir_path }),
+        expected_output => q{--genome_lib_dir} . $SPACE . catfile(qw{ dir genome_lib_dir_path }),
     },
     min_junction_reads => {
         input           => 0,
@@ -120,9 +121,7 @@ my %specific_argument = (
     },
     samples_file_path => {
         input           => catfile(qw{ dir samples_file.txt }),
-        expected_output => q{--samples_file}
-          . $SPACE
-          . catfile(qw{ dir samples_file.txt }),
+        expected_output => q{--samples_file} . $SPACE . catfile(qw{ dir samples_file.txt }),
     },
     sjdb_path => {
         input           => catfile(qw{ dir junctions.tab }),
@@ -159,9 +158,7 @@ my %fastq_required_argument = (
     },
     genome_lib_dir_path => {
         input           => catfile(qw{ dir genome_lib_dir_path }),
-        expected_output => q{--genome_lib_dir}
-          . $SPACE
-          . catfile(qw{ dir genome_lib_dir_path }),
+        expected_output => q{--genome_lib_dir} . $SPACE . catfile(qw{ dir genome_lib_dir_path }),
     },
     output_directory_path => {
         input           => catfile(qw{ dir }),

@@ -142,16 +142,16 @@ recipe_time:
     bcftools_norm: 2
     blobfish: 1
     bootstrapann: 2
-    build_sj_tracks: 1
+    build_sj_tracks: 2
     dna_vcf_reformat: 1
     fastqc_ar: 1
-    fusion_report: 1
-    gatk_asereadcounter: 2
+    fusion_report: 8
+    gatk_asereadcounter: 3
     gatk_baserecalibration: 5
-    gatk_haplotypecaller: 6
-    gatk_splitncigarreads: 8
+    gatk_haplotypecaller: 12
+    gatk_splitncigarreads: 16
     gatk_variantfiltration: 1
-    genebody_coverage: 3
+    genebody_coverage: 6
     gffcompare_ar: 1
     gzip_fastq: 2
     markduplicates: 8
@@ -160,14 +160,15 @@ recipe_time:
     merge_fusion_reports: 1
     picardtools_collectrnaseqmetrics: 4
     picardtools_mergesamfiles: 2
-    preseq_ar: 2
+    preseq_ar: 4
     qccollect_ar: 1
     rseqc: 3
     sacct: 1
     salmon_quant: 5
-    star_aln: 8
-    star_fusion: 16
-    stringtie_ar: 2
+    star_aln: 16
+    star_fusion: 36
+    star_fusion_aln: 16
+    stringtie_ar: 6
     svdb_merge_fusion: 1
     trim_galore_ar: 6
     varianteffectpredictor: 4
@@ -180,19 +181,22 @@ recipe_memory:
   data_type: HASH
   default:
     analysisrunstatus: 1
-    build_sj_tracks: 8
+    build_sj_tracks: 12
     dna_vcf_reformat: 2
     fusion_report: 15
     gatk_asereadcounter: 25
+    gatk_splitncigarreads: 20
     gatk_variantfiltration: 8
     genebody_coverage: 16
+    merge_fusion_reports: 8
     multiqc_ar: 10
     picardtools_collectrnaseqmetrics: 10
     picardtools_mergesamfiles: 5
     preseq_ar: 8
-    rseqc: 35
+    rseqc: 40
     salmon_quant: 2
-    star_aln: 3
+    star_aln: 5
+    star_fusion: 15
     stringtie_ar: 2
     trim_galore_ar: 5
     varianteffectpredictor: 12
@@ -216,7 +220,7 @@ recipe_core_number:
     gatk_asereadcounter: 1
     gatk_baserecalibration: 13
     gatk_haplotypecaller: 13
-    gatk_splitncigarreads: 12
+    gatk_splitncigarreads: 8
     gatk_variantfiltration: 1
     genebody_coverage: 1
     gffcompare_ar: 1
@@ -232,7 +236,8 @@ recipe_core_number:
     sacct: 1
     salmon_quant: 20
     star_aln: 36
-    star_fusion: 36
+    star_fusion: 2
+    star_fusion_aln: 36
     stringtie_ar: 36
     svdb_merge_fusion: 1
     megafusion_ar: 1
@@ -431,6 +436,17 @@ build_sj_tracks:
     - wigToBigWig
   type: recipe
 ## Star Fusion
+star_fusion_aln:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _chimeric
+  outfile_suffix: ".junction"
+  program_executables:
+    - STAR
+  type: recipe
 star_fusion:
   analysis_mode: sample
   associated_recipe:
