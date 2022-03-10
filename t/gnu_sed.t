@@ -110,6 +110,14 @@ my %base_argument = (
         input           => q{stderrfile.test},
         expected_output => q{2>> stderrfile.test},
     },
+    stdoutfile_path => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1> stdoutfile.test},
+    },
+    stdoutfile_path_append => {
+        input           => q{stdoutfile.test},
+        expected_output => q{1>> stdoutfile.test},
+    },
 );
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
@@ -129,10 +137,6 @@ my %specific_argument = (
     inplace_edit => {
         input           => 1,
         expected_output => q{-i},
-    },
-    outfile_path => {
-        input           => q{outfile.test},
-        expected_output => q{> outfile.test},
     },
     script => {
         input           => q{script.test},

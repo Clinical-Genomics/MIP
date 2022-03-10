@@ -21,16 +21,13 @@ use Modern::Perl qw{ 2018 };
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Environment::Container} => [qw{ parse_container_uri }],
-);
+    my %perl_module = ( q{MIP::Environment::Container} => [qw{ parse_container_uri }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -87,4 +84,19 @@ parse_container_uri(
 ## Then leave uri unchanged
 $expected_uri = q{docker://quay.io/clinicalgenomics/chanjo:4.2.0};
 is( $uri, $expected_uri, q{Parse quay uri for singularity} );
+
+## Given a ghcr uri
+$uri = q{ghcr.io/dnanexus-rnd/glnexus:v1.4.1};
+## When container manager is singularity
+parse_container_uri(
+    {
+        container_manager => q{singularity},
+        uri_ref           => \$uri,
+    }
+);
+
+## Then prepend docker://
+$expected_uri = q{docker://ghcr.io/dnanexus-rnd/glnexus:v1.4.1};
+is( $uri, $expected_uri, q{Parse uri for singularity} );
+
 done_testing();

@@ -6,6 +6,7 @@ use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
 use File::Spec::Functions qw{ catdir catfile };
+use File::Temp qw{ tempdir };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -32,8 +33,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Install::Container} => [qw{ install_containers }],
-        q{MIP::Test::Fixtures} =>
-          [qw{ test_constants test_log test_mip_hashes }],
+        q{MIP::Test::Fixtures}              => [qw{ test_constants test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -55,10 +55,10 @@ test_log( { no_screen => 1, } );
 test_constants( {} );
 
 ## Given install parameters
-my %active_parameter =
-  test_mip_hashes( { mip_hash_name => q{install_active_parameter}, } );
-$active_parameter{reference_dir}     = catdir( $test_dir, qw{ a dir } );
-$active_parameter{container_manager} = q{docker};
+my %active_parameter = test_mip_hashes( { mip_hash_name => q{install_active_parameter}, } );
+$active_parameter{reference_dir}          = catdir( $test_dir, qw{ a dir } );
+$active_parameter{container_manager}      = q{docker};
+$active_parameter{conda_environment_path} = tempdir( CLEANUP => 1 );
 
 my $is_ok = install_containers(
     {

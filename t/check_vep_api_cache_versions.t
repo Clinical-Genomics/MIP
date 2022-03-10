@@ -54,13 +54,13 @@ my $test_dir = File::Temp->newdir();
 test_log( {} );
 
 ## Given matching vep API and cache version
-my $vep_directory_cache = catdir( $Bin, qw{ data references ensembl-tools-data-103 cache } );
+my $vep_directory_cache = catdir( $Bin, qw{ data references ensembl-tools-data-104 cache } );
 
 my %process_return = (
     buffers_ref   => [],
     error_message => undef,
     stderrs_ref   => [],
-    stdouts_ref   => [qw{ 103 }],
+    stdouts_ref   => [qw{ 104 }],
     success       => 1,
 );
 test_constants(
@@ -70,7 +70,7 @@ test_constants(
 );
 my $base_command = q{vep};
 my $container_base_command =
-  q{singularity exec docker//docker.io/ensemblorg/ensembl-vep:release_103.1 vep};
+  q{singularity exec docker//docker.io/ensemblorg/ensembl-vep:release_104.3 vep};
 my %container_cmd = ( $base_command => $container_base_command, );
 set_container_cmd( { container_cmd_href => \%container_cmd, } );
 
@@ -85,7 +85,7 @@ my $match = check_vep_api_cache_versions(
 ok( $match, q{Return on matching versions} );
 
 ## Given non matching API and cache
-$vep_directory_cache = catdir( $Bin, qw{ data references ensembl-tools-data-103 cache2 } );
+$vep_directory_cache = catdir( $Bin, qw{ data references ensembl-tools-data-104 cache2 } );
 
 ## When comparing API and cache version
 trap {

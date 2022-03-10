@@ -169,6 +169,23 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
+        q{mt_annotation} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{MT annotation vcf},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{mt_annotation_offline} => (
+            documentation => q{MT variants using offline-mode},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{gatk_disable_auto_index_and_file_lock} => (
             cmd_flag      => q{gatk_dis_auto_ind_fl},
             documentation => q{Disable auto index creation and locking when reading rods},
@@ -198,15 +215,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         q{recipe_core_number} => (
             cmd_tags      => [q{recipe_name=X(cores)}],
             documentation => q{Set the number of cores for each recipe},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
-    option(
-        q{set_recipe_core_number} => (
-            cmd_tags      => [q{recipe_name=X(cores)}],
-            documentation => q{Set the number of cores for specific recipe(s)},
             is            => q{rw},
             isa           => HashRef,
         )
@@ -248,16 +256,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         )
     );
 
-    option(
-        q{set_recipe_memory} => (
-            cmd_aliases   => [qw{ srm }],
-            cmd_tags      => [q{recipe_name=X(G)}],
-            documentation => q{Set the memory for specific recipe(s)},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
-
     has(
         q{recipe_time} => (
             cmd_tags      => [q{recipe_name=time(hours)}],
@@ -267,14 +265,6 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
         )
     );
 
-    option(
-        q{set_recipe_time} => (
-            cmd_tags      => [q{recipe_name=time(hours)}],
-            documentation => q{Set the time allocation for specific recipe(s)},
-            is            => q{rw},
-            isa           => HashRef,
-        )
-    );
     option(
         q{infile_dirs} => (
             cmd_aliases   => [qw{ ifd }],
@@ -481,6 +471,69 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
             documentation => q{Static binning of base quality scores},
             is            => q{rw},
             isa           => ArrayRef [Int],
+        )
+    );
+
+    option(
+        q{gatk_collectreadcounts} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{GATK CollectReadCounts for Gens},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_denoisereadcounts} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{GATK DenoiseReadCounts for Gens},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gens_generatedata} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Generates .bed-files for Gens},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gens_intervals} => (
+            cmd_tags      => [q{Default: grch37_gens_targets_preprocessed_100bp.interval_list}],
+            documentation => q{Precomputed 100bp intervals for Gens},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{gens_panel_of_normals_female} => (
+            cmd_tags      => [q{Default: grch37_gens_female_pon_100bp.hdf5}],
+            documentation => q{Gens read count reference},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{gens_panel_of_normals_male} => (
+            cmd_tags      => [q{Default: grch37_gens_male_pon_100bp.hdf5}],
+            documentation => q{Gens read count reference},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{gens_gnomad_positions} => (
+            cmd_tags      => [q{Default: grch37_gnomad.genomes.r2.1.1.sites.5percent.pos.txt}],
+            documentation => q{Gnomad SNV positions for Gens},
+            is            => q{rw},
+            isa           => Str,
         )
     );
 
@@ -808,7 +861,7 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
-        q{sv_fqa_annotations} => (
+        q{sv_fqa_vcfanno_filters} => (
             documentation => q{Frequency annotations to use when filtering },
             is            => q{rw},
             isa           => ArrayRef,
@@ -1407,6 +1460,7 @@ q{Number of hom-ref genotypes to infer at sites not present in a panel. Connecte
         q{gatk_combinevariants_callers_to_combine} => (
             cmd_flag      => q{gatk_combinevar_use_callers},
             documentation => q{Combine vcf output from these recipes},
+            cmd_tags      => [q{Defaults: glnexus_merge}],
             is            => q{rw},
             isa           => ArrayRef [ enum( [qw{ gatk_variantrecalibration glnexus_merge }] ), ],
         )

@@ -12,7 +12,7 @@ names=["Obs", "Hom"]
 ops=["self", "self"]
 
 [[annotation]]
-file="TEST_REFERENCES!/grch38_gnomad_reformated_-r3.0-.vcf.gz"
+file="TEST_REFERENCES!/grch38_gnomad_reformated_-r3.1.1-.vcf.gz"
 fields = ["AF", "AF_popmax"]
 ops=["self", "self"]
-names=["GNOMADAF", "GNOMADAF_POPMAX"]
+names=["GNOMADAF", "GNOMADAF_popmax"]

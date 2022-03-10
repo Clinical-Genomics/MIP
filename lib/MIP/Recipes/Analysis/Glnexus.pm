@@ -17,7 +17,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $DASH $LOG_NAME $NEWLINE $PIPE $SPACE };
+use MIP::Constants qw{ $DASH $LOG_NAME $NEWLINE $PIPE $SINGLE_QUOTE $SPACE };
 
 BEGIN {
 
@@ -114,7 +114,8 @@ sub analysis_glnexus {
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Program::Bcftools qw{ bcftools_norm };
     use MIP::Program::Glnexus qw{ glnexus_merge };
-    use MIP::Program::Htslib qw{ htslib_tabix };
+    use MIP::Program::Gnu::Software::Gnu_sed qw{ gnu_sed };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
@@ -223,11 +224,29 @@ sub analysis_glnexus {
         {
             filehandle        => $filehandle,
             infile_path       => $DASH,
-            outfile_path      => $outfile_path,
-            output_type       => q{z},
+            output_type       => q{v},
             reference_path    => $active_parameter_href->{human_genome_reference},
             remove_duplicates => 1,
             threads           => $core_number,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    ## Add to info field so that scout can identify the caller
+    gnu_sed(
+        {
+            filehandle => $filehandle,
+            script     => _build_sed_script( {} ),
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    htslib_bgzip(
+        {
+            filehandle      => $filehandle,
+            stdoutfile_path => $outfile_path,
+            threads         => $core_number,
+
         }
     );
     say {$filehandle} $NEWLINE;
@@ -281,6 +300,27 @@ sub analysis_glnexus {
         );
     }
     return 1;
+}
+
+sub _build_sed_script {
+
+    ## Function : Build sed script to add caller information to vcf
+
+    my $header_info =
+      q{##INFO=<ID=FOUND_IN,Number=1,Type=String,Description="Program that called the variant">};
+    my $info_tag = q{FOUND_IN=deepvariant};
+
+    my $sed_script = $SINGLE_QUOTE
+      ## Find first occurence of ##INFO
+      . q{0,/^##INFO.*/}
+
+      ## Prepend header to line
+      . q{s//} . $header_info . q{\n&/; }
+
+      ## Append new info tag to all INFO columns (8th)
+      . q{s/[^\t]*/&;} . $info_tag . q{/8} . $SINGLE_QUOTE;
+
+    return $sed_script;
 }
 
 1;

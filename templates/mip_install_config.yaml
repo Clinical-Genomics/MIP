@@ -52,7 +52,7 @@ container:
   cyrius:
     executable:
       star_caller.py:
-    uri: docker.io/clinicalgenomics/cyrius:v1.1
+    uri: docker.io/clinicalgenomics/cyrius:v1.1.1
   deepvariant:
     executable:
       run_deepvariant: /opt/deepvariant/bin/run_deepvariant
@@ -60,12 +60,12 @@ container:
       call_variants: /opt/deepvariant/bin/call_variants
       postprocess_variants: /opt/deepvariant/bin/postprocess_variants
     gpu_support: 0
-    uri: docker.io/google/deepvariant:1.1.0
+    uri: docker.io/google/deepvariant:1.2.0
   deeptrio:
     executable:
       run_deeptrio: /opt/deepvariant/bin/deeptrio/run_deeptrio
-    gpu_support: 1
-    uri: docker.io/google/deepvariant:deeptrio-1.1.0-gpu
+    gpu_support: 0
+    uri: docker.io/google/deepvariant:deeptrio-1.2.0
   delly:
     executable:
       delly:
@@ -85,11 +85,15 @@ container:
   gatk4:
     executable:
       gatk:
-    uri: docker.io/broadinstitute/gatk:4.2.0.0
+    uri: docker.io/broadinstitute/gatk:4.2.2.0
   genmod:
     executable:
       genmod:
     uri: docker.io/clinicalgenomics/genmod:3.7.3
+  gens_preproc:
+    executable:
+      generate_gens_data.pl:
+    uri: docker.io/raysloks/gens_preproc:1.0.0
   gffcompare:
     executable:
       gffcompare:
@@ -97,14 +101,18 @@ container:
   glnexus:
     executable:
       glnexus_cli:
-    uri: quay.io/mlin/glnexus:v1.3.1
+    uri: docker.io/clinicalgenomics/glnexus:v1.4.1
+  hmtnote:
+    executable:
+      hmtnote:
+    uri: docker.io/clinicalgenomics/hmtnote:0.7.2
   htslib:
     executable:
       bcftools:
       bgzip:
       samtools:
       tabix:
-    uri: docker.io/clinicalgenomics/htslib:1.10.2
+    uri: docker.io/clinicalgenomics/htslib:1.13
   manta:
     executable:
       configManta.py:
@@ -121,7 +129,7 @@ container:
   multiqc:
     executable:
       multiqc:
-    uri: docker.io/ewels/multiqc:1.10.1
+    uri: docker.io/ewels/multiqc:v1.11
   perl:
     executable:
       perl:
@@ -193,7 +201,7 @@ container:
       remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
       restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
       STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
-    uri: docker.io/trinityctat/starfusion:1.10.0
+    uri: docker.io/trinityctat/starfusion:1.10.1
   stranger:
     executable:
       stranger:
@@ -244,7 +252,7 @@ container:
   vep:
     executable:
       vep:
-    uri: docker.io/ensemblorg/ensembl-vep:release_103.1
+    uri: docker.io/ensemblorg/ensembl-vep:release_104.3
   vcf2cytosure:
     executable:
       vcf2cytosure:
