@@ -123,7 +123,7 @@ sub slurm_build_sbatch_header {
             strict_type => 1,
         },
         slurm_quality_of_service => {
-            allow       => [ undef, qw{ high low normal } ],
+            allow       => [ undef, qw{ express high low normal } ],
             store       => \$slurm_quality_of_service,
             strict_type => 1,
         },
