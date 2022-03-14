@@ -739,7 +739,7 @@ gatk_combinevariantcallsets:
   data_type: SCALAR
   default: 1
   file_tag: _gatkcomb
-  outfile_suffix: ".vcf"
+  outfile_suffix: ".vcf.gz"
   type: recipe
 gatk_combinevariantcallsets_bcf_file:
   associated_recipe:

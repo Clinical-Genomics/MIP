@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [10.2.5]
+
+- Allow slurm quality of service flag to be set to 'express'
+
 ## [10.2.4]
 
 - Split Star-Fusion alignment and detection into two recipes
