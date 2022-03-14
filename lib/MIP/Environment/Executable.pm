@@ -359,6 +359,10 @@ q?'my ($version) = /Hunter\s+(v\d+.\d+.\d+)/xms; if($version) {print $version;la
             version_regexp =>
 q?'my ($version) = /geneBody_coverage2.py\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
+        q{generate_gens_data.pl} => {
+            version_cmd    => q{--version},
+            version_regexp => q?'my ($version) = /generate_gens_data\.pl\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
         genmod => {
             version_cmd    => q{--version},
             version_regexp =>
@@ -378,6 +382,11 @@ q?'my ($version) = /genmod\s+version:\s+(\S+)/xms; if($version) {print $version;
             version_cmd    => q{--version},
             version_regexp =>
               q?'my ($version) = /gzip\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        hmtnote => {
+            version_cmd    => q{--version},
+            version_regexp =>
+              q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?,
         },
         q{infer_exeperiment.py} => {
             version_cmd    => q{--version},

@@ -102,6 +102,14 @@ sub _build_usage {
     );
 
     option(
+        q{container_config_file} => (
+            documentation => q{File with install configuration parameters in YAML format},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{core_ram_memory} => (
             cmd_tags      => [q{Default: 5}],
             documentation => q{RAM memory size of the core(s) in GigaBytes},
@@ -148,7 +156,7 @@ sub _build_usage {
     );
 
     option(
-        q{install_config_file} => (
+        q{container_config_file} => (
             documentation => q{File with install configuration parameters in YAML format},
             is            => q{rw},
             isa           => Str,

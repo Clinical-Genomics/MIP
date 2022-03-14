@@ -64,7 +64,7 @@ my $metric_name  = q{AT_DROPOUT};
 my $metric_value = 1;
 
 ## Given a recipe
-my $recipe_name = q{picardtools_collectmultiplemetrics};
+my $recipe_name = q{collecthsmetrics};
 
 ## Given two sample_ids
 my $sample_id   = q{ADM1059A1};

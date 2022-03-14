@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Samtools} => [qw{ samtools_stats }],
-);
+    my %perl_module = ( q{MIP::Program::Samtools} => [qw{ samtools_stats }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -88,6 +85,10 @@ my %specific_argument = (
     auto_detect_input_format => {
         input           => 1,
         expected_output => q{-s},
+    },
+    insert_size => {
+        input           => q{16000},
+        expected_output => q{--insert-size 16000},
     },
     outfile_path => {
         input           => q{outpath},

@@ -99,6 +99,10 @@ my %specific_argument = (
         inputs_ref      => [qw{ ^sample_1 sample_2 }],
         expected_output => q{--samples ^sample_1,sample_2},
     },
+    targets => {
+        input           => q{^MT},
+        expected_output => q{--targets} . $SPACE . q{^MT},
+    },
     threads => {
         input           => $NR_THREADS_TO_USE,
         expected_output => q{--threads} . $SPACE . $NR_THREADS_TO_USE,

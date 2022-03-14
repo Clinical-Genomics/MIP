@@ -18,6 +18,8 @@ CHAIN_ALL:
     - CHAIN_TCOV:
       - tiddit_coverage
       - chromograph_cov
+    - CHAIN_MTDEL:
+      - mitodel
     - CHAIN_SBCOV:
       - sambamba_depth
     - CHAIN_SMN:
@@ -70,6 +72,10 @@ CHAIN_ALL:
       - rtg_vcfeval
     - CHAIN_GATKEVALALL:
       - gatk_variantevalall
+    - CHAIN_GENS:
+      - gatk_collectreadcounts
+      - gatk_denoisereadcounts
+      - gens_generatedata
   - CHAIN_MAIN:
     - prepareforvariantannotationblock
     - rhocall_ar
@@ -81,6 +87,7 @@ CHAIN_ALL:
     - CHAIN_UPD:
       - upd_ar
       - chromograph_upd
+    - mt_annotation
     - frequency_filter
     - cadd_ar
     - varianteffectpredictor

@@ -93,6 +93,10 @@ container:
     executable:
       genmod:
     uri: docker.io/clinicalgenomics/genmod:3.7.3
+  gens_preproc:
+    executable:
+      generate_gens_data.pl:
+    uri: docker.io/raysloks/gens_preproc:1.0.0
   gffcompare:
     executable:
       gffcompare:

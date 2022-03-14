@@ -47,7 +47,7 @@ diag(   q{Test analysis_variant_annotation from Variant_annotation.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
+test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
 my $recipe_name    = q{variant_annotation};
@@ -107,6 +107,26 @@ my $is_ok = analysis_variant_annotation(
 );
 
 ## Then return TRUE
+ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
+
+## Given no loqusdb file in toml - alters the bcftools command
+$active_parameter{vcfanno_config} =
+  catfile( $Bin, qw{ data references grch37_vcfanno_config_bad_template-v1.0-.toml } );
+
+$is_ok = analysis_variant_annotation(
+    {
+        active_parameter_href => \%active_parameter,
+        case_id               => $case_id,
+        file_info_href        => \%file_info,
+        job_id_href           => \%job_id,
+        parameter_href        => \%parameter,
+        profile_base_command  => $slurm_mock_cmd,
+        recipe_name           => $recipe_name,
+        sample_info_href      => \%sample_info,
+    }
+);
+
+## Then still return TRUE
 ok( $is_ok, q{ Executed analysis recipe } . $recipe_name );
 
 done_testing();
