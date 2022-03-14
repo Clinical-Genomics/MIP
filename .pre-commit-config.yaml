@@ -9,7 +9,7 @@ repos:
       args: [--markdown-linebreak-ext=md]
     - id: check-merge-conflict
   - repo: https://github.com/perltidy/perltidy
-    rev: '20201207'
+    rev: '20220217.01'
     hooks:
     - id: perltidy
       types: [file]

@@ -31,6 +31,10 @@ vep release_103.1 -> release_104.3
 - [NEW] gnomad mt: r3.1
 - clinvar: 20210415 -> 20210919
 
+## [10.2.5]
+
+- Allow slurm quality of service flag to be set to 'express'
+
 ## [10.2.4]
 
 - Split Star-Fusion alignment and detection into two recipes
