@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - GATK Haplotypecaller has been turned off in favour of Deepvariant
 - Introduces possibility to store singularity images locally as a .sif file
 - Increased allele frequency cut off for when a variant is filtered out to 0.7
+- Turned off Star_caller and Telomerecat by default
 
 ### Tools
 
