@@ -406,6 +406,7 @@ sub pipeline_analyse_rd_rna {
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Salmon_quant qw{ analysis_salmon_quant };
     use MIP::Recipes::Analysis::Star_fusion qw{ analysis_star_fusion };
+    use MIP::Recipes::Analysis::Star_aln qw{ analysis_star_fusion_aln };
     use MIP::Recipes::Analysis::Stringtie qw{ analysis_stringtie };
     use MIP::Recipes::Analysis::Svdb_merge_fusion qw{ analysis_svdb_merge_fusion };
     use MIP::Recipes::Analysis::Trim_galore qw{ analysis_trim_galore };
@@ -471,6 +472,7 @@ sub pipeline_analyse_rd_rna {
         salmon_quant                     => \&analysis_salmon_quant,
         star_aln                         => undef,
         star_fusion                      => \&analysis_star_fusion,
+        star_fusion_aln                  => \&analysis_star_fusion_aln,
         stringtie_ar                     => \&analysis_stringtie,
         svdb_merge_fusion                => \&analysis_svdb_merge_fusion,
         trim_galore_ar                   => \&analysis_trim_galore,

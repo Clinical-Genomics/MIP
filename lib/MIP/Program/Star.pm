@@ -34,13 +34,18 @@ sub star_aln {
 
 ## Function  : Perl wrapper for STAR v2.7.8a.
 ## Returns   : @commands
-## Arguments : $align_intron_max                       => Maximum intron size
+## Arguments : $align_insertion_flush                  => Flush ambiguous insertions
+##           : $align_intron_max                       => Maximum intron size
 ##           : $align_mates_gap_max                    => Maximum gap between two mates
 ##           : $align_sj_stitch_mismatch_nmax          => Number of mismatches allowed for each splicing motif (4)
 ##           : $align_sjdb_overhang_min                => Minimum overhang (i.e. block size) for spliced alignments
+##           : $align_spliced_mate_map_lmin            => Minimum mapped length for spliced read
 ##           : $align_spliced_mate_map_lmin_over_lmate => alignSplicedMateMapLmin normalized to mate length
 ##           : $chim_junction_overhang_min             => Minimum overhang for a chimeric junction
 ##           : $chim_multimap_nmax                     => Maximum number of chimeric multi-alignments
+##           : $chim_multimap_score_range              => Score range for multimapping chimeras
+##           : $chim_nonchim_score_drop_min            => What it says
+##           : $chim_out_junction_format               => Format of chimeric out junction file
 ##           : $chim_score_drop_max                    => Max drop of total score from the read length
 ##           : $chim_score_junction_non_gtag           => Penalty for a non-GT/AG chimeric junction
 ##           : $chim_score_min                         => Minimum total score of chimeric alignment
@@ -63,6 +68,7 @@ sub star_aln {
 ##           : $out_wig_strand                         => Strandedness of wig output
 ##           : $out_wig_type                           => Output wiggle
 ##           : $pe_overlap_nbases_min                  => Min overlapp to trigger merging and realignment
+##           : $pe_overlap_mmp                         => Min overlapp to trigger merging and realignment
 ##           : $quant_mode                             => Types of quantification requested
 ##           : $read_files_command                     => A command which will be applied to the input files
 ##           : $stderrfile_path                        => Stderrfile path
@@ -75,13 +81,18 @@ sub star_aln {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $align_insertion_flush;
     my $align_intron_max;
     my $align_mates_gap_max;
     my $align_sj_stitch_mismatch_nmax;
     my $align_sjdb_overhang_min;
+    my $align_spliced_mate_map_lmin;
     my $align_spliced_mate_map_lmin_over_lmate;
     my $chim_junction_overhang_min;
     my $chim_multimap_nmax;
+    my $chim_multimap_score_range;
+    my $chim_nonchim_score_drop_min;
+    my $chim_out_junction_format;
     my $chim_out_type;
     my $chim_score_drop_max;
     my $chim_score_junction_non_gtag;
@@ -102,6 +113,7 @@ sub star_aln {
     my $out_wig_strand;
     my $out_wig_type;
     my $pe_overlap_nbases_min;
+    my $pe_overlap_mmp;
     my $quant_mode;
     my $stderrfile_path;
     my $stderrfile_path_append;
@@ -117,6 +129,11 @@ sub star_aln {
     my $two_pass_mode;
 
     my $tmpl = {
+        align_insertion_flush => {
+            allow       => [ undef, qw{ None Right } ],
+            store       => \$align_insertion_flush,
+            strict_type => 1,
+        },
         align_intron_max => {
             store       => \$align_intron_max,
             strict_type => 1,
@@ -139,6 +156,11 @@ sub star_aln {
             store       => \$align_sj_stitch_mismatch_nmax,
             strict_type => 1,
         },
+        align_spliced_mate_map_lmin => {
+            allow       => [ undef, qr/\A \d+ \z /xms ],
+            store       => \$align_spliced_mate_map_lmin,
+            strict_type => 1,
+        },
         align_spliced_mate_map_lmin_over_lmate => {
             store       => \$align_spliced_mate_map_lmin_over_lmate,
             strict_type => 1,
@@ -151,6 +173,21 @@ sub star_aln {
         chim_multimap_nmax => {
             allow       => [ undef, qr/\A \d+ \z /xms ],
             store       => \$chim_multimap_nmax,
+            strict_type => 1,
+        },
+        chim_multimap_score_range => {
+            allow       => [ undef, qr/\A \d+ \z /xms ],
+            store       => \$chim_multimap_score_range,
+            strict_type => 1,
+        },
+        chim_nonchim_score_drop_min => {
+            allow       => [ undef, qr/\A \d+ \z /xms ],
+            store       => \$chim_nonchim_score_drop_min,
+            strict_type => 1,
+        },
+        chim_out_junction_format => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$chim_out_junction_format,
             strict_type => 1,
         },
         chim_out_type => {
@@ -271,6 +308,10 @@ sub star_aln {
             store       => \$pe_overlap_nbases_min,
             strict_type => 1,
         },
+        pe_overlap_mmp => {
+            store       => \$pe_overlap_mmp,
+            strict_type => 1,
+        },
         quant_mode => {
             allow       => [ undef, qw{- GeneCounts} ],
             store       => \$quant_mode,
@@ -323,6 +364,10 @@ sub star_aln {
 
     push @commands, q{--outSAMtype} . $SPACE . $out_sam_type;
 
+    if ($align_insertion_flush) {
+
+        push @commands, q{--alignInsertionFlush} . $SPACE . $align_insertion_flush;
+    }
     if ($align_intron_max) {
 
         push @commands, q{--alignIntronMax} . $SPACE . $align_intron_max;
@@ -339,6 +384,10 @@ sub star_aln {
 
         push @commands, q{--alignSJstitchMismatchNmax} . $SPACE . $align_sj_stitch_mismatch_nmax;
     }
+    if ($align_spliced_mate_map_lmin) {
+
+        push @commands, q{--alignSplicedMateMapLmin} . $SPACE . $align_spliced_mate_map_lmin;
+    }
     if ($align_spliced_mate_map_lmin_over_lmate) {
 
         push @commands,
@@ -351,6 +400,18 @@ sub star_aln {
     if ($chim_multimap_nmax) {
 
         push @commands, q{--chimMultimapNmax} . $SPACE . $chim_multimap_nmax;
+    }
+    if ($chim_multimap_score_range) {
+
+        push @commands, q{--chimMultimapScoreRange} . $SPACE . $chim_multimap_score_range;
+    }
+    if ($chim_nonchim_score_drop_min) {
+
+        push @commands, q{--chimNonchimScoreDropMin} . $SPACE . $chim_nonchim_score_drop_min;
+    }
+    if ($chim_out_junction_format) {
+
+        push @commands, q{--chimOutJunctionFormat} . $SPACE . $chim_out_junction_format;
     }
     if ($chim_out_type) {
 
@@ -423,6 +484,10 @@ sub star_aln {
     if ($out_wig_type) {
 
         push @commands, q{--outWigType} . $SPACE . $out_wig_type;
+    }
+    if ($pe_overlap_mmp) {
+
+        push @commands, q{--peOverlapMMp} . $SPACE . $pe_overlap_mmp;
     }
     if ($pe_overlap_nbases_min) {
 

@@ -344,7 +344,7 @@ q{Default: jobid, jobname%50, account, partition, alloccpus, TotalCPU, elapsed, 
             cmd_aliases   => [qw{ qos }],
             documentation => q{SLURM quality of service},
             is            => q{rw},
-            isa           => enum( [qw{ low normal high }] ),
+            isa           => enum( [qw{ low normal high express }] ),
         )
     );
 

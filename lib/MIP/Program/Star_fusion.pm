@@ -35,12 +35,14 @@ sub star_fusion {
 
 ## Function : Splice site analysis using STAR-fusion. Based on STAR-Fusion v1.8.0.
 ## Returns  :
-## Arguments: $cpu                    => Number of threads for running STAR
+## Arguments: $aln_temp_directory     => Temporary directory
+##          : $cpu                    => Number of threads for running STAR
 ##          : $examine_coding_effect  => Append coding effect to fusion
 ##          : $fastq_r1_path          => The path of the R1 fastq
 ##          : $fastq_r2_path          => The path of the R2 fastq
 ##          : $filehandle             => Filehandle to write to
 ##          : $fusion_inspector       => Run FusionInspector in either inspect or validate mode
+##          : $fusion_temp_directory  => Temporary directory
 ##          : $genome_lib_dir_path    => Path to the directory containing the genome library
 ##          : $min_junction_reads     => Minimum number of reads spanning the junction {REF}
 ##          : $output_directory_path  => output directory path
@@ -53,11 +55,13 @@ sub star_fusion {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $aln_temp_directory;
     my $cpu;
     my $fastq_r1_path;
     my $fastq_r2_path;
     my $filehandle;
     my $fusion_inspector;
+    my $fusion_temp_directory;
     my $genome_lib_dir_path;
     my $output_directory_path;
     my $min_junction_reads;
@@ -71,6 +75,10 @@ sub star_fusion {
     my $examine_coding_effect;
 
     my $tmpl = {
+        aln_temp_directory => {
+            store       => \$aln_temp_directory,
+            strict_type => 1,
+        },
         cpu => {
             store       => \$cpu,
             strict_type => 1,
@@ -95,6 +103,10 @@ sub star_fusion {
         fusion_inspector => {
             allow       => [ undef, qw{ inspect validate } ],
             store       => \$fusion_inspector,
+            strict_type => 1,
+        },
+        fusion_temp_directory => {
+            store       => \$fusion_temp_directory,
             strict_type => 1,
         },
         genome_lib_dir_path => {
@@ -160,6 +172,10 @@ q{Error: You must either specify the fastq file paths or a splice junction datab
         );
     }
 
+    if ($aln_temp_directory) {
+        push @commands, q{--outTmpDir} . $SPACE . $aln_temp_directory;
+    }
+
     if ($cpu) {
         push @commands, q{--CPU} . $SPACE . $cpu;
     }
@@ -169,7 +185,11 @@ q{Error: You must either specify the fastq file paths or a splice junction datab
     }
 
     if ($fusion_inspector) {
-        push @commands, q{--FusionInspector} . $SPACE . $fusion_inspector,;
+        push @commands, q{--FusionInspector} . $SPACE . $fusion_inspector;
+    }
+
+    if ($fusion_temp_directory) {
+        push @commands, q{--tmpdir} . $SPACE . $fusion_temp_directory;
     }
 
     if ( defined $min_junction_reads ) {
@@ -261,11 +281,8 @@ sub star_fusion_gtf_file_to_feature_seqs {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = (
-        get_executable_base_command(
-            { base_command => q{gtf_file_to_feature_seqs.pl}, }
-        ),
-    );
+    my @commands =
+      ( get_executable_base_command( { base_command => q{gtf_file_to_feature_seqs.pl}, } ), );
 
     push @commands, q{--gtf_file} . $SPACE . $gtf_path;
 
