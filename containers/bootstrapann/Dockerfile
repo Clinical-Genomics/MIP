@@ -7,7 +7,7 @@ FROM python:2.7-slim
 LABEL base_image="python:2.7-slim"
 LABEL version="2"
 LABEL software="BootstrapAnn"
-LABEL software.version="ebc81ed"
+LABEL software.version="e557dd3"
 LABEL extra.binaries="BootstrapAnn.py"
 LABEL maintainer="Clinical-Genomics/MIP"
 
@@ -20,7 +20,7 @@ RUN pip install numpy scipy
 ## Clone git repository
 RUN git clone https://github.com/J35P312/BootstrapAnn.git /usr/local/BootstrapAnn
 
-RUN cd /usr/local/BootstrapAnn && git checkout ebc81ed
+RUN cd /usr/local/BootstrapAnn && git checkout e557dd3
 
 RUN cd /usr/local/BootstrapAnn && \
     chmod a+x BootstrapAnn.py

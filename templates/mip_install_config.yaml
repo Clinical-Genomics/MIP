@@ -16,7 +16,7 @@ container:
   bootstrapann:
     executable:
       BootstrapAnn.py:
-    uri: docker.io/clinicalgenomics/bootstrapann:ebc81ed
+    uri: docker.io/clinicalgenomics/bootstrapann:e557dd3
   bwa:
     executable:
       bwa:
