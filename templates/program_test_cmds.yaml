@@ -48,6 +48,8 @@ gatk:
   execution: 'gatk3 java -jar /usr/GenomeAnalysisTK.jar --version'
 genmod:
   execution: 'genmod'
+gens_preproc:
+  execution: 'generate_gens_data.pl --version'
 gffcompare:
   execution: 'gffcompare --version'
 glnexus:

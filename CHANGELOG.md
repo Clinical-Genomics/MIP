@@ -16,7 +16,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Tools
 
 cyrius v1.1 -> v1.1.1
-deeptrio 1.1.0-gpu -> 1.2.0-gpu
+deepvariant 1.1.0 -> 1.2.0
+deeptrio 1.1.0 -> 1.2.0
 gatk 4.2.0.0 -> 4.2.2.0
 glnexus v1.3.1 -> v1.4.1
 HmtNote: 0.7.2
@@ -30,6 +31,22 @@ vep release_103.1 -> release_104.3
 - gnomad: r3.0 -> r3.1.1
 - [NEW] gnomad mt: r3.1
 - clinvar: 20210415 -> 20211010
+
+## [10.2.5]
+
+- Allow slurm quality of service flag to be set to 'express'
+
+## [10.2.4]
+
+- Split Star-Fusion alignment and detection into two recipes
+- Use temp directory with Star-Fusion
+- Resource bump for RNA
+- Limit memory for glnexus
+- Use non-gpu version of Deepvariant by default
+
+## [10.2.3]
+
+- Updates Chromograph to version 1.1.4
 
 ## [10.2.5]
 

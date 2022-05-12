@@ -129,7 +129,8 @@ sub parse_rd_dna {
     Readonly my @MIP_VEP_PLUGINS                 => qw{ sv_vep_plugin vep_plugin };
     Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES => qw{ cnvnator_ar delly_reformat tiddit };
     Readonly my @ONLY_WGS_RECIPIES               =>
-      qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter mitodel
+      qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter
+      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata mitodel
       samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
@@ -462,11 +463,14 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration };
     use MIP::Recipes::Analysis::Gatk_combinevariantcallsets
       qw{ analysis_gatk_combinevariantcallsets };
+    use MIP::Recipes::Analysis::Gatk_collectreadcounts qw{ analysis_gatk_collectreadcounts };
+    use MIP::Recipes::Analysis::Gatk_denoisereadcounts qw{ analysis_gatk_denoisereadcounts };
     use MIP::Recipes::Analysis::Gatk_gathervcfs qw{ analysis_gatk_gathervcfs };
     use MIP::Recipes::Analysis::Gatk_genotypegvcfs qw{ analysis_gatk_genotypegvcfs };
     use MIP::Recipes::Analysis::Gatk_haplotypecaller qw{ analysis_gatk_haplotypecaller };
     use MIP::Recipes::Analysis::Gatk_variantevalall qw{ analysis_gatk_variantevalall };
     use MIP::Recipes::Analysis::Gatk_variantevalexome qw{ analysis_gatk_variantevalexome };
+    use MIP::Recipes::Analysis::Gens_generatedata qw{ analysis_gens_generatedata };
     use MIP::Recipes::Analysis::Glnexus qw{ analysis_glnexus };
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
@@ -570,11 +574,14 @@ sub pipeline_analyse_rd_dna {
         gatk_baserecalibration      => \&analysis_gatk_baserecalibration,
         gatk_gathervcfs             => \&analysis_gatk_gathervcfs,
         gatk_combinevariantcallsets => \&analysis_gatk_combinevariantcallsets,
+        gatk_collectreadcounts      => \&analysis_gatk_collectreadcounts,
+        gatk_denoisereadcounts      => \&analysis_gatk_denoisereadcounts,
         gatk_genotypegvcfs          => \&analysis_gatk_genotypegvcfs,
         gatk_haplotypecaller        => \&analysis_gatk_haplotypecaller,
         gatk_variantevalall         => \&analysis_gatk_variantevalall,
         gatk_variantevalexome       => \&analysis_gatk_variantevalexome,
         gatk_variantrecalibration   => undef,    # Depends on analysis type and/or number of samples
+        gens_generatedata           => \&analysis_gens_generatedata,
         glnexus_merge                      => \&analysis_glnexus,
         gzip_fastq                         => \&analysis_gzip_fastq,
         manta                              => \&analysis_manta,
