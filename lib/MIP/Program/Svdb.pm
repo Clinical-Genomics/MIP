@@ -38,6 +38,7 @@ sub svdb_merge {
 ##          : $infile_paths_ref       => Infile path {REF}
 ##          : $notag                  => Do not add the the VARID and set entries to the info field
 ##          : $outfile_path           => Outfile path
+##          : $pass_only              => Only merge variants labeled PASS
 ##          : $priority               => Priority order of structural variant calls
 ##          : $same_order             => Across all input vcf files, the order of the sample columns are the same
 ##          : $stderrfile_path        => Stderrfile path
@@ -51,6 +52,7 @@ sub svdb_merge {
     my $infile_paths_ref;
     my $notag;
     my $outfile_path;
+    my $pass_only;
     my $priority;
     my $same_order;
     my $stderrfile_path;
@@ -66,10 +68,15 @@ sub svdb_merge {
             store       => \$infile_paths_ref,
             strict_type => 1,
         },
-        notag           => { store => \$notag,        strict_type => 1, },
-        outfile_path    => { store => \$outfile_path, strict_type => 1, },
-        priority        => { store => \$priority,     strict_type => 1, },
-        same_order      => { store => \$same_order,   strict_type => 1, },
+        notag        => { store => \$notag,        strict_type => 1, },
+        outfile_path => { store => \$outfile_path, strict_type => 1, },
+        pass_only    => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$pass_only,
+            strict_type => 1,
+        },
+        priority        => { store => \$priority,   strict_type => 1, },
+        same_order      => { store => \$same_order, strict_type => 1, },
         stderrfile_path => {
             store       => \$stderrfile_path,
             strict_type => 1,
@@ -86,9 +93,13 @@ sub svdb_merge {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ),
-        qw{ --merge } );
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ --merge } );
 
+    if ($pass_only) {
+
+        push @commands, q{--pass_only},;
+    }
     if ($priority) {
 
         push @commands, q{--priority} . $SPACE . $priority;
@@ -175,7 +186,7 @@ sub svdb_query {
         filehandle          => { store       => \$filehandle },
         in_frequency_tag    => { strict_type => 1, store => \$in_frequency_tag },
         in_allele_count_tag => { strict_type => 1, store => \$in_allele_count_tag },
-        infile_path => {
+        infile_path         => {
             required    => 1,
             defined     => 1,
             strict_type => 1,
@@ -205,8 +216,8 @@ sub svdb_query {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ),
-        qw{ --query } );
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ --query } );
 
     if ($bnd_distance) {
 

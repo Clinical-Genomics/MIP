@@ -718,7 +718,7 @@ star_caller:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _cyp2d6
   outfile_suffix: ".tsv"
   program_executables:
@@ -729,7 +729,7 @@ telomerecat_ar:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _tel
   outfile_suffix: ".csv"
   program_executables:

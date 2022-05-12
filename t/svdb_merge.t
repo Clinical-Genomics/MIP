@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Svdb}  => [qw{ svdb_merge }],
-);
+    my %perl_module = ( q{MIP::Program::Svdb} => [qw{ svdb_merge }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -73,7 +70,7 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_paths_ref => {
-        inputs_ref => [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
+        inputs_ref      => [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
         expected_output => q{--vcf}
           . $SPACE
           . catfile(qw{ a test infile_1 })
@@ -84,7 +81,7 @@ my %required_argument = (
 
 my %specific_argument = (
     infile_paths_ref => {
-        inputs_ref => [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
+        inputs_ref      => [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
         expected_output => q{--vcf}
           . $SPACE
           . catfile(qw{ a test infile_1 })
@@ -94,6 +91,10 @@ my %specific_argument = (
     notag => {
         input           => q{1},
         expected_output => q{--notag},
+    },
+    pass_only => {
+        input           => 1,
+        expected_output => q{--pass_only},
     },
     priority => {
         input           => q{manta,delly,cnvnator,tiddit},

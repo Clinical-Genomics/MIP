@@ -16,7 +16,7 @@ container:
   bootstrapann:
     executable:
       BootstrapAnn.py:
-    uri: docker.io/clinicalgenomics/bootstrapann:df02f35
+    uri: docker.io/clinicalgenomics/bootstrapann:e557dd3
   bwa:
     executable:
       bwa:
@@ -60,7 +60,7 @@ container:
       call_variants: /opt/deepvariant/bin/call_variants
       postprocess_variants: /opt/deepvariant/bin/postprocess_variants
     gpu_support: 0
-    uri: docker.io/google/deepvariant:1.2.0
+    uri: docker.io/google/deepvariant:1.1.0
   deeptrio:
     executable:
       run_deeptrio: /opt/deepvariant/bin/deeptrio/run_deeptrio
@@ -125,7 +125,7 @@ container:
   mip:
     executable:
       mip:
-    uri: docker.io/clinicalgenomics/mip:v10.2.5
+    uri: docker.io/clinicalgenomics/mip:v11.0.0
   multiqc:
     executable:
       multiqc:

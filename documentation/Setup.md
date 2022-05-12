@@ -49,7 +49,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Expansionhunter] (version 4.0.2)
 - [FastQC] (version: 0.11.9)
 - [Deeptrio] (version: 1.2.0)
-- [Deepvariant] (version: 1.2.0)
+- [Deepvariant] (version: 1.1.0)
 - [Delly] (version 0.8.7)
 - [GATK] (version: 3.8.1 and 4.2.2.0)
 - [GENMOD] (version: 3.7.3)

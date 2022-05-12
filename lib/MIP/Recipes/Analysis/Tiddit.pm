@@ -271,6 +271,7 @@ sub analysis_tiddit {
             filehandle       => $filehandle,
             infile_paths_ref => \@svdb_infile_paths,
             notag            => 1,
+            pass_only        => 1,
             stdoutfile_path  => $outfile_path,
         }
     );

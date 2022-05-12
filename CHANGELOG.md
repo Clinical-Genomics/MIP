@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Develop]
+## [11.0.0]
 
 - HmtNote: annotate mitochondrial variants in VCF file
 - Updating to latest and greatest versions
@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - GATK Haplotypecaller has been turned off in favour of Deepvariant
 - Introduces possibility to store singularity images locally as a .sif file
 - Increased allele frequency cut off for when a variant is filtered out to 0.7
+- Turned off Star_caller and Telomerecat by default
 
 ### Tools
 
@@ -29,7 +30,23 @@ vep release_103.1 -> release_104.3
 
 - gnomad: r3.0 -> r3.1.1
 - [NEW] gnomad mt: r3.1
-- clinvar: 20210415 -> 20210919
+- clinvar: 20210415 -> 20211010
+
+## [10.2.5]
+
+- Allow slurm quality of service flag to be set to 'express'
+
+## [10.2.4]
+
+- Split Star-Fusion alignment and detection into two recipes
+- Use temp directory with Star-Fusion
+- Resource bump for RNA
+- Limit memory for glnexus
+- Use non-gpu version of Deepvariant by default
+
+## [10.2.3]
+
+- Updates Chromograph to version 1.1.4
 
 ## [10.2.5]
 

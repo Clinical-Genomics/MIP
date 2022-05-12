@@ -129,7 +129,7 @@ sub analysis_sv_annotate {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
-    use MIP::Program::Gnu::Coreutils qw( gnu_cat gnu_mv gnu_tee );
+    use MIP::Program::Gnu::Coreutils qw( gnu_cat gnu_cp gnu_mv gnu_rm gnu_tee );
     use MIP::Io::Read qw{ read_from_file };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_filter bcftools_view };
@@ -318,12 +318,24 @@ sub analysis_sv_annotate {
     ## Remove FILTER ne PASS and filter on frequency
     if ( $active_parameter_href->{sv_frequency_filter} ) {
 
+        say {$filehandle}
+q{## Create temp file as to not read and write to the same file in the case of wes samples};
+        my $temp_filter_infile_path = $outfile_path_prefix . q{_temp} . $outfile_suffix;
+        gnu_cp(
+            {
+                filehandle   => $filehandle,
+                infile_path  => $sort_outfile_path,
+                outfile_path => $temp_filter_infile_path,
+            }
+        );
+        say ${filehandle} $NEWLINE;
+
         say {$filehandle} q{## Remove FILTER ne PASS, annotate and remove common variants};
         bcftools_view(
             {
                 apply_filters_ref => [qw{ PASS }],
                 filehandle        => $filehandle,
-                infile_path       => $sort_outfile_path,
+                infile_path       => $temp_filter_infile_path,
                 output_type       => q{v},
             }
         );
@@ -403,7 +415,14 @@ sub analysis_sv_annotate {
                     stdoutfile_path  => $outfile_path,
                 }
             );
+            say {$filehandle} $NEWLINE;
         }
+        gnu_rm(
+            {
+                filehandle  => $filehandle,
+                infile_path => $temp_filter_infile_path,
+            }
+        );
     }
 
     close $filehandle or $log->logcroak(q{Could not close filehandle});
