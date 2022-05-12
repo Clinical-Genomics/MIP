@@ -91,6 +91,7 @@ vep_plugin:
       - phyloP100way_vertebrate
       - phastCons100way_vertebrate
       - REVEL_rankscore
+      - rs_dbSNP150
   ExACpLI:
     exist_check:
       - type: file
