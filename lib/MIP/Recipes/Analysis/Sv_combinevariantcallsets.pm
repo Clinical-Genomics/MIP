@@ -281,6 +281,7 @@ sub analysis_sv_combinevariantcallsets {
             filehandle       => $filehandle,
             infile_paths_ref => \@svdb_infile_paths,
             priority         => $active_parameter_href->{sv_svdb_merge_prioritize},
+            pass_only        => 1,
             same_order       => 1,
             stdoutfile_path  => $outfile_path,
         }

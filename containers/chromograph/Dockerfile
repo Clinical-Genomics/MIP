@@ -17,20 +17,14 @@ RUN apt-get update --fix-missing && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN conda install pip python=3.9 matplotlib
+RUN conda install pip python=3.9 matplotlib && \
+    /opt/conda/bin/conda clean -ya
 
-## Clean up after conda
-RUN /opt/conda/bin/conda clean -ya
+WORKDIR /opt/conda/share
 
-## Download release
-RUN wget --no-verbose https://github.com/mikaell/chromograph/archive/refs/tags/v1.1.4.zip -O /opt/conda/share/chromograph-1.1.4.zip
-
-## Extract
-RUN unzip -o /opt/conda/share/chromograph-1.1.4.zip -d /opt/conda/share/ && \
-    rm /opt/conda/share/chromograph-1.1.4.zip
-
-## Move to chromograph directory
-RUN cd /opt/conda/share/chromograph-1.1.4 && \
+RUN wget --no-verbose https://github.com/mikaell/chromograph/archive/refs/tags/v1.1.4.zip && \
+    unzip v1.1.4.zip && \
+    cd chromograph-1.1.4 && \
     python -m pip install --no-cache-dir .
 
 WORKDIR /data/

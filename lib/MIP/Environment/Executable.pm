@@ -379,6 +379,11 @@ q?'my ($version) = /genmod\s+version:\s+(\S+)/xms; if($version) {print $version;
             version_regexp =>
               q?'my ($version) = /gzip\s+(\S+)/xms; if($version) {print $version;last;}'?,
         },
+        hmtnote => {
+            version_cmd    => q{--version},
+            version_regexp =>
+              q?'my ($version) = /version\s(\S+)/xms; if($version) {print $version;last;}'?,
+        },
         q{infer_exeperiment.py} => {
             version_cmd    => q{--version},
             version_regexp =>
@@ -443,6 +448,11 @@ q?'my ($version) = /read_duplication.py\s+(\S+)/xms; if($version) {print $versio
             version_cmd    => q{--version},
             version_regexp =>
               q?'my ($version) = /version\s+(\S+)/xms; if($version) {print $version;last;}'?,
+        },
+        run_deepvariant => {
+            version_cmd    => q{--version},
+            version_regexp =>
+q?'my ($version) = /DeepVariant\s+version\s+(\S+)/xms; if($version) {print $version;last;}'?
         },
         salmon => {
             version_cmd    => q{--version},

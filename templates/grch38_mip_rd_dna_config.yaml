@@ -53,23 +53,24 @@ nist_call_set_vcf:
     NA24385: grch38_nist_hg002_-na24385_v3.3.2-.vcf.gz
     NA24631: grch38_nist_hg005_-na24631_v3.3.2-.vcf.gz
 rank_model_file: grch38_rank_model_-v0.1-.ini
-rhocall_frequency_file: grch38_gnomad_reformated_-r3.0-.tab.gz
+rhocall_frequency_file: grch38_gnomad_reformated_-r3.1.1-.tab.gz
 sambamba_depth_bed: grch38_scout_exons_-2020-09-17-.bed
 sv_genmod_models_reduced_penetrance_file: grch38_cust003-cmms-red-pen_-2017_FAKE-.tsv
 sv_rank_model_file: grch38_sv_rank_model_-v0.1-.ini
 sv_svdb_query_db_files:
   # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
   grch38_swegen_concat_sv_-2020-.vcf: swegen|AF|OCC|FRQ|OCC|1
-sv_vcfanno_config: grch38_sv_vcfanno_config_-v0.1-.toml
+sv_vcfanno_config: grch38_sv_vcfanno_config_-v0.2-.toml
 vcf2cytosure_exclude_filter: "'swegenAF > 0.05'"
-vcfanno_config: grch38_vcfanno_config_-v0.1-.toml
+vcfanno_config: grch38_vcfanno_config_-v0.2-.toml
 ### Analysis
 ## Programs
 ## Parameters
-gatk_combinevariants_prioritize_caller: deepvariant,haplotypecaller
-gatk_combinevariants_callers_to_combine:
-  - gatk_variantrecalibration
-  - glnexus_merge
+sv_fqa_vcfanno_filters:
+  - GNOMADAF
+  - GNOMADAF_popmax
+  - SWEGENAF
+  - swegen
 gatk_path: /opt/conda/opt/gatk-3.8
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 picardtools_path: /usr/picard/
@@ -93,10 +94,10 @@ vep_custom_annotation:
     force_report_coordinates: 0
     key: CLINVAR
     file_type: vcf
-    path: cluster_constant_path!/references/grch38_clinvar_reformated_-20210415-.vcf.gz
+    path: cluster_constant_path!/references/grch38_clinvar_reformated_-20211010-.vcf.gz
     vcf_fields: CLNSIG,CLNVID,CLNREVSTAT
-vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data-103/cache/
-vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins
+vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data-104/cache/
+vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data-104/cache/Plugins
 vep_plugin:
   dbNSFP:
     exist_check:
@@ -118,15 +119,15 @@ vep_plugin:
   LoFtool:
     exists_check:
       - type: file
-        path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/LoFtool_scores.txt
+        path: cluster_constant_path!/references/ensembl-tools-data-104/cache/Plugins/LoFtool_scores.txt
     parameters:
-      - cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/LoFtool_scores.txt
+      - cluster_constant_path!/references/ensembl-tools-data-104/cache/Plugins/LoFtool_scores.txt
   MaxEntScan:
     exist_check:
       - type: directory
-        path: cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/fordownload
+        path: cluster_constant_path!/references/ensembl-tools-data-104/cache/Plugins/fordownload
     parameters:
-      - cluster_constant_path!/references/ensembl-tools-data-103/cache/Plugins/fordownload
+      - cluster_constant_path!/references/ensembl-tools-data-104/cache/Plugins/fordownload
       - SWA
       - NCSS
   SpliceAI:

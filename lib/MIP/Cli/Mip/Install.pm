@@ -79,6 +79,16 @@ sub _build_usage {
     );
 
     option(
+        q{container_directory_path} => (
+            cmd_tags      => [q{Default: "<conda_path>/<env>/bin"}],
+            documentation =>
+              q{Save singularity images to directory. Requires singularity_local_install option},
+            is  => q{rw},
+            isa => Str,
+        )
+    );
+
+    option(
         q{environment_name} => (
             cmd_aliases   => [qw{ envn }],
             cmd_flag      => q{environment_name},
@@ -132,13 +142,24 @@ sub _build_usage {
                     [
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit bwa-mem2 cadd chanjo
                           chromograph cnvnator cyrius deeptrio deepvariant delly expansionhunter fastqc gatk
-                          gatk4 genmod gffcompare glnexus htslib manta megafusion mip mip_scripts multiqc
+                          gatk4 genmod gffcompare glnexus hmtnote htslib manta megafusion mip mip_scripts multiqc
                           pdfmerger perl peddy picard plink preseq python rhocall rseqc rtg-tools salmon sambamba
                           smncopynumbercaller star star-fusion stranger stringtie svdb telomerecat tiddit
                           trim-galore ucsc upd utilities varg vcf2cytosure vcfanno vep vts }
                     ]
                 ),
             ],
+            required => 0,
+        ),
+    );
+
+    option(
+        q{singularity_local_install} => (
+            cmd_tags      => [q{Default: off}],
+            documentation =>
+q{Save singularity images to sif and update run instructions for offline mip execution},
+            is       => q{rw},
+            isa      => Bool,
             required => 0,
         ),
     );
@@ -154,7 +175,7 @@ sub _build_usage {
                     [
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit bwa-mem2 cadd chanjo
                           chromograph cnvnator cyrius deeptrio deepvariant delly expansionhunter fastqc gatk
-                          gatk4 genmod gffcompare glnexus htslib manta megafusion mip mip_scripts multiqc
+                          gatk4 genmod gffcompare glnexus hmtnote htslib manta megafusion mip mip_scripts multiqc
                           pdfmerger perl peddy picard plink preseq python rhocall rseqc rtg-tools salmon sambamba
                           smncopynumbercaller star star-fusion stranger stringtie svdb telomerecat tiddit
                           trim-galore ucsc upd utilities varg vcf2cytosure vcfanno vep vts }

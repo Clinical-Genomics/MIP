@@ -786,7 +786,7 @@ sub _calculate_fraction_duplicates_for_all_metric_files {
     $regexp .= q?while (<>) { ?;
 
     # Find duplicate metric
-    $regexp .= q?if($_=~/duplicates/ && $_=~/^(\d+)/) { ?;
+    $regexp .= q?if($_=~/\d+\sduplicates/ && $_=~/^(\d+)/) { ?;
 
     # Add to previous duplicate metrics
     $regexp .= q?$feature{dup} = $feature{dup} + $1 } ?;

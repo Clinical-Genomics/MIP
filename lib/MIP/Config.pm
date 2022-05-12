@@ -94,32 +94,32 @@ sub check_cmd_config_vs_definition_file {
 sub get_install_containers {
 
 ## Function : Get install containers from install config file
-## Returns  : $install_config{container}
-## Arguments: $install_config_file => File with containers from install config
+## Returns  : $container_config
+## Arguments: $container_config_file => File with containers from install config
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $install_config_file;
+    my $container_config_file;
 
     my $tmpl = {
-        install_config_file => {
+        container_config_file => {
             defined     => 1,
             required    => 1,
-            store       => \$install_config_file,
+            store       => \$container_config_file,
             strict_type => 1,
         },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my %install_config = read_from_file(
+    my %container_config = read_from_file(
         {
             format => q{yaml},
-            path   => $install_config_file,
+            path   => $container_config_file,
         }
     );
-    return %{ $install_config{container} };
+    return %container_config;
 }
 
 sub parse_config {

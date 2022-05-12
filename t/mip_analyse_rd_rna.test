@@ -33,8 +33,8 @@ my $VERBOSE = 1;
 ## Set paths
 my $conda_path            = catdir( dirname($Bin), qw{ t data modules miniconda} );
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data } );
-my $mip_install_config =
-  catfile( dirname($Bin), qw{ t data test_data miptest_install_config.yaml } );
+my $mip_container_config =
+  catfile( dirname($Bin), qw{ t data test_data miptest_container_config.yaml } );
 my $mip_path = catfile( dirname($Bin), q{mip} );
 my $dna_vcf_file =
   catfile( dirname($Bin), qw{ t data test_data 643594-miptest_sorted_md_brecal_comb_BOTH.bcf } );
@@ -79,8 +79,8 @@ my @base_cmds = (
     q{perl},
     $mip_path,
     qw{ analyse rd_rna 118-rnatest },
-    q{--install_config},
-    $mip_install_config,
+    q{--container_config},
+    $mip_container_config,
     q{--conda_path},
     $conda_path,
     q{--cluster_constant_path},
@@ -92,6 +92,8 @@ my @base_cmds = (
     q{--ifd},
     catfile( $cluster_constant_path, qw{ 118-rnatest test_data 118-2-2U fastq=118-2-2U } ),
     qw{--dra --vb },
+    q{--stringtie_ar},
+    2,
 );
 
 my %genome_build_config = (

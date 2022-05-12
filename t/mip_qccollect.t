@@ -99,6 +99,10 @@ my %specific_argument = (
           . $SPACE
           . catfile(qw{ outdata_dir case_id case_id_qc_sample_info.yaml }),
     },
+    limit_qc_output => {
+        input           => 1,
+        expected_output => q{--limit_qc_output},
+    },
     log_file_path => {
         input           => catfile(qw{ outcase_directory case_id _qccollect.log }),
         expected_output => q{--log_file}

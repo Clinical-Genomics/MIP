@@ -16,7 +16,7 @@ container:
   bootstrapann:
     executable:
       BootstrapAnn.py:
-    uri: docker.io/clinicalgenomics/bootstrapann:df02f35
+    uri: docker.io/clinicalgenomics/bootstrapann:e557dd3
   bwa:
     executable:
       bwa:
@@ -52,7 +52,7 @@ container:
   cyrius:
     executable:
       star_caller.py:
-    uri: docker.io/clinicalgenomics/cyrius:v1.1
+    uri: docker.io/clinicalgenomics/cyrius:v1.1.1
   deepvariant:
     executable:
       run_deepvariant: /opt/deepvariant/bin/run_deepvariant
@@ -64,8 +64,8 @@ container:
   deeptrio:
     executable:
       run_deeptrio: /opt/deepvariant/bin/deeptrio/run_deeptrio
-    gpu_support: 1
-    uri: docker.io/google/deepvariant:deeptrio-1.1.0-gpu
+    gpu_support: 0
+    uri: docker.io/google/deepvariant:deeptrio-1.2.0
   delly:
     executable:
       delly:
@@ -85,7 +85,7 @@ container:
   gatk4:
     executable:
       gatk:
-    uri: docker.io/broadinstitute/gatk:4.2.0.0
+    uri: docker.io/broadinstitute/gatk:4.2.2.0
   genmod:
     executable:
       genmod:
@@ -97,14 +97,18 @@ container:
   glnexus:
     executable:
       glnexus_cli:
-    uri: quay.io/mlin/glnexus:v1.3.1
+    uri: docker.io/clinicalgenomics/glnexus:v1.4.1
+  hmtnote:
+    executable:
+      hmtnote:
+    uri: docker.io/clinicalgenomics/hmtnote:0.7.2
   htslib:
     executable:
       bcftools:
       bgzip:
       samtools:
       tabix:
-    uri: docker.io/clinicalgenomics/htslib:1.10.2
+    uri: docker.io/clinicalgenomics/htslib:1.13
   manta:
     executable:
       configManta.py:
@@ -117,11 +121,11 @@ container:
   mip:
     executable:
       mip:
-    uri: docker.io/clinicalgenomics/mip:v10.2.5
+    uri: docker.io/clinicalgenomics/mip:v11.0.0
   multiqc:
     executable:
       multiqc:
-    uri: docker.io/ewels/multiqc:1.10.1
+    uri: docker.io/ewels/multiqc:v1.11
   perl:
     executable:
       perl:
@@ -193,7 +197,7 @@ container:
       remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
       restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
       STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
-    uri: docker.io/trinityctat/starfusion:1.10.0
+    uri: docker.io/trinityctat/starfusion:1.10.1
   stranger:
     executable:
       stranger:
@@ -244,7 +248,7 @@ container:
   vep:
     executable:
       vep:
-    uri: docker.io/ensemblorg/ensembl-vep:release_103.1
+    uri: docker.io/ensemblorg/ensembl-vep:release_104.3
   vcf2cytosure:
     executable:
       vcf2cytosure:

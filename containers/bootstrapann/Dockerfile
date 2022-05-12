@@ -1,33 +1,30 @@
 ################## BASE IMAGE ######################
 
-FROM continuumio/miniconda3:4.7.12
+FROM python:2.7-slim
 
 ################## METADATA ######################
 
-LABEL base_image="continuumio/miniconda3:4.7.12"
+LABEL base_image="python:2.7-slim"
 LABEL version="2"
 LABEL software="BootstrapAnn"
-LABEL software.version="df02f35"
+LABEL software.version="e557dd3"
 LABEL extra.binaries="BootstrapAnn.py"
 LABEL maintainer="Clinical-Genomics/MIP"
 
-RUN apt-get --allow-releaseinfo-change update --fix-missing && \
-    apt-get install -y --no-install-recommends procps && \
-    apt-get clean && \
+RUN apt-get update && apt-get install -y git
+RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN conda install pip python=2.7 numpy scipy && \
-    /opt/conda/bin/conda clean -ya
+RUN pip install numpy scipy
 
 ## Clone git repository
-RUN git clone https://github.com/J35P312/BootstrapAnn.git /opt/conda/share/BootstrapAnn
+RUN git clone https://github.com/J35P312/BootstrapAnn.git /usr/local/BootstrapAnn
 
-WORKDIR /opt/conda/share/BootstrapAnn
+RUN cd /usr/local/BootstrapAnn && git checkout e557dd3
 
-RUN git checkout df02f35
+RUN cd /usr/local/BootstrapAnn && \
+    chmod a+x BootstrapAnn.py
 
-RUN chmod a+x BootstrapAnn.py
-
-RUN ln --symbolic --force /opt/conda/share/BootstrapAnn/BootstrapAnn.py /opt/conda/bin/BootstrapAnn.py
+RUN ln --symbolic --force /usr/local/BootstrapAnn/BootstrapAnn.py /usr/local/bin/BootstrapAnn.py
 
 WORKDIR /data/

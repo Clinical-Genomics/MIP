@@ -325,11 +325,10 @@ sub samtools_faidx {
             store       => \$infile_path,
             strict_type => 1,
         },
-        outfile_path => { store => \$outfile_path, strict_type => 1, },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
+        outfile_path           => { store   => \$outfile_path, strict_type => 1, },
+        regions_ref            => { default => [], store => \$regions_ref, strict_type => 1, },
+        stderrfile_path        => { store   => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store   => \$stderrfile_path_append, strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -412,10 +411,8 @@ sub samtools_flagstat {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = (
-        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
-        qw{ flagstat }
-    );
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ flagstat } );
 
     push @commands, $infile_path;
 
@@ -484,10 +481,8 @@ sub samtools_idxstats {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    my @commands = (
-        get_executable_base_command( { base_command => $BASE_COMMAND, } ),
-        qw{ idxstats }
-    );
+    my @commands =
+      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ idxstats } );
 
     push @commands, $infile_path;
 
@@ -541,10 +536,9 @@ sub samtools_index {
             store       => \$infile_path,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -643,10 +637,9 @@ sub samtools_merge {
             store       => \$region,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => {
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
@@ -775,10 +768,9 @@ sub samtools_sort {
             store       => \$referencefile_path,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => {
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
@@ -855,6 +847,7 @@ sub samtools_stats {
 ##          : $auto_detect_input_format => Ignored (input format is auto-detected)
 ##          : $filehandle               => Sbatch filehandle to write to
 ##          : $infile_path              => Infile path
+##          : $insert_size              => Maximum insert size
 ##          : $outfile_path             => Outfile path
 ##          : $regions_ref              => Regions to process {REF}
 ##          : $remove_overlap           => Remove overlaps of paired-end reads from coverage and base count computations
@@ -867,6 +860,7 @@ sub samtools_stats {
     ## Flatten argument(s)
     my $filehandle;
     my $infile_path;
+    my $insert_size;
     my $outfile_path;
     my $regions_ref;
     my $stderrfile_path;
@@ -891,6 +885,11 @@ sub samtools_stats {
             store       => \$infile_path,
             strict_type => 1,
         },
+        insert_size => {
+            allow       => qr/ ^\d+$ /sxm,
+            store       => \$insert_size,
+            strict_type => 1,
+        },
         outfile_path   => { store => \$outfile_path, strict_type => 1, },
         remove_overlap => {
             allow       => [ undef, 0, 1 ],
@@ -898,11 +897,10 @@ sub samtools_stats {
             store       => \$remove_overlap,
             strict_type => 1,
         },
-        regions_ref => { default => [], store => \$regions_ref, strict_type => 1, },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => {
+        regions_ref            => { default => [], store => \$regions_ref, strict_type => 1, },
+        stderrfile_path        => { store   => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store   => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => {
             strict_type => 1,
             store       => \$stdoutfile_path,
         },
@@ -916,6 +914,11 @@ sub samtools_stats {
     if ($auto_detect_input_format) {
 
         push @commands, q{-s};
+    }
+
+    if ($insert_size) {
+
+        push @commands, q{--insert-size} . $SPACE . $insert_size;
     }
 
     if ($remove_overlap) {

@@ -45,19 +45,20 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Chanjo] (version: 4.6.0)
 - [Chromograph] (version: 1.1.4)
 - [Cnvnator] (version: 0.4.1)
-- [Cyrius] (version: v1.1)
+- [Cyrius] (version: v1.1.1)
 - [Expansionhunter] (version 4.0.2)
 - [FastQC] (version: 0.11.9)
+- [Deeptrio] (version: 1.2.0)
 - [Deepvariant] (version: 1.1.0)
 - [Delly] (version 0.8.7)
-- [GATK] (version: 3.8.1 and 4.2.0.0)
+- [GATK] (version: 3.8.1 and 4.2.2.0)
 - [GENMOD] (version: 3.7.3)
 - [Gffcompare] (version: 0.11.2)
-- [Glnexus] (version: 1.3.1)
-- [Htslib] (version: 1.10.2)
+- [Glnexus] (version: v1.4.1)
+- [Htslib] (version: 1.13)
 - [Manta] (version: 1.6.0)
 - [Megafusion] (version: 66a3a80)
-- [MultiQC] (version: 1.10.1)
+- [MultiQC] (version: v1.11)
 - [Pdfmerger] (version: 1.0)
 - [Peddy] (version: 0.4.3)
 - [PicardTools] (version: 2.25.0)
@@ -70,7 +71,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Sambamba] (version: 0.6.8)
 - [Samtools] (version: 1.11)
 - [SMNCopyNumberCaller] (version: v1.1.1)
-- [STAR-Fusion] (version: 1.10.0)
+- [STAR-Fusion] (version: 1.10.1)
 - [STAR] (version: 2.7.8a)
 - [Stranger] (version: 0.8.0)
 - [StringTie] (version: 2.1.3b)
@@ -81,7 +82,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Varg] (version: 1.2.0)
 - [Vcf2cytosure] (version: 0.5.1)
 - [Vcfanno] (version: 0.3.2)
-- [VEP] (version: 103.1) with plugin "ExACpLI", "MaxEntScan, LoFtool", "SpliceAI"
+- [VEP] (version: 104.3) with plugin "ExACpLI", "MaxEntScan, LoFtool", "SpliceAI"
 
 The version number after the software name are tested for compatibility with MIP.
 

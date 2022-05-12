@@ -81,6 +81,7 @@ rd_dna:
     - gatk4
     - genmod
     - glnexus
+    - hmtnote
     - htslib
     - manta
     - mip
@@ -146,10 +147,23 @@ container:
   data_type: HASH
   mandatory: no
   type: mip
+container_directory_path:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  mandatory: no
+  type: path
+  update_path: absolute_path
 select_programs:
   associated_recipe:
     - mip
   data_type: ARRAY
+  mandatory: no
+  type: mip
+singularity_local_install:
+  associated_recipe:
+    - mip
+  data_type: SCALAR
   mandatory: no
   type: mip
 skip_programs:

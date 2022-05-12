@@ -38,6 +38,8 @@ my $config_files_ref = [
     catfile( dirname($Bin), qw{ templates mip_download_rd_rna_config_-1.0-.yaml } )
 ];
 my $mip_path = catfile( dirname($Bin), q{mip} );
+my $mip_container_config =
+  catfile( dirname($Bin), qw{ t data test_data miptest_container_config.yaml } );
 
 ### User Options
 GetOptions(
@@ -76,8 +78,11 @@ ok( can_run(q{mip}), q{Checking can run mip} );
 foreach my $config_file ( @{$config_files_ref} ) {
 
     my $cmds_ref = [
-        q{perl},      $mip_path,       q{download}, q{--config},
-        $config_file, q{--conda_path}, $conda_path, qw{ --dra },
+        q{perl},               $mip_path,
+        q{download},           q{--config},
+        $config_file,          q{--conda_path},
+        $conda_path,           qw{ --dra },
+        q{--container_config}, $mip_container_config,
     ];
 
     my %process_return = child_process(

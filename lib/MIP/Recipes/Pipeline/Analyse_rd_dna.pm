@@ -129,7 +129,7 @@ sub parse_rd_dna {
     Readonly my @MIP_VEP_PLUGINS                 => qw{ sv_vep_plugin vep_plugin };
     Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES => qw{ cnvnator_ar delly_reformat tiddit };
     Readonly my @ONLY_WGS_RECIPIES               =>
-      qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter
+      qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter mitodel
       samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
@@ -474,6 +474,8 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
+    use MIP::Recipes::Analysis::Mitodel qw{ analysis_mitodel };
+    use MIP::Recipes::Analysis::Mt_annotation qw{ analysis_mt_annotation };
     use MIP::Recipes::Analysis::Multiqc qw{ analysis_multiqc };
     use MIP::Recipes::Analysis::Peddy qw{ analysis_peddy };
     use MIP::Recipes::Analysis::Picardtools_collecthsmetrics
@@ -577,6 +579,8 @@ sub pipeline_analyse_rd_dna {
         gzip_fastq                         => \&analysis_gzip_fastq,
         manta                              => \&analysis_manta,
         markduplicates                     => \&analysis_markduplicates,
+        mitodel                            => \&analysis_mitodel,
+        mt_annotation                      => \&analysis_mt_annotation,
         multiqc_ar                         => \&analysis_multiqc,
         peddy_ar                           => \&analysis_peddy,
         picardtools_collecthsmetrics       => \&analysis_picardtools_collecthsmetrics,
