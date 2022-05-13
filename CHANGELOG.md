@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [11.0.1]
+
+- Modified singularity exec command to include `--no-home` and `--cleanenv`
+
 ## [11.0.0]
 
 - HmtNote: annotate mitochondrial variants in VCF file
