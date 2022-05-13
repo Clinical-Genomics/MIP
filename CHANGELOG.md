@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [11.0.1]
 
-- Modified singularity exec command to include `--no-home` and `--cleanenv`
+- Set tmpdir and use `intermediate_results_dir` for DeepVariant.
 
 ## [11.0.0]
 

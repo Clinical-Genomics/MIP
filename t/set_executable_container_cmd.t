@@ -79,7 +79,7 @@ my %container_cmd = set_executable_container_cmd(
 );
 
 my $expected_arriba_cmd =
-q{singularity exec --bind reference_dir!/a_dir:opt/conda/share/a_dir --cleanenv --no-home docker://docker.io/uhrigs/arriba:2.1.0 /arriba_v2.1.0/arriba};
+q{singularity exec --bind reference_dir!/a_dir:opt/conda/share/a_dir docker://docker.io/uhrigs/arriba:2.1.0 /arriba_v2.1.0/arriba};
 
 ## Then return command for how to execute arriba using singularity
 is( $container_cmd{arriba}, $expected_arriba_cmd, q{Set singularity cmd for executable} );

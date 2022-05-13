@@ -22,16 +22,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Deepvariant} => [qw{ deepvariant }],
-);
+    my %perl_module = ( q{MIP::Program::Deepvariant} => [qw{ deepvariant }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -77,8 +74,7 @@ my %required_argument = (
     },
     referencefile_path => {
         input           => catfile(qw{ reference_dir human_genome_build.fasta }),
-        expected_output => q{--ref=}
-          . catfile(qw{ reference_dir human_genome_build.fasta}),
+        expected_output => q{--ref=} . catfile(qw{ reference_dir human_genome_build.fasta}),
     },
     model_type => {
         input           => q{WES},
@@ -103,7 +99,10 @@ my %specific_argument = (
         input           => catfile(qw{ dir infile.bed }),
         expected_output => q{--regions=} . catfile(qw{ dir infile.bed }),
     },
-
+    intermediate_results_dir => {
+        input           => catdir(qw{ temp dir}),
+        expected_output => q{--intermediate_results_dir} . $SPACE . catdir(qw{ temp dir }),
+    },
 );
 
 ## Coderef - enables generalized use of generate call

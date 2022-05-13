@@ -121,6 +121,7 @@ sub analysis_deepvariant {
 
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Gnu::Bash qw{ gnu_export };
     use MIP::Program::Deepvariant qw{ deepvariant };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
@@ -201,15 +202,25 @@ sub analysis_deepvariant {
 
     say {$filehandle} q{## } . $recipe_name;
 
+    my $export_tmpdir = q{TMPDIR=} . $active_parameter_href->{temp_directory};
+    gnu_export(
+        {
+            bash_variable => $export_tmpdir,
+            filehandle    => $filehandle,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
     deepvariant(
         {
-            filehandle         => $filehandle,
-            infile_path        => $infile_path,
-            model_type         => uc $analysis_type,
-            num_shards         => $recipe{core_number},
-            outfile_path       => $outfile_path,
-            outfile_path_vcf   => $outfile_path_vcf,
-            referencefile_path => $active_parameter_href->{human_genome_reference},
+            filehandle               => $filehandle,
+            infile_path              => $infile_path,
+            intermediate_results_dir => $active_parameter_href->{temp_directory},
+            model_type               => uc $analysis_type,
+            num_shards               => $recipe{core_number},
+            outfile_path             => $outfile_path,
+            outfile_path_vcf         => $outfile_path_vcf,
+            referencefile_path       => $active_parameter_href->{human_genome_reference},
         }
     );
 

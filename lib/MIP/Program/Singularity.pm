@@ -46,17 +46,15 @@ sub singularity_exec {
 
     ## Flatten argument(s)
     my $bind_paths_ref;
+    my $clean_env;
     my $container_cmds_ref;
     my $filehandle;
     my $gpu_switch;
     my $image;
+    my $no_home;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
-
-    ## Default(s)
-    my $clean_env;
-    my $no_home;
 
     my $tmpl = {
         bind_paths_ref => {
@@ -65,7 +63,6 @@ sub singularity_exec {
             strict_type => 1,
         },
         clean_env => {
-            default     => 1,
             allow       => [ undef, 0, 1 ],
             store       => \$clean_env,
             strict_type => 1,
@@ -90,7 +87,6 @@ sub singularity_exec {
             strict_type => 1,
         },
         no_home => {
-            default     => 1,
             allow       => [ undef, 0, 1 ],
             store       => \$no_home,
             strict_type => 1,
