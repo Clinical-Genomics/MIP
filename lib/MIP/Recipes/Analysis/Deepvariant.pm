@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $UNDERSCORE };
+use MIP::Constants qw{ $CONTAINER_MANAGER $EQUALS $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -202,14 +202,13 @@ sub analysis_deepvariant {
 
     say {$filehandle} q{## } . $recipe_name;
 
-    my $export_tmpdir = q{TMPDIR=} . $active_parameter_href->{temp_directory};
-    gnu_export(
-        {
-            bash_variable => $export_tmpdir,
-            filehandle    => $filehandle,
-        }
-    );
-    say {$filehandle} $NEWLINE;
+    if ( $CONTAINER_MANAGER eq q{singularity} ) {
+
+        print {$filehandle} q{SINGULARITYENV_TMPDIR}
+          . $EQUALS
+          . $active_parameter_href->{temp_directory}
+          . $SPACE;
+    }
 
     deepvariant(
         {

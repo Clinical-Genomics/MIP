@@ -1961,6 +1961,16 @@ q{Regular expression file containing the regular expression to be used for each 
         )
     );
 
+    option(
+        q{isolate_singularity_containers} => (
+            cmd_tags      => [q{Contain these containers}],
+            documentation =>
+              q{Run these singularity executables with --no-home and --cleanenv option},
+            is  => qw{rw},
+            isa => ArrayRef,
+        )
+    );
+
     return;
 }
 
