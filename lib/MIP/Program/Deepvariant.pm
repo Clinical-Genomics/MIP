@@ -31,18 +31,19 @@ sub deepvariant {
 
 ## Function : Perl wrapper for generic commands module
 ## Returns  : @commands
-## Arguments: $bedfile                => Bed file containing the list of regions we want to process
-##          : $filehandle             => Filehandle to write to
-##          : $infile_path            => Aligned, sorted, indexed bam file containing the reads we want to call
-##          : $model_type             => Type of model to use for variant calling. Allowed values WES, WGS, or PACBIO
-##          : $num_shards             => Number of files the input is split into for the make examples step
-##          : $outfile_path           => Path to the output gvcf file
-##          : $outfile_path_vcf       => Path to the output vcf file
-##          : $referencefile_path     => Path to genome reference
-##          : $stderrfile_path        => Stderrfile path
-##          : $stderrfile_path_append => Append stderr info to file path
-##          : $stdinfile_path         => Stdinfile path
-##          : $stdoutfile_path        => Stdoutfile path
+## Arguments: $bedfile                  => Bed file containing the list of regions we want to process
+##          : $filehandle               => Filehandle to write to
+##          : $infile_path              => Aligned, sorted, indexed bam file containing the reads we want to call
+##          : $intermediate_results_dir => Store intermediate results here
+##          : $model_type               => Type of model to use for variant calling. Allowed values WES, WGS, or PACBIO
+##          : $num_shards               => Number of files the input is split into for the make examples step
+##          : $outfile_path             => Path to the output gvcf file
+##          : $outfile_path_vcf         => Path to the output vcf file
+##          : $referencefile_path       => Path to genome reference
+##          : $stderrfile_path          => Stderrfile path
+##          : $stderrfile_path_append   => Append stderr info to file path
+##          : $stdinfile_path           => Stdinfile path
+##          : $stdoutfile_path          => Stdoutfile path
 
     my ($arg_href) = @_;
 
@@ -50,6 +51,7 @@ sub deepvariant {
     my $bedfile;
     my $filehandle;
     my $infile_path;
+    my $intermediate_results_dir;
     my $model_type;
     my $num_shards;
     my $outfile_path;
@@ -75,6 +77,10 @@ sub deepvariant {
             required    => 1,
             store       => \$infile_path,
             strict_type => 1,
+        },
+        intermediate_results_dir => {
+            store       => \$intermediate_results_dir,
+            strict_type => 1
         },
         model_type => {
             allow       => [qw{ WES WGS PACBIO }],
@@ -138,6 +144,9 @@ sub deepvariant {
 
     if ($bedfile) {
         push @commands, q{--regions} . $EQUALS . $bedfile;
+    }
+    if ($intermediate_results_dir) {
+        push @commands, q{--intermediate_results_dir} . $SPACE . $intermediate_results_dir;
     }
 
     push @commands,

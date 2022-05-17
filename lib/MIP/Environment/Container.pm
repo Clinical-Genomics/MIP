@@ -128,6 +128,16 @@ sub build_container_cmd {
                 $gpu_switch = $container_href->{$container_name}{gpu_support} ? 1 : 0;
             }
 
+            ## Isolate singularity container
+            my $no_home   = 0;
+            my $clean_env = 0;
+            if ( any { $_ eq $executable_name }
+                @{ $active_parameter_href->{isolate_singularity_containers} } )
+            {
+                $no_home   = 1;
+                $clean_env = 1;
+            }
+
             my @cmds = run_container(
                 {
                     bind_paths_ref    => \@bind_paths,
@@ -135,6 +145,8 @@ sub build_container_cmd {
                     container_manager => $container_manager,
                     container_path    => $container_href->{$container_name}{uri},
                     gpu_switch        => $gpu_switch,
+                    no_home           => $no_home,
+                    clean_env         => $clean_env,
                 }
             );
 
@@ -665,6 +677,7 @@ sub run_container {
 ## Function : Run a docker container or exec a singularity image
 ## Returns  : @commands
 ## Arguments: $bind_paths_ref         => Bind host directory to container {REF}
+##          : $clean_env              => Start with clean environment
 ##          : $container_cmds_ref     => Cmds to be executed in container {REF}
 ##          : $container_manager      => Container manager
 ##          : $container_path         => Path to container
@@ -673,6 +686,7 @@ sub run_container {
 ##          : $filehandle             => Filehandle to write to
 ##          : $gpu_switch             => Use nvidia experimental support
 ##          : $image                  => Image to run
+##          : $no_home                => Don't mount home if it isn't the current working dir
 ##          : $remove                 => Remove stopped container
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
@@ -683,12 +697,14 @@ sub run_container {
 
     ## Flatten argument(s)
     my $bind_paths_ref;
+    my $clean_env;
     my $container_cmds_ref;
     my $container_manager;
     my $container_path;
     my $executable_name;
     my $filehandle;
     my $gpu_switch;
+    my $no_home;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdinfile_path;
@@ -701,6 +717,11 @@ sub run_container {
         bind_paths_ref => {
             default     => [],
             store       => \$bind_paths_ref,
+            strict_type => 1,
+        },
+        clean_env => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$clean_env,
             strict_type => 1,
         },
         container_cmds_ref => {
@@ -730,6 +751,11 @@ sub run_container {
         gpu_switch => {
             allow       => [ undef, 0, 1 ],
             store       => \$gpu_switch,
+            strict_type => 1,
+        },
+        no_home => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$no_home,
             strict_type => 1,
         },
         remove => {
@@ -787,10 +813,12 @@ sub run_container {
         singularity => {
             arg_href => {
                 bind_paths_ref         => $bind_paths_ref,
+                clean_env              => $clean_env,
                 container_cmds_ref     => $container_cmds_ref,
                 filehandle             => $filehandle,
                 image                  => $container_path,
                 gpu_switch             => $gpu_switch,
+                no_home                => $no_home,
                 stderrfile_path        => $stderrfile_path,
                 stderrfile_path_append => $stderrfile_path_append,
                 stdoutfile_path        => $stdoutfile_path,

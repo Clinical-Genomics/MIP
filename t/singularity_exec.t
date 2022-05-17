@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Singularity} => [qw{ singularity_exec }],
-);
+    my %perl_module = ( q{MIP::Program::Singularity} => [qw{ singularity_exec }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -86,9 +83,17 @@ my %specific_argument = (
           . $COMMA
           . catdir(qw{ path two }),
     },
+    clean_env => {
+        input           => 1,
+        expected_output => q{--cleanenv},
+    },
     container_cmds_ref => {
         inputs_ref      => [q{Hello_world.py}],
         expected_output => qw{ Hello_world.py },
+    },
+    no_home => {
+        input           => 1,
+        expected_output => q{--no-home},
     },
 );
 
