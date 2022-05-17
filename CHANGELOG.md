@@ -5,7 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [11.0.1]
 
-- Set tmpdir and use `intermediate_results_dir` for DeepVariant.
+- When running Deepvariant, set tmpdir to analysis folder and use `intermediate_results_dir`.
+- When running DeepVariant via singularity, use the options `--no-home` and `--cleanenv`.
 
 ## [11.0.0]
 
