@@ -89,6 +89,16 @@ gpu_capable_executables:
     - run_deeptrio
     - call_variants
   type: mip
+##  Isolate singularity containers (--no-home, --cleanenv)
+isolate_singularity_containers:
+  associated_recipe:
+    - mip
+  data_type: ARRAY
+  default:
+    - call_variants
+    - run_deeptrio
+    - run_deepvariant
+  type: mip
 ## HumanGenomeReference
 human_genome_reference:
   associated_recipe:

@@ -13,12 +13,9 @@ LABEL maintainer="Clinical-Genomics/MIP"
 
 RUN apt-get update && apt-get install -y --no-install-recommends git && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-RUN pip install --no-cache-dir numpy scipy
-
-## Clone git repository
-RUN git clone https://github.com/J35P312/BootstrapAnn.git /usr/local/BootstrapAnn
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    pip install --no-cache-dir numpy scipy && \
+    git clone https://github.com/J35P312/BootstrapAnn.git /usr/local/BootstrapAnn
 
 WORKDIR  /usr/local/BootstrapAnn
 
