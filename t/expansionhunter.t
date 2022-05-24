@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Expansionhunter} => [qw{ expansionhunter }],
-);
+    my %perl_module = ( q{MIP::Program::Expansionhunter} => [qw{ expansionhunter }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -81,9 +78,7 @@ my %required_argument = (
     },
     outfile_path_prefix => {
         input           => catfile(qw{ a test outfile_path_prefix }),
-        expected_output => q{--output-prefix}
-          . $SPACE
-          . catfile(qw{ a test outfile_path_prefix }),
+        expected_output => q{--output-prefix} . $SPACE . catfile(qw{ a test outfile_path_prefix }),
     },
     reference_genome_path => {
         input           => catfile(qw{ a test fasta }),
@@ -108,9 +103,7 @@ my %specific_argument = (
     },
     outfile_path_prefix => {
         input           => catfile(qw{ a test outfile_path_prefix }),
-        expected_output => q{--output-prefix}
-          . $SPACE
-          . catfile(qw{ a test outfile_path_prefix }),
+        expected_output => q{--output-prefix} . $SPACE . catfile(qw{ a test outfile_path_prefix }),
     },
     reference_genome_path => {
         input           => catfile(qw{ a test fasta }),
@@ -118,13 +111,15 @@ my %specific_argument = (
     },
     region_extension_length => {
         input           => $REGION_EXTENSION_LENGTH,
-        expected_output => q{--region-extension-length}
-          . $SPACE
-          . $REGION_EXTENSION_LENGTH,
+        expected_output => q{--region-extension-length} . $SPACE . $REGION_EXTENSION_LENGTH,
     },
     sex => {
         input           => q{female},
         expected_output => q{--sex female},
+    },
+    threads => {
+        input           => 2,
+        expected_output => q{--threads 2},
     },
     variant_catalog_file_path => {
         input           => catdir(qw{ a test variant_catalog_file.json }),

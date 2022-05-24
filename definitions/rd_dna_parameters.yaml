@@ -207,7 +207,7 @@ recipe_core_number:
     delly_call: 36
     delly_reformat: 13
     endvariantannotationblock: 1
-    expansionhunter: 0
+    expansionhunter: 3
     fastqc_ar: 0
     variant_annotation: 13
     frequency_filter: 13
@@ -284,7 +284,7 @@ recipe_memory:
     chromograph_upd: 5
     delly_reformat: 3
     endvariantannotationblock: 8
-    expansionhunter: 2
+    expansionhunter: 3
     gatk_baserecalibration: 10
     gatk_combinevariantcallsets: 25
     gatk_collectreadcounts: 12

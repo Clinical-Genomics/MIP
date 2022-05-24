@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Develop]
+
+- Save raw files from ExpansionHunter
+
+### Tools
+
+ExpansionHunter: 4.0.2 -> 5.0.0
+
 ## [11.0.1]
 
 - When running Deepvariant, set tmpdir to analysis folder and use `intermediate_results_dir`.

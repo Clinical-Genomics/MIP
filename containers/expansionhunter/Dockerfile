@@ -1,19 +1,31 @@
 ################## BASE IMAGE ######################
 
-FROM clinicalgenomics/mip_base:2.1
+FROM ubuntu:bionic
 
 ################## METADATA ######################
 
-LABEL base_image="clinicalgenomics/mip_base:2.1"
-LABEL version="3"
-LABEL software="expansionhunter"
-LABEL software.version="4.0.2"
-LABEL extra.binaries="expansionhunter"
+LABEL base_image="ubuntu:bionic"
+LABEL version="4"
+LABEL software="ExpanionHunter"
+LABEL software.version="5.0.0"
+LABEL extra.binaries="ExpanionHunter"
 LABEL maintainer="Clinical-Genomics/MIP"
 
-RUN conda install -c bioconda expansionhunter=4.0.2
+## Install wget
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    wget \
+    libreadline-dev && \
+    apt-get clean && \
+    apt-get purge && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-## Clean up after conda
-RUN /opt/conda/bin/conda clean -ya
+WORKDIR /app
 
-WORKDIR /data/
+RUN wget https://github.com/Illumina/ExpansionHunter/releases/download/v5.0.0/ExpansionHunter-v5.0.0-linux_x86_64.tar.gz && \
+    tar -xvf ExpansionHunter-v5.0.0-linux_x86_64.tar.gz && \
+    rm ExpansionHunter-v5.0.0-linux_x86_64.tar.gz
+
+ENV PATH=/app/ExpansionHunter-v5.0.0-linux_x86_64/bin:${PATH}
