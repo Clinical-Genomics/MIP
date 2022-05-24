@@ -650,6 +650,7 @@ sub analysis_chromograph_upd {
       if (
         not is_sample_proband_in_trio(
             {
+                only_affected    => 0,
                 sample_id        => $sample_id,
                 sample_info_href => $sample_info_href,
             }

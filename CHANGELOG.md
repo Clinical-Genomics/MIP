@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Develop]
+- Run UPD and subsequently chromograph on unaffected children
+
 ## [11.0.1]
 
 - When running Deepvariant, set tmpdir to analysis folder and use `intermediate_results_dir`.
