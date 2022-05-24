@@ -24,7 +24,7 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-RUN wget https://github.com/Illumina/ExpansionHunter/releases/download/v5.0.0/ExpansionHunter-v5.0.0-linux_x86_64.tar.gz && \
+RUN wget -nv https://github.com/Illumina/ExpansionHunter/releases/download/v5.0.0/ExpansionHunter-v5.0.0-linux_x86_64.tar.gz && \
     tar -xvf ExpansionHunter-v5.0.0-linux_x86_64.tar.gz && \
     rm ExpansionHunter-v5.0.0-linux_x86_64.tar.gz
 
