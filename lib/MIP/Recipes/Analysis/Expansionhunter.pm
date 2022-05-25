@@ -389,6 +389,7 @@ sub analysis_expansionhunter {
                     path_index       => $exphun_sample_file{$sample_id}{out_vcf} . q{.gz.tbi},
                     recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
+                    tag              => q{str_variants},
                 }
             );
             set_file_path_to_store(
@@ -399,6 +400,7 @@ sub analysis_expansionhunter {
                     path_index       => $exphun_sample_file{$sample_id}{out_bam} . q{.bai},
                     recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
+                    tag              => q{str_alignment},
                 }
             );
         }
