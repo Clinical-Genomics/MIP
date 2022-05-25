@@ -131,7 +131,7 @@ sub analysis_expansionhunter {
       qw{ bcftools_index bcftools_norm bcftools_rename_vcf_samples bcftools_view };
     use MIP::Program::Expansionhunter qw{ expansionhunter };
     use MIP::Program::Htslib qw{ htslib_bgzip };
-    use MIP::Program::Samtools qw{ samtools_index };
+    use MIP::Program::Samtools qw{ samtools_index samtools_sort };
     use MIP::Program::Stranger qw{ stranger };
     use MIP::Program::Svdb qw{ svdb_merge };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
@@ -139,7 +139,7 @@ sub analysis_expansionhunter {
       qw{ get_pedigree_sample_id_attributes set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
-    ### PREPROCESSING:
+    Readonly my $SCALING_FACTOR => 0.75;
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -196,6 +196,7 @@ sub analysis_expansionhunter {
     ### SHELL:
 
     my %exphun_sample_file;
+    my @decompose_outfile_paths;
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
   SAMPLE_ID:
@@ -216,14 +217,6 @@ sub analysis_expansionhunter {
         my $infile_suffix      = $sample_io{in}{file_suffix};
         my $infile_path        = $infile_path_prefix . $infile_suffix;
 
-        $exphun_sample_file{$sample_id}{in} = $infile_path;
-    }
-
-    my @decompose_outfile_paths;
-
-  SAMPLE_ID:
-    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
-
         say {$filehandle} q{## Run ExpansionHunter};
 
         # Get parameter
@@ -242,7 +235,7 @@ sub analysis_expansionhunter {
         expansionhunter(
             {
                 filehandle                => $filehandle,
-                infile_path               => $exphun_sample_file{$sample_id}{in},
+                infile_path               => $infile_path,
                 outfile_path_prefix       => $sample_outfile_path_prefix,
                 reference_genome_path     => $human_genome_reference,
                 sex                       => $sample_id_sex,
@@ -253,9 +246,24 @@ sub analysis_expansionhunter {
         say {$filehandle} $NEWLINE;
 
         my $exphun_sample_vcf = $sample_outfile_path_prefix . $outfile_suffix;
-        my $exphun_sample_bam = $sample_outfile_path_prefix . q{_realigned.bam};
+        my $exphun_sample_bam = $sample_outfile_path_prefix . q{.bam};
         $exphun_sample_file{$sample_id}{out_vcf} = $exphun_sample_vcf;
         $exphun_sample_file{$sample_id}{out_bam} = $exphun_sample_bam;
+
+        my $thread_memory = int( $recipe{memory} / $recipe{core_number} );
+        $thread_memory = int( $thread_memory * $SCALING_FACTOR );
+        samtools_sort(
+            {
+                filehandle            => $filehandle,
+                infile_path           => $sample_outfile_path_prefix . q{_realigned.bam},
+                max_memory_per_thread => $thread_memory . q{G},
+                outfile_path          => $exphun_sample_bam,
+                output_format         => q{bam},
+                temp_file_path_prefix => $temp_directory,
+                thread_number         => $recipe{core_number},
+            }
+        );
+        say {$filehandle} $NEWLINE;
 
         samtools_index(
             {
