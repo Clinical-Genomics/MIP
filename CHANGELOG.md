@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Develop]
 
 - Save raw files from ExpansionHunter
+- Run UPD and subsequently chromograph on unaffected children
 
 ### Tools
 
