@@ -73,7 +73,7 @@ container:
   expansionhunter:
     executable:
       ExpansionHunter:
-    uri: docker.io/clinicalgenomics/expansionhunter:4.0.2
+    uri: docker.io/clinicalgenomics/expansionhunter:5.0.0
   fastqc:
     executable:
       fastqc:

@@ -3,12 +3,15 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-[Develop]
+## [Develop]
 
+- Save raw files from ExpansionHunter
+- Run UPD and subsequently chromograph on unaffected children
 - Annotate SV variants with the caller that reported the variant
 
 ### Tools
 
+- ExpansionHunter: 4.0.2 -> 5.0.0
 - svdb: 2.4.0 -> 2.6.2
 
 ## [11.0.1]
