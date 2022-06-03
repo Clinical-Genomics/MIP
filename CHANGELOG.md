@@ -12,7 +12,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Tools
 
 - ExpansionHunter: 4.0.2 -> 5.0.0
-- svdb: 2.4.0 -> 2.6.2
+- svdb: 2.4.0 -> 2.6.4
 
 ## [11.0.1]
 

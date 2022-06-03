@@ -213,7 +213,7 @@ container:
   svdb:
     executable:
       svdb:
-    uri: quay.io/biocontainers/svdb:2.6.2--py27h4329609_0
+    uri: quay.io/biocontainers/svdb:2.6.4--py38h17adfb0_0
   telomerecat:
     executable:
       telomerecat:
