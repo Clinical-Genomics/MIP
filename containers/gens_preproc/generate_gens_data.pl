@@ -6,7 +6,7 @@ use List::Util qw(sum);
 use File::Basename qw(dirname);
 
 if ($ARGV[0] eq "--version") {
-    print "generate_gens_data.pl 1.0.0\n";
+    print "generate_gens_data.pl 1.0.1\n";
     exit 0;
 }
 
