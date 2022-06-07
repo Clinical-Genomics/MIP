@@ -125,7 +125,7 @@ container:
   mip:
     executable:
       mip:
-    uri: docker.io/clinicalgenomics/mip:v11.0.1
+    uri: docker.io/clinicalgenomics/mip:develop
   multiqc:
     executable:
       multiqc:
@@ -213,7 +213,7 @@ container:
   svdb:
     executable:
       svdb:
-    uri: quay.io/biocontainers/svdb:2.4.0--py37h77a2a36_4
+    uri: quay.io/biocontainers/svdb:2.6.4--py38h17adfb0_0
   telomerecat:
     executable:
       telomerecat:

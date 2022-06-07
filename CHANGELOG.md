@@ -7,10 +7,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - Save raw files from ExpansionHunter
 - Run UPD and subsequently chromograph on unaffected children
+- Annotate SV variants with the caller that reported the variant
 
 ### Tools
 
-ExpansionHunter: 4.0.2 -> 5.0.0
+- ExpansionHunter: 4.0.2 -> 5.0.0
+- svdb: 2.4.0 -> 2.6.4
 
 ## [11.0.1]
 
@@ -29,16 +31,16 @@ ExpansionHunter: 4.0.2 -> 5.0.0
 
 ### Tools
 
-cyrius v1.1 -> v1.1.1
-deepvariant 1.1.0 -> 1.2.0
-deeptrio 1.1.0 -> 1.2.0
-gatk 4.2.0.0 -> 4.2.2.0
-glnexus v1.3.1 -> v1.4.1
-HmtNote: 0.7.2
-htslib: 1.10.2 -> 1.13
-multiqc 1.10.1 -> v1.11
-star-fusion 1.10.0 -> 1.10.1
-vep release_103.1 -> release_104.3
+- cyrius v1.1 -> v1.1.1
+- deepvariant 1.1.0 -> 1.2.0
+- deeptrio 1.1.0 -> 1.2.0
+- gatk 4.2.0.0 -> 4.2.2.0
+- glnexus v1.3.1 -> v1.4.1
+- HmtNote: 0.7.2
+- htslib: 1.10.2 -> 1.13
+- multiqc 1.10.1 -> v1.11
+- star-fusion 1.10.0 -> 1.10.1
+- vep release_103.1 -> release_104.3
 
 ### References
 
