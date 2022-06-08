@@ -6,7 +6,7 @@ use List::Util qw(sum);
 use File::Basename qw(dirname);
 
 if ($ARGV[0] eq "--version") {
-    print "generate_gens_data.pl 1.0.1\n";
+    print "generate_gens_data.pl 1.0.2\n";
     exit 0;
 }
 
@@ -64,7 +64,7 @@ sub generate_baf_bed {
 	    print BAFOUT $prefix."_".$a[0]."\t".($a[1]-1)."\t".$a[1]."\t".$a[2]."\n";
 	}
     }
-    close $fn;
+    close $fh;
 }
 
 sub generate_cov_bed {
