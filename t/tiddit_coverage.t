@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Tiddit} => [qw{ tiddit_coverage }],
-);
+    my %perl_module = ( q{MIP::Program::Tiddit} => [qw{ tiddit_coverage }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -51,7 +48,7 @@ diag(   q{Test tiddit_coverage from Tiddit.pm}
 Readonly my $BIN_SIZE => 500;
 
 ## Base arguments
-my @function_base_commands = qw{ TIDDIT.py --cov };
+my @function_base_commands = qw{ tiddit --cov };
 
 my %base_argument = (
     filehandle => {
