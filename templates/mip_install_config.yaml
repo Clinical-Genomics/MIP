@@ -141,7 +141,7 @@ container:
   pdfmerger:
     executable:
       pdfmerger:
-    uri: docker.io/northwestwitch/pdfmerger:v1.0
+    uri: docker.io/clinicalgenomics/pdfmerger:v1.0
   picard:
     executable:
       picard: "no_executable_in_image"
