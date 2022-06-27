@@ -285,7 +285,7 @@ sub _install_loftool_plugin {
         {
             outfile_path => catfile( $plugin_dir_path, q{LoFtool_scores.txt} ),
             url          =>
-              q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt},
+q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/106/LoFtool_scores.txt},
         }
     );
 
@@ -318,7 +318,7 @@ sub _install_exacpli_plugin {
         {
             outfile_path => catfile( $plugin_dir_path, q{ExACpLI_values.txt} ),
             url          =>
-              q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/ExACpLI_values.txt},
+q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/106/ExACpLI_values.txt},
         }
     );
 

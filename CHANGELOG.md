@@ -11,8 +11,21 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Tools
 
+- Arriba: 2.1.0 -> 2.3.0
+- DeepVariant: 1.1.0 -> 1.4.0
 - ExpansionHunter: 4.0.2 -> 5.0.0
+- GATK: 4.2.2.0 -> 4.2.6.1
+- HTSlib: 1.13 -> 1.15.1
+- MultiQC: 1.11 -> 1.12
+- Peddy: 0.4.3 -> 0.4.8
+- Picard: 2.25.0 -> 2.27.2
+- SMNCopyNumberCaller 1.1.1 -> 1.1.2
+- Stranger: 0.8.0 -> 0.8.1
+- Stringtie: 2.1.3b -> 2.2.1
 - svdb: 2.4.0 -> 2.6.4
+- Tiddit: 2.12.1 -> 3.1.0
+- Trimgalore: 0.6.4 -> 0.6.7
+- VEP: 104.3 -> 106.1
 
 ## [11.0.1]
 
