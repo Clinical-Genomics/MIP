@@ -336,7 +336,7 @@ reference_feature:
         file: clinvar_20220620.vcf.gz
         file_check: clinvar_20220620.vcf.gz.md5
         file_index: clinvar_20220620.vcf.gz.tbi
-        outfile: grch37_clinvar_-2020620-.vcf.gz
+        outfile: grch37_clinvar_-20220620-.vcf.gz
         outfile_check: grch37_clinvar_-20220620-.vcf.gz.md5
         outfile_index: grch37_clinvar_-20220620-.vcf.gz.tbi
         outfile_check_method: md5sum
