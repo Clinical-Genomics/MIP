@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Save raw files from ExpansionHunter
 - Run UPD and subsequently chromograph on unaffected children
 - Annotate SV variants with the caller that reported the variant
+- Produce files for CNV analysis in Gens
 
 ### Tools
 
@@ -29,11 +30,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Databases
 
-- clinvar: 211010 -> 220620
+- clinvar: 211010 -> 220730
 - dbnsfp: 4.1a -> 4.3a (grch38 only)
 - gnomad: r3.1.1 -> r3.1.2 (grch38 only)
 - giab: 3.3.2 -> 4.2.1
-- loqusdb dump: 20210921 -> 20220622
+- loqusdb dump: 20210921 -> 20220810
 - vcf2cytosure blacklist: 200520
 
 ## [11.0.1]

@@ -27,7 +27,7 @@ reference:
     - v1.0
   clinvar:
     - 20211010
-    - 20220620
+    - 20220730
   dbnsfp:
     - 3.5a
     - 4.1a
@@ -332,13 +332,13 @@ reference_feature:
         outfile_index: grch37_clinvar_-20211010-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
-      20220620:
-        file: clinvar_20220620.vcf.gz
-        file_check: clinvar_20220620.vcf.gz.md5
-        file_index: clinvar_20220620.vcf.gz.tbi
-        outfile: grch37_clinvar_-20220620-.vcf.gz
-        outfile_check: grch37_clinvar_-20220620-.vcf.gz.md5
-        outfile_index: grch37_clinvar_-20220620-.vcf.gz.tbi
+      20220730:
+        file: clinvar_20220730.vcf.gz
+        file_check: clinvar_20220730.vcf.gz.md5
+        file_index: clinvar_20220730.vcf.gz.tbi
+        outfile: grch37_clinvar_-20220730-.vcf.gz
+        outfile_check: grch37_clinvar_-20220730-.vcf.gz.md5
+        outfile_index: grch37_clinvar_-20220730-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
     grch38:
@@ -351,13 +351,13 @@ reference_feature:
         outfile_index: grch38_clinvar_-20211010-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
-      20220620:
-        file: clinvar_20220620.vcf.gz
-        file_check: clinvar_20220620.vcf.gz.md5
-        file_index: clinvar_20220620.vcf.gz.tbi
-        outfile: grch38_clinvar_-20220620-.vcf.gz
-        outfile_check: grch38_clinvar_-20220620-.vcf.gz.md5
-        outfile_index: grch38_clinvar_-20220620-.vcf.gz.tbi
+      20220730:
+        file: clinvar_20220730.vcf.gz
+        file_check: clinvar_20220730.vcf.gz.md5
+        file_index: clinvar_20220730.vcf.gz.tbi
+        outfile: grch38_clinvar_-20220730-.vcf.gz
+        outfile_check: grch38_clinvar_-20220730-.vcf.gz.md5
+        outfile_index: grch38_clinvar_-20220730-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
   dbnsfp:
