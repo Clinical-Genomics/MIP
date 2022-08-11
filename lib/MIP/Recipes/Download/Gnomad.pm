@@ -732,7 +732,7 @@ sub _build_af_file {
             strict_type => 1,
         },
         reference_version => {
-            allow       => [qw{ r2.0.1 r2.1.1 r2.1.1_sv r3.0 r3.1.1 }],
+            allow       => [qw{ r2.0.1 r2.1.1 r2.1.1_sv r3.0 r3.1.1 r3.1.2 }],
             required    => 1,
             store       => \$reference_version,
             strict_type => 1,
