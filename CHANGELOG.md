@@ -21,6 +21,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Peddy: 0.4.3 -> 0.4.8
 - Picard: 2.25.0 -> 2.27.2
 - SMNCopyNumberCaller 1.1.1 -> 1.1.2
+- Star Fusion: 1.10.1 -> 1.11.0
 - Stranger: 0.8.0 -> 0.8.1
 - Stringtie: 2.1.3b -> 2.2.1
 - svdb: 2.4.0 -> 2.6.4
