@@ -701,7 +701,7 @@ reference_feature:
         file_index: HG005_GRCh37_1_22_v4.2.1_benchmark.vcf.gz.tbi
         outfile: grch37_nist_hg005_-na24631_v4.2.1-.vcf.gz
         outfile_index: grch37_nist_hg005_-na24631_v4.2.1-.vcf.gz.tbi
-        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv3.3.2/GRCh37/
+        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv4.2.1/GRCh37/
     grch38:
       na12878_v3.3.2_bed:
         file: HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel_noCENorHET7.bed
