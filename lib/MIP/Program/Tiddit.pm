@@ -162,6 +162,7 @@ sub tiddit_sv {
 ##          : $stderrfile_path                 => Stderrfile path
 ##          : $stderrfile_path_append          => Append stderr info to file path
 ##          : $stdoutfile_path                 => Stdoutfile path
+##          : $threads                         => Threads
 
     my ($arg_href) = @_;
 
@@ -174,6 +175,7 @@ sub tiddit_sv {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $threads;
 
     my $tmpl = {
         filehandle  => { store => \$filehandle, },
@@ -207,6 +209,11 @@ sub tiddit_sv {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        threads => {
+            allow       => qr/ \A \d+ \z /xms,
+            store       => \$threads,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -227,6 +234,10 @@ sub tiddit_sv {
     push @commands, q{--ref} . $SPACE . $referencefile_path;
 
     push @commands, q{--bam} . $SPACE . $infile_path;
+
+    if ($threads) {
+        push @commands, q{--threads} . $SPACE . $threads;
+    }
 
     push @commands,
       unix_standard_streams(
