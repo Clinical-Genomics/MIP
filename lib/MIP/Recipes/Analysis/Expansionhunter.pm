@@ -276,9 +276,11 @@ sub analysis_expansionhunter {
 
         htslib_bgzip(
             {
-                filehandle  => $filehandle,
-                infile_path => $exphun_sample_vcf,
-                threads     => $recipe{core_number},
+                filehandle      => $filehandle,
+                infile_path     => $exphun_sample_vcf,
+                stdoutfile_path => $exphun_sample_vcf . q{.gz},
+                threads         => $recipe{core_number},
+                write_to_stdout => 1,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -385,8 +387,7 @@ sub analysis_expansionhunter {
                 {
                     format           => q{vcf},
                     id               => $sample_id,
-                    path             => $exphun_sample_file{$sample_id}{out_vcf} . q{.gz},
-                    path_index       => $exphun_sample_file{$sample_id}{out_vcf} . q{.gz.tbi},
+                    path             => $exphun_sample_file{$sample_id}{out_vcf},
                     recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                     tag              => q{str_variants},
