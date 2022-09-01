@@ -221,7 +221,7 @@ container:
   tiddit:
     executable:
       tiddit:
-    uri: quay.io/biocontainers/tiddit:3.3.0--py310hc2b7f4b_0
+    uri: quay.io/biocontainers/tiddit:3.3.1--py39h5094d80_0
   trim-galore:
     executable:
       trim_galore:

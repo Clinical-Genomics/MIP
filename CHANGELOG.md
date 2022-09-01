@@ -25,7 +25,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Stranger: 0.8.0 -> 0.8.1
 - Stringtie: 2.1.3b -> 2.2.1
 - svdb: 2.4.0 -> 2.6.4
-- Tiddit: 2.12.1 -> 3.3.0
+- Tiddit: 2.12.1 -> 3.3.1
 - Trimgalore: 0.6.4 -> 0.6.7
 - VEP: 104.3 -> 106.1
 
