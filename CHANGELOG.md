@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Run UPD and subsequently chromograph on unaffected children
 - Annotate SV variants with the caller that reported the variant
 - Produce files for CNV analysis in Gens
+- Updated SO terms for new version of VEP
 
 ### Tools
 
