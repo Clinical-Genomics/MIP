@@ -65,7 +65,7 @@ vep_plugin:
       - phyloP100way_vertebrate
       - phastCons100way_vertebrate
       - REVEL_rankscore
-  ExACpLI:
+  pLI:
     exist_check:
       - type: file
         path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt

@@ -57,7 +57,7 @@ picardtools_path: /usr/picard
 qccollect_sampleinfo_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_id!_qc_sample_info.yaml
 sv_genmod_models_case_type: cmms
 sv_vep_plugin:
-  ExACpLI:
+  pLI:
     exist_check:
       - type: file
         path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt
@@ -92,7 +92,7 @@ vep_plugin:
       - phastCons100way_vertebrate
       - REVEL_rankscore
       - rs_dbSNP150
-  ExACpLI:
+  pLI:
     exist_check:
       - type: file
         path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt

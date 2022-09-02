@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Annotate SV variants with the caller that reported the variant
 - Produce files for CNV analysis in Gens
 - Updated SO terms for new version of VEP
+- ExACpLI -> pLI, see [vep issue 108](https://github.com/Ensembl/VEP_plugins/issues/108)
 
 ### Tools
 
@@ -28,7 +29,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - svdb: 2.4.0 -> 2.6.4
 - Tiddit: 2.12.1 -> 3.3.1
 - Trimgalore: 0.6.4 -> 0.6.7
-- VEP: 104.3 -> 106.1
+- VEP: 104.3 -> 107.0
 
 ### Databases
 

@@ -206,7 +206,7 @@ vep_plugins:
   data_type: ARRAY
   default:
     - dbNSFP
-    - ExACpLI
+    - pLI
     - LoFtool
     - MaxEntScan
     - SpliceAI

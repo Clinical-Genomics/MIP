@@ -253,7 +253,7 @@ container:
     uri: docker.io/jemten/vcf2cytosure:0.5.1
 vep_plugins:
   - dbNSFP
-  - ExACpLI
+  - pLI
   - LoFtool
   - MaxEntScan
   - SpliceAI
