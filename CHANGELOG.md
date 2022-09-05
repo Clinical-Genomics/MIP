@@ -15,6 +15,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Tools
 
 - Arriba: 2.1.0 -> 2.3.0
+- Chromograph 1.1.4 -> 1.1.5
 - DeepVariant: 1.1.0 -> 1.4.0
 - ExpansionHunter: 4.0.2 -> 5.0.0
 - GATK: 4.2.2.0 -> 4.2.6.1
@@ -26,11 +27,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Star Fusion: 1.10.1 -> 1.11.0
 - Stranger: 0.8.0 -> 0.8.1
 - Stringtie: 2.1.3b -> 2.2.1
-- svdb: 2.4.0 -> 2.6.4
 - Tiddit: 2.12.1 -> 3.3.1
 - Trimgalore: 0.6.4 -> 0.6.7
-- vcf2cytosure v0.5.1 -> v0.8
 - VEP: 104.3 -> 107.0
+- svdb: 2.4.0 -> 2.6.4
+- vcf2cytosure v0.5.1 -> v0.8
 
 ### Databases
 
