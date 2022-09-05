@@ -35,7 +35,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Databases
 
-- clinvar: 211010 -> 220730
+- clinvar: 20211010 -> 20220829
 - dbnsfp: 4.1a -> 4.3a (grch38 only)
 - gnomad: r3.1.1 -> r3.1.2 (grch38 only)
 - giab: 3.3.2 -> 4.2.1
