@@ -91,10 +91,6 @@ my %specific_argument = (
         input           => 1,
         expected_output => q{-w},
     },
-    skip_quality_track => {
-        input           => 1,
-        expected_output => q{-u},
-    },
 );
 
 ## Coderef - enables generalized use of generate call

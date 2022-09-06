@@ -41,7 +41,6 @@ sub tiddit_coverage {
 ##          : $infile_path            => Infile path
 ##          : $outfile_path_prefix    => Outfile path prefix
 ##          : $output_wig             => Generate wig instead of bed
-##          : $skip_quality_track     => Skip quality track in output file
 ##          : $stderrfile_path        => Stderrfile path
 ##          : $stderrfile_path_append => Append stderr info to file path
 ##          : $stdoutfile_path        => Stdoutfile path
@@ -121,11 +120,6 @@ sub tiddit_coverage {
     if ($output_wig) {
 
         push @commands, q{-w};
-    }
-
-    if ($skip_quality_track) {
-
-        push @commands, q{-u};
     }
 
     push @commands, q{--bam} . $SPACE . $infile_path;
