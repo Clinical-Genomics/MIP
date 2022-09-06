@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [11.0.2]
+
+Updates chromograph
+
+### Tools
+chromograph 1.1.4 -> 1.1.5
+
 ## [11.0.1]
 
 - When running Deepvariant, set tmpdir to analysis folder and use `intermediate_results_dir`.
