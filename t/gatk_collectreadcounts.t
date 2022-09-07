@@ -4,7 +4,7 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ dirname };
+use File::Basename qw{ dirname  };
 use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
@@ -23,23 +23,19 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
+
 BEGIN {
-
     use MIP::Test::Fixtures qw{ test_import };
-
-### Check all internal dependency modules and imports
+    ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = ( q{MIP::Program::Tiddit} => [qw{ tiddit_sv }], );
+    my %perl_module = ( q{MIP::Program::Gatk} => [qw{ gatk_collectreadcounts }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-## Constants
-Readonly my $N_SUPPORTING_PAIRS => 50;
+use MIP::Program::Gatk qw{ gatk_collectreadcounts };
 
-use MIP::Program::Tiddit qw{ tiddit_sv };
-
-diag(   q{Test tiddit_sv from Tiddit.pm}
+diag(   q{Test gatk_collectreadcounts from Gatk.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -48,24 +44,12 @@ diag(   q{Test tiddit_sv from Tiddit.pm}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ tiddit };
+my @function_base_commands = qw{ gatk CollectReadCounts };
 
 my %base_argument = (
     filehandle => {
         input           => undef,
         expected_output => \@function_base_commands,
-    },
-    stderrfile_path => {
-        input           => q{stderrfile.test},
-        expected_output => q{2> stderrfile.test},
-    },
-    stderrfile_path_append => {
-        input           => q{stderrfile.test},
-        expected_output => q{2>> stderrfile.test},
-    },
-    stdoutfile_path => {
-        input           => q{stdoutfile.test},
-        expected_output => q{1> stdoutfile.test},
     },
 );
 
@@ -73,36 +57,33 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input           => q{infile_path},
-        expected_output => q{--bam infile_path},
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--input } . catfile(qw{ dir infile.bam }),
     },
-    referencefile_path => {
-        input           => catfile(qw{ a test reference_path }),
-        expected_output => q{--ref} . $SPACE . catfile(qw{ a test reference_path }),
+    outfile_path => {
+        input           => catfile(qw{ dir outfile.hdf5 }),
+        expected_output => q{--output } . catfile(qw{ dir outfile.hdf5 }),
+    },
+    intervals => {
+        input           => catfile(qw{reference_dir targets_preprocessed.interval_list }),
+        expected_output => q{--intervals }
+          . catfile(qw{reference_dir targets_preprocessed.interval_list }),
     },
 );
 
 my %specific_argument = (
     infile_path => {
-        input           => q{infile_path},
-        expected_output => q{--bam infile_path},
+        input           => catfile(qw{ dir infile.bam }),
+        expected_output => q{--input } . catfile(qw{ dir infile.bam }),
     },
-    minimum_number_supporting_pairs => {
-        input           => $N_SUPPORTING_PAIRS,
-        expected_output => q{-p} . $SPACE . $N_SUPPORTING_PAIRS,
-    },
-    outfile_path_prefix => {
-        input           => q{outfile_path_prefix},
-        expected_output => q{-o outfile_path_prefix},
-    },
-    referencefile_path => {
-        input           => catfile(qw{ a test reference_path }),
-        expected_output => q{--ref} . $SPACE . catfile(qw{ a test reference_path }),
+    outfile_path => {
+        input           => catfile(qw{ dir outfile.hdf5 }),
+        expected_output => q{--output } . catfile(qw{ dir outfile.hdf5 }),
     },
 );
 
 ## Coderef - enables generalized use of generate call
-my $module_function_cref = \&tiddit_sv;
+my $module_function_cref = \&gatk_collectreadcounts;
 
 ## Test both base and function specific arguments
 my @arguments = ( \%base_argument, \%specific_argument );
@@ -112,6 +93,7 @@ foreach my $argument_href (@arguments) {
     my @commands = test_function(
         {
             argument_href              => $argument_href,
+            base_commands_index        => 1,
             do_test_base_command       => 1,
             function_base_commands_ref => \@function_base_commands,
             module_function_cref       => $module_function_cref,
@@ -119,5 +101,4 @@ foreach my $argument_href (@arguments) {
         }
     );
 }
-
 done_testing();

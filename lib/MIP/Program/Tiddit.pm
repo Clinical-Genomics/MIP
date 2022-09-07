@@ -29,7 +29,7 @@ BEGIN {
 }
 
 ## Constants
-Readonly my $BASE_COMMAND => q{TIDDIT.py};
+Readonly my $BASE_COMMAND => q{tiddit};
 Readonly my $BIN_SIZE     => 500;
 
 sub tiddit_coverage {

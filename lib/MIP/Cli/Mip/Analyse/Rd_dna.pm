@@ -475,6 +475,69 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
+        q{gatk_collectreadcounts} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{GATK CollectReadCounts for Gens},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gatk_denoisereadcounts} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{GATK DenoiseReadCounts for Gens},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gens_generatedata} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Generates .bed-files for Gens},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{gens_intervals} => (
+            cmd_tags      => [q{Default: grch37_gens_targets_preprocessed_100bp.interval_list}],
+            documentation => q{Precomputed 100bp intervals for Gens},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{gens_panel_of_normals_female} => (
+            cmd_tags      => [q{Default: grch37_gens_female_pon_100bp.hdf5}],
+            documentation => q{Gens read count reference},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{gens_panel_of_normals_male} => (
+            cmd_tags      => [q{Default: grch37_gens_male_pon_100bp.hdf5}],
+            documentation => q{Gens read count reference},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
+        q{gens_gnomad_positions} => (
+            cmd_tags      => [q{Default: grch37_gnomad.genomes.r2.1.1.sites.5percent.pos.txt}],
+            documentation => q{Gnomad SNV positions for Gens},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{chanjo_sexcheck} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Predicts gender from sex chromosome coverage},
