@@ -116,7 +116,7 @@ like( $trap->die, qr/Is\s+not\s+a/xms, q{Not a hash ref} );
 delete $vep_plugin{not_valid_annotation};
 
 ## Given a plugin that is missing
-$vep_plugin{MockPlugin} = $rd_dna_config{vep_plugin}{ExACpLI};
+$vep_plugin{MockPlugin} = $rd_dna_config{vep_plugin}{pLI};
 trap {
     check_vep_plugin(
         {

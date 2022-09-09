@@ -36,6 +36,7 @@ BEGIN {
 
 ## Constants
 Readonly my $N_SUPPORTING_PAIRS => 50;
+Readonly my $THREADS            => 8;
 
 use MIP::Program::Tiddit qw{ tiddit_sv };
 
@@ -98,6 +99,10 @@ my %specific_argument = (
     referencefile_path => {
         input           => catfile(qw{ a test reference_path }),
         expected_output => q{--ref} . $SPACE . catfile(qw{ a test reference_path }),
+    },
+    threads => {
+        input           => $THREADS,
+        expected_output => q{--threads} . $SPACE . $THREADS,
     },
 );
 

@@ -37,7 +37,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Vep} => [qw{ analysis_vep_sv_wgs }],
-        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
+        q{MIP::Test::Fixtures}         => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -77,8 +77,8 @@ $active_parameter{vep_custom_annotation}{a_ref} = {
     annotation_type          => q{exact},
 };
 $active_parameter{vep_directory_cache} = q{a_cache};
-$active_parameter{sv_vep_plugin}{ExACpLI} = { path => q{a_path}, };
-$active_parameter{sv_vep_features} = [qw{ refseq }];
+$active_parameter{sv_vep_plugin}{pLI}  = { path => q{a_path}, };
+$active_parameter{sv_vep_features}     = [qw{ refseq }];
 
 my %file_info = test_mip_hashes(
     {
@@ -102,11 +102,11 @@ my %parameter = test_mip_hashes(
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $case_id,
-        parameter_href    => \%parameter,
-        recipe_name       => $recipe_name,
-        step              => q{vcf},
+        file_info_href => \%file_info,
+        id             => $case_id,
+        parameter_href => \%parameter,
+        recipe_name    => $recipe_name,
+        step           => q{vcf},
     }
 );
 

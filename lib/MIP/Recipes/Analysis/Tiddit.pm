@@ -136,11 +136,6 @@ sub analysis_tiddit {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
 
-    ## Unpack parameters
-    my $max_cores_per_node = $active_parameter_href->{max_cores_per_node};
-    my $modifier_core_number =
-      scalar( @{ $active_parameter_href->{sample_ids} } );
-
     my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
@@ -170,31 +165,15 @@ sub analysis_tiddit {
     # Create anonymous filehandle
     my $filehandle = IO::Handle->new();
 
-    ## Update number of cores and memory depending on how many samples that are processed
-    my $core_number = get_core_number(
-        {
-            max_cores_per_node   => $max_cores_per_node,
-            modifier_core_number => $modifier_core_number,
-            recipe_core_number   => $recipe{core_number},
-        }
-    );
-    my $memory_allocation = update_memory_allocation(
-        {
-            node_ram_memory           => $active_parameter_href->{node_ram_memory},
-            parallel_processes        => $core_number,
-            process_memory_allocation => $recipe{memory},
-        }
-    );
-
     ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
     my ( $recipe_file_path, $recipe_info_path ) = setup_script(
         {
             active_parameter_href => $active_parameter_href,
-            core_number           => $core_number,
+            core_number           => $recipe{core_number},
             directory_id          => $case_id,
             filehandle            => $filehandle,
             job_id_href           => $job_id_href,
-            memory_allocation     => $memory_allocation,
+            memory_allocation     => $recipe{memory},
             process_time          => $recipe{time},
             recipe_directory      => $recipe_name,
             recipe_name           => $recipe_name,
@@ -208,7 +187,7 @@ sub analysis_tiddit {
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
   SAMPLE_ID:
-    while ( my ( $sample_id_index, $sample_id ) = each @{ $active_parameter_href->{sample_ids} } ) {
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
         ## Get the io infiles per chain and id
         my %sample_io = get_io_files(
@@ -229,23 +208,10 @@ sub analysis_tiddit {
     }
     say {$filehandle} q{wait}, $NEWLINE;
 
-    # Start counter
-    my $process_batches_count = 1;
-
     ## Tiddit sv calling per sample id
   SAMPLE_ID:
-    while ( my ( $sample_id_index, $sample_id ) = each @{ $active_parameter_href->{sample_ids} } ) {
+    foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
-        $process_batches_count = print_wait(
-            {
-                filehandle            => $filehandle,
-                max_process_number    => $core_number,
-                process_batches_count => $process_batches_count,
-                process_counter       => $sample_id_index,
-            }
-        );
-
-        ## Tiddit
         tiddit_sv(
             {
                 filehandle                      => $filehandle,
@@ -254,11 +220,11 @@ sub analysis_tiddit {
                   $active_parameter_href->{tiddit_minimum_number_supporting_pairs},
                 outfile_path_prefix => $tiddit_sample_file_info{$sample_id}{out},
                 referencefile_path  => $active_parameter_href->{human_genome_reference},
+                threads             => $recipe{core_number}
             }
         );
-        say {$filehandle} $AMPERSAND . $SPACE . $NEWLINE;
+        say {$filehandle} $NEWLINE;
     }
-    say {$filehandle} q{wait}, $NEWLINE;
 
     ## Get parameters
     ## Tiddit sample outfiles needs to be lexiographically sorted for svdb merge

@@ -250,6 +250,7 @@ recipe_core_number:
     sv_varianteffectpredictor: 0
     sv_vcfparser: 13
     telomerecat_ar: 12
+    tiddit: 12
     tiddit_coverage: 1
     upd_ar: 1
     varg_ar: 1
@@ -307,7 +308,7 @@ recipe_memory:
     sv_annotate: 7
     sv_reformat: 24
     sv_varianteffectpredictor: 9
-    tiddit: 8
+    tiddit: 5
     upd_ar: 3
     variant_annotation: 3
     varianteffectpredictor: 7
@@ -380,7 +381,7 @@ recipe_time:
     sv_varianteffectpredictor: 10
     sv_vcfparser: 2
     telomerecat_ar: 5
-    tiddit: 20
+    tiddit: 15
     tiddit_coverage: 5
     upd_ar: 1
     varg_ar: 1

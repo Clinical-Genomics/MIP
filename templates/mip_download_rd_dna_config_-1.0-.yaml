@@ -27,7 +27,7 @@ reference:
     - v1.0
   clinvar:
     - 20211010
-    - 20220730
+    - 20220829
   dbnsfp:
     - 3.5a
     - 4.1a
@@ -332,13 +332,13 @@ reference_feature:
         outfile_index: grch37_clinvar_-20211010-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
-      20220730:
-        file: clinvar_20220730.vcf.gz
-        file_check: clinvar_20220730.vcf.gz.md5
-        file_index: clinvar_20220730.vcf.gz.tbi
-        outfile: grch37_clinvar_-20220730-.vcf.gz
-        outfile_check: grch37_clinvar_-20220730-.vcf.gz.md5
-        outfile_index: grch37_clinvar_-20220730-.vcf.gz.tbi
+      20220829:
+        file: clinvar_20220829.vcf.gz
+        file_check: clinvar_20220829.vcf.gz.md5
+        file_index: clinvar_20220829.vcf.gz.tbi
+        outfile: grch37_clinvar_-20220829-.vcf.gz
+        outfile_check: grch37_clinvar_-20220829-.vcf.gz.md5
+        outfile_index: grch37_clinvar_-20220829-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
     grch38:
@@ -351,13 +351,13 @@ reference_feature:
         outfile_index: grch38_clinvar_-20211010-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
-      20220730:
-        file: clinvar_20220730.vcf.gz
-        file_check: clinvar_20220730.vcf.gz.md5
-        file_index: clinvar_20220730.vcf.gz.tbi
-        outfile: grch38_clinvar_-20220730-.vcf.gz
-        outfile_check: grch38_clinvar_-20220730-.vcf.gz.md5
-        outfile_index: grch38_clinvar_-20220730-.vcf.gz.tbi
+      20220829:
+        file: clinvar_20220829.vcf.gz
+        file_check: clinvar_20220829.vcf.gz.md5
+        file_index: clinvar_20220829.vcf.gz.tbi
+        outfile: grch38_clinvar_-20220829-.vcf.gz
+        outfile_check: grch38_clinvar_-20220829-.vcf.gz.md5
+        outfile_index: grch38_clinvar_-20220829-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
   dbnsfp:
@@ -701,7 +701,7 @@ reference_feature:
         file_index: HG005_GRCh37_1_22_v4.2.1_benchmark.vcf.gz.tbi
         outfile: grch37_nist_hg005_-na24631_v4.2.1-.vcf.gz
         outfile_index: grch37_nist_hg005_-na24631_v4.2.1-.vcf.gz.tbi
-        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv3.3.2/GRCh37/
+        url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv4.2.1/GRCh37/
     grch38:
       na12878_v3.3.2_bed:
         file: HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel_noCENorHET7.bed

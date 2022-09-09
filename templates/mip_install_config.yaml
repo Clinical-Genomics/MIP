@@ -221,7 +221,7 @@ container:
   tiddit:
     executable:
       tiddit:
-    uri: quay.io/biocontainers/tiddit:3.1.0--py39h5094d80_1
+    uri: quay.io/biocontainers/tiddit:3.3.1--py39h5094d80_0
   trim-galore:
     executable:
       trim_galore:
@@ -252,8 +252,8 @@ container:
   vep:
     executable:
       vep:
-    uri: docker.io/ensemblorg/ensembl-vep:release_106.1
+    uri: docker.io/ensemblorg/ensembl-vep:release_107.0
   vcf2cytosure:
     executable:
       vcf2cytosure:
-    uri: docker.io/jemten/vcf2cytosure:0.5.1
+    uri: docker.io/clinicalgenomics/vcf2cytosure:v0.8

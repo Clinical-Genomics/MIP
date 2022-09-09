@@ -377,7 +377,7 @@ vep_assemblies:
 vep_auto_flag: cfp
 vep_plugins:
   - dbNSFP
-  - ExACpLI
+  - pLI
   - LoFtool
   - MaxEntScan
   - SpliceAI
