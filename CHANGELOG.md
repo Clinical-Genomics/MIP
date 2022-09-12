@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Develop]
+## [11.1.0]
 
 - Save raw files from ExpansionHunter
 - Run UPD and subsequently chromograph on unaffected children
