@@ -90,9 +90,9 @@ sub install_mip_scripts {
               program_test_cmds.yaml
               qc_eval_metric_-v1.3-.yaml
               qc_regexp_-v1.26-.yaml
-              rank_model_-v1.33-.ini
+              rank_model_-v1.34-.ini
               svrank_model_-v1.8-.ini
-              }
+            }
         ],
     );
 

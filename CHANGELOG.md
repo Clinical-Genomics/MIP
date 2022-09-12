@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Produce files for CNV analysis in Gens
 - Updated SO terms for new version of VEP
 - ExACpLI -> pLI, see [vep issue 108](https://github.com/Ensembl/VEP_plugins/issues/108)
+- Use REVEL_score rather than REVEL_rankscore for the ranking algorithm
 
 ### Tools
 

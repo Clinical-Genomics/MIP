@@ -305,7 +305,7 @@ sub mip_scripts {
               rd_rna_initiation_map.yaml
               rd_dna_vcf_rerun_initiation_map.yaml
               rd_dna_vcf_rerun_parameters.yaml
-              }
+            }
         ],
         t => [
             qw{ mip_install.test
@@ -314,7 +314,7 @@ sub mip_scripts {
               mip_analyse_rd_dna_vcf_rerun.test
               mip_core.t
               mip_analysis.test
-              }
+            }
         ],
         templates => [
             qw{ 643594-miptest_pedigree.yaml
@@ -330,9 +330,9 @@ sub mip_scripts {
               mip_rd_rna_config.yaml
               program_test_cmds.yaml
               qc_regexp_-v1.26-.yaml
-              rank_model_-v1.33-.ini
+              rank_model_-v1.34-.ini
               svrank_model_-v1.8-.ini
-              }
+            }
         ],
     );
 
