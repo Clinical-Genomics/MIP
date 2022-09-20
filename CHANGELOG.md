@@ -41,6 +41,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - gnomad: r3.1.1 -> r3.1.2 (grch38 only)
 - giab: 3.3.2 -> 4.2.1
 - loqusdb dump: 20210921 -> 20220905
+- nist: v3.3.2 -> v4.2.1
 - vcf2cytosure blacklist: 200520
 
 ## [11.0.2]
