@@ -156,37 +156,37 @@ Readonly our %SO_CONSEQUENCE_SEVERITY => (
         rank                      => 17,
         genetic_region_annotation => q{exonic},
     },
-    start_retained_variant => {
+    non_coding_transcript_exon_variant => {
         rank                      => 18,
-        genetic_region_annotation => q{exonic},
+        genetic_region_annotation => q{ncRNA_exonic},
     },
-    stop_retained_variant => {
+    synonymous_variant => {
         rank                      => 19,
         genetic_region_annotation => q{exonic},
     },
-    synonymous_variant => {
+    start_retained_variant => {
         rank                      => 20,
         genetic_region_annotation => q{exonic},
     },
-    coding_sequence_variant => {
+    stop_retained_variant => {
         rank                      => 21,
         genetic_region_annotation => q{exonic},
     },
-    mature_miRNA_variant => {
+    coding_sequence_variant => {
         rank                      => 22,
+        genetic_region_annotation => q{exonic},
+    },
+    mature_miRNA_variant => {
+        rank                      => 23,
         genetic_region_annotation => q{ncRNA_exonic},
     },
     q{5_prime_UTR_variant} => {
-        rank                      => 23,
+        rank                      => 24,
         genetic_region_annotation => q{5UTR},
     },
     q{3_prime_UTR_variant} => {
-        rank                      => 24,
-        genetic_region_annotation => q{3UTR},
-    },
-    non_coding_transcript_exon_variant => {
         rank                      => 25,
-        genetic_region_annotation => q{ncRNA_exonic},
+        genetic_region_annotation => q{3UTR},
     },
     intron_variant => {
         rank                      => 26,
