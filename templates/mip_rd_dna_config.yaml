@@ -27,7 +27,7 @@ rank_model_file: rank_model_-v1.34-.ini
 sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
 sv_vcfanno_config: grch37_sv_vcfanno_config_-v1.4-.toml
 sv_genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
-sv_rank_model_file: svrank_model_-v1.8-.ini
+sv_rank_model_file: svrank_model_-v1.9-.ini
 sv_svdb_query_db_files:
   # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
   grch37_gnomad_reformated_-r2.1.1_sv-.vcf.gz: gnomad_sv|AF|AC|AF|AC|1
