@@ -17,7 +17,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Tools
 
 - Arriba: 2.1.0 -> 2.3.0
-- Chromograph 1.1.4 -> 1.1.5
+- Chromograph 1.1.4 -> 1.3.0
 - DeepVariant: 1.1.0 -> 1.4.0
 - ExpansionHunter: 4.0.2 -> 5.0.0
 - GATK: 4.2.2.0 -> 4.2.6.1
