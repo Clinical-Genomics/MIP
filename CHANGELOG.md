@@ -13,6 +13,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - ExACpLI -> pLI, see [vep issue 108](https://github.com/Ensembl/VEP_plugins/issues/108)
 - Use REVEL_score rather than REVEL_rankscore for the ranking algorithm
 - Use BWA-mem2 instead of BWA mem for mapping
+- Set default annotation overlap for structural variants to 0.5 (previously 0.8)
 
 ### Tools
 

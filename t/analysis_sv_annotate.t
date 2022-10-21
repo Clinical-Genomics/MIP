@@ -49,7 +49,8 @@ diag(   q{Test analysis_sv_annotate from Sv_annotate.pm}
       . $EXECUTABLE_NAME );
 
 ## Constants
-Readonly my $FREQ_CUTOFF => 0.40;
+Readonly my $FREQ_CUTOFF        => 0.40;
+Readonly my $ANNOTATION_OVERLAP => 0.5;
 
 my $log = test_log( { log_name => q{MIP} } );
 
@@ -73,6 +74,7 @@ $active_parameter{sv_vcfanno_config} =
   catfile( $Bin, qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml } );
 $active_parameter{sv_svdb_query}          = 1;
 $active_parameter{sv_svdb_query_db_files} = { a_file => q{a_file|AF|AC|in_AF|in_AC|1}, };
+$active_parameter{sv_svdb_query_overlap}  = $ANNOTATION_OVERLAP;
 @{ $active_parameter{sv_fqa_vcfanno_filters} } = (qw{ GNOMADAF_popmax GNOMADAF });
 
 my %file_info = test_mip_hashes(

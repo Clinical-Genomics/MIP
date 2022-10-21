@@ -276,7 +276,7 @@ sub analysis_sv_annotate {
                       . $outfile_suffix
                       . $DOT
                       . $outfile_tracker,
-                    overlap => 0.8,
+                    overlap => $active_parameter_href->{sv_svdb_query_overlap},
                 }
             );
             say {$filehandle} $NEWLINE;
