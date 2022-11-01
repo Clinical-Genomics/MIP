@@ -34,7 +34,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Tiddit: 2.12.1 -> 3.3.2
 - Trimgalore: 0.6.4 -> 0.6.7
 - VEP: 104.3 -> 107.0
-- svdb: 2.4.0 -> 2.6.4
+- svdb: 2.4.0 -> 2.7.0
 - vcf2cytosure v0.5.1 -> v0.8
 
 ### Databases
