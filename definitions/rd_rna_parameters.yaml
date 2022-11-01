@@ -152,7 +152,7 @@ recipe_time:
     gatk_splitncigarreads: 16
     gatk_variantfiltration: 1
     genebody_coverage: 6
-    gffcompare_ar: 1
+    gffcompare_ar: 2
     gzip_fastq: 2
     markduplicates: 8
     megafusion_ar: 1
@@ -170,7 +170,7 @@ recipe_time:
     star_fusion_aln: 16
     stringtie_ar: 6
     svdb_merge_fusion: 1
-    trim_galore_ar: 6
+    trim_galore_ar: 12
     varianteffectpredictor: 4
     vcfparser_ar: 3
     version_collect_ar: 1
@@ -240,7 +240,7 @@ recipe_core_number:
     star_aln: 36
     star_fusion: 2
     star_fusion_aln: 36
-    stringtie_ar: 36
+    stringtie_ar: 24
     svdb_merge_fusion: 1
     varianteffectpredictor: 1
     vcfparser_ar: 1
@@ -637,7 +637,7 @@ stringtie_ar:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _strg
   outfile_suffix: ".gtf"
   program_executables:
@@ -661,7 +661,7 @@ gffcompare_ar:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _gffcmp
   outfile_suffix: ".gtf"
   program_executables:
