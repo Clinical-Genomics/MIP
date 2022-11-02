@@ -31,7 +31,7 @@ BEGIN {
 ## Modules with import
     my %perl_module = (
         q{MIP::Recipes::Analysis::Varg} => [qw{ analysis_varg }],
-        q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
+        q{MIP::Test::Fixtures}          => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
@@ -84,34 +84,34 @@ my @order_recipes_ref = ( qw{ endvariantannotationblock sv_reformat }, $recipe_n
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $case_id,
-        parameter_href    => \%parameter,
-        recipe_name       => q{endvariantannotationblock},
-        step              => q{vcf},
+        file_info_href => \%file_info,
+        id             => $case_id,
+        parameter_href => \%parameter,
+        recipe_name    => q{endvariantannotationblock},
+        step           => q{vcf},
     }
 );
-$file_info{io}{TEST}{$case_id}{endvariantannotationblock}{out}{file_path_href}{selected}
-  = q{select.vcf};
+$file_info{io}{TEST}{$case_id}{endvariantannotationblock}{out}{file_path_prefix} = q{/path/to/snv};
+$file_info{io}{TEST}{$case_id}{endvariantannotationblock}{out}{file_suffix}      = q{.vcf};
 
 test_add_io_for_recipe(
     {
-        file_info_href    => \%file_info,
-        id                => $case_id,
-        parameter_href    => \%parameter,
-        recipe_name       => q{sv_reformat},
-        step              => q{vcf},
+        file_info_href => \%file_info,
+        id             => $case_id,
+        parameter_href => \%parameter,
+        recipe_name    => q{sv_reformat},
+        step           => q{vcf},
     }
 );
-$file_info{io}{TEST}{$case_id}{sv_reformat}{out}{file_path_href}{selected} =
-  q{sv.select.vcf};
+$file_info{io}{TEST}{$case_id}{sv_reformat}{out}{file_path_prefix} = q{/path/to/sv};
+$file_info{io}{TEST}{$case_id}{sv_reformat}{out}{file_suffix}      = q{.vcf};
 
 test_add_io_for_recipe(
     {
         file_info_href    => \%file_info,
         id                => $case_id,
         order_recipes_ref => \@order_recipes_ref,
-        outfile_suffix => q{.txt},
+        outfile_suffix    => q{.txt},
         parameter_href    => \%parameter,
         recipe_name       => $recipe_name,
         step              => q{vcf},

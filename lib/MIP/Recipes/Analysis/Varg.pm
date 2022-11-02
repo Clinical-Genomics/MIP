@@ -31,7 +31,7 @@ BEGIN {
 
 sub analysis_varg {
 
-## Function : Compares the selected SNV, and SVs with a truth set.
+## Function : Compares the research SNV, and SVs with a truth set.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
@@ -134,7 +134,9 @@ sub analysis_varg {
         }
     );
     my $infile_name_prefix = $io{out}{file_name_prefix};
-    my $infile_path_snv    = $io{out}{file_path_href}{selected} . $DOT . q{gz};
+    my $infile_path_prefix = $io{out}{file_path_prefix};
+    my $infile_suffix      = $io{out}{file_suffix};
+    my $infile_path_snv    = $infile_path_prefix . $infile_suffix . $DOT . q{gz};
 
     %io = get_io_files(
         {
@@ -146,9 +148,12 @@ sub analysis_varg {
         }
     );
 
-    my $infile_path_sv       = $io{out}{file_path_href}{selected} . $DOT . q{gz};
+    $infile_path_prefix = $io{out}{file_path_prefix};
+    $infile_suffix      = $io{out}{file_suffix};
+    my $infile_path_sv       = $infile_path_prefix . $infile_suffix . $DOT . q{gz};
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };
-    my %recipe               = parse_recipe_prerequisites(
+
+    my %recipe = parse_recipe_prerequisites(
         {
             active_parameter_href => $active_parameter_href,
             parameter_href        => $parameter_href,
