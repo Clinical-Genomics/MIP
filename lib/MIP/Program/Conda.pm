@@ -14,7 +14,7 @@ use warnings qw{ FATAL utf8 };
 use warnings;
 
 ## MIPs lib/
-use MIP::Constants qw{ $LOG_NAME $NEWLINE $SPACE };
+use MIP::Constants qw{ $LOG_NAME $NEWLINE $SEMICOLON $SPACE };
 use MIP::Unix::Write_to_file qw{ unix_write_to_file };
 
 BEGIN {
@@ -30,16 +30,22 @@ sub conda_activate {
 
 ##Function : Activate conda environment
 ##Returns  : @commands
-##Arguments: $env_name   => Name of conda environment
-##         : $filehandle => Filehandle to write to
+##Arguments: $conda_init path => path to initialize conda
+##         : $env_name        => Name of conda environment
+##         : $filehandle      => Filehandle to write to
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $conda_init_path;
     my $env_name;
     my $filehandle;
 
     my $tmpl = {
+        conda_init_path => {
+            store       => \$conda_init_path,
+            strict_type => 1,
+        },
         env_name => {
             required    => 1,
             store       => \$env_name,
@@ -52,10 +58,14 @@ sub conda_activate {
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
-    ## Stores commands depending on input parameters
+    my @commands;
 
-    # Basic command
-    my @commands = qw{ conda activate };
+    if ($conda_init_path) {
+
+        push @commands, ( q{source}, $conda_init_path, $SEMICOLON );
+    }
+
+    push @commands, qw{ conda activate };
 
     # Activates env, default base
     push @commands, $env_name;

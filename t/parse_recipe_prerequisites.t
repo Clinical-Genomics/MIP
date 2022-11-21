@@ -52,6 +52,7 @@ test_log( { no_screen => 1, } );
 my $recipe_name = q{deepvariant};
 my %active_parameter =
   test_mip_hashes( { mip_hash_name => q{active_parameter}, recipe_name => $recipe_name, } );
+$active_parameter{conda_path} = catdir(qw{path to conda});
 
 ## Given a parameter hash
 my %parameter =
@@ -77,7 +78,7 @@ my %expected_recipe = (
     file_tag       => q{_deepvar},
     gpu_number     => 1,
     job_id_chain   => q{TEST},
-    load_env_ref   => [qw{ conda activate test }],
+    load_env_ref   => [qw{ source path/to/conda/etc/profile.d/conda.sh ; conda activate test }],
     memory         => 175,
     mode           => 2,
     outfile_suffix => q{.g.vcf.gz},

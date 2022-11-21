@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [11.0.3]
+
+- Initiate conda prior to activation
+
 ## [11.0.2]
 
 Updates chromograph

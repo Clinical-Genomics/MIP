@@ -656,14 +656,12 @@ sub check_sample_id_in_hash_parameter_path {
                 ## Check sample_id are unique
                 next SAMPLE_ID if ( $seen{$sample_id} < 2 );
 
-                $log->fatal(
-                        q{Sample_id: }
+                $log->fatal( q{Sample_id: }
                       . $sample_id
                       . q{ is not uniqe in '--}
                       . $parameter_name . q{': }
                       . $path . q{=}
-                      . $sample_ids_str,
-                );
+                      . $sample_ids_str, );
                 exit 1;
             }
         }
@@ -677,14 +675,12 @@ sub check_sample_id_in_hash_parameter_path {
 
             my $seen_sample_ids = join $COMMA . $SPACE, ( keys %seen );
 
-            $log->fatal(
-                    q{Could not detect }
+            $log->fatal( q{Could not detect }
                   . $sample_id
                   . q{ for '--}
                   . $parameter_name
                   . q{'. Provided sample_ids are: }
-                  . $seen_sample_ids,
-            );
+                  . $seen_sample_ids, );
             exit 1;
         }
     }
@@ -1042,11 +1038,14 @@ sub get_package_env_cmds {
     }
 
     ## Get env load command
+    my $conda_init_path =
+      catfile( $active_parameter_href->{conda_path}, qw{ etc profile.d conda.sh } );
     my @env_method_cmds = get_env_method_cmds(
         {
-            action     => q{load},
-            env_name   => $env_name,
-            env_method => $env_method,
+            action          => q{load},
+            conda_init_path => $conda_init_path,
+            env_name        => $env_name,
+            env_method      => $env_method,
         }
     );
     return @env_method_cmds;

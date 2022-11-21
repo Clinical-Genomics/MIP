@@ -28,14 +28,16 @@ sub get_env_method_cmds {
 
 ## Function : Get the standard load and unload env command for environment method
 ## Returns  : @env_method_cmds
-## Arguments: $action     => What to do with the environment
-##          : $env_method => Method used to load environment
-##          : $env_name   => Name of environment
+## Arguments: $action          => What to do with the environment
+##          : $conda_init path => path to initialize conda
+##          : $env_method      => Method used to load environment
+##          : $env_name        => Name of environment
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $action;
+    my $conda_init_path;
     my $env_method;
     my $env_name;
 
@@ -45,6 +47,10 @@ sub get_env_method_cmds {
             defined     => 1,
             required    => 1,
             store       => \$action,
+            strict_type => 1,
+        },
+        conda_init_path => {
+            store       => \$conda_init_path,
             strict_type => 1,
         },
         env_method => {
@@ -67,7 +73,13 @@ sub get_env_method_cmds {
 
     my %method_cmd = (
         conda => {
-            load   => [ ( conda_activate( { env_name => $env_name, } ), ) ],
+            load => [
+                (
+                    conda_activate(
+                        { conda_init_path => $conda_init_path, env_name => $env_name, }
+                    ),
+                )
+            ],
             unload => [ ( conda_deactivate( {} ), ) ],
         },
     );

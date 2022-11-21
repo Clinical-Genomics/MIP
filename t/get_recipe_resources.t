@@ -57,6 +57,7 @@ test_log( { no_screen => 1, } );
 ## Given a recipe name and active parameter hash
 my %active_parameter =
   test_mip_hashes( { mip_hash_name => q{active_parameter}, recipe_name => q{deepvariant}, } );
+$active_parameter{conda_path} = catdir(qw{path to conda});
 my $recipe_name = q{deepvariant};
 
 my %recipe_resource = get_recipe_resources(
@@ -70,7 +71,7 @@ my %recipe_resource = get_recipe_resources(
 my %expected = (
     core_number  => 35,
     gpu_number   => 1,
-    load_env_ref => [qw{ conda activate test }],
+    load_env_ref => [qw{ source path/to/conda/etc/profile.d/conda.sh ; conda activate test }],
     memory       => 175,
     mode         => 2,
     time         => 10,
