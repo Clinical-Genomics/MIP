@@ -42,6 +42,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - loqusdb dump: 20210921 -> 20220810
 - vcf2cytosure blacklist: 200520
 
+## [11.0.3]
+
+- Initiate conda prior to activation
+
 ## [11.0.2]
 
 Updates chromograph

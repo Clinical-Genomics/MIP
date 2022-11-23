@@ -663,7 +663,7 @@ sub setup_script {
         {
             bash_bin_path      => catfile( rootdir(), qw{ bin bash } ),
             filehandle         => $filehandle,
-            invoke_login_shell => 1,
+            invoke_login_shell => 0,
         }
     );
     print {$filehandle} $NEWLINE;

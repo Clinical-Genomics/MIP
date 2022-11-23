@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -19,9 +19,8 @@ use Modern::Perl qw{ 2018 };
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COMMA $SPACE };
+use MIP::Constants qw{ $COMMA $SEMICOLON $SPACE };
 use MIP::Test::Commands qw{ test_function };
-
 
 BEGIN {
 
@@ -29,9 +28,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Conda} => [qw{ conda_activate }],
-);
+    my %perl_module = ( q{MIP::Program::Conda} => [qw{ conda_activate }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -48,7 +45,8 @@ diag(   q{Test conda_activate from Conda.pm}
       . $EXECUTABLE_NAME );
 
 ## Base arguments
-my @function_base_commands = qw{ conda activate };
+my @source_commands = ( q{source}, catfile(qw{path to conda etc profile.d conda.sh}), $SEMICOLON );
+my @function_base_commands = ( @source_commands, qw{ conda activate } );
 
 my %base_argument = (
     filehandle => {
@@ -59,13 +57,21 @@ my %base_argument = (
 
 ## Can be duplicated with %base and/or %specific to enable testing of each individual argument
 my %required_argument = (
-    filehandle => {
-        input           => undef,
-        expected_output => \@function_base_commands,
+    conda_init_path => {
+        input           => catfile(qw{path to conda etc profile.d conda.sh}),
+        expected_output => q{source}
+          . $SPACE
+          . catfile(qw{path to conda etc profile.d conda.sh})
+          . $SPACE
+          . $SEMICOLON,
     },
     env_name => {
         input           => q{test_env},
         expected_output => q{test_env},
+    },
+    filehandle => {
+        input           => undef,
+        expected_output => \@function_base_commands,
     },
 );
 
