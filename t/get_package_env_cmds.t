@@ -54,6 +54,7 @@ my %active_parameter = (
             $program_name => undef,
         },
     },
+    conda_path => catdir(qw{ path to conda }),
 );
 
 ## When no prior to load cmd
@@ -67,7 +68,7 @@ my @program_environment_cmds = get_package_env_cmds(
 ## Then return command to activate environment for package
 is_deeply(
     \@program_environment_cmds,
-    [qw{ conda activate mip_pyv3.6 }],
+    [qw{ source path/to/conda/etc/profile.d/conda.sh ; conda activate mip_pyv3.6 }],
     q{Got package environment command}
 );
 
