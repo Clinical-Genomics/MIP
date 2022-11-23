@@ -2,9 +2,9 @@
 container:
   arriba:
     executable:
-      arriba: /arriba_v2.1.0/arriba
-      draw_fusions.R: /arriba_v2.1.0/draw_fusions.R
-    uri: docker.io/uhrigs/arriba:2.1.0
+      arriba: /arriba_v2.3.0/arriba
+      draw_fusions.R: /arriba_v2.3.0/draw_fusions.R
+    uri: docker.io/uhrigs/arriba:2.3.0
   bedtools:
     executable:
       bedtools:
@@ -60,12 +60,12 @@ container:
       call_variants: /opt/deepvariant/bin/call_variants
       postprocess_variants: /opt/deepvariant/bin/postprocess_variants
     gpu_support: 0
-    uri: docker.io/google/deepvariant:1.1.0
+    uri: docker.io/google/deepvariant:1.4.0
   deeptrio:
     executable:
       run_deeptrio: /opt/deepvariant/bin/deeptrio/run_deeptrio
     gpu_support: 0
-    uri: docker.io/google/deepvariant:deeptrio-1.2.0
+    uri: docker.io/google/deepvariant:deeptrio-1.4.0
   delly:
     executable:
       delly:
@@ -73,7 +73,7 @@ container:
   expansionhunter:
     executable:
       ExpansionHunter:
-    uri: docker.io/clinicalgenomics/expansionhunter:4.0.2
+    uri: docker.io/clinicalgenomics/expansionhunter:5.0.0
   fastqc:
     executable:
       fastqc:
@@ -85,11 +85,15 @@ container:
   gatk4:
     executable:
       gatk:
-    uri: docker.io/broadinstitute/gatk:4.2.2.0
+    uri: docker.io/broadinstitute/gatk:4.2.6.1
   genmod:
     executable:
       genmod:
     uri: docker.io/clinicalgenomics/genmod:3.7.3
+  gens_preproc:
+    executable:
+      generate_gens_data.pl:
+    uri: docker.io/raysloks/gens_preproc:1.0.2
   gffcompare:
     executable:
       gffcompare:
@@ -108,7 +112,7 @@ container:
       bgzip:
       samtools:
       tabix:
-    uri: docker.io/clinicalgenomics/htslib:1.13
+    uri: docker.io/clinicalgenomics/htslib:1.15.1
   manta:
     executable:
       configManta.py:
@@ -121,11 +125,11 @@ container:
   mip:
     executable:
       mip:
-    uri: docker.io/clinicalgenomics/mip:v11.0.3
+    uri: docker.io/clinicalgenomics/mip:develop
   multiqc:
     executable:
       multiqc:
-    uri: docker.io/ewels/multiqc:v1.11
+    uri: docker.io/ewels/multiqc:v1.12
   perl:
     executable:
       perl:
@@ -133,15 +137,15 @@ container:
   peddy:
     executable:
       peddy: "python -m peddy"
-    uri: docker.io/clinicalgenomics/peddy:0.4.3
+    uri: docker.io/clinicalgenomics/peddy:0.4.8
   pdfmerger:
     executable:
       pdfmerger:
-    uri: docker.io/northwestwitch/pdfmerger:v1.0
+    uri: docker.io/clinicalgenomics/pdfmerger:v1.0
   picard:
     executable:
       picard: "no_executable_in_image"
-    uri: docker.io/broadinstitute/picard:2.25.0
+    uri: docker.io/broadinstitute/picard:2.27.2
   plink:
     executable:
       plink2:
@@ -181,7 +185,7 @@ container:
   smncopynumbercaller:
     executable:
       smn_caller.py:
-    uri: docker.io/clinicalgenomics/smncopynumbercaller:v1.1.1
+    uri: docker.io/clinicalgenomics/smncopynumbercaller:v1.1.2
   star:
     executable:
       STAR:
@@ -197,31 +201,31 @@ container:
       remove_long_intron_readthru_transcripts.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/remove_long_intron_readthru_transcripts.pl
       restrict_genome_to_chr_entries.pl: /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/util/restrict_genome_to_chr_entries.pl
       STAR-Fusion: /usr/local/src/STAR-Fusion/STAR-Fusion
-    uri: docker.io/trinityctat/starfusion:1.10.1
+    uri: docker.io/trinityctat/starfusion:1.11.0
   stranger:
     executable:
       stranger:
-    uri: docker.io/clinicalgenomics/stranger:0.8.0
+    uri: docker.io/clinicalgenomics/stranger:0.8.1
   stringtie:
     executable:
       stringtie:
-    uri: docker.io/clinicalgenomics/stringtie:2.1.3b
+    uri: docker.io/clinicalgenomics/stringtie:2.2.1
   svdb:
     executable:
       svdb:
-    uri: quay.io/biocontainers/svdb:2.4.0--py37h77a2a36_4
+    uri: quay.io/biocontainers/svdb:2.6.4--py38h17adfb0_0
   telomerecat:
     executable:
       telomerecat:
     uri: quay.io/wtsicgp/telomerecat:3.4.0
   tiddit:
     executable:
-      TIDDIT.py:
-    uri: docker.io/clinicalgenomics/tiddit:2.12.1
+      tiddit:
+    uri: quay.io/biocontainers/tiddit:3.3.1--py39h5094d80_0
   trim-galore:
     executable:
       trim_galore:
-    uri: docker.io/clinicalgenomics/trim_galore:0.6.4
+    uri: docker.io/clinicalgenomics/trim_galore:0.6.7
   ucsc:
     executable:
       bedToBigBed:
@@ -248,8 +252,8 @@ container:
   vep:
     executable:
       vep:
-    uri: docker.io/ensemblorg/ensembl-vep:release_104.3
+    uri: docker.io/ensemblorg/ensembl-vep:release_107.0
   vcf2cytosure:
     executable:
       vcf2cytosure:
-    uri: docker.io/jemten/vcf2cytosure:0.5.1
+    uri: docker.io/clinicalgenomics/vcf2cytosure:v0.8

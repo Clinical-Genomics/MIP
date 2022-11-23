@@ -90,151 +90,159 @@ Readonly our $MOOSEX_APP_SCEEN_WIDTH => 160;
 Readonly our %SO_CONSEQUENCE_SEVERITY => (
     transcript_ablation => {
         rank                      => 1,
-        genetic_region_annotation => q{exonic}
-    },
-    splice_donor_variant => {
-        rank                      => 2,
-        genetic_region_annotation => q{splicing}
+        genetic_region_annotation => q{exonic},
     },
     splice_acceptor_variant => {
         rank                      => 2,
-        genetic_region_annotation => q{splicing}
+        genetic_region_annotation => q{splicing},
+    },
+    splice_donor_variant => {
+        rank                      => 3,
+        genetic_region_annotation => q{splicing},
     },
     stop_gained => {
-        rank                      => 3,
-        genetic_region_annotation => q{exonic}
+        rank                      => 4,
+        genetic_region_annotation => q{exonic},
     },
     frameshift_variant => {
-        rank                      => 4,
-        genetic_region_annotation => q{exonic}
+        rank                      => 5,
+        genetic_region_annotation => q{exonic},
     },
     stop_lost => {
-        rank                      => 5,
-        genetic_region_annotation => q{exonic}
+        rank                      => 6,
+        genetic_region_annotation => q{exonic},
     },
     start_lost => {
-        rank                      => 5,
-        genetic_region_annotation => q{exonic}
-    },
-    initiator_codon_variant => {
-        rank                      => 6,
-        genetic_region_annotation => q{exonic}
-    },
-    inframe_insertion => {
-        rank                      => 6,
-        genetic_region_annotation => q{exonic}
-    },
-    inframe_deletion => {
-        rank                      => 6,
-        genetic_region_annotation => q{exonic}
-    },
-    missense_variant => {
-        rank                      => 6,
-        genetic_region_annotation => q{exonic}
-    },
-    protein_altering_variant => {
-        rank                      => 6,
-        genetic_region_annotation => q{exonic}
+        rank                      => 7,
+        genetic_region_annotation => q{exonic},
     },
     transcript_amplification => {
-        rank                      => 7,
-        genetic_region_annotation => q{exonic}
+        rank                      => 8,
+        genetic_region_annotation => q{exonic},
+    },
+    inframe_insertion => {
+        rank                      => 9,
+        genetic_region_annotation => q{exonic},
+    },
+    inframe_deletion => {
+        rank                      => 10,
+        genetic_region_annotation => q{exonic},
+    },
+    missense_variant => {
+        rank                      => 11,
+        genetic_region_annotation => q{exonic},
+    },
+    protein_altering_variant => {
+        rank                      => 12,
+        genetic_region_annotation => q{exonic},
     },
     splice_region_variant => {
-        rank                      => 8,
-        genetic_region_annotation => q{splicing}
+        rank                      => 13,
+        genetic_region_annotation => q{splicing},
+    },
+    splice_donor_5th_base_variant => {
+        rank                      => 14,
+        genetic_region_annotation => q{splicing},
+    },
+    splice_donor_region_variant => {
+        rank                      => 15,
+        genetic_region_annotation => q{splicing},
+    },
+    splice_polypyrimidine_tract_variant => {
+        rank                      => 16,
+        genetic_region_annotation => q{splicing},
     },
     incomplete_terminal_codon_variant => {
-        rank                      => 9,
-        genetic_region_annotation => q{exonic}
-    },
-    synonymous_variant => {
-        rank                      => 10,
-        genetic_region_annotation => q{exonic}
-    },
-    stop_retained_variant => {
-        rank                      => 10,
-        genetic_region_annotation => q{exonic}
+        rank                      => 17,
+        genetic_region_annotation => q{exonic},
     },
     start_retained_variant => {
-        rank                      => 10,
-        genetic_region_annotation => q{exonic}
+        rank                      => 18,
+        genetic_region_annotation => q{exonic},
+    },
+    stop_retained_variant => {
+        rank                      => 19,
+        genetic_region_annotation => q{exonic},
+    },
+    synonymous_variant => {
+        rank                      => 20,
+        genetic_region_annotation => q{exonic},
     },
     coding_sequence_variant => {
-        rank                      => 11,
-        genetic_region_annotation => q{exonic}
+        rank                      => 21,
+        genetic_region_annotation => q{exonic},
     },
     mature_miRNA_variant => {
-        rank                      => 12,
-        genetic_region_annotation => q{ncRNA_exonic}
+        rank                      => 22,
+        genetic_region_annotation => q{ncRNA_exonic},
     },
     q{5_prime_UTR_variant} => {
-        rank                      => 13,
-        genetic_region_annotation => q{5UTR}
+        rank                      => 23,
+        genetic_region_annotation => q{5UTR},
     },
     q{3_prime_UTR_variant} => {
-        rank                      => 14,
-        genetic_region_annotation => q{3UTR}
+        rank                      => 24,
+        genetic_region_annotation => q{3UTR},
     },
     non_coding_transcript_exon_variant => {
-        rank                      => 15,
-        genetic_region_annotation => q{ncRNA_exonic}
-    },
-    non_coding_transcript_variant => {
-        rank                      => 15,
-        genetic_region_annotation => q{ncRNA}
+        rank                      => 25,
+        genetic_region_annotation => q{ncRNA_exonic},
     },
     intron_variant => {
-        rank                      => 16,
-        genetic_region_annotation => q{intronic}
+        rank                      => 26,
+        genetic_region_annotation => q{intronic},
     },
     NMD_transcript_variant => {
-        rank                      => 17,
-        genetic_region_annotation => q{ncRNA}
+        rank                      => 27,
+        genetic_region_annotation => q{ncRNA},
+    },
+    non_coding_transcript_variant => {
+        rank                      => 28,
+        genetic_region_annotation => q{ncRNA},
     },
     upstream_gene_variant => {
-        rank                      => 18,
-        genetic_region_annotation => q{upstream}
+        rank                      => 29,
+        genetic_region_annotation => q{upstream},
     },
     downstream_gene_variant => {
-        rank                      => 19,
-        genetic_region_annotation => q{downstream}
+        rank                      => 30,
+        genetic_region_annotation => q{downstream},
     },
     TFBS_ablation => {
-        rank                      => 20,
-        genetic_region_annotation => q{TFBS}
+        rank                      => 31,
+        genetic_region_annotation => q{TFBS},
     },
     TFBS_amplification => {
-        rank                      => 21,
-        genetic_region_annotation => q{TFBS}
+        rank                      => 32,
+        genetic_region_annotation => q{TFBS},
     },
     TF_binding_site_variant => {
-        rank                      => 22,
-        genetic_region_annotation => q{TFBS}
-    },
-    regulatory_region_variant => {
-        rank                      => 22,
-        genetic_region_annotation => q{regulatory_region}
+        rank                      => 33,
+        genetic_region_annotation => q{TFBS},
     },
     regulatory_region_ablation => {
-        rank                      => 23,
-        genetic_region_annotation => q{regulatory_region}
+        rank                      => 34,
+        genetic_region_annotation => q{regulatory_region},
     },
     regulatory_region_amplification => {
-        rank                      => 24,
-        genetic_region_annotation => q{regulatory_region}
+        rank                      => 35,
+        genetic_region_annotation => q{regulatory_region},
     },
     feature_elongation => {
-        rank                      => 25,
-        genetic_region_annotation => q{genomic_feature}
+        rank                      => 36,
+        genetic_region_annotation => q{genomic_feature},
+    },
+    regulatory_region_variant => {
+        rank                      => 37,
+        genetic_region_annotation => q{regulatory_region},
     },
     feature_truncation => {
-        rank                      => 26,
-        genetic_region_annotation => q{genomic_feature}
+        rank                      => 38,
+        genetic_region_annotation => q{genomic_feature},
     },
     intergenic_variant => {
-        rank                      => 27,
-        genetic_region_annotation => q{intergenic}
+        rank                      => 39,
+        genetic_region_annotation => q{intergenic},
     },
 );
 

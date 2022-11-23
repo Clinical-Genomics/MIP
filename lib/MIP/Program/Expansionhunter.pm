@@ -42,6 +42,7 @@ sub expansionhunter {
 ##          : $stderrfile_path           => Stderrfile path
 ##          : $stderrfile_path_append    => Append stderr info to file path
 ##          : $stdoutfile_path           => Stdoutfile path
+##          : $threads                   => Threads
 ##          : $variant_catalog_file_path => Path to dir with repeat-specification files
 
     my ($arg_href) = @_;
@@ -58,6 +59,9 @@ sub expansionhunter {
     my $stderrfile_path_append;
     my $stdoutfile_path;
     my $variant_catalog_file_path;
+
+    ## Default
+    my $threads;
 
     my $tmpl = {
         filehandle => {
@@ -110,6 +114,12 @@ sub expansionhunter {
             store       => \$stdoutfile_path,
             strict_type => 1,
         },
+        threads => {
+            allow       => qr/\A \d+ \z/xms,
+            default     => 1,
+            store       => \$threads,
+            strict_type => 1,
+        },
         variant_catalog_file_path => {
             defined     => 1,
             required    => 1,
@@ -142,6 +152,8 @@ sub expansionhunter {
 
         push @commands, q{--sex} . $SPACE . $sex;
     }
+
+    push @commands, q{--threads} . $SPACE . $threads;
 
     push @commands,
       unix_standard_streams(

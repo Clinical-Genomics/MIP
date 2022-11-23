@@ -142,7 +142,7 @@ sub _build_usage {
                     [
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit bwa-mem2 cadd chanjo
                           chromograph cnvnator cyrius deeptrio deepvariant delly expansionhunter fastqc gatk
-                          gatk4 genmod gffcompare glnexus hmtnote htslib manta megafusion mip mip_scripts multiqc
+                          gatk4 genmod gens_preproc gffcompare glnexus hmtnote htslib manta megafusion mip mip_scripts multiqc
                           pdfmerger perl peddy picard plink preseq python rhocall rseqc rtg-tools salmon sambamba
                           smncopynumbercaller star star-fusion stranger stringtie svdb telomerecat tiddit
                           trim-galore ucsc upd utilities varg vcf2cytosure vcfanno vep vts }
@@ -175,7 +175,7 @@ q{Save singularity images to sif and update run instructions for offline mip exe
                     [
                         qw{ arriba bedtools blobfish bootstrapann bwa bwakit bwa-mem2 cadd chanjo
                           chromograph cnvnator cyrius deeptrio deepvariant delly expansionhunter fastqc gatk
-                          gatk4 genmod gffcompare glnexus hmtnote htslib manta megafusion mip mip_scripts multiqc
+                          gatk4 genmod gens_preproc gffcompare glnexus hmtnote htslib manta megafusion mip mip_scripts multiqc
                           pdfmerger perl peddy picard plink preseq python rhocall rseqc rtg-tools salmon sambamba
                           smncopynumbercaller star star-fusion stranger stringtie svdb telomerecat tiddit
                           trim-galore ucsc upd utilities varg vcf2cytosure vcfanno vep vts }

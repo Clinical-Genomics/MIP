@@ -70,7 +70,21 @@ $check = is_sample_proband_in_trio(
 ## Then return 0
 is( $check, 0, q{Not affected} );
 
+## Given a unaffected proband + request to return
+$sample_info{has_trio}                     = 1;
+$sample_info{sample}{ADM1059A1}{phenotype} = q{unaffected};
+$check                                     = is_sample_proband_in_trio(
+    {
+        only_affected    => 0,
+        sample_id        => q{ADM1059A1},
+        sample_info_href => \%sample_info,
+    }
+);
+## Then return 0
+is( $check, 1, q{Not affected, but return OK} );
+
 ## Given a affected child in trio
+$sample_info{sample}{ADM1059A1}{phenotype} = q{affected};
 $check = is_sample_proband_in_trio(
     {
         sample_id        => q{ADM1059A1},
@@ -81,7 +95,7 @@ $check = is_sample_proband_in_trio(
 ok( $check, q{Detect affected child in trio} );
 
 ## Given an affected that is not a child
-$sample_info{sample}{ADM1059A12}{phenotype} = q{affected};
+$sample_info{sample}{ADM1059A2}{phenotype} = q{affected};
 $check = is_sample_proband_in_trio(
     {
         sample_id        => q{ADM1059A2},

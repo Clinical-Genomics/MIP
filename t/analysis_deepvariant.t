@@ -20,7 +20,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COLON $COMMA $SPACE };
+use MIP::Constants qw{ $COLON $COMMA $SPACE set_container_constants };
 use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes };
 
 BEGIN {
@@ -47,7 +47,7 @@ diag(   q{Test analysis_deepvariant from Deepvariant.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-my $log = test_log( { log_name => q{MIP}, no_screen => 1, } );
+test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
 my $recipe_name    = q{deepvariant};
@@ -64,7 +64,14 @@ $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
 $active_parameter{recipe_gpu_number}{$recipe_name}  = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
+$active_parameter{container_manager}                = q{sinularity};
 my $sample_id = $active_parameter{sample_ids}[0];
+
+set_container_constants(
+    {
+        active_parameter_href => \%active_parameter,
+    }
+);
 
 my %file_info = test_mip_hashes(
     {
