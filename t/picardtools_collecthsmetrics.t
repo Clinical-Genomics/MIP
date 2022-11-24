@@ -22,16 +22,13 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Picardtools} => [qw{ picardtools_collecthsmetrics }],
-);
+    my %perl_module = ( q{MIP::Program::Picardtools} => [qw{ picardtools_collecthsmetrics }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -46,6 +43,8 @@ diag(   q{Test picardtools_collecthsmetrics from Picardtools.pm}
       . $PERL_VERSION
       . $SPACE
       . $EXECUTABLE_NAME );
+
+Readonly my $MAX_COVERAGE => 500;
 
 ## Base arguments
 my @function_base_commands = qw{ picard CollectHsMetrics };
@@ -98,6 +97,10 @@ my %specific_argument = (
         expected_output => q{-BAIT_INTERVALS}
           . $SPACE
           . catfile(qw{ indirectory exome_padded_interval_list_1 }),
+    },
+    coverage_cap => {
+        input           => $MAX_COVERAGE,
+        expected_output => q{-COVERAGE_CAP} . $SPACE . $MAX_COVERAGE,
     },
     target_interval_file_paths_ref => {
         inputs_ref      => [ catfile(qw{ indirectory exome_interval_list_1 }) ],

@@ -16,6 +16,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Set default annotation overlap for structural variants to 0.5 (previously 0.8), due to change in TIDDIT
 - Turn on Stringtie and gffcompare by default
 - Run varg on research vcf
+- Increase max for coverage calculation to 500x
 
 ### Tools
 
