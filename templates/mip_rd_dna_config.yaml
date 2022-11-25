@@ -30,6 +30,7 @@ sv_genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 sv_rank_model_file: svrank_model_-v1.9-.ini
 sv_svdb_query_db_files:
   # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
+  grch37_clinvar_sv_pathogenic_-20221004-.bedpe: clinvar_pathogenic|Occ|Frq
   grch37_gnomad_reformated_-r2.1.1_sv-.vcf.gz: gnomad_sv|AF|AC|AF|AC|1
   grch37_loqusdb_sv_variants_export-20220905-.vcf: clinical_genomics_loqus|Frq|Obs|Frq|Obs|1
   grch37_mip_sv_svdb_export_-2018-10-09-.vcf: clinical_genomics_mip|AF|OCC|FRQ|OCC|1

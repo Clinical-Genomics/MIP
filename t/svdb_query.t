@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Svdb}  => [qw{ svdb_query }],
-);
+    my %perl_module = ( q{MIP::Program::Svdb} => [qw{ svdb_query }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -76,10 +73,6 @@ my %base_argument = (
 ## Can be duplicated with %base_argument and/or %specific_argument
 ## to enable testing of each individual argument
 my %required_argument = (
-    dbfile_path => {
-        input           => catfile(qw{ a test databasefile }),
-        expected_output => q{--db} . $SPACE . catfile(qw{ a test databasefile }),
-    },
     infile_path => {
         input           => catfile(qw{ a test infile }),
         expected_output => q{--query_vcf} . $SPACE . catfile(qw{ a test infile }),
@@ -87,6 +80,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    bedpedb_path => {
+        input           => catfile(qw{ test pedpe}),
+        expected_output => q{--bedpedb} . $SPACE . catfile(qw{ test pedpe}),
+    },
     bnd_distance => {
         input           => $BND_DISTANCE,
         expected_output => q{--bnd_distance} . $SPACE . $BND_DISTANCE,
@@ -106,6 +103,10 @@ my %specific_argument = (
     infile_path => {
         input           => catfile(qw{ a test infile }),
         expected_output => q{--query_vcf} . $SPACE . catfile(qw{ a test infile }),
+    },
+    no_var => {
+        input           => 1,
+        expected_output => q{--no_var},
     },
     out_allele_count_tag => {
         input           => q{OCC_out},

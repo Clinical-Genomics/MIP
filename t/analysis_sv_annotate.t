@@ -73,8 +73,11 @@ $active_parameter{fqf_bcftools_filter_threshold} = $FREQ_CUTOFF;
 $active_parameter{sv_vcfanno_config} =
   catfile( $Bin, qw{ data references grch37_frequency_vcfanno_filter_config_-v1.0-.toml } );
 $active_parameter{sv_svdb_query}          = 1;
-$active_parameter{sv_svdb_query_db_files} = { a_file => q{a_file|AF|AC|in_AF|in_AC|1}, };
-$active_parameter{sv_svdb_query_overlap}  = $ANNOTATION_OVERLAP;
+$active_parameter{sv_svdb_query_db_files} = {
+    a_file     => q{a_file|AF|AC|in_AF|in_AC|1},
+    bedpe_file => q{bedpe|frq|occ},
+};
+$active_parameter{sv_svdb_query_overlap} = $ANNOTATION_OVERLAP;
 @{ $active_parameter{sv_fqa_vcfanno_filters} } = (qw{ GNOMADAF_popmax GNOMADAF });
 
 my %file_info = test_mip_hashes(

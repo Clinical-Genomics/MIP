@@ -18,6 +18,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Run varg on research vcf
 - Increase max for coverage calculation to 500x
 - Separate list of ranked SO terms for structural variants to ensure that the right SO term gets picked as the most severe for SVs
+- Adds option to use bedpe files with svdb query
 
 ### Tools
 
