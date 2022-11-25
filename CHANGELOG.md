@@ -17,6 +17,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Turn on Stringtie and gffcompare by default
 - Run varg on research vcf
 - Increase max for coverage calculation to 500x
+- Separate list of ranked SO terms for structural variants to ensure that the right SO term gets picked as the most severe for SVs
 
 ### Tools
 

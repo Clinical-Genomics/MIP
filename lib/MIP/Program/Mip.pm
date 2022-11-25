@@ -305,6 +305,7 @@ sub mip_vcfparser {
 ##          : $stderrfile_path                       => Stderrfile path
 ##          : $stderrfile_path_append                => Append stderr info to file path
 ##          : $stdoutfile_path                       => Stdoutfile path
+##          : $variant_type                          => Type of variants to parse <snv/sv>
 
     my ($arg_href) = @_;
 
@@ -322,6 +323,7 @@ sub mip_vcfparser {
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
+    my $variant_type;
 
     ## Default(s)
     my $padding;
@@ -391,6 +393,11 @@ sub mip_vcfparser {
         },
         stdoutfile_path => {
             store       => \$stdoutfile_path,
+            strict_type => 1,
+        },
+        variant_type => {
+            allow       => [ undef, qw{snv sv} ],
+            store       => \$variant_type,
             strict_type => 1,
         },
     };
@@ -463,6 +470,11 @@ sub mip_vcfparser {
     if ($select_outfile) {
 
         push @commands, q{--select_outfile} . $SPACE . $select_outfile;
+    }
+
+    if ($variant_type) {
+
+        push @commands, q{--variant_type} . $SPACE . $variant_type;
     }
 
     push @commands,

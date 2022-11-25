@@ -15,7 +15,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $COLON $LOG_NAME $NEWLINE %SO_CONSEQUENCE_SEVERITY $TAB };
+use MIP::Constants
+  qw{ $COLON $LOG_NAME $NEWLINE %SO_CONSEQUENCE_SEVERITY %SO_CONSEQUENCE_SEVERITY_SV $TAB };
 use MIP::File::Format::Feature_file qw{ read_feature_file };
 use MIP::File::Format::Pli qw{ load_pli_file };
 use MIP::Log::MIP_log4perl qw{ retrieve_log };
@@ -46,6 +47,7 @@ sub mip_vcfparser {
 ##          : $select_feature_file                   => Select feature file
 ##          : $select_feature_matching_column        => Select feature matching column
 ##          : $select_outfile_path                   => Select file path
+##          : $variant_type                          => Type of variants to parse
 ##          : $vcf_in_fh                             => VCF in filehandle
 ##          : $write_software_tag                    => Write software tag to vcf header switch
 
@@ -56,6 +58,7 @@ sub mip_vcfparser {
     my $pli_values_file_path;
     my $range_feature_annotation_columns_ref;
     my $range_feature_file;
+    my $variant_type;
     my $select_feature_annotation_columns_ref;
     my $select_feature_matching_column;
     my $select_outfile_path;
@@ -114,9 +117,14 @@ sub mip_vcfparser {
             store       => \$select_feature_matching_column,
             strict_type => 1,
         },
-        select_outfile_path => { store   => \$select_outfile_path, strict_type => 1, },
-        vcf_in_fh           => { defined => 1, required => 1, store => \$vcf_in_fh, },
-        write_software_tag  => {
+        select_outfile_path => { store => \$select_outfile_path, strict_type => 1, },
+        variant_type        => {
+            allow       => [qw{ snv sv }],
+            store       => \$variant_type,
+            strict_type => 1,
+        },
+        vcf_in_fh          => { defined => 1, required => 1, store => \$vcf_in_fh, },
+        write_software_tag => {
             allow       => [ 0, 1 ],
             default     => 1,
             store       => \$write_software_tag,
@@ -127,7 +135,8 @@ sub mip_vcfparser {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Constants
-    my %consequence_severity = %SO_CONSEQUENCE_SEVERITY;
+    my %consequence_severity =
+      ( $variant_type eq q{sv} ) ? %SO_CONSEQUENCE_SEVERITY_SV : %SO_CONSEQUENCE_SEVERITY;
 
     my ( %meta_data, %range_data, %tree, %pli_score );
 

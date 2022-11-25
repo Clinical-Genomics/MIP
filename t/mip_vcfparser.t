@@ -23,12 +23,9 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 my $VERBOSE = 1;
 ## Constants
 Readonly my $PADDING => 50;
-
-
 
 BEGIN {
 
@@ -36,9 +33,7 @@ BEGIN {
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Mip}   => [qw{ mip_vcfparser }],
-);
+    my %perl_module = ( q{MIP::Program::Mip} => [qw{ mip_vcfparser }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -80,19 +75,17 @@ my %base_argument = (
 ## to enable testing of each individual argument
 my %required_argument = (
     infile_path => {
-        input => catfile(
-            qw{ file_path_prefix_contig_analysis-type_suffix.annotation_infile_number}),
-        expected_output => catfile(
-            qw{ file_path_prefix_contig_analysis-type_suffix.annotation_infile_number}),
+        input =>
+          catfile(qw{ file_path_prefix_contig_analysis-type_suffix.annotation_infile_number}),
+        expected_output =>
+          catfile(qw{ file_path_prefix_contig_analysis-type_suffix.annotation_infile_number}),
     },
 );
 
 my %specific_argument = (
     log_file_path => {
         input           => catfile(qw{ a dir vcfparser_contig.log}),
-        expected_output => q{--log_file}
-          . $SPACE
-          . catfile(qw{ a dir vcfparser_contig.log}),
+        expected_output => q{--log_file} . $SPACE . catfile(qw{ a dir vcfparser_contig.log}),
     },
     padding => {
         input           => $PADDING,
@@ -111,18 +104,16 @@ my %specific_argument = (
         expected_output => q{--pli_values_file } . catfile(qw{a dir plifile_path}),
     },
     range_feature_annotation_columns_ref => {
-        inputs_ref => [qw{ feature_anno1 feature_anno2 }],
-        expected_output =>
-          q{--range_feature_annotation_columns feature_anno1,feature_anno2},
+        inputs_ref      => [qw{ feature_anno1 feature_anno2 }],
+        expected_output => q{--range_feature_annotation_columns feature_anno1,feature_anno2},
     },
     range_feature_file_path => {
         input           => q{sv_vcfparser_range_feature_file},
         expected_output => q{--range_feature_file sv_vcfparser_range_feature_file},
     },
     select_feature_annotation_columns_ref => {
-        inputs_ref => [qw{ feature_anno1 feature_anno2 }],
-        expected_output =>
-          q{--select_feature_annotation_columns feature_anno1,feature_anno2},
+        inputs_ref      => [qw{ feature_anno1 feature_anno2 }],
+        expected_output => q{--select_feature_annotation_columns feature_anno1,feature_anno2},
     },
     select_feature_file_path => {
         input           => catfile(qw{ active_parameter_href vcfparser_select_file }),
@@ -139,6 +130,10 @@ my %specific_argument = (
         expected_output => q{--select_outfile}
           . $SPACE
           . catdir(qw{ outfile_path prefix_contig.selectedsuffix }),
+    },
+    variant_type => {
+        input           => q{sv},
+        expected_output => q{--variant_type sv},
     },
 );
 
