@@ -31,7 +31,7 @@ BEGIN {
 }
 
 Readonly my $FOUR                   => 4;
-Readonly my $MAX_PARALLEL_PROCESSES => 8;
+Readonly my $MAX_PARALLEL_PROCESSES => 6;
 
 sub analysis_rankvariant {
 
