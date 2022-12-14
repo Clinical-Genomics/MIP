@@ -290,6 +290,14 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
+        q{sv_svdb_query_overlap} => (
+            documentation => q{Database file(s) for annotation},
+            is            => q{rw},
+            isa           => Str,
+        )
+    );
+
+    option(
         q{sv_varianteffectpredictor} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Annotate SV variants using VEP},

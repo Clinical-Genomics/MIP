@@ -28,8 +28,7 @@ use MIP::Main::Vcfparser qw{ mip_vcfparser };
 
 command_short_description(q{MIP vcfparser command});
 
-command_long_description(
-    q{Entry point for splitting VCF into clinical and research variants});
+command_long_description(q{Entry point for splitting VCF into clinical and research variants});
 
 command_usage(q{vcfparser [options] infile.vcf [OPTIONS] > outfile.vcf});
 
@@ -60,6 +59,7 @@ sub run {
     my $padding              = $arg_href->{padding};
     my $per_gene             = $arg_href->{per_gene};
     my $pli_values_file_path = $arg_href->{pli_values_file};
+    my $variant_type         = $arg_href->{variant_type} // q{snv};
     my $write_software_tag   = $arg_href->{write_software_tag};
     my $log_file             = $arg_href->{log_file};
 
@@ -100,6 +100,7 @@ sub run {
             select_feature_file                  => $select_feature_file,
             select_feature_matching_column       => $select_feature_matching_column,
             select_outfile_path                  => $select_outfile,
+            variant_type                         => $variant_type,
             write_software_tag                   => $write_software_tag,
         }
     );
@@ -220,6 +221,14 @@ sub _build_usage {
             documentation => q{Select feature outfile},
             is            => q{rw},
             isa           => Str,
+        )
+    );
+
+    option(
+        q{variant_type} => (
+            documentation => q{Variant type to parse; snv(default)/sv},
+            is            => q{rw},
+            isa           => enum( [qw{ snv sv}] ),
         )
     );
 

@@ -46,6 +46,7 @@ BEGIN {
 }
 
 Readonly my $BASE_COMMAND => q{picard};
+Readonly my $MAX_COVERAGE => 500;
 
 sub picardtools_addorreplacereadgroups {
 
@@ -149,11 +150,9 @@ sub picardtools_addorreplacereadgroups {
             store       => \$readgroup_sample,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-
-        temp_directory => { store => \$temp_directory, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        temp_directory         => { store => \$temp_directory,         strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -269,8 +268,7 @@ sub picardtools_base {
 
     my @commands = @{$commands_ref};
 
-    unshift @commands,
-      ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
+    unshift @commands, ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     if ( $create_index ne q{false} ) {
 
@@ -347,10 +345,9 @@ sub picardtools_bedtointervallist {
             store       => \$sequence_dictionary,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        temp_directory => { store => \$temp_directory, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        temp_directory         => { store => \$temp_directory,         strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -653,8 +650,7 @@ sub picardtools_intervallisttools {
     }
 
     ## Infile
-    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE,
-      @{$infile_paths_ref};
+    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE, @{$infile_paths_ref};
 
     ## Output
     push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
@@ -748,12 +744,11 @@ sub picardtools_mergesamfiles {
             store       => \$referencefile_path,
             strict_type => 1,
         },
-        regionsfile_path => { store => \$regionsfile_path, strict_type => 1, },
-        stderrfile_path  => { store => \$stderrfile_path,  strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        temp_directory => { store => \$temp_directory, strict_type => 1, },
-        threading      => {
+        regionsfile_path       => { store => \$regionsfile_path,       strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        temp_directory         => { store => \$temp_directory,         strict_type => 1, },
+        threading              => {
             allow       => [qw{ true false }],
             store       => \$threading,
             strict_type => 1,
@@ -798,8 +793,7 @@ sub picardtools_mergesamfiles {
     }
 
     ## Infile
-    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE,
-      @{$infile_paths_ref};
+    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE, @{$infile_paths_ref};
 
     ## Output
     push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
@@ -911,10 +905,9 @@ sub picardtools_markduplicates {
             store       => \$referencefile_path,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        temp_directory => { store => \$temp_directory, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        temp_directory         => { store => \$temp_directory,         strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -954,13 +947,11 @@ sub picardtools_markduplicates {
     }
     if ($optical_duplicate_distance) {
 
-        push @commands,
-          q{-OPTICAL_DUPLICATE_PIXEL_DISTANCE} . $SPACE . $optical_duplicate_distance;
+        push @commands, q{-OPTICAL_DUPLICATE_PIXEL_DISTANCE} . $SPACE . $optical_duplicate_distance;
     }
 
     ## Infile
-    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE,
-      @{$infile_paths_ref};
+    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE, @{$infile_paths_ref};
 
     ## Output
     push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
@@ -1051,10 +1042,9 @@ sub picardtools_gatherbamfiles {
             store       => \$referencefile_path,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        temp_directory => { store => \$temp_directory, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        temp_directory         => { store => \$temp_directory,         strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1089,8 +1079,7 @@ sub picardtools_gatherbamfiles {
     );
 
     ## Infile
-    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE,
-      @{$infile_paths_ref};
+    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE, @{$infile_paths_ref};
 
     ## Output
     push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
@@ -1180,10 +1169,9 @@ sub picardtools_collectmultiplemetrics {
             store       => \$referencefile_path,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        temp_directory => { store => \$temp_directory, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        temp_directory         => { store => \$temp_directory,         strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1246,6 +1234,7 @@ sub picardtools_collecthsmetrics {
 ## Function : Perl wrapper for writing picardtools collecthsmetrics recipe to $filehandle. Based on picardtools 2.20.7.
 ## Returns  : @commands
 ## Arguments: $bait_interval_file_paths_ref   => Interval list file(s) that contains the locations of the baits used {REF}
+##          : $coverage_cap                   => Coverage cap for sensitivity calculations, Picard default: 200
 ##          : $create_index                   => Create index
 ##          : $filehandle                     => Sbatch filehandle to write to
 ##          : $infile_path                    => Infile paths
@@ -1274,6 +1263,7 @@ sub picardtools_collecthsmetrics {
     my $temp_directory;
 
     ## Default(s)
+    my $coverage_cap;
     my $create_index;
     my $java_use_large_pages;
 
@@ -1283,6 +1273,12 @@ sub picardtools_collecthsmetrics {
             defined     => 1,
             required    => 1,
             store       => \$bait_interval_file_paths_ref,
+            strict_type => 1,
+        },
+        coverage_cap => {
+            allow       => qr/ \A \d+ \z /xms,
+            default     => $MAX_COVERAGE,
+            store       => \$coverage_cap,
             strict_type => 1,
         },
         create_index => {
@@ -1318,9 +1314,8 @@ sub picardtools_collecthsmetrics {
             store       => \$referencefile_path,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
+        stderrfile_path                => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append         => { store => \$stderrfile_path_append, strict_type => 1, },
         target_interval_file_paths_ref => {
             default     => [],
             defined     => 1,
@@ -1370,6 +1365,8 @@ sub picardtools_collecthsmetrics {
     push @commands,
       q{-TARGET_INTERVALS} . $SPACE . join $SPACE . q{-TARGET_INTERVALS} . $SPACE,
       @{$target_interval_file_paths_ref};
+
+    push @commands, q{-COVERAGE_CAP} . $SPACE . $coverage_cap;
 
     ## Infile
     push @commands, q{-INPUT} . $SPACE . $infile_path;
@@ -1507,8 +1504,7 @@ sub picardtools_sortvcf {
     push @commands, q{-SEQUENCE_DICTIONARY} . $SPACE . $sequence_dictionary;
 
     ## Infile
-    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE,
-      @{$infile_paths_ref};
+    push @commands, q{-INPUT} . $SPACE . join $SPACE . q{-INPUT} . $SPACE, @{$infile_paths_ref};
 
     ## Output
     push @commands, q{-OUTPUT} . $SPACE . $outfile_path;
@@ -1589,8 +1585,7 @@ sub sort_vcf {
             filehandle           => $filehandle,
             infile_paths_ref     => \@{$infile_paths_ref},
             java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-            java_jar =>
-              catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            java_jar => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             memory_allocation   => q{Xmx4g},
             outfile_path        => $outfile,
             referencefile_path  => $active_parameter_href->{human_genome_reference},
@@ -1680,9 +1675,7 @@ sub picardtools_collectrnaseqmetrics {
             strict_type => 1,
         },
         strand_specificity => {
-            allow => [
-                qw{ FIRST_READ_TRANSCRIPTION_STRAND NONE SECOND_READ_TRANSCRIPTION_STRAND }
-            ],
+            allow => [qw{ FIRST_READ_TRANSCRIPTION_STRAND NONE SECOND_READ_TRANSCRIPTION_STRAND }],
             required    => 1,
             store       => \$strand_specificity,
             strict_type => 1,
@@ -1812,10 +1805,9 @@ sub picardtools_updatevcfsequencedictionary {
             store       => \$sequence_dictionary,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        temp_directory => { store => \$temp_directory, strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        temp_directory         => { store => \$temp_directory,         strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};

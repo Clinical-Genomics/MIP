@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Develop]
+## [11.1.0]
 
 - Save raw files from ExpansionHunter
 - Run UPD and subsequently chromograph on unaffected children
@@ -11,11 +11,19 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Produce files for CNV analysis in Gens
 - Updated SO terms for new version of VEP
 - ExACpLI -> pLI, see [vep issue 108](https://github.com/Ensembl/VEP_plugins/issues/108)
+- Use REVEL_score rather than REVEL_rankscore for the ranking algorithm
+- Use BWA-mem2 instead of BWA mem for mapping
+- Set default annotation overlap for structural variants to 0.5 (previously 0.8), due to change in TIDDIT
+- Turn on Stringtie and gffcompare by default
+- Run varg on research vcf
+- Increase max for coverage calculation to 500x
+- Separate list of ranked SO terms for structural variants to ensure that the right SO term gets picked as the most severe for SVs
+- Adds option to use bedpe files with svdb query
 
 ### Tools
 
 - Arriba: 2.1.0 -> 2.3.0
-- Chromograph 1.1.4 -> 1.1.5
+- Chromograph 1.1.4 -> 1.3.0
 - DeepVariant: 1.1.0 -> 1.4.0
 - ExpansionHunter: 4.0.2 -> 5.0.0
 - GATK: 4.2.2.0 -> 4.2.6.1
@@ -27,10 +35,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Star Fusion: 1.10.1 -> 1.11.0
 - Stranger: 0.8.0 -> 0.8.1
 - Stringtie: 2.1.3b -> 2.2.1
-- Tiddit: 2.12.1 -> 3.3.1
+- Tiddit: 2.12.1 -> 3.3.2
 - Trimgalore: 0.6.4 -> 0.6.7
 - VEP: 104.3 -> 107.0
-- svdb: 2.4.0 -> 2.6.4
+- svdb: 2.4.0 -> 2.7.0
 - vcf2cytosure v0.5.1 -> v0.8
 
 ### Databases
@@ -39,7 +47,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - dbnsfp: 4.1a -> 4.3a (grch38 only)
 - gnomad: r3.1.1 -> r3.1.2 (grch38 only)
 - giab: 3.3.2 -> 4.2.1
-- loqusdb dump: 20210921 -> 20220810
+- loqusdb dump: 20210921 -> 20220905
+- nist: v3.3.2 -> v4.2.1
 - vcf2cytosure blacklist: 200520
 
 ## [11.0.3]

@@ -140,12 +140,14 @@ sub svdb_query {
 
 ## Function : Perl wrapper for writing svdb query recipe to $filehandle or return commands array. Based on svdb 2.0.0.
 ## Returns  : @commands
-## Arguments: $bnd_distance           => Maximum distance between two similar precise breakpoints
+## Arguments: $bedpedb_path           => File path to bedpe file
+##          : $bnd_distance           => Maximum distance between two similar precise breakpoints
 ##          : $dbfile_path            => Svdb database file path
 ##          : $filehandle             => Filehandle to write to
 ##          : $in_frequency_tag       => The frequency count tag, if used, this tag must be present in the INFO column of the input DB (usually AF or FRQ)
 ##          : $in_allele_count_tag    => The allele count tag, if used, this tag must be present in the INFO column of the input DB (usually AC or OCC)
 ##          : $infile_path            => Infile path
+##          : $no_var                 => Run without taking variant type into consideration
 ##          : $outfile_path           => Outfile path
 ##          : $out_allele_count_tag   => The allele count tag output name
 ##          : $out_frequency_tag      => The frequency count tag output name
@@ -157,12 +159,14 @@ sub svdb_query {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $bedpedb_path;
     my $bnd_distance;
     my $dbfile_path;
     my $filehandle;
     my $in_frequency_tag;
     my $in_allele_count_tag;
     my $infile_path;
+    my $no_var;
     my $outfile_path;
     my $out_allele_count_tag;
     my $out_frequency_tag;
@@ -172,14 +176,16 @@ sub svdb_query {
     my $stdoutfile_path;
 
     my $tmpl = {
+        bedpedb_path => {
+            store       => \$bedpedb_path,
+            strict_type => 1,
+        },
         bnd_distance => {
             allow       => qr/ \A \d+ \z /sxm,
             strict_type => 1,
             store       => \$bnd_distance
         },
         dbfile_path => {
-            required    => 1,
-            defined     => 1,
             strict_type => 1,
             store       => \$dbfile_path
         },
@@ -191,6 +197,11 @@ sub svdb_query {
             defined     => 1,
             strict_type => 1,
             store       => \$infile_path
+        },
+        no_var => {
+            allow       => [ undef, 0, 1, ],
+            store       => \$no_var,
+            strict_type => 1,
         },
         outfile_path         => { strict_type => 1, store => \$outfile_path },
         out_allele_count_tag => { strict_type => 1, store => \$out_allele_count_tag },
@@ -227,6 +238,10 @@ sub svdb_query {
 
         push @commands, q{--overlap} . $SPACE . $overlap;
     }
+    if ($no_var) {
+
+        push @commands, q{--no_var};
+    }
     if ($in_allele_count_tag) {
 
         push @commands, q{--in_occ} . $SPACE . $in_allele_count_tag;
@@ -243,8 +258,14 @@ sub svdb_query {
 
         push @commands, q{--out_frq} . $SPACE . $out_frequency_tag;
     }
+    if ($bedpedb_path) {
 
-    push @commands, q{--db} . $SPACE . $dbfile_path;
+        push @commands, q{--bedpedb} . $SPACE . $bedpedb_path;
+    }
+    if ($dbfile_path) {
+
+        push @commands, q{--db} . $SPACE . $dbfile_path;
+    }
 
     push @commands, q{--query_vcf} . $SPACE . $infile_path;
 

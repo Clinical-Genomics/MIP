@@ -1073,6 +1073,7 @@ sub analysis_mip_vcfparser_sv_wes {
             select_feature_file_path              => $select_file,
             select_feature_matching_column        => $select_file_matching_column,
             select_outfile                        => $select_outfile,
+            variant_type                          => q{sv},
         }
     );
     say {$filehandle} $NEWLINE;
@@ -1411,6 +1412,7 @@ sub analysis_mip_vcfparser_sv_wgs {
                 select_feature_file_path       => $select_file,
                 select_feature_matching_column => $select_file_matching_column,
                 select_outfile                 => $select_outfile,
+                variant_type                   => q{sv},
             }
         );
 

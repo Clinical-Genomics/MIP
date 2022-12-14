@@ -48,7 +48,7 @@ container:
   chromograph:
     executable:
       chromograph:
-    uri: docker.io/clinicalgenomics/chromograph:1.1.5
+    uri: docker.io/clinicalgenomics/chromograph:1.3.0
   cyrius:
     executable:
       star_caller.py:
@@ -125,7 +125,7 @@ container:
   mip:
     executable:
       mip:
-    uri: docker.io/clinicalgenomics/mip:develop
+    uri: docker.io/clinicalgenomics/mip:v11.1.0
   multiqc:
     executable:
       multiqc:
@@ -213,7 +213,7 @@ container:
   svdb:
     executable:
       svdb:
-    uri: quay.io/biocontainers/svdb:2.6.4--py38h17adfb0_0
+    uri: quay.io/biocontainers/svdb:2.7.0--py39h5371cbf_0
   telomerecat:
     executable:
       telomerecat:
@@ -221,7 +221,7 @@ container:
   tiddit:
     executable:
       tiddit:
-    uri: quay.io/biocontainers/tiddit:3.3.1--py39h5094d80_0
+    uri: quay.io/biocontainers/tiddit:3.3.2--py39h5094d80_0
   trim-galore:
     executable:
       trim_galore:

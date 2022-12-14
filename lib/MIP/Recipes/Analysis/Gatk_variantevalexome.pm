@@ -228,6 +228,7 @@ sub analysis_gatk_variantevalexome {
             filehandle        => $filehandle,
             infile_path       => $view_outfile_path,
             memory_allocation => q{Xmx2g},
+            temp_directory    => $temp_directory,
         }
     );
     say {$filehandle} $NEWLINE;

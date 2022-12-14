@@ -390,8 +390,7 @@ sub build_interval_tree {
     my $feature_stop  = $line_elements_ref->[2] + $padding;
 
     ## Features to collect (Format: ";" separated elements)
-    my $feature_string = join $SEMICOLON,
-      @{$line_elements_ref}[ @{$feature_columns_ref} ];
+    my $feature_string = join $SEMICOLON, @{$line_elements_ref}[ @{$feature_columns_ref} ];
 
     ## Translate not allowed whitespace from INFO field to underscore
     $feature_string =~ tr/ /_/;
@@ -501,21 +500,21 @@ sub check_vcfparser_cli {
     my %cli = (
         range_feature_annotation_column => {
             dependens_on_value => $range_feature_file,
-            msg =>
+            msg                =>
 q{Need to specify which feature column(s) to use with range feature file when annotating variants by using flag --range_feature_annotation_columns}
               . $NEWLINE,
             value => $range_feature_annotation_column,
         },
         select_feature_matching_column => {
             dependens_on_value => $select_feature_file,
-            msg =>
+            msg                =>
 q{Need to specify which feature column to use with select feature file when selecting variants by using flag --select_feature_matching_column}
               . $NEWLINE,
             value => $select_feature_matching_column,
         },
         select_outfile => {
             dependens_on_value => $select_feature_file,
-            msg =>
+            msg                =>
 q{Need to specify a select outfile to use when selecting variants by using flag --select_outfile}
               . $NEWLINE,
             value => $select_outfile,
@@ -548,7 +547,7 @@ sub define_select_data_headers {
     $select_data{select_file}{HGNC_symbol}{INFO} =
       q{##INFO=<ID=HGNC_symbol,Number=.,Type=String,Description="The HGNC gene symbol">};
     $select_data{select_file}{Ensembl_gene_id}{INFO} =
-q{##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensembl gene identifier">};
+      q{##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensembl gene identifier">};
     $select_data{select_file}{OMIM_morbid}{INFO} =
 q{##INFO=<ID=OMIM_morbid,Number=.,Type=String,Description="OMIM morbid ID associated with gene(s)">};
     $select_data{select_file}{Phenotypic_disease_model}{INFO} =
@@ -560,7 +559,7 @@ q{##INFO=<ID=Disease_associated_transcript,Number=.,Type=String,Description="Kno
     $select_data{select_file}{Ensembl_transcript_to_refseq_transcript}{INFO} =
 q{##INFO=<ID=Ensembl_transcript_to_refseq_transcript,Number=.,Type=String,Description="The link between ensembl transcript and refSeq transcript IDs">};
     $select_data{select_file}{Gene_description}{INFO} =
-q{##INFO=<ID=Gene_description,Number=.,Type=String,Description="The HGNC gene description">};
+      q{##INFO=<ID=Gene_description,Number=.,Type=String,Description="The HGNC gene description">};
     $select_data{select_file}{Genetic_disease_model}{INFO} =
 q{##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene(s) inheritance model">};
     $select_data{select_file}{no_hgnc_symbol}{INFO} =
@@ -1063,8 +1062,7 @@ sub set_most_severe_ann_to_vcf_record {
   FEATURE_TYPE_KEY:
     foreach my $feature_type_key ( @{$feature_type_keys_ref} ) {
 
-        my $vcf_key = join $UNDERSCORE,
-          ( qw{INFO addition}, $feature_type_key, qw{ feature } );
+        my $vcf_key = join $UNDERSCORE, ( qw{INFO addition}, $feature_type_key, qw{ feature } );
 
         if ( $most_severe_pli_href->{$feature_type_key} ) {
 
@@ -1227,8 +1225,7 @@ sub parse_vep_csq_consequence {
         );
 
         ## Build most severe consequence format
-        my $most_severe_consequence =
-          $hgnc_id . $COLON . $allele . $PIPE . $consequence_term;
+        my $most_severe_consequence = $hgnc_id . $COLON . $allele . $PIPE . $consequence_term;
 
         ## Unpack
         my $current_so_rank = $consequence_severity{$consequence_term}{rank};
@@ -1440,7 +1437,10 @@ sub write_info_addition_fields {
 
             my $info_string =
               $SEMICOLON . $key . $EQUALS . $vcf_record_href->{$info_addition_key}{$key};
-            print {$filehandle} $info_string;
+
+            ## If INFO_addition_range_feature has been written to research list; Don't write select feature
+            print {$filehandle} $info_string
+              if ( not $info_addition_key eq q{INFO_addition_select_feature} );
 
             ## Never to select file for this info addition key
             next INFO_KEY if ( $info_addition_key eq q{INFO_addition_range_feature} );
@@ -1631,15 +1631,13 @@ sub write_meta_data {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## Determine order to print for standard vcf schema
-    my @meta_data_vcf_schemas =
-      qw{ fileformat ALT FILTER FORMAT INFO contig software other };
+    my @meta_data_vcf_schemas = qw{ fileformat ALT FILTER FORMAT INFO contig software other };
 
     ## Dispatch table of how to write meta data
     my %write_record = (
-        contig => \&_write_vcf_schema,    # Written "as is"
+        contig => \&_write_vcf_schema,           # Written "as is"
         other  => \&_write_vcf_schema,
-        vcf_id =>
-          \&_write_vcf_schema_id_line, # All standard vcf_schema with vcf_id except contig
+        vcf_id => \&_write_vcf_schema_id_line,   # All standard vcf_schema with vcf_id except contig
     );
 
   VCF_SCHEMA:
@@ -1689,9 +1687,9 @@ sub _write_to_file {
     my $selectfilehandle;
 
     my $tmpl = {
-        filehandle     => { defined => 1, required => 1, store => \$filehandle, },
-        meta_data_line => { defined => 1, required => 1, store => \$meta_data_line, },
-        selectfilehandle => { store => \$selectfilehandle, },
+        filehandle       => { defined => 1, required => 1, store => \$filehandle, },
+        meta_data_line   => { defined => 1, required => 1, store => \$meta_data_line, },
+        selectfilehandle => { store   => \$selectfilehandle, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
@@ -1808,9 +1806,7 @@ sub _write_vcf_schema_id_line {
     while ( my ( $feature_file_type, $ANNOTATION_FH ) = each %feature_annotation ) {
 
       VCF_ID:
-        foreach
-          my $vcf_id ( sort keys %{ $meta_data_href->{$feature_file_type}{$vcf_schema} } )
-        {
+        foreach my $vcf_id ( sort keys %{ $meta_data_href->{$feature_file_type}{$vcf_schema} } ) {
 
             my $header_line = $meta_data_href->{$feature_file_type}{$vcf_schema}{$vcf_id};
             if ( defined $ANNOTATION_FH ) {

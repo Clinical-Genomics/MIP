@@ -29,7 +29,7 @@ PMID:25495354
 
 ## Overview
 
-**MIP is being rewritten in NextFlow as a part of the [nf-core](https://nf-co.re/) project. This repo will mainly receive bugfixes as we are focusing our resources on the new pipeline.**  
+**MIP is being rewritten in NextFlow as a part of the [nf-core](https://nf-co.re/) project. This repo will mainly receive bugfixes as we are focusing our resources on the new pipeline.**
 **You can follow the progress here :point_right: [raredisease](https://github.com/nf-core/raredisease).**
 
 MIP performs whole genome or target region analysis of sequenced single-end and/or paired-end reads from the Illumina platform in fastq\(.gz\) format to generate annotated ranked potential disease causing variants.
@@ -135,7 +135,7 @@ $ cd MIP
 
 ```Bash
 $ bash mip_install_perl.sh -e [mip] -p [$HOME/miniconda3]
-```  
+```
 
 ##### 3. Test conda and mip installation files (optional, but recommended)
 
@@ -176,7 +176,7 @@ $ perl t/mip_analyse_rd_dna.test
 
 MIP is called from the command line and takes input from the command line \(precedence\) or falls back on defaults where applicable.
 
-Lists are supplied as repeated flag entries on the command line or in the config using the yaml format for arrays.  
+Lists are supplied as repeated flag entries on the command line or in the config using the yaml format for arrays.
 Only flags that will actually be used needs to be specified and MIP will check that all required parameters are set before submitting to SLURM.
 
 Recipe parameters can be set to "0" \(=off\), "1" \(=on\) and "2" \(=dry run mode\). Any recipe can be set to dry run mode and MIP will create the sbatch scripts, but not submit them to SLURM. MIP can be restarted from any recipe using the ``--start_with_recipe`` flag and after any recipe using the `--start_after_recipe` flag.
@@ -233,6 +233,6 @@ MIP will place any generated data files in the output data directory specified b
 [Miniconda]: http://conda.pydata.org/miniconda.html
 [Pedigree file]: https://github.com/Clinical-Genomics/MIP/tree/master/templates/643594-miptest_pedigree.yaml
 [Perl]:https://www.perl.org/
-[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_-v1.33-.ini
-[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_-v1.8-.ini
+[Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_-v1.34-.ini
+[SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_-v1.9-.ini
 [Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/qc_regexp_-v1.26-.yaml

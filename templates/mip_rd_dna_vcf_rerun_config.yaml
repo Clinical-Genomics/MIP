@@ -22,13 +22,13 @@ sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_i
 ## References
 genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 human_genome_reference: grch37_homo_sapiens_-d5-.fasta
-rank_model_file: rank_model_-v1.33-.ini
+rank_model_file: rank_model_-v1.34-.ini
 sv_genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
-sv_rank_model_file: svrank_model_-v1.8-.ini
+sv_rank_model_file: svrank_model_-v1.9-.ini
 # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
 sv_svdb_query_db_files:
   grch37_gnomad_reformated_-r2.1.1_sv-.vcf.gz: gnomad_sv|AF|AC|AF|AC|1
-  grch37_loqusdb_sv_variants_export-20210921-.vcf: clinical_genomics_loqus|Frq|Obs|Frq|Obs
+  grch37_loqusdb_sv_variants_export-20220905-.vcf: clinical_genomics_loqus|Frq|Obs|Frq|Obs
   grch37_mip_sv_svdb_export_-2018-10-09-.vcf: clinical_genomics_mip|AF|OCC|FRQ|OCC|1
   grch37_svdb_query_decipher_-v1.0.0-.vcf: decipher|AF|OCC|FRQ|OCC
   grch37_svdb_query_clingen_cgh_benign_-v1.0.0-.vcf: clingen_cgh_benign

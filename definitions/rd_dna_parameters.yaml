@@ -437,7 +437,7 @@ bwa_mem:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _sorted
   outfile_suffix: ".bam"
   program_executables:
@@ -459,7 +459,7 @@ bwa_mem2:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _sorted
   outfile_suffix: ".bam"
   program_executables:
@@ -997,6 +997,12 @@ sv_svdb_query_db_files:
   is_reference: 1
   reference: reference_dir
   type: path
+sv_svdb_query_overlap:
+  associated_recipe:
+    - sv_annotate
+  data_type: SCALAR
+  default: 0.5
+  type: recipe_argument
 sv_vcfanno_config:
   associated_recipe:
     - sv_annotate
@@ -2038,6 +2044,11 @@ nist_call_set_vcf:
       NA24143: grch37_nist_hg004_-na24143_v3.3.2-.vcf
       NA24385: grch37_nist_hg002_-na24385_v3.3.2-.vcf
       NA24631: grch37_nist_hg005_-na24631_v3.3.2-.vcf
+    4.2.1:
+      NA12878: grch37_nist_hg001_-na12878_v4.2.1-.vcf
+      NA24143: grch37_nist_hg004_-na24143_v4.2.1-.vcf
+      NA24385: grch37_nist_hg002_-na24385_v4.2.1-.vcf
+      NA24631: grch37_nist_hg005_-na24631_v4.2.1-.vcf
   data_type: HASH
   is_reference: 1
   type: recipe_argument
@@ -2052,6 +2063,11 @@ nist_call_set_bed:
       NA24143: grch37_nist_hg004_-na24143_v3.3.2-.bed
       NA24385: grch37_nist_hg002_-na24385_v3.3.2-.bed
       NA24631: grch37_nist_hg005_-na24631_v3.3.2-.bed
+    4.2.1:
+      NA12878: grch37_nist_hg001_-na12878_v4.2.1-.bed
+      NA24143: grch37_nist_hg004_-na24143_v4.2.1-.bed
+      NA24385: grch37_nist_hg002_-na24385_v4.2.1-.bed
+      NA24631: grch37_nist_hg005_-na24631_v4.2.1-.bed
   data_type: HASH
   is_reference: 1
   type: recipe_argument
@@ -2067,6 +2083,7 @@ nist_versions:
   default:
     - 2.19
     - 3.3.2
+    - 4.2.1
   type: recipe_argument
 ## RankVariant
 rankvariant:

@@ -381,6 +381,17 @@ sub analysis_expansionhunter {
             }
         );
 
+        set_file_path_to_store(
+            {
+                format           => q{meta},
+                id               => $case_id,
+                path             => $variant_catalog_file_path,
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+                tag              => q{variant_catalog},
+            }
+        );
+
         foreach my $sample_id ( @{ $active_parameter_href->{sample_ids} } ) {
 
             set_file_path_to_store(
