@@ -317,6 +317,9 @@ sub _build_sed_script {
       ## Prepend header to line
       . q{s//} . $header_info . q{\n&/; }
 
+      ## Skip the #CHROM line
+      . q{/^#CHROM\t/n; }
+
       ## Append new info tag to all INFO columns (8th)
       . q{s/[^\t]*/&;} . $info_tag . q{/8} . $SINGLE_QUOTE;
 

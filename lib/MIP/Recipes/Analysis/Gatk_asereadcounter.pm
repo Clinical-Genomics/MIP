@@ -258,8 +258,9 @@ sub analysis_gatk_asereadcounter {
     say {$filehandle} q{## GATK IndexFeatureFile};
     gatk_indexfeaturefile(
         {
-            filehandle  => $filehandle,
-            infile_path => $variant_file_path,
+            filehandle     => $filehandle,
+            infile_path    => $variant_file_path,
+            temp_directory => $temp_directory,
         }
     );
     say {$filehandle} $NEWLINE;

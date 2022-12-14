@@ -55,7 +55,7 @@ my %active_parameter = (
         { another_hash => [ catfile(q{cluster_constant_path!}), ] },
     ],
     sv_vep_plugin => {
-        ExACpLI => {
+        pLI => {
             exists_check => q{file},
             path         => catfile(qw{ cluster_constant_path! analysis_constant_path! pli.txt }),
         },
@@ -90,7 +90,7 @@ is( $active_parameter{sample_info_file},
     $updated_sample_info_file, q{Updated sample_info_file path} );
 
 my $updated_sv_vep_pli = catfile(qw{ root dir_1 dir_2 case_1 analysis pli.txt });
-is( $active_parameter{sv_vep_plugin}{ExACpLI}{path},
+is( $active_parameter{sv_vep_plugin}{pLI}{path},
     $updated_sv_vep_pli, q{Updated sv_vep_plugin pli path} );
 
 my $updated_sv_vep_loftool = catfile(qw{ root dir_1 dir_2 case_1 analysis loftool.txt });

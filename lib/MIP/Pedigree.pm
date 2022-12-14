@@ -252,10 +252,7 @@ sub check_pedigree_sample_allowed_values {
 
             ## If element is not part of array
             next SAMPLE_KEY
-              if (
-                any { $_ eq $pedigree_sample_href->{$key} }
-                @{ $allowed_values{$key} }
-              );
+              if ( any { $_ eq $pedigree_sample_href->{$key} } @{ $allowed_values{$key} } );
 
             $log->fatal( q{Pedigree file: } . $pedigree_file_path );
             $log->fatal( q{For key: }
@@ -688,7 +685,8 @@ sub is_sample_proband_in_trio {
 
 ## Function : Check if sample id has an affected or unknown phenotype and is child in trio
 ## Returns  : 0 | 1
-## Arguments: $sample_id        => Sample id
+## Arguments: $only_affected    => Control whether the proband needs to marked as affected
+##          : $sample_id        => Sample id
 ##          : $sample_info_href => Info on samples and case hash {REF}
 
     my ($arg_href) = @_;
@@ -697,7 +695,16 @@ sub is_sample_proband_in_trio {
     my $sample_id;
     my $sample_info_href;
 
+    ## Default(s)
+    my $only_affected;
+
     my $tmpl = {
+        only_affected => {
+            allow       => [ 0, 1 ],
+            default     => 1,
+            store       => \$only_affected,
+            strict_type => 1,
+        },
         sample_id => {
             defined     => 1,
             required    => 1,
@@ -730,7 +737,7 @@ sub is_sample_proband_in_trio {
     );
 
     ## Sample_id needs to be affected
-    return 0 if ( $phenotype eq q{unaffected} );
+    return 0 if ( $only_affected && ( $phenotype eq q{unaffected} ) );
 
     ## Get family hash
     my %family_member_id = get_family_member_id( { sample_info_href => $sample_info_href } );
@@ -1565,11 +1572,7 @@ sub _parse_trio_members {
     while ( my ( $parent_role, $parent_id ) = each %parent ) {
 
         ## If parent is present in current analysis
-        if (
-            any { $_ eq $parent_id }
-            @{$sample_ids_ref}
-          )
-        {
+        if ( any { $_ eq $parent_id } @{$sample_ids_ref} ) {
 
             ## Set as parents
             $trio{$parent_role} = $parent_id;
@@ -1577,14 +1580,13 @@ sub _parse_trio_members {
     }
     if ( scalar( keys %trio ) == $TRIO_MEMBERS_COUNT ) {
 
-        $log->info(
-                q{Found trio: Child = "}
+        $log->info( q{Found trio: Child = "}
               . $trio{child}
               . q{", Father = "}
               . $trio{father}
               . q{", Mother = "}
-              . $trio{mother} . q{"},
-        );
+              . $trio{mother}
+              . q{"}, );
         return 1;
     }
     return;

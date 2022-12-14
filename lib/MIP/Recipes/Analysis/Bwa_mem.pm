@@ -694,8 +694,6 @@ sub analysis_bwa_mem2 {
         );
         ## Add missing "@RG"
         $rg_header_line = $DOUBLE_QUOTE . q{@RG} . q{\t} . $rg_header_line . $DOUBLE_QUOTE;
-        my $samtools_view_outfile_path =
-          $outfile_path_prefix . $UNDERSCORE . q{mem} . $outfile_suffix;
 
         # Prior to ALTs in reference genome
         bwa_mem2_mem(
@@ -714,24 +712,8 @@ sub analysis_bwa_mem2 {
         # Pipe SAM to BAM conversion of aligned reads
         print {$filehandle} $PIPE . $SPACE;
 
-        samtools_view(
-            {
-                auto_detect_input_format => 1,
-                filehandle               => $filehandle,
-                infile_path              => q{-},
-                outfile_path             => $samtools_view_outfile_path,
-                thread_number            => $recipe{core_number},
-                uncompressed_bam_output  => $uncompressed_bam_output,
-                with_header              => 1,
-            }
-        );
-        say {$filehandle} $NEWLINE;
-
         ## Set samtools sort input;
-        my $samtools_sort_infile = $samtools_view_outfile_path;
-
-        ## Increment paired end tracker
-        $paired_end_tracker++;
+        my $samtools_sort_infile = catfile( dirname( devnull() ), q{stdin} );
 
         ## Sort the output from bwa mem
         samtools_sort(
@@ -746,6 +728,9 @@ sub analysis_bwa_mem2 {
             }
         );
         say {$filehandle} $NEWLINE;
+
+        ## Increment paired end tracker
+        $paired_end_tracker++;
 
         samtools_index(
             {

@@ -210,7 +210,7 @@ sub analysis_vcf2cytosure {
         }
     );
 
-    ## Store file info from ".bam", ".tab" and ".vcf"
+    ## Store file info from ".bam", ".bed" and ".vcf"
     my %vcf2cytosure_file_info;
 
     ### Get case vcf from sv_anno
@@ -269,8 +269,8 @@ sub analysis_vcf2cytosure {
           $outfile_path_prefix . $UNDERSCORE . q{tiddit} . $UNDERSCORE . $sample_id;
 
         ## Store file for use downstream
-        $vcf2cytosure_file_info{$sample_id}{in}{q{.tab}} =
-          $tiddit_cov_file_path . q{.tab};
+        $vcf2cytosure_file_info{$sample_id}{in}{q{.bed}} =
+          $tiddit_cov_file_path . q{.bed};
 
         ## Tiddit coverage
         tiddit_coverage(
@@ -373,7 +373,7 @@ sub analysis_vcf2cytosure {
         vcf2cytosure_convert(
             {
                 blacklist_file_path => $active_parameter_href->{vcf2cytosure_blacklist},
-                coverage_file       => $vcf2cytosure_file_info{$sample_id}{in}{q{.tab}},
+                coverage_file       => $vcf2cytosure_file_info{$sample_id}{in}{q{.bed}},
                 filehandle          => $filehandle,
                 maxbnd              => $active_parameter_href->{vcf2cytosure_maxbnd},
                 outfile_path        => $outfile_path{$sample_id},

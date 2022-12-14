@@ -260,9 +260,18 @@ sub analysis_sv_annotate {
 
                 push @svdb_query_annotations, $query_db_tag . $out_frequency_tag;
             }
+            my $query_bedpedb_file;
+            my $no_var = 0;
+            if ( $query_db_file =~ m/[.] bedpe \z/xms ) {
+
+                $query_bedpedb_file = $query_db_file;
+                $query_db_file      = undef;
+                $no_var             = 1;
+            }
 
             svdb_query(
                 {
+                    bedpedb_path         => $query_bedpedb_file,
                     bnd_distance         => 25_000,
                     dbfile_path          => $query_db_file,
                     filehandle           => $filehandle,
@@ -276,7 +285,7 @@ sub analysis_sv_annotate {
                       . $outfile_suffix
                       . $DOT
                       . $outfile_tracker,
-                    overlap => 0.8,
+                    overlap => $active_parameter_href->{sv_svdb_query_overlap},
                 }
             );
             say {$filehandle} $NEWLINE;

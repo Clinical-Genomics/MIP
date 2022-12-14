@@ -22,7 +22,7 @@ sample_info_file: cluster_constant_path!/case_id!/analysis_constant_path!/case_i
 gatk_genotypegvcfs_ref_gvcf: grch37_gatk_merged_reference_samples.txt
 genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
 human_genome_reference: grch37_homo_sapiens_-d5-.fasta
-rank_model_file: rank_model_-v1.33-.ini
+rank_model_file: rank_model_-v1.34-.ini
 sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
 vcfanno_config: grch37_vcfanno_config_v1.16-.toml
 ### Analysis
@@ -49,7 +49,7 @@ vep_custom_annotation:
     force_report_coordinates: 0
     key: CLINVAR
     file_type: vcf
-    path: cluster_constant_path!/references/grch37_clinvar_reformated_-20211010-.vcf.gz
+    path: cluster_constant_path!/references/grch37_clinvar_reformated_-20220829-.vcf.gz
     vcf_fields: CLNSIG,CLNVID,CLNREVSTAT
 vep_directory_cache: cluster_constant_path!/references/ensembl-tools-data-104/cache/
 vep_plugins_dir_path: cluster_constant_path!/references/ensembl-tools-data-104/cache/Plugins
@@ -65,7 +65,7 @@ vep_plugin:
       - phyloP100way_vertebrate
       - phastCons100way_vertebrate
       - REVEL_rankscore
-  ExACpLI:
+  pLI:
     exist_check:
       - type: file
         path: cluster_constant_path!/references/gnomad_pli_per_gene_-_r2.1.1-.txt

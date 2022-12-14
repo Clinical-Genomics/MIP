@@ -178,7 +178,7 @@ q{By default VEP cache and plugins will be downloaded to <reference_dir>/ensembl
         my %finish_plugin_installation = (
             MaxEntScan => \&_install_maxentscan_plugin,
             LoFtool    => \&_install_loftool_plugin,
-            ExACpLI    => \&_install_exacpli_plugin,
+            pLI        => \&_install_pli_plugin,
         );
 
       PLUGIN:
@@ -285,16 +285,16 @@ sub _install_loftool_plugin {
         {
             outfile_path => catfile( $plugin_dir_path, q{LoFtool_scores.txt} ),
             url          =>
-              q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt},
+q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/107/LoFtool_scores.txt},
         }
     );
 
     return @cmds;
 }
 
-sub _install_exacpli_plugin {
+sub _install_pli_plugin {
 
-## Function : Write command that downloads file required by ExACpLI
+## Function : Write command that downloads file required by pLI
 ## Returns  : @cmds
 ## Arguments: $plugin_dir_path => Plugin path
 
@@ -316,9 +316,9 @@ sub _install_exacpli_plugin {
 
     my @cmds = wget(
         {
-            outfile_path => catfile( $plugin_dir_path, q{ExACpLI_values.txt} ),
+            outfile_path => catfile( $plugin_dir_path, q{pLI_values.txt} ),
             url          =>
-              q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/ExACpLI_values.txt},
+              q{https://raw.githubusercontent.com/Ensembl/VEP_plugins/release/107/pLI_values.txt},
         }
     );
 

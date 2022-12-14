@@ -3,6 +3,54 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [11.1.0]
+
+- Save raw files from ExpansionHunter
+- Run UPD and subsequently chromograph on unaffected children
+- Annotate SV variants with the caller that reported the variant
+- Produce files for CNV analysis in Gens
+- Updated SO terms for new version of VEP
+- ExACpLI -> pLI, see [vep issue 108](https://github.com/Ensembl/VEP_plugins/issues/108)
+- Use REVEL_score rather than REVEL_rankscore for the ranking algorithm
+- Use BWA-mem2 instead of BWA mem for mapping
+- Set default annotation overlap for structural variants to 0.5 (previously 0.8), due to change in TIDDIT
+- Turn on Stringtie and gffcompare by default
+- Run varg on research vcf
+- Increase max for coverage calculation to 500x
+- Separate list of ranked SO terms for structural variants to ensure that the right SO term gets picked as the most severe for SVs
+- Adds option to use bedpe files with svdb query
+
+### Tools
+
+- Arriba: 2.1.0 -> 2.3.0
+- Chromograph 1.1.4 -> 1.3.0
+- DeepVariant: 1.1.0 -> 1.4.0
+- ExpansionHunter: 4.0.2 -> 5.0.0
+- GATK: 4.2.2.0 -> 4.2.6.1
+- HTSlib: 1.13 -> 1.15.1
+- MultiQC: 1.11 -> 1.12
+- Peddy: 0.4.3 -> 0.4.8
+- Picard: 2.25.0 -> 2.27.2
+- SMNCopyNumberCaller 1.1.1 -> 1.1.2
+- Star Fusion: 1.10.1 -> 1.11.0
+- Stranger: 0.8.0 -> 0.8.1
+- Stringtie: 2.1.3b -> 2.2.1
+- Tiddit: 2.12.1 -> 3.3.2
+- Trimgalore: 0.6.4 -> 0.6.7
+- VEP: 104.3 -> 107.0
+- svdb: 2.4.0 -> 2.7.0
+- vcf2cytosure v0.5.1 -> v0.8
+
+### Databases
+
+- clinvar: 20211010 -> 20220829
+- dbnsfp: 4.1a -> 4.3a (grch38 only)
+- gnomad: r3.1.1 -> r3.1.2 (grch38 only)
+- giab: 3.3.2 -> 4.2.1
+- loqusdb dump: 20210921 -> 20220905
+- nist: v3.3.2 -> v4.2.1
+- vcf2cytosure blacklist: 200520
+
 ## [11.0.3]
 
 - Initiate conda prior to activation
@@ -12,6 +60,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Updates chromograph
 
 ### Tools
+
 chromograph 1.1.4 -> 1.1.5
 
 ## [11.0.1]
@@ -31,21 +80,38 @@ chromograph 1.1.4 -> 1.1.5
 
 ### Tools
 
-cyrius v1.1 -> v1.1.1
-deeptrio 1.1.0-gpu -> 1.2.0-gpu
-gatk 4.2.0.0 -> 4.2.2.0
-glnexus v1.3.1 -> v1.4.1
-HmtNote: 0.7.2
-htslib: 1.10.2 -> 1.13
-multiqc 1.10.1 -> v1.11
-star-fusion 1.10.0 -> 1.10.1
-vep release_103.1 -> release_104.3
+- cyrius v1.1 -> v1.1.1
+- deepvariant 1.1.0 -> 1.2.0
+- deeptrio 1.1.0 -> 1.2.0
+- gatk 4.2.0.0 -> 4.2.2.0
+- glnexus v1.3.1 -> v1.4.1
+- HmtNote: 0.7.2
+- htslib: 1.10.2 -> 1.13
+- multiqc 1.10.1 -> v1.11
+- star-fusion 1.10.0 -> 1.10.1
+- vep release_103.1 -> release_104.3
 
 ### References
 
 - gnomad: r3.0 -> r3.1.1
 - [NEW] gnomad mt: r3.1
 - clinvar: 20210415 -> 20211010
+
+## [10.2.5]
+
+- Allow slurm quality of service flag to be set to 'express'
+
+## [10.2.4]
+
+- Split Star-Fusion alignment and detection into two recipes
+- Use temp directory with Star-Fusion
+- Resource bump for RNA
+- Limit memory for glnexus
+- Use non-gpu version of Deepvariant by default
+
+## [10.2.3]
+
+- Updates Chromograph to version 1.1.4
 
 ## [10.2.5]
 

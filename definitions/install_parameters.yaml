@@ -80,6 +80,7 @@ rd_dna:
     - gatk
     - gatk4
     - genmod
+    - gens_preproc
     - glnexus
     - hmtnote
     - htslib
@@ -205,7 +206,7 @@ vep_plugins:
   data_type: ARRAY
   default:
     - dbNSFP
-    - ExACpLI
+    - pLI
     - LoFtool
     - MaxEntScan
     - SpliceAI

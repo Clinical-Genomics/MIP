@@ -58,6 +58,8 @@ gatk_logging_level:
   associated_recipe:
     - gatk_baserecalibration
     - gatk_combinevariantcallsets
+    - gatk_collectreadcounts
+    - gatk_denoisereadcounts
     - gatk_gathervcfs
     - gatk_genotypegvcfs
     - gatk_haplotypecaller
@@ -147,6 +149,42 @@ human_genome_reference_file_endings:
   mandatory: no
   reference: reference_dir
   type: path
+gens_intervals:
+  associated_recipe:
+    - gatk_collectreadcounts
+  data_type: SCALAR
+  default: grch37_gens_targets_preprocessed_100bp.interval_list
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
+gens_panel_of_normals_female:
+  associated_recipe:
+    - gatk_denoisereadcounts
+  data_type: SCALAR
+  default: grch37_gens_female_pon_100bp.hdf5
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
+gens_panel_of_normals_male:
+  associated_recipe:
+    - gatk_denoisereadcounts
+  data_type: SCALAR
+  default: grch37_gens_male_pon_100bp.hdf5
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
+gens_gnomad_positions:
+  associated_recipe:
+    - gens_generatedata
+  data_type: SCALAR
+  default: grch37_gnomad.genomes.r2.1.1.sites.5percent.pos.txt
+  exists_check: file
+  is_reference: 1
+  reference: reference_dir
+  type: path
 #### Bash
 recipe_core_number:
   associated_recipe:
@@ -169,18 +207,21 @@ recipe_core_number:
     delly_call: 36
     delly_reformat: 13
     endvariantannotationblock: 1
-    expansionhunter: 0
+    expansionhunter: 3
     fastqc_ar: 0
     variant_annotation: 13
     frequency_filter: 13
     gatk_baserecalibration: 13
     gatk_combinevariantcallsets: 1
+    gatk_collectreadcounts: 1
+    gatk_denoisereadcounts: 1
     gatk_gathervcfs: 1
     gatk_genotypegvcfs: 1
     gatk_haplotypecaller: 16
     gatk_variantevalall: 1
     gatk_variantevalexome: 1
     gatk_variantrecalibration: 1
+    gens_generatedata: 1
     glnexus_merge: 16
     gzip_fastq: 0
     manta: 36
@@ -209,6 +250,7 @@ recipe_core_number:
     sv_varianteffectpredictor: 0
     sv_vcfparser: 13
     telomerecat_ar: 12
+    tiddit: 12
     tiddit_coverage: 1
     upd_ar: 1
     varg_ar: 1
@@ -243,12 +285,15 @@ recipe_memory:
     chromograph_upd: 5
     delly_reformat: 3
     endvariantannotationblock: 8
-    expansionhunter: 2
+    expansionhunter: 3
     gatk_baserecalibration: 10
     gatk_combinevariantcallsets: 25
+    gatk_collectreadcounts: 12
+    gatk_denoisereadcounts: 42
     gatk_gathervcfs: 7
     gatk_genotypegvcfs: 12
     gatk_variantrecalibration: 30
+    gens_generatedata: 7
     glnexus_merge: 10
     markduplicates: 10
     mitodel: 2
@@ -263,7 +308,7 @@ recipe_memory:
     sv_annotate: 7
     sv_reformat: 24
     sv_varianteffectpredictor: 9
-    tiddit: 8
+    tiddit: 5
     upd_ar: 3
     variant_annotation: 3
     varianteffectpredictor: 7
@@ -297,12 +342,15 @@ recipe_time:
     frequency_filter: 2
     gatk_baserecalibration: 20
     gatk_combinevariantcallsets: 2
+    gatk_collectreadcounts: 1
+    gatk_denoisereadcounts: 1
     gatk_genotypegvcfs: 10
     gatk_gathervcfs: 2
     gatk_haplotypecaller: 30
     gatk_variantevalall: 2
     gatk_variantevalexome: 2
     gatk_variantrecalibration: 10
+    gens_generatedata: 4
     glnexus_merge: 5
     gzip_fastq: 2
     manta: 30
@@ -333,7 +381,7 @@ recipe_time:
     sv_varianteffectpredictor: 10
     sv_vcfparser: 2
     telomerecat_ar: 5
-    tiddit: 20
+    tiddit: 15
     tiddit_coverage: 5
     upd_ar: 1
     varg_ar: 1
@@ -389,7 +437,7 @@ bwa_mem:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 1
+  default: 0
   file_tag: _sorted
   outfile_suffix: ".bam"
   program_executables:
@@ -411,7 +459,7 @@ bwa_mem2:
   associated_recipe:
     - mip
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _sorted
   outfile_suffix: ".bam"
   program_executables:
@@ -949,6 +997,12 @@ sv_svdb_query_db_files:
   is_reference: 1
   reference: reference_dir
   type: path
+sv_svdb_query_overlap:
+  associated_recipe:
+    - sv_annotate
+  data_type: SCALAR
+  default: 0.5
+  type: recipe_argument
 sv_vcfanno_config:
   associated_recipe:
     - sv_annotate
@@ -1196,6 +1250,42 @@ sv_reformat_remove_genes_file:
   mandatory: no
   reference: reference_dir
   type: path
+## GATK CollectReadCounts
+gatk_collectreadcounts:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".hdf5"
+  program_executables:
+    - gatk
+  type: recipe
+## GATK DenoiseReadCounts
+gatk_denoisereadcounts:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".tsv"
+  program_executables:
+    - gatk
+  type: recipe
+## gens_generate_data.pl
+gens_generatedata:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: ""
+  outfile_suffix: ".bed.gz"
+  program_executables:
+    - generate_gens_data.pl
+  type: recipe
 ## GATK Genotype
 gatk_haplotypecaller:
   analysis_mode: sample
@@ -1954,6 +2044,11 @@ nist_call_set_vcf:
       NA24143: grch37_nist_hg004_-na24143_v3.3.2-.vcf
       NA24385: grch37_nist_hg002_-na24385_v3.3.2-.vcf
       NA24631: grch37_nist_hg005_-na24631_v3.3.2-.vcf
+    4.2.1:
+      NA12878: grch37_nist_hg001_-na12878_v4.2.1-.vcf
+      NA24143: grch37_nist_hg004_-na24143_v4.2.1-.vcf
+      NA24385: grch37_nist_hg002_-na24385_v4.2.1-.vcf
+      NA24631: grch37_nist_hg005_-na24631_v4.2.1-.vcf
   data_type: HASH
   is_reference: 1
   type: recipe_argument
@@ -1968,6 +2063,11 @@ nist_call_set_bed:
       NA24143: grch37_nist_hg004_-na24143_v3.3.2-.bed
       NA24385: grch37_nist_hg002_-na24385_v3.3.2-.bed
       NA24631: grch37_nist_hg005_-na24631_v3.3.2-.bed
+    4.2.1:
+      NA12878: grch37_nist_hg001_-na12878_v4.2.1-.bed
+      NA24143: grch37_nist_hg004_-na24143_v4.2.1-.bed
+      NA24385: grch37_nist_hg002_-na24385_v4.2.1-.bed
+      NA24631: grch37_nist_hg005_-na24631_v4.2.1-.bed
   data_type: HASH
   is_reference: 1
   type: recipe_argument
@@ -1983,6 +2083,7 @@ nist_versions:
   default:
     - 2.19
     - 3.3.2
+    - 4.2.1
   type: recipe_argument
 ## RankVariant
 rankvariant:

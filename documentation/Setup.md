@@ -34,8 +34,8 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - Simple Linux Utility for Resource Management ([SLURM]) (version: 18.08.0)
 
 #### **Pipeline: Rare disease**
-- [Arriba] (version: 2.1.0)
-- [Bcftools] (version: 1.11)
+- [Arriba] (version: 2.3.0)
+- [Bcftools] (version: 1.15.1)
 - [BWA] (version: 0.7.17)
 - [BedTools] (version: 2.30.0)
 - [Blobfish] (version: 0.0.2 )
@@ -43,13 +43,13 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [BWAKit] (version: 0.7.17)
 - [CADD] (version: 1.6)
 - [Chanjo] (version: 4.6.0)
-- [Chromograph] (version: 1.1.5)
+- [Chromograph] (version: 1.3.0)
 - [Cnvnator] (version: 0.4.1)
 - [Cyrius] (version: v1.1.1)
-- [Expansionhunter] (version 4.0.2)
+- [Expansionhunter] (version 5.0.0)
 - [FastQC] (version: 0.11.9)
-- [Deeptrio] (version: 1.2.0)
-- [Deepvariant] (version: 1.1.0)
+- [Deeptrio] (version: 1.4.0)
+- [Deepvariant] (version: 1.4.0)
 - [Delly] (version 0.8.7)
 - [GATK] (version: 3.8.1 and 4.2.2.0)
 - [GENMOD] (version: 3.7.3)
@@ -58,10 +58,10 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Htslib] (version: 1.13)
 - [Manta] (version: 1.6.0)
 - [Megafusion] (version: 66a3a80)
-- [MultiQC] (version: v1.11)
+- [MultiQC] (version: v1.12)
 - [Pdfmerger] (version: 1.0)
 - [Peddy] (version: 0.4.3)
-- [PicardTools] (version: 2.25.0)
+- [PicardTools] (version: 2.27.2)
 - [PLINK] (version: 1.90b3x35)
 - [Preseq] (version: 3.1.2)
 - [Rhocall] (version: 0.5.1)
@@ -69,9 +69,9 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [rtg-tools] (version: 3.12)
 - [Salmon] (version: 1.4.0)
 - [Sambamba] (version: 0.6.8)
-- [Samtools] (version: 1.11)
+- [Samtools] (version: 1.15.1)
 - [SMNCopyNumberCaller] (version: v1.1.1)
-- [STAR-Fusion] (version: 1.10.1)
+- [STAR-Fusion] (version: 1.11.0)
 - [STAR] (version: 2.7.8a)
 - [Stranger] (version: 0.8.0)
 - [StringTie] (version: 2.1.3b)
@@ -82,7 +82,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Varg] (version: 1.2.0)
 - [Vcf2cytosure] (version: 0.5.1)
 - [Vcfanno] (version: 0.3.2)
-- [VEP] (version: 104.3) with plugin "ExACpLI", "MaxEntScan, LoFtool", "SpliceAI"
+- [VEP] (version: 107.0) with plugin "pLI", "MaxEntScan, LoFtool", "SpliceAI"
 
 The version number after the software name are tested for compatibility with MIP.
 

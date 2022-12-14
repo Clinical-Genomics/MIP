@@ -228,6 +228,12 @@ sv_svdb_query_db_files:
   is_reference: 1
   reference: reference_dir
   type: path
+sv_svdb_query_overlap:
+  associated_recipe:
+    - sv_annotate
+  data_type: SCALAR
+  default: 0.5
+  type: recipe_argument
 sv_vcfanno_config:
   associated_recipe:
     - sv_annotate
