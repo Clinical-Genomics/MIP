@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [11.1.1]
+
+- Updates chromgraph to version 1.3.1
+- Added vcfanno config version 1.18 to the download config
+
 ## [11.1.0]
 
 - Save raw files from ExpansionHunter
