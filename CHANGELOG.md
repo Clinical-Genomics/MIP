@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## Develop
+
+Updates expansionhunter variant catalog
+
 ## [11.1.1]
 
 - Updates chromgraph to version 1.3.1
