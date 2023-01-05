@@ -194,7 +194,7 @@ recipe_memory:
     picardtools_mergesamfiles: 5
     preseq_ar: 8
     rseqc: 40
-    salmon_quant: 2
+    salmon_quant: 4
     star_aln: 5
     star_fusion: 25
     stringtie_ar: 2
