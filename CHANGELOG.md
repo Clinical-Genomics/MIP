@@ -5,7 +5,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Develop
 
+Updates expansionhunter variant catalog
 Changes sv annotation overlap back to 0.8 (from 0.5) with the new tiddit update
+
 ### Tools
 
 Tiddit 3.3.2 -> 3.4.0
