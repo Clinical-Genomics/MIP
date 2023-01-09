@@ -125,7 +125,7 @@ container:
   mip:
     executable:
       mip:
-    uri: docker.io/clinicalgenomics/mip:v11.1.1
+    uri: docker.io/clinicalgenomics/mip:develop
   multiqc:
     executable:
       multiqc:
@@ -221,7 +221,7 @@ container:
   tiddit:
     executable:
       tiddit:
-    uri: quay.io/biocontainers/tiddit:3.3.2--py39h5094d80_0
+    uri: quay.io/biocontainers/tiddit:3.4.0--py310hc2b7f4b_0
   trim-galore:
     executable:
       trim_galore:
