@@ -191,7 +191,7 @@ recipe_memory:
     merge_fusion_reports: 8
     multiqc_ar: 10
     picardtools_collectrnaseqmetrics: 10
-    picardtools_mergesamfiles: 5
+    picardtools_mergesamfiles: 8
     preseq_ar: 8
     rseqc: 40
     salmon_quant: 4
