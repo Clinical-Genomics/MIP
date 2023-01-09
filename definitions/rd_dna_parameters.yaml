@@ -1001,7 +1001,7 @@ sv_svdb_query_overlap:
   associated_recipe:
     - sv_annotate
   data_type: SCALAR
-  default: 0.5
+  default: 0.8
   type: recipe_argument
 sv_vcfanno_config:
   associated_recipe:
