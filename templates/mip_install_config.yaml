@@ -121,7 +121,7 @@ container:
   megafusion:
     executable:
       MegaFusion.py: "python /opt/conda/share/MegaFusion/MegaFusion.py"
-    uri: docker.io/clinicalgenomics/megafusion:66a3a80
+    uri: docker.io/clinicalgenomics/megafusion:d3feacf
   mip:
     executable:
       mip:
