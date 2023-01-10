@@ -8,10 +8,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Increased memory allocation for salmon and picardtools_mergersamfiles (RNA)
 - Updates expansionhunter variant catalog
 - Changes sv annotation overlap back to 0.8 (from 0.5) with the new tiddit update
+- New version of MegaFusion. A bug in the previous version prevented SVDB from writing the format and sample field in the vcf.
 
 ### Tools
 
-Tiddit 3.3.2 -> 3.4.0
+- Tiddit 3.3.2 -> 3.4.0
+- MegaFusion 66a3a80 -> d3feacf
 
 ## [11.1.1]
 
