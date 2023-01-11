@@ -146,7 +146,7 @@ recipe_time:
     dna_vcf_reformat: 1
     fastqc_ar: 1
     fusion_report: 8
-    gatk_asereadcounter: 3
+    gatk_asereadcounter: 8
     gatk_baserecalibration: 5
     gatk_haplotypecaller: 12
     gatk_splitncigarreads: 16

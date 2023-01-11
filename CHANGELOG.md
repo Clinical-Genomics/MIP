@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Changes sv annotation overlap back to 0.8 (from 0.5) with the new tiddit update
 - New version of MegaFusion. A bug in the previous version prevented SVDB from writing the format and sample field in the vcf.
 - Remove the RSeQC read duplication analysis as it often fails.
+- Increased run time allocation for gatk_asereadcounter.
 
 ### Tools
 
