@@ -301,6 +301,13 @@ trim_galore_ar:
   program_executables:
     - trim_galore
   type: recipe
+trim_min_length:
+  associated_recipe:
+    - trim_galore_ar
+  data_type: SCALAR
+  default: 40
+  mandatory: no
+  type: recipe_argument
 ## Salmon
 salmon_quant:
   analysis_mode: sample

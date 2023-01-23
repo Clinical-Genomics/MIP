@@ -278,6 +278,7 @@ sub analysis_trim_galore {
                 cores            => $process_core_number,
                 filehandle       => $filehandle,
                 infile_paths_ref => \@fastq_files,
+                length           => $active_parameter_href->{trim_min_length},
                 outdir_path      => $outsample_directory,
                 paired_reads     => $paired_reads,
                 stderrfile_path  => $stderrfile_path,

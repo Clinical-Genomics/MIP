@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - New version of MegaFusion. A bug in the previous version prevented SVDB from writing the format and sample field in the vcf.
 - Remove the RSeQC read duplication analysis as it often fails.
 - Increased run time allocation for gatk_asereadcounter.
+- Increased the default required length for a trimmed rna read to be retained from 20 bp to 40 bp. Configurable via CLI or config.
 
 ### Tools
 
