@@ -794,7 +794,7 @@ reference_feature:
         file_index: gnomad_v2.1_sv.sites.vcf.gz.tbi
         outfile: grch37_gnomad.genomes_-r2.1_sv-.vcf.gz
         outfile_index: grch37_gnomad.genomes_-r2.1_sv-.vcf.gz.tbi
-        url_prefix: https://storage.googleapis.com/gcp-public-data--gnomad/papers/2019-sv/gnomad_v2.1_sv.sites.vcf.gz
+        url_prefix: https://storage.googleapis.com/gcp-public-data--gnomad/papers/2019-sv/
     grch38:
       r2.1.1:
         file: gnomad.genomes.r2.1.1.sites.liftover_grch38.vcf.bgz
