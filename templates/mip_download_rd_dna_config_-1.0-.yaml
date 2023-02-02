@@ -91,7 +91,7 @@ reference:
   gnomad:
     - r2.0.1
     - r2.1.1
-    - r2.1.1_sv
+    - r2.1_sv
   gnomad_chrsplit:
     - r3.1.1
     - r3.1.2
@@ -789,12 +789,12 @@ reference_feature:
         outfile: grch37_gnomad.genomes_-r2.1.1-.vcf.gz
         outfile_index: grch37_gnomad.genomes_-r2.1.1-.vcf.gz.tbi
         url_prefix: https://storage.googleapis.com/gnomad-public/release/2.1.1/vcf/genomes/
-      r2.1.1_sv:
-        file: gnomad_v2_sv.sites.vcf.gz
-        file_index: gnomad_v2_sv.sites.vcf.gz.tbi
-        outfile: grch37_gnomad.genomes_-r2.1.1_sv-.vcf.gz
-        outfile_index: grch37_gnomad.genomes_-r2.1.1_sv-.vcf.gz.tbi
-        url_prefix: https://storage.googleapis.com/gnomad-public/papers/2019-sv/
+      r2.1_sv:
+        file: gnomad_v2.1_sv.sites.vcf.gz
+        file_index: gnomad_v2.1_sv.sites.vcf.gz.tbi
+        outfile: grch37_gnomad.genomes_-r2.1_sv-.vcf.gz
+        outfile_index: grch37_gnomad.genomes_-r2.1_sv-.vcf.gz.tbi
+        url_prefix: https://storage.googleapis.com/gcp-public-data--gnomad/papers/2019-sv/gnomad_v2.1_sv.sites.vcf.gz
     grch38:
       r2.1.1:
         file: gnomad.genomes.r2.1.1.sites.liftover_grch38.vcf.bgz

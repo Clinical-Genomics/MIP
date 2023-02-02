@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Remove the RSeQC read duplication analysis as it often fails.
 - Increased run time allocation for gatk_asereadcounter.
 - Increased the default required length for a trimmed rna read to be retained from 20 bp to 40 bp. Configurable via CLI or config.
+- Fixed a bug where gnomad SV version 2.0 instead of version 2.1 was used to annotate SVs
 
 ### Tools
 
