@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [11.1.2]
+
+- Fixed a bug in the mitochondrial deletion recipe affecting samples with 0 intermediate discordant MT reads.
+
 ## [11.1.1]
 
 - Updates chromgraph to version 1.3.1

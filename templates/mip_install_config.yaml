@@ -125,7 +125,7 @@ container:
   mip:
     executable:
       mip:
-    uri: docker.io/clinicalgenomics/mip:v11.1.1
+    uri: docker.io/clinicalgenomics/mip:v11.1.2
   multiqc:
     executable:
       multiqc:

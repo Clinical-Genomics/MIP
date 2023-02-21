@@ -230,14 +230,17 @@ sub analysis_mitodel {
 
     my $awk_statement =
 
+      # Set start value for intermediate discordant
+      q?BEGIN {sum=0} ?
+
       # identification of read pairs that are separated by >1.2 kb but <15 kb
-      q?($2>=1200 && $2<=15000) {sum=sum+$3}?
+      . q?($2>=1200 && $2<=15000) {sum=sum+$3} ?
 
       # identification of normal read pairs which are <1.2 kb but >15 kb
-      . q?($2<1200 || $2>15000) {sum_norm=sum_norm+$3}?
+      . q?($2<1200 || $2>15000) {sum_norm=sum_norm+$3} ?
 
       # Add end rule
-      . q?END?
+      . q?END ?
 
       # ratio of discordant to normal read pairs
       . q?{print "intermediate discordant ", sum, "normal ", sum_norm, "ratio ppk", sum*1000/(sum_norm+sum)}?;
