@@ -20,6 +20,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Tiddit 3.3.2 -> 3.4.0
 - MegaFusion 66a3a80 -> d3feacf
 
+### Databases
+
+clinvar: 20220829 -> 20230218
+loqusdb snapshot: 20230208 -> 20230214
+
 ## [11.1.1]
 
 - Updates chromgraph to version 1.3.1
@@ -69,7 +74,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - dbnsfp: 4.1a -> 4.3a (grch38 only)
 - gnomad: r3.1.1 -> r3.1.2 (grch38 only)
 - giab: 3.3.2 -> 4.2.1
-- loqusdb dump: 20210921 -> 20220905
+- loqusdb dump: 20210921 -> c
 - nist: v3.3.2 -> v4.2.1
 - vcf2cytosure blacklist: 200520
 
