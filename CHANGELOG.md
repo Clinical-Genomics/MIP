@@ -13,7 +13,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Increased run time allocation for gatk_asereadcounter.
 - Increased the default required length for a trimmed rna read to be retained from 20 bp to 40 bp. Configurable via CLI or config.
 - Fixed a bug where gnomad SV version 2.0 instead of version 2.1 was used to annotate SVs
-- Fixed a bug in the mitochondrial deletion recipe affecting samples with 0 intermediate discordant MT reads
 
 ### Tools
 
@@ -25,6 +24,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 clinvar: 20220829 -> 20230218
 loqusdb snapshot: 20230208 -> 20230214
 hmtvar: oct2022
+
+## [11.1.2]
+
+- Fixed a bug in the mitochondrial deletion recipe affecting samples with 0 intermediate discordant MT reads.
 
 ## [11.1.1]
 
