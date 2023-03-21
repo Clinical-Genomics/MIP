@@ -13,12 +13,21 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Increased run time allocation for gatk_asereadcounter.
 - Increased the default required length for a trimmed rna read to be retained from 20 bp to 40 bp. Configurable via CLI or config.
 - Fixed a bug where gnomad SV version 2.0 instead of version 2.1 was used to annotate SVs
+- One-pass instead of two-pass mapping with STAR-Fusion, as recommended for STAR-Fusion 1.12
 
 ### Tools
 
-- Tiddit 3.3.2 -> 3.4.0
+- Arriba 2.3.0 -> 2.4.0
+- DeepVariant 1.4.0 -> 1.5.0
+- FastQC: 0.11.9 -> 0.12.1
+- GATK: 4.2.6.1 -> 4.4.0.0
+- Gffcompare 0.11.2 -> 0.12.6
+- Htslib 1.15.1 -> 1.16
 - MegaFusion 66a3a80 -> d3feacf
-
+- Picard 2.27.2 -> 2.27.5
+- STAR-Fusion 1.11.0 -> 1.12.0
+- SVDB: 2.7.0 -> 2.8.1
+- Tiddit 3.3.2 -> 3.4.0
 ### Databases
 
 clinvar: 20220829 -> 20230218
