@@ -146,7 +146,7 @@ recipe_time:
     dna_vcf_reformat: 1
     fastqc_ar: 1
     fusion_report: 8
-    gatk_asereadcounter: 3
+    gatk_asereadcounter: 8
     gatk_baserecalibration: 5
     gatk_haplotypecaller: 12
     gatk_splitncigarreads: 16
@@ -301,6 +301,13 @@ trim_galore_ar:
   program_executables:
     - trim_galore
   type: recipe
+trim_min_length:
+  associated_recipe:
+    - trim_galore_ar
+  data_type: SCALAR
+  default: 40
+  mandatory: no
+  type: recipe_argument
 ## Salmon
 salmon_quant:
   analysis_mode: sample
