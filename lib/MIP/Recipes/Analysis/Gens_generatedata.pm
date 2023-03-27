@@ -253,6 +253,7 @@ sub analysis_gens_generatedata {
                     format           => q{bed},
                     id               => $sample_id,
                     path             => $outfile_path{$file_tag},
+                    path_index       => $outfile_path{$file_tag} . q{.tbi},
                     recipe_name      => $recipe_name,
                     sample_info_href => $sample_info_href,
                     tag              => $file_tag,
