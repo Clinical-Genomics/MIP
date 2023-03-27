@@ -34,6 +34,10 @@ clinvar: 20220829 -> 20230218
 loqusdb snapshot: 20230208 -> 20230214
 hmtvar: oct2022
 
+## [11.1.3]
+
+- Adds Gens' bed index file to deliverables
+
 ## [11.1.2]
 
 - Fixed a bug in the mitochondrial deletion recipe affecting samples with 0 intermediate discordant MT reads.
