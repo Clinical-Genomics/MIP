@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $CONTAINER_MANAGER $EQUALS $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $DOT $LOG_NAME $NEWLINE };
 
 BEGIN {
 
@@ -41,6 +41,7 @@ sub analysis_retroseq {
 ##          : $recipe_name             => Recipe name
 ##          : $sample_id               => Sample id
 ##          : $sample_info_href        => Info on samples and case hash {REF}
+##          : $temp_directory          => Temporary directory
 
     my ($arg_href) = @_;
 
@@ -56,6 +57,7 @@ sub analysis_retroseq {
     ## Default(s)
     my $case_id;
     my $profile_base_command;
+    my $temp_directory;
 
     my $tmpl = {
         active_parameter_href => {
@@ -115,19 +117,24 @@ sub analysis_retroseq {
             store       => \$sample_info_href,
             strict_type => 1,
         },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Bcftools qw{ bcftools_sort };
     use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
+    use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Program::Retroseq qw{ retroseq_call retroseq_discover };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
-
-    ### PREPROCESSING:
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger($LOG_NAME);
@@ -141,6 +148,7 @@ sub analysis_retroseq {
             parameter_href => $parameter_href,
             recipe_name    => $recipe_name,
             stream         => q{in},
+            temp_directory => $temp_directory,
         }
     );
 
@@ -170,6 +178,7 @@ sub analysis_retroseq {
                 outdata_dir            => $active_parameter_href->{outdata_dir},
                 parameter_href         => $parameter_href,
                 recipe_name            => $recipe_name,
+                temp_directory         => $temp_directory,
             }
         )
     );
@@ -237,13 +246,36 @@ sub analysis_retroseq {
     say {$filehandle} $NEWLINE;
 
     say {$filehandle} q{## Call mobile elements};
+    my $call_outfile_path = $outfile_path_prefix . q{_call.vcf};
     retroseq_call(
         {
             filehandle           => $filehandle,
             infile_path          => $infile_path,
             retroseq_bed_path    => $discover_outfile_path,
-            outfile_path         => $outfile_path,
+            outfile_path         => $call_outfile_path,
             reference_fasta_path => $active_parameter_href->{human_genome_reference},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    my $sort_memory = $recipe{memory} - 2;
+    bcftools_sort(
+        {
+            filehandle     => $filehandle,
+            infile_path    => $call_outfile_path,
+            max_mem        => $sort_memory . q{G},
+            outfile_path   => $outfile_path,
+            output_type    => q{z},
+            temp_directory => catdir( $temp_directory, q{bcftools_sort} ),
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    htslib_tabix(
+        {
+            filehandle  => $filehandle,
+            infile_path => $outfile_path,
+            preset      => q{vcf},
         }
     );
     say {$filehandle} $NEWLINE;
@@ -260,6 +292,17 @@ sub analysis_retroseq {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{vcf},
+                id               => $sample_id,
+                path             => $outfile_path,
+                path_index       => $outfile_path . $DOT . q{tbi},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );

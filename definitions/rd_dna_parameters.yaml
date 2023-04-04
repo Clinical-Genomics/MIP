@@ -1261,7 +1261,11 @@ retroseq:
   data_type: SCALAR
   default: 1
   file_tag: _me
-  outfile_suffix: ".vcf"
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - retroseq.pl
+    - tabix
+    - bcftools
   type: recipe
 mobile_element_reference:
   associated_recipe:
