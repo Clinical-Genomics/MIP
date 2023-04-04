@@ -131,6 +131,7 @@ sub analysis_retroseq {
     use MIP::Program::Bcftools qw{ bcftools_sort };
     use MIP::Program::Gnu::Coreutils qw{ gnu_echo };
     use MIP::Program::Htslib qw{ htslib_tabix };
+    use MIP::Program::Picardtools qw{ picardtools_updatevcfsequencedictionary };
     use MIP::Program::Retroseq qw{ retroseq_call retroseq_discover };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
@@ -258,11 +259,24 @@ sub analysis_retroseq {
     );
     say {$filehandle} $NEWLINE;
 
+    say {$filehandle} q{## Cleaning up the vcf};
+    my $picardtools_outfile_path = $outfile_path_prefix . q{_header_fix.vcf};
+    picardtools_updatevcfsequencedictionary(
+        {
+            filehandle   => $filehandle,
+            infile_path  => $discover_outfile_path,
+            java_jar     => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
+            outfile_path => $picardtools_outfile_path,
+            sequence_dictionary => $infile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
     my $sort_memory = $recipe{memory} - 2;
     bcftools_sort(
         {
             filehandle     => $filehandle,
-            infile_path    => $call_outfile_path,
+            infile_path    => $picardtools_outfile_path,
             max_mem        => $sort_memory . q{G},
             outfile_path   => $outfile_path,
             output_type    => q{z},

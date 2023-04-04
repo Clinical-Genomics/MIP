@@ -408,6 +408,7 @@ picardtools_path:
     - markduplicates
     - picardtools_collecthsmetrics
     - picardtools_collectmultiplemetrics
+    - retroseq
     - sv_reformat
   data_type: SCALAR
   type: path
@@ -1263,9 +1264,10 @@ retroseq:
   file_tag: _me
   outfile_suffix: ".vcf.gz"
   program_executables:
+    - bcftools
+    - picard
     - retroseq.pl
     - tabix
-    - bcftools
   type: recipe
 mobile_element_reference:
   associated_recipe:
