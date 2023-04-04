@@ -34,9 +34,10 @@ sub retroseq_call {
 
 ## Function : Perl wrapper for Retroseq version 1.5 mobile element detector
 ## Returns  : @commands
-## Arguments: $filehandle              => Filehandle to write to
+## Arguments: $call_heterozygous       => Call heterogygous insertions
+##          : $filehandle              => Filehandle to write to
 ##          : $infile_path             => Path to input bam file
-##          : $outputfile_path         => Path to the output file
+##          : $outfile_path            => Path to the output file
 ##          : $reference_fasta_path    => Reference genome path
 ##          : $retroseq_bed_path       => Path to the retroseq discover bedfile
 ##          : $stderrfile_path         => Stderrfile path
@@ -46,9 +47,10 @@ sub retroseq_call {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $call_heterozygous;
     my $filehandle;
     my $infile_path;
-    my $outputfile_path;
+    my $outfile_path;
     my $reference_fasta_path;
     my $retroseq_bed_path;
     my $stderrfile_path;
@@ -56,6 +58,11 @@ sub retroseq_call {
     my $stdoutfile_path;
 
     my $tmpl = {
+        call_heterozygous => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$call_heterozygous,
+            strict_type => 1,
+        },
         filehandle => {
             store => \$filehandle,
         },
@@ -65,10 +72,10 @@ sub retroseq_call {
             store       => \$infile_path,
             strict_type => 1,
         },
-        outputfile_path => {
+        outfile_path => {
             defined     => 1,
             required    => 1,
-            store       => \$outputfile_path,
+            store       => \$outfile_path,
             strict_type => 1,
         },
         reference_fasta_path => {
@@ -103,13 +110,18 @@ sub retroseq_call {
 
     push @commands, q{-call -soft};
 
+    if ($call_heterozygous) {
+
+        push @commands, q{-hets};
+    }
+
     push @commands, q{-bam} . $SPACE . $infile_path;
 
     push @commands, q{-input} . $SPACE . $retroseq_bed_path;
 
     push @commands, q{-ref} . $SPACE . $reference_fasta_path;
 
-    push @commands, q{-output} . $SPACE . $outputfile_path;
+    push @commands, q{-output} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(
@@ -138,7 +150,7 @@ sub retroseq_discover {
 ## Arguments: $filehandle              => Filehandle to write to
 ##          : $infile_path             => Path to input bam file
 ##          : $mobile_element_tsv_path => Tab separated file containing the name and path of mobile elements
-##          : $outputfile_path         => path to the output file
+##          : $outfile_path            => path to the output file
 ##          : $stderrfile_path         => Stderrfile path
 ##          : $stderrfile_path_append  => Append stderr info to file path
 ##          : $stdoutfile_path         => Stdoutfile path
@@ -149,7 +161,7 @@ sub retroseq_discover {
     my $filehandle;
     my $infile_path;
     my $mobile_element_tsv_path;
-    my $outputfile_path;
+    my $outfile_path;
     my $stderrfile_path;
     my $stderrfile_path_append;
     my $stdoutfile_path;
@@ -170,10 +182,10 @@ sub retroseq_discover {
             store       => \$mobile_element_tsv_path,
             strict_type => 1,
         },
-        outputfile_path => {
+        outfile_path => {
             defined     => 1,
             required    => 1,
-            store       => \$outputfile_path,
+            store       => \$outfile_path,
             strict_type => 1,
         },
         stderrfile_path => {
@@ -200,7 +212,7 @@ sub retroseq_discover {
 
     push @commands, q{-refTEs} . $SPACE . $mobile_element_tsv_path;
 
-    push @commands, q{-output} . $SPACE . $outputfile_path;
+    push @commands, q{-output} . $SPACE . $outfile_path;
 
     push @commands,
       unix_standard_streams(

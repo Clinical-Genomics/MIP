@@ -1157,6 +1157,24 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
+        q{retroseq} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Discover mobile elements using RetroSeq},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{mobile_element_reference} => (
+            cmd_tags      => [q{file.vcf=TE_type}],
+            documentation => q{Database file(s) for mobile element iscovery},
+            is            => q{rw},
+            isa           => HashRef,
+        )
+    );
+
+    option(
         q{gatk_haplotypecaller} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},

@@ -40,6 +40,11 @@ gatk_varianteval_dbsnp: grch38_variant_-gold_standard_dbsnp-.vcf.gz
 gatk_varianteval_gold: grch38_mills_and_1000g_-gold_standard_indels-.vcf.gz
 genmod_models_reduced_penetrance_file: grch38_cust003-cmms-red-pen_-2017_FAKE-.tsv
 human_genome_reference: grch38_homo_sapiens_-assembly-.fasta
+mobile_element_reference:
+  grch38_g1k_alu.bed: ALU
+  grch38_g1k_l1.bed: L1
+  grch38_g1k_herv.bed: HERV
+  grch38_g1k_sva.bed: SVA
 nist_call_set_bed:
   3.3.2:
     NA12878: grch38_nist_hg001_-na12878_v3.3.2-.bed

@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [11.2.0]
+
+- Adds retroseq for mobile element detection
+
+### Tools
+
+- RetroSeq: 9d4f3b5
+
 ## [11.1.3]
 
 - Adds Gens' bed index file to deliverables

@@ -128,9 +128,9 @@ sub parse_rd_dna {
     ## Constants
     Readonly my @MIP_VEP_PLUGINS                 => qw{ sv_vep_plugin vep_plugin };
     Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES => qw{ cnvnator_ar delly_reformat tiddit };
-    Readonly my @ONLY_WGS_RECIPIES               =>
+    Readonly my @ONLY_WGS_RECIPIES =>
       qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter
-      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata mitodel
+      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata mitodel retroseq
       samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
@@ -491,6 +491,7 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_prepareforvariantannotationblock };
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
+    use MIP::Recipes::Analysis::Retroseq qw{ analysis_retroseq };
     use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate analysis_rhocall_viz };
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
@@ -581,7 +582,7 @@ sub pipeline_analyse_rd_dna {
         gatk_variantevalall         => \&analysis_gatk_variantevalall,
         gatk_variantevalexome       => \&analysis_gatk_variantevalexome,
         gatk_variantrecalibration   => undef,    # Depends on analysis type and/or number of samples
-        gens_generatedata           => \&analysis_gens_generatedata,
+        gens_generatedata                  => \&analysis_gens_generatedata,
         glnexus_merge                      => \&analysis_glnexus,
         gzip_fastq                         => \&analysis_gzip_fastq,
         manta                              => \&analysis_manta,
@@ -596,6 +597,7 @@ sub pipeline_analyse_rd_dna {
         prepareforvariantannotationblock   => \&analysis_prepareforvariantannotationblock,
         qccollect_ar                       => \&analysis_mip_qccollect,
         rankvariant               => undef,                             # Depends on sample features
+        retroseq                  => \&analysis_retroseq,
         rhocall_ar                => \&analysis_rhocall_annotate,
         rhocall_viz               => \&analysis_rhocall_viz,
         rtg_vcfeval               => \&analysis_rtg_vcfeval,

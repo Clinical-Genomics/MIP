@@ -125,7 +125,7 @@ container:
   mip:
     executable:
       mip:
-    uri: docker.io/clinicalgenomics/mip:v11.1.3
+    uri: docker.io/clinicalgenomics/mip:v11.2.0
   multiqc:
     executable:
       multiqc:
@@ -154,6 +154,10 @@ container:
     executable:
       preseq:
     uri: docker.io/clinicalgenomics/preseq:3.1.2
+  retroseq:
+    executable:
+      retroseq: "perl /opt/conda/share/RetroSeq/bin/retroseq.pl"
+    uri: docker.io/clinicalgenomics/retroseq:1.5_9d4f3b5
   rhocall:
     executable:
       rhocall:

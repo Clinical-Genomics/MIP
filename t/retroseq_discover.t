@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Retroseq} => [qw{ retroseq_discover }],
-);
+    my %perl_module = ( q{MIP::Program::Retroseq} => [qw{ retroseq_discover }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -82,7 +79,7 @@ my %required_argument = (
         input           => q{input.tab},
         expected_output => q{-refTEs} . $SPACE . q{input.tab},
     },
-    outputfile_path => {
+    outfile_path => {
         input           => q{HappyKangaroo.bed},
         expected_output => q{-output} . $SPACE . q{HappyKangaroo.bed},
     },
@@ -98,7 +95,7 @@ my %specific_argument = (
         input           => q{input.tab},
         expected_output => q{-refTEs} . $SPACE . q{input.tab},
     },
-    outputfile_path => {
+    outfile_path => {
         input           => q{HappyKangaroo.bed},
         expected_output => q{-output} . $SPACE . q{HappyKangaroo.bed},
     },

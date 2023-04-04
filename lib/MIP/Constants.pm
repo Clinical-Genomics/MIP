@@ -82,7 +82,7 @@ Readonly our %ANALYSIS => (
 );
 
 ## Set MIP version
-Readonly our $MIP_VERSION => q{11.1.3};
+Readonly our $MIP_VERSION => q{11.2.0};
 
 ## Cli
 Readonly our $MOOSEX_APP_SCEEN_WIDTH => 160;
