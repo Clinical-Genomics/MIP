@@ -28,4 +28,3 @@ WORKDIR /opt/conda/share/RetroSeq
 ## Make sure we're on the right commit and remove samtools check
 RUN git reset --hard 9d4f3b5 && \
     sed -i '/RetroSeq::Utilities::checkBinary( q\[samtools\].*/d' ./bin/retroseq.pl
-

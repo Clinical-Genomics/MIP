@@ -91,10 +91,6 @@ my %required_argument = (
 );
 
 my %specific_argument = (
-    call_heterozygous => {
-        input           => 1,
-        expected_output => q{-hets},
-    },
     infile_path => {
         input           => q{infile_path},
         expected_output => q{-bam infile_path},

@@ -239,7 +239,6 @@ sub analysis_retroseq {
     say {$filehandle} q{## Call mobile elements};
     retroseq_call(
         {
-            call_heterozygous    => 1,
             filehandle           => $filehandle,
             infile_path          => $infile_path,
             retroseq_bed_path    => $discover_outfile_path,

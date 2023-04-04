@@ -34,8 +34,7 @@ sub retroseq_call {
 
 ## Function : Perl wrapper for Retroseq version 1.5 mobile element detector
 ## Returns  : @commands
-## Arguments: $call_heterozygous       => Call heterogygous insertions
-##          : $filehandle              => Filehandle to write to
+## Arguments: $filehandle              => Filehandle to write to
 ##          : $infile_path             => Path to input bam file
 ##          : $outfile_path            => Path to the output file
 ##          : $reference_fasta_path    => Reference genome path
@@ -47,7 +46,6 @@ sub retroseq_call {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $call_heterozygous;
     my $filehandle;
     my $infile_path;
     my $outfile_path;
@@ -58,11 +56,6 @@ sub retroseq_call {
     my $stdoutfile_path;
 
     my $tmpl = {
-        call_heterozygous => {
-            allow       => [ undef, 0, 1 ],
-            store       => \$call_heterozygous,
-            strict_type => 1,
-        },
         filehandle => {
             store => \$filehandle,
         },
@@ -109,11 +102,6 @@ sub retroseq_call {
     my @commands = ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), );
 
     push @commands, q{-call -soft};
-
-    if ($call_heterozygous) {
-
-        push @commands, q{-hets};
-    }
 
     push @commands, q{-bam} . $SPACE . $infile_path;
 
