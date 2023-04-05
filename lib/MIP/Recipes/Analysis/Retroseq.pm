@@ -134,7 +134,7 @@ sub analysis_retroseq {
     use MIP::Program::Picardtools qw{ picardtools_updatevcfsequencedictionary };
     use MIP::Program::Retroseq qw{ retroseq_call retroseq_discover };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ## Retrieve logger object
@@ -306,17 +306,6 @@ sub analysis_retroseq {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        set_file_path_to_store(
-            {
-                format           => q{vcf},
-                id               => $sample_id,
-                path             => $outfile_path,
-                path_index       => $outfile_path . $DOT . q{tbi},
-                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
