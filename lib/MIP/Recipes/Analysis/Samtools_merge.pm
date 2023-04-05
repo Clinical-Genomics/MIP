@@ -463,7 +463,8 @@ sub analysis_samtools_merge_panel {
 
     use MIP::File_info qw{ get_io_files parse_io_outfiles set_merged_infile_prefix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Samtools qw{ samtools_merge samtools_view };
+    use MIP::Program::Gnu::Coreutils qw{ gnu_cp };
+    use MIP::Program::Samtools qw{ samtools_merge samtools_index };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
@@ -576,7 +577,6 @@ sub analysis_samtools_merge_panel {
     ## More than one file - we have something to merge
     if ( scalar @infile_paths > 1 ) {
 
-        ## Samtools_merge
         say {$filehandle} q{## Merging alignment files};
         samtools_merge(
             {
@@ -586,7 +586,7 @@ sub analysis_samtools_merge_panel {
                 outfile_path       => $outfile_path,
                 output_format      => q{bam},
                 referencefile_path => ${active_parameter_href}->{human_genome_reference},
-                thread_number      => 2,
+                thread_number      => $core_number - 1,
                 write_index        => 1,
             }
         );
@@ -596,13 +596,20 @@ sub analysis_samtools_merge_panel {
         ## Only 1 infile - rename sample and index instead of merge to streamline handling of filenames downstream
 
         say {$filehandle} q{## Only one infile, rename to streamline handling of files downstream};
-        samtools_view(
+        gnu_cp(
             {
-                filehandle    => $filehandle,
-                infile_path   => $infile_paths[0],
-                outfile_path  => $outfile_path,
-                output_format => q{bam},
-                write_index   => 1,
+                filehandle   => $filehandle,
+                infile_path  => $infile_paths[0],
+                outfile_path => $outfile_path,
+            }
+        );
+        say {$filehandle} $NEWLINE;
+
+        samtools_index(
+            {
+                bai_format  => 1,
+                filehandle  => $filehandle,
+                infile_path => $outfile_path,
             }
         );
         say {$filehandle} $NEWLINE;
