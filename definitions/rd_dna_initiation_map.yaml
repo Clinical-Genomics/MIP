@@ -52,6 +52,7 @@ CHAIN_ALL:
     - CHAIN_MOBILE_ELEMENTS:
       - me_merge_bam
       - retroseq
+      - me_merge_vcfs
   - CHAIN_MAIN:
     # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
     - PARALLEL:

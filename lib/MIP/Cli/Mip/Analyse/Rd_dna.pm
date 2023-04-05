@@ -1175,6 +1175,15 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
+        q{me_merge_vcfs} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Merge sample vcfs from RetroSeq},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{mobile_element_reference} => (
             cmd_tags      => [q{file.vcf=TE_type}],
             documentation => q{Database file(s) for mobile element iscovery},

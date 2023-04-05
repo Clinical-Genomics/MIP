@@ -227,6 +227,7 @@ recipe_core_number:
     manta: 36
     markduplicates: 13
     me_merge_bam: 5
+    me_merge_vcfs: 2
     mitodel: 1
     mt_annotation: 1
     multiqc_ar: 1
@@ -359,6 +360,7 @@ recipe_time:
     manta: 30
     markduplicates: 20
     me_merge_bam: 5
+    me_merge_vcfs: 2
     mitodel: 2
     mt_annotation: 1
     multiqc_ar: 5
@@ -1289,6 +1291,19 @@ mobile_element_reference:
   is_reference: 1
   reference: reference_dir
   type: path
+me_merge_vcfs:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _me
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - bgzip
+    - svdb
+    - tabix
+  type: recipe
 ## GATK CollectReadCounts
 gatk_collectreadcounts:
   analysis_mode: sample
