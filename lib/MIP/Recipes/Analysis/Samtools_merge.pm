@@ -480,7 +480,7 @@ sub analysis_samtools_merge_panel {
     ## Special case for mobile elements
     my $stream_for_input      = q{in};
     my $recipe_name_for_input = $recipe_name;
-    if ( $recipe_name eq q{merge_bam_me} ) {
+    if ( $recipe_name eq q{me_merge_bam} ) {
 
         $recipe_name_for_input = $active_parameter_href->{bwa_mem2} ? q{bwa_mem2} : q{bwa_mem};
         $stream_for_input      = q{out};

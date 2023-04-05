@@ -130,7 +130,7 @@ sub parse_rd_dna {
     Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES => qw{ cnvnator_ar delly_reformat tiddit };
     Readonly my @ONLY_WGS_RECIPIES =>
       qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter
-      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata merge_bam_me mitodel
+      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata me_merge_bam mitodel
       retroseq samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
@@ -588,7 +588,7 @@ sub pipeline_analyse_rd_dna {
         gzip_fastq                         => \&analysis_gzip_fastq,
         manta                              => \&analysis_manta,
         markduplicates                     => \&analysis_markduplicates,
-        merge_bam_me                       => \&analysis_samtools_merge_panel,
+        me_merge_bam                       => \&analysis_samtools_merge_panel,
         mitodel                            => \&analysis_mitodel,
         mt_annotation                      => \&analysis_mt_annotation,
         multiqc_ar                         => \&analysis_multiqc,

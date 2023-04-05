@@ -1157,7 +1157,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{merge_bam_me} => (
+        q{me_merge_bam} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Prepare bam files for RetroSeq},
             is            => q{rw},
