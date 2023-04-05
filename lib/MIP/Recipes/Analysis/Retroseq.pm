@@ -264,7 +264,7 @@ sub analysis_retroseq {
     picardtools_updatevcfsequencedictionary(
         {
             filehandle   => $filehandle,
-            infile_path  => $discover_outfile_path,
+            infile_path  => $call_outfile_path,
             java_jar     => catfile( $active_parameter_href->{picardtools_path}, q{picard.jar} ),
             outfile_path => $picardtools_outfile_path,
             sequence_dictionary => $infile_path,
