@@ -226,6 +226,7 @@ recipe_core_number:
     gzip_fastq: 0
     manta: 36
     markduplicates: 13
+    merge_bam_me: 5
     mitodel: 1
     mt_annotation: 1
     multiqc_ar: 1
@@ -357,6 +358,7 @@ recipe_time:
     gzip_fastq: 2
     manta: 30
     markduplicates: 20
+    merge_bam_me: 5
     mitodel: 2
     mt_annotation: 1
     multiqc_ar: 5
@@ -1255,6 +1257,17 @@ sv_reformat_remove_genes_file:
   reference: reference_dir
   type: path
 ## Mobile elenment chain
+merge_bam_me:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: "_all"
+  program_executables:
+    - samtools
+  outfile_suffix: ".bam"
+  type: recipe
 retroseq:
   analysis_mode: sample
   associated_recipe:

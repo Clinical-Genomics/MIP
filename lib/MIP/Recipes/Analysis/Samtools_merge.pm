@@ -475,16 +475,26 @@ sub analysis_samtools_merge_panel {
 
     ## Unpack parameters
     ## Get the io infiles per chain and id
+
+    ## Special case for mobile elements
+    my $stream_for_input      = q{in};
+    my $recipe_name_for_input = $recipe_name;
+    if ( $recipe_name eq q{merge_bam_me} ) {
+
+        $recipe_name_for_input = $active_parameter_href->{bwa_mem2} ? q{bwa_mem2} : q{bwa_mem};
+        $stream_for_input      = q{out};
+    }
+
     my %io = get_io_files(
         {
             id             => $sample_id,
             file_info_href => $file_info_href,
             parameter_href => $parameter_href,
-            recipe_name    => $recipe_name,
-            stream         => q{in},
+            recipe_name    => $recipe_name_for_input,
+            stream         => $stream_for_input,
         }
     );
-    my @infile_paths = @{ $io{in}{file_paths} };
+    my @infile_paths = @{ $io{$stream_for_input}{file_paths} };
 
     my %recipe = parse_recipe_prerequisites(
         {

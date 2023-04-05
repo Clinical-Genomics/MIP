@@ -50,6 +50,7 @@ CHAIN_ALL:
       - sv_reformat
       - vcf2cytosure_ar
     - CHAIN_MOBILE_ELEMENTS:
+      - merge_bam_me
       - retroseq
   - CHAIN_MAIN:
     # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
