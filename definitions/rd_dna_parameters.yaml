@@ -1304,6 +1304,18 @@ me_merge_vcfs:
     - svdb
     - tabix
   type: recipe
+me_merge_vcfs_overlap:
+  associated_recipe:
+    - me_merge_vcfs
+  data_type: SCALAR
+  default: 0.5
+  type: recipe_argument
+me_merge_vcfs_bnd_distance:
+  associated_recipe:
+    - me_merge_vcfs
+  data_type: SCALAR
+  default: 150
+  type: recipe_argument
 ## GATK CollectReadCounts
 gatk_collectreadcounts:
   analysis_mode: sample

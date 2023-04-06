@@ -193,8 +193,10 @@ sub analysis_me_merge_vcfs {
     my $svdb_merge_output = $outfile_path_prefix . q{.vcf};
     svdb_merge(
         {
+            bnd_distance     => $active_parameter_href->{me_merge_vcfs_bnd_distance},
             filehandle       => $filehandle,
             infile_paths_ref => \@me_infile_paths,
+            overlap          => $active_parameter_href->{me_merge_vcfs_overlap},
         }
     );
     print ${filehandle} $PIPE . $SPACE;

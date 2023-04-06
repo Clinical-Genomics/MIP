@@ -1184,6 +1184,24 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
+        q{me_merge_vcfs_bnd_distance} => (
+            cmd_tags      => [q{Default: 150}],
+            documentation => q{Maximum distance between two similar BNDs},
+            is            => q{rw},
+            isa           => Num,
+        )
+    );
+
+    option(
+        q{me_merge_vcfs_overlap} => (
+            cmd_tags      => [q{Default: }],
+            documentation => q{Overlap required to mege two events},
+            is            => q{rw},
+            isa           => Num,
+        )
+    );
+
+    option(
         q{mobile_element_reference} => (
             cmd_tags      => [q{file.vcf=TE_type}],
             documentation => q{Database file(s) for mobile element iscovery},
