@@ -1157,7 +1157,16 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{me_retroseq} => (
+        q{me_merge_bam} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Prepare bam files for RetroSeq},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{retroseq} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Discover mobile elements using RetroSeq},
             is            => q{rw},

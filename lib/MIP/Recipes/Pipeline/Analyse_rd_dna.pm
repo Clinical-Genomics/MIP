@@ -130,8 +130,8 @@ sub parse_rd_dna {
     Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES => qw{ cnvnator_ar delly_reformat tiddit };
     Readonly my @ONLY_WGS_RECIPIES =>
       qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter
-      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata mitodel retroseq
-      samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
+      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata me_merge_bam mitodel
+      retroseq samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
     ## Set analysis constants
@@ -496,7 +496,8 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
-    use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge };
+    use MIP::Recipes::Analysis::Samtools_merge
+      qw{ analysis_samtools_merge analysis_samtools_merge_panel };
     use MIP::Recipes::Analysis::Samtools_subsample_mt qw{ analysis_samtools_subsample_mt };
     use MIP::Recipes::Analysis::Smncopynumbercaller qw{ analysis_smncopynumbercaller };
     use MIP::Recipes::Analysis::Star_caller qw{ analysis_star_caller };
@@ -587,6 +588,7 @@ sub pipeline_analyse_rd_dna {
         gzip_fastq                         => \&analysis_gzip_fastq,
         manta                              => \&analysis_manta,
         markduplicates                     => \&analysis_markduplicates,
+        me_merge_bam                       => \&analysis_samtools_merge_panel,
         mitodel                            => \&analysis_mitodel,
         mt_annotation                      => \&analysis_mt_annotation,
         multiqc_ar                         => \&analysis_multiqc,
