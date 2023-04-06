@@ -34,10 +34,12 @@ sub svdb_merge {
 
 ## Function : Perl wrapper for writing svdb merge recipe to $filehandle or return commands array. Based on svdb 1.0.7.
 ## Returns  : @commands
-## Arguments: $filehandle             => Filehandle to write to
+## Arguments: $bnd_distance           => Maximum distance between two similar precise breakpoints
+##          : $filehandle             => Filehandle to write to
 ##          : $infile_paths_ref       => Infile path {REF}
 ##          : $notag                  => Do not add the the VARID and set entries to the info field
 ##          : $outfile_path           => Outfile path
+##          : $overlap                => Overlap required to merge two events
 ##          : $pass_only              => Only merge variants labeled PASS
 ##          : $priority               => Priority order of structural variant calls
 ##          : $same_order             => Across all input vcf files, the order of the sample columns are the same
@@ -48,10 +50,12 @@ sub svdb_merge {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $bnd_distance;
     my $filehandle;
     my $infile_paths_ref;
     my $notag;
     my $outfile_path;
+    my $overlap;
     my $pass_only;
     my $priority;
     my $same_order;
@@ -60,6 +64,11 @@ sub svdb_merge {
     my $stdoutfile_path;
 
     my $tmpl = {
+        bnd_distance => {
+            allow       => [ undef, qr/ \A \d+ \z /sxm ],
+            strict_type => 1,
+            store       => \$bnd_distance
+        },
         filehandle       => { store => \$filehandle, },
         infile_paths_ref => {
             default     => [],
@@ -70,7 +79,12 @@ sub svdb_merge {
         },
         notag        => { store => \$notag,        strict_type => 1, },
         outfile_path => { store => \$outfile_path, strict_type => 1, },
-        pass_only    => {
+        overlap      => {
+            allow       => [ undef, qr/ \A [-]? \d+ | \d+[.]\d+ \z /sxm ],
+            strict_type => 1,
+            store       => \$overlap
+        },
+        pass_only => {
             allow       => [ undef, 0, 1 ],
             store       => \$pass_only,
             strict_type => 1,
@@ -96,6 +110,18 @@ sub svdb_merge {
     my @commands =
       ( get_executable_base_command( { base_command => $BASE_COMMAND, } ), qw{ --merge } );
 
+    if ($bnd_distance) {
+
+        push @commands, q{--bnd_distance} . $SPACE . $bnd_distance;
+    }
+    if ($notag) {
+
+        push @commands, q{--notag};
+    }
+    if ($overlap) {
+
+        push @commands, q{--overlap} . $SPACE . $overlap;
+    }
     if ($pass_only) {
 
         push @commands, q{--pass_only},;
@@ -103,10 +129,6 @@ sub svdb_merge {
     if ($priority) {
 
         push @commands, q{--priority} . $SPACE . $priority;
-    }
-    if ($notag) {
-
-        push @commands, q{--notag};
     }
     if ($same_order) {
 
@@ -207,7 +229,7 @@ sub svdb_query {
         out_allele_count_tag => { strict_type => 1, store => \$out_allele_count_tag },
         out_frequency_tag    => { strict_type => 1, store => \$out_frequency_tag },
         overlap              => {
-            allow       => qr/ \A \d+ | d+[.]d+$ /sxm,
+            allow       => qr/ \A [-]? \d+ | \d+[.]\d+ \z /sxm,
             strict_type => 1,
             store       => \$overlap
         },

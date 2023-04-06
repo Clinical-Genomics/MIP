@@ -130,8 +130,8 @@ sub parse_rd_dna {
     Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES => qw{ cnvnator_ar delly_reformat tiddit };
     Readonly my @ONLY_WGS_RECIPIES =>
       qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter
-      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata me_merge_bam mitodel
-      retroseq samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
+      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata me_merge_bam me_merge_vcfs
+      mitodel retroseq samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
     ## Set analysis constants
@@ -504,6 +504,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets qw{ analysis_sv_combinevariantcallsets };
+    use MIP::Recipes::Analysis::Svdb_merge_me qw{ analysis_me_merge_vcfs };
     use MIP::Recipes::Analysis::Telomerecat qw{ analysis_telomerecat };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
     use MIP::Recipes::Analysis::Tiddit_coverage qw{ analysis_tiddit_coverage };
@@ -589,6 +590,7 @@ sub pipeline_analyse_rd_dna {
         manta                              => \&analysis_manta,
         markduplicates                     => \&analysis_markduplicates,
         me_merge_bam                       => \&analysis_samtools_merge_panel,
+        me_merge_vcfs                      => \&analysis_me_merge_vcfs,
         mitodel                            => \&analysis_mitodel,
         mt_annotation                      => \&analysis_mt_annotation,
         multiqc_ar                         => \&analysis_multiqc,

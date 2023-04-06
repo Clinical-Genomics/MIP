@@ -44,6 +44,10 @@ diag(   q{Test svdb_merge from Svdb.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
+## Constants
+Readonly my $BND_DISTANCE  => 2_000;
+Readonly my $EVENT_OVERLAP => -1;
+
 ## Base arguments
 my @function_base_commands = qw{ svdb --merge };
 
@@ -80,6 +84,10 @@ my %required_argument = (
 );
 
 my %specific_argument = (
+    bnd_distance => {
+        input           => $BND_DISTANCE,
+        expected_output => q{--bnd_distance} . $SPACE . $BND_DISTANCE,
+    },
     infile_paths_ref => {
         inputs_ref      => [ catfile(qw{ a test infile_1 }), catfile(qw{ a test infile_2 }) ],
         expected_output => q{--vcf}
@@ -91,6 +99,10 @@ my %specific_argument = (
     notag => {
         input           => q{1},
         expected_output => q{--notag},
+    },
+    overlap => {
+        input           => $EVENT_OVERLAP,
+        expected_output => q{--overlap} . $SPACE . $EVENT_OVERLAP,
     },
     pass_only => {
         input           => 1,
