@@ -40,6 +40,13 @@ gatk_varianteval_dbsnp: grch38_variant_-gold_standard_dbsnp-.vcf.gz
 gatk_varianteval_gold: grch38_mills_and_1000g_-gold_standard_indels-.vcf.gz
 genmod_models_reduced_penetrance_file: grch38_cust003-cmms-red-pen_-2017_FAKE-.tsv
 human_genome_reference: grch38_homo_sapiens_-assembly-.fasta
+me_annotate_exons_bed: grch38_scout_exons_-2020-09-17-.bed
+me_annotate_query_files:
+  # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
+  grch38_alu_swegen.vcf.gz: swegen_alu_|FRQ|OCC|FRQ|OCC|1
+  grch38_herv_swegen.vcf.gz: swegen_herv_|FRQ|OCC|FRQ|OCC|1
+  grch38_l1_swegen.vcf.gz: swegen_l1_|FRQ|OCC|FRQ|OCC|1
+  grch38_sva_swegen.vcf.gz: swegen_sva_|FRQ|OCC|FRQ|OCC|1
 mobile_element_reference:
   grch38_g1k_alu.bed: ALU
   grch38_g1k_l1.bed: L1
