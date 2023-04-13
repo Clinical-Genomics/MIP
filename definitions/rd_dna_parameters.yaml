@@ -1324,7 +1324,7 @@ me_annotate:
     - mip
   data_type: SCALAR
   default: 1
-  file_tag: _ ann
+  file_tag: _ann
   outfile_suffix: ".vcf.gz"
   program_executables:
     - svdb

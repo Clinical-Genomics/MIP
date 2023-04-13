@@ -249,6 +249,7 @@ sub analysis_me_annotate {
         {
             annotations_file_path => $active_parameter_href->{me_annotate_exons_bed},
             columns_name          => q{CHROM,FROM,TO},
+            filehandle            => $filehandle,
             headerfile_path       => $header,
             infile_path           => $svdb_outfile_path,
             mark_sites            => q{IN_EXON},
