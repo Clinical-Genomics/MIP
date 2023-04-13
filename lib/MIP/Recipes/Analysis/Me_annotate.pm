@@ -114,8 +114,7 @@ sub analysis_me_annotate {
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_annotate };
-    use MIP::Program::Gnu::Coreutils qw( gnu_mv );
-    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Program::Svdb qw{ svdb_query };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info qw{ set_file_path_to_store set_recipe_outfile_in_sample_info };
@@ -244,28 +243,19 @@ sub analysis_me_annotate {
         say {$filehandle} $NEWLINE;
     }
 
-    if ( not $constraint{is_gzipped}->($svdb_outfile_path) ) {
-
-        htslib_bgzip(
-            {
-                filehandle      => $filehandle,
-                infile_path     => $svdb_outfile_path,
-                stdoutfile_path => $outfile_path,
-                threads         => $core_number,
-
-            }
-        );
-    }
-    else {
-
-        gnu_mv(
-            {
-                filehandle   => $filehandle,
-                infile_path  => $svdb_outfile_path,
-                outfile_path => $outfile_path,
-            }
-        );
-    }
+    my $header =
+      q{<(echo '##INFO=<ID=IN_EXON,Number=0,Type=Flag,Description="Breakpoint in exon">')};
+    bcftools_annotate(
+        {
+            annotations_file_path => $active_parameter_href->{me_annotate_exons_bed},
+            columns_name          => q{CHROM,FROM,TO},
+            headerfile_path       => $header,
+            infile_path           => $svdb_outfile_path,
+            mark_sites            => q{IN_EXON},
+            outfile_path          => $outfile_path,
+            output_type           => q{z},
+        }
+    );
     say {$filehandle} $NEWLINE;
 
     htslib_tabix {
