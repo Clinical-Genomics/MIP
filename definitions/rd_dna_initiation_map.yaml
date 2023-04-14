@@ -54,6 +54,7 @@ CHAIN_ALL:
       - retroseq
       - me_merge_vcfs
       - me_annotate
+      - me_varianteffectpredictor
   - CHAIN_MAIN:
     # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
     - PARALLEL:

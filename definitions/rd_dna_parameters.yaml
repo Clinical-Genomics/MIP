@@ -229,6 +229,7 @@ recipe_core_number:
     me_annotate: 2
     me_merge_bam: 5
     me_merge_vcfs: 2
+    me_varianteffectpredictor: 4
     mitodel: 1
     mt_annotation: 1
     multiqc_ar: 1
@@ -363,6 +364,7 @@ recipe_time:
     me_annotate: 2
     me_merge_bam: 5
     me_merge_vcfs: 2
+    me_varianteffectpredictor: 3
     mitodel: 2
     mt_annotation: 1
     multiqc_ar: 5
@@ -1359,6 +1361,19 @@ me_annotate_exons_bed:
   is_reference: 1
   reference: reference_dir
   type: path
+me_varianteffectpredictor:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _vep
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - bcftools
+    - vep
+    - tabix
+  type: recipe
 ## GATK CollectReadCounts
 gatk_collectreadcounts:
   analysis_mode: sample
