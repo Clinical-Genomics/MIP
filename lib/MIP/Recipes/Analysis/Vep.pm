@@ -1496,7 +1496,7 @@ sub analysis_vep_me {
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::List qw{ get_splitted_lists };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Bcftools qw{ bcftools_concat bcftools_view };
+    use MIP::Program::Bcftools qw{ bcftools_concat bcftools_sort bcftools_view };
     use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
@@ -1526,9 +1526,7 @@ sub analysis_vep_me {
 
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
-
-    #my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path = $io{in}{file_path};
+    my $infile_path        = $io{in}{file_path};
 
     my $genome_reference_version = $file_info_href->{human_genome_reference_version};
 
@@ -1553,9 +1551,8 @@ sub analysis_vep_me {
     );
     my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-
-    #my $outfile_suffix      = $io{out}{file_suffix};
-    my $outfile_path = $io{out}{file_path};
+    my $outfile_suffix      = $io{out}{file_constant_suffix};
+    my $outfile_path        = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -1635,11 +1632,12 @@ sub analysis_vep_me {
     );
     print {$filehandle} $PIPE . $SPACE;
 
-    my $vep_non_mt_outfile_path = $outfile_path_prefix . q{_non_MT.vcf};
+    my $vep_non_mt_outfile_path = $outfile_path_prefix . q{_non_MT} . $outfile_suffix;
     variant_effect_predictor(
         {
             assembly           => $assembly_version,
             cache_directory    => $active_parameter_href->{vep_directory_cache},
+            compress_output    => 1,
             distance           => $ANNOTATION_DISTANCE,
             filehandle         => $filehandle,
             fork               => $VEP_FORK_NUMBER,
@@ -1650,6 +1648,14 @@ sub analysis_vep_me {
             reference_path     => $active_parameter_href->{human_genome_reference},
             synonyms_file_path => $vep_synonyms_file_path,
             vep_features_ref   => \@vep_features,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    htslib_tabix(
+        {
+            filehandle  => $filehandle,
+            infile_path => $vep_non_mt_outfile_path,
         }
     );
     say {$filehandle} $NEWLINE;
@@ -1673,6 +1679,7 @@ sub analysis_vep_me {
             filehandle         => $filehandle,
             fork               => $VEP_FORK_NUMBER,
             outfile_format     => q{vcf},
+            outfile_path       => q{STDOUT},
             plugins_dir_path   => $active_parameter_href->{vep_plugins_dir_path},
             plugins_ref        => \@plugins,
             reference_path     => $active_parameter_href->{human_genome_reference},
@@ -1682,23 +1689,42 @@ sub analysis_vep_me {
     );
     print {$filehandle} $PIPE . $SPACE;
 
+    my $vep_mt_outfile_path = $outfile_path_prefix . q{_MT} . $outfile_suffix;
     bcftools_view(
         {
-            filehandle  => $filehandle,
-            regions_ref => [ $mt_contig_ref->[0] ],
+            filehandle   => $filehandle,
+            output_type  => q{z},
+            outfile_path => $vep_mt_outfile_path,
+            targets      => $mt_contig_ref->[0],
         }
     );
-    print {$filehandle} $PIPE . $SPACE;
+    say {$filehandle} $NEWLINE;
+
+    htslib_tabix(
+        {
+            filehandle  => $filehandle,
+            infile_path => $vep_non_mt_outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     bcftools_concat(
         {
             allow_overlaps   => 1,
             filehandle       => $filehandle,
-            infile_paths_ref =>
-              [ $vep_non_mt_outfile_path, catfile( dirname( devnull() ), q{stdin} ) ],
-            outfile_path => $outfile_path,
-            output_type  => q{z},
-            threads      => $recipe{core_number},
+            infile_paths_ref => [ $vep_non_mt_outfile_path, $vep_mt_outfile_path ],
+            output_type      => q{u},
+            threads          => $recipe{core_number},
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    bcftools_sort(
+        {
+            filehandle     => $filehandle,
+            output_type    => q{z},
+            outfile_path   => $outfile_path,
+            temp_directory => $temp_directory,
         }
     );
     say {$filehandle} $NEWLINE;

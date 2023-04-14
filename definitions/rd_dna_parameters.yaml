@@ -1371,8 +1371,8 @@ me_varianteffectpredictor:
   outfile_suffix: ".vcf.gz"
   program_executables:
     - bcftools
-    - vep
     - tabix
+    - vep
   type: recipe
 ## GATK CollectReadCounts
 gatk_collectreadcounts:
