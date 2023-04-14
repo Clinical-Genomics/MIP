@@ -1327,6 +1327,7 @@ me_annotate:
   file_tag: _ann
   outfile_suffix: ".vcf.gz"
   program_executables:
+    - bcftools
     - svdb
     - tabix
   type: recipe
