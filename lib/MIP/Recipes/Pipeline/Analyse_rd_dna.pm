@@ -131,7 +131,7 @@ sub parse_rd_dna {
     Readonly my @ONLY_WGS_RECIPIES =>
       qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter
       gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata me_annotate me_merge_bam me_merge_vcfs
-      mitodel retroseq samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
+      me_varianteffectpredictor mitodel retroseq samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
     ## Set analysis constants
@@ -513,7 +513,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Varg qw{ analysis_varg };
     use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation };
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
-    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_me analysis_vep_wgs };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
 
     ### Pipeline specific checks
@@ -593,6 +593,7 @@ sub pipeline_analyse_rd_dna {
         me_annotate                        => \&analysis_me_annotate,
         me_merge_bam                       => \&analysis_samtools_merge_panel,
         me_merge_vcfs                      => \&analysis_me_merge_vcfs,
+        me_varianteffectpredictor          => \&analysis_vep_me,
         mitodel                            => \&analysis_mitodel,
         mt_annotation                      => \&analysis_mt_annotation,
         multiqc_ar                         => \&analysis_multiqc,

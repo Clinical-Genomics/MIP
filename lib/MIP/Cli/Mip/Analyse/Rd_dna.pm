@@ -1246,6 +1246,15 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
+        q{me_varianteffectpredictor} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Annotate mobile elememnts with VEP},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
         q{gatk_haplotypecaller} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},
