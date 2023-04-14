@@ -39,6 +39,7 @@ sub variant_effect_predictor {
 ## Arguments: $assembly                => Assembly version to use
 ##          : $buffer_size             => Sets the internal buffer size, corresponding to the number of variants that are read in to memory simultaneously
 ##          : $cache_directory         => VEP chache directory
+##          : $compress_output         => Compress output
 ##          : $custom_annotations_ref  => Custom annotations {REF}
 ##          : $distance                => Modify the distance up and/or downstream between a variant and a transcript for which VEP will assign the upstream_gene_variant or downstream_gene_variant consequences
 ##          : $filehandle              => Filehandle to write to
@@ -65,6 +66,7 @@ sub variant_effect_predictor {
     my $assembly;
     my $buffer_size;
     my $cache_directory;
+    my $compress_output;
     my $custom_annotations_ref;
     my $filehandle;
     my $infile_path;
@@ -100,6 +102,11 @@ sub variant_effect_predictor {
         },
         cache_directory => {
             store       => \$cache_directory,
+            strict_type => 1,
+        },
+        compress_output => {
+            allow       => [ undef, 0, 1 ],
+            store       => \$compress_output,
             strict_type => 1,
         },
         custom_annotations_ref => {
@@ -225,6 +232,10 @@ sub variant_effect_predictor {
 
         push @commands, q{--dir_cache} . $SPACE . $cache_directory;
     }
+    if ($compress_output) {
+
+        push @commands, q{--compress_output} . $SPACE . q{bgzip};
+    }
     if ($infile_format) {
 
         push @commands, q{--format} . $SPACE . $infile_format;
@@ -259,8 +270,7 @@ sub variant_effect_predictor {
     }
     if ( @{$custom_annotations_ref} ) {
 
-        push @commands, q{--custom} . $SPACE . join q{ --custom },
-          @{$custom_annotations_ref};
+        push @commands, q{--custom} . $SPACE . join q{ --custom }, @{$custom_annotations_ref};
     }
     if ( @{$vep_features_ref} ) {
 
@@ -353,11 +363,10 @@ sub variant_effect_predictor_install {
             store       => \$species_ref,
             strict_type => 1,
         },
-        stderrfile_path => { store => \$stderrfile_path, strict_type => 1, },
-        stderrfile_path_append =>
-          { store => \$stderrfile_path_append, strict_type => 1, },
-        stdoutfile_path => { store => \$stdoutfile_path, strict_type => 1, },
-        version         => { store => \$version,         strict_type => 1, },
+        stderrfile_path        => { store => \$stderrfile_path,        strict_type => 1, },
+        stderrfile_path_append => { store => \$stderrfile_path_append, strict_type => 1, },
+        stdoutfile_path        => { store => \$stdoutfile_path,        strict_type => 1, },
+        version                => { store => \$version,                strict_type => 1, },
     };
 
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
