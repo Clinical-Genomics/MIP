@@ -1496,6 +1496,7 @@ sub analysis_vep_me {
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::List qw{ get_splitted_lists };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Bcftools qw{ bcftools_concat bcftools_sort bcftools_view };
     use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Program::Vep qw{ variant_effect_predictor };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
