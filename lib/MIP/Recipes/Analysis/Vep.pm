@@ -1526,8 +1526,9 @@ sub analysis_vep_me {
 
     my $infile_name_prefix = $io{in}{file_name_prefix};
     my $infile_path_prefix = $io{in}{file_path_prefix};
-    my $infile_suffix      = $io{in}{file_suffix};
-    my $infile_path        = $infile_path_prefix . $infile_suffix;
+
+    #my $infile_suffix      = $io{in}{file_suffix};
+    my $infile_path = $io{in}{file_path};
 
     my $genome_reference_version = $file_info_href->{human_genome_reference_version};
 
@@ -1552,8 +1553,9 @@ sub analysis_vep_me {
     );
     my $outdir_path_prefix  = $io{out}{dir_path_prefix};
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_suffix      = $io{out}{file_suffix};
-    my $outfile_path        = $io{out}{file_path};
+
+    #my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_path = $io{out}{file_path};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -1655,8 +1657,8 @@ sub analysis_vep_me {
     bcftools_view(
         {
             filehandle  => $filehandle,
-            regions_ref => [ $contigs_ref->[20], $mt_contig_ref->[0] ],
             infile_path => $infile_path,
+            regions_ref => [ $contigs_ref->[20], $mt_contig_ref->[0] ],
         }
     );
     print {$filehandle} $PIPE . $SPACE;
@@ -1680,8 +1682,17 @@ sub analysis_vep_me {
     );
     print {$filehandle} $PIPE . $SPACE;
 
+    bcftools_view(
+        {
+            filehandle  => $filehandle,
+            regions_ref => [ $mt_contig_ref->[0] ],
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
     bcftools_concat(
         {
+            allow_overlaps   => 1,
             filehandle       => $filehandle,
             infile_paths_ref =>
               [ $vep_non_mt_outfile_path, catfile( dirname( devnull() ), q{stdin} ) ],
