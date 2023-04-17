@@ -1655,6 +1655,7 @@ sub analysis_vep_me {
     htslib_tabix(
         {
             filehandle  => $filehandle,
+            force       => 1,
             infile_path => $vep_non_mt_outfile_path,
         }
     );
@@ -1703,6 +1704,7 @@ sub analysis_vep_me {
     htslib_tabix(
         {
             filehandle  => $filehandle,
+            force       => 1,
             infile_path => $vep_non_mt_outfile_path,
         }
     );
@@ -1732,6 +1734,7 @@ sub analysis_vep_me {
     htslib_tabix(
         {
             filehandle  => $filehandle,
+            force       => 1,
             infile_path => $outfile_path,
         }
     );
