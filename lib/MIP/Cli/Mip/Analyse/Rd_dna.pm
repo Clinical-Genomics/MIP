@@ -1248,7 +1248,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     option(
         q{me_varianteffectpredictor} => (
             cmd_tags      => [q{Analysis recipe switch}],
-            documentation => q{Annotate mobile elememnts with VEP},
+            documentation => q{Annotate mobile elements with VEP},
             is            => q{rw},
             isa           => enum( [ 0, 1, 2 ] ),
         )
