@@ -1705,7 +1705,7 @@ sub analysis_vep_me {
         {
             filehandle  => $filehandle,
             force       => 1,
-            infile_path => $vep_non_mt_outfile_path,
+            infile_path => $vep_mt_outfile_path,
         }
     );
     say {$filehandle} $NEWLINE;
