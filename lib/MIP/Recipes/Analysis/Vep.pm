@@ -4,8 +4,8 @@ use 5.026;
 use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
-use File::Basename qw{ fileparse };
-use File::Spec::Functions qw{ catfile splitpath };
+use File::Basename qw{ dirname fileparse };
+use File::Spec::Functions qw{ catfile devnull splitpath };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ check allow last_error };
 use POSIX;
@@ -19,7 +19,7 @@ use Readonly;
 
 ## MIPs lib/
 use MIP::Constants
-  qw{ %ANALYSIS $ASTERISK $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE %PRIMARY_CONTIG $SPACE $UNDERSCORE };
+  qw{ %ANALYSIS $ASTERISK $COMMA $DOT $EMPTY_STR $LOG_NAME $NEWLINE $PIPE %PRIMARY_CONTIG $SPACE $UNDERSCORE };
 use MIP::File::Format::Vep qw{ create_vep_synonyms_file };
 
 BEGIN {
@@ -30,6 +30,7 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = qw{
       analysis_vep
+      analysis_vep_me
       analysis_vep_wgs
       analysis_vep_sv_wes
       analysis_vep_sv_wgs
@@ -1378,6 +1379,379 @@ sub analysis_vep {
             }
         );
 
+        submit_recipe(
+            {
+                base_command                      => $profile_base_command,
+                case_id                           => $case_id,
+                dependency_method                 => q{sample_to_case},
+                job_id_chain                      => $recipe{job_id_chain},
+                job_id_href                       => $job_id_href,
+                job_reservation_name              => $active_parameter_href->{job_reservation_name},
+                log                               => $log,
+                max_parallel_processes_count_href =>
+                  $file_info_href->{max_parallel_processes_count},
+                recipe_file_path   => $recipe_file_path,
+                sample_ids_ref     => \@{ $active_parameter_href->{sample_ids} },
+                submission_profile => $active_parameter_href->{submission_profile},
+            }
+        );
+    }
+    return 1;
+}
+
+sub analysis_vep_me {
+
+## Function : Varianteffectpredictor performs annotation of mobile elements.
+## Returns  :
+## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
+##          : $case_id                 => Family id
+##          : $filehandle              => Filehandle to write to
+##          : $file_info_href          => The file_info hash {REF}
+##          : $job_id_href             => Job id hash {REF}
+##          : $parameter_href          => Parameter hash {REF}
+##          : $profile_base_command    => Submission profile base command
+##          : $recipe_name             => Program name
+##          : $sample_info_href        => Info on samples and case hash {REF}
+##          : $temp_directory          => Temporary directory
+##          : $xargs_file_counter      => The xargs file counter
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $job_id_href;
+    my $parameter_href;
+    my $recipe_name;
+    my $sample_info_href;
+
+    ## Default(s)
+    my $case_id;
+    my $profile_base_command;
+    my $temp_directory;
+    my $xargs_file_counter;
+
+    my $tmpl = {
+        active_parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$active_parameter_href,
+            strict_type => 1,
+        },
+        case_id => {
+            default     => $arg_href->{active_parameter_href}{case_id},
+            store       => \$case_id,
+            strict_type => 1,
+        },
+        file_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$file_info_href,
+            strict_type => 1,
+        },
+        job_id_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$job_id_href,
+            strict_type => 1,
+        },
+        parameter_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$parameter_href,
+            strict_type => 1,
+        },
+        profile_base_command => {
+            default     => q{sbatch},
+            store       => \$profile_base_command,
+            strict_type => 1,
+        },
+        recipe_name => {
+            defined     => 1,
+            required    => 1,
+            store       => \$recipe_name,
+            strict_type => 1,
+        },
+        sample_info_href => {
+            default     => {},
+            defined     => 1,
+            required    => 1,
+            store       => \$sample_info_href,
+            strict_type => 1,
+        },
+        temp_directory => {
+            default     => $arg_href->{active_parameter_href}{temp_directory},
+            store       => \$temp_directory,
+            strict_type => 1,
+        },
+    };
+
+    check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
+
+    use MIP::Cluster qw{ get_core_number update_memory_allocation };
+    use MIP::File_info qw{ get_io_files parse_io_outfiles };
+    use MIP::List qw{ get_splitted_lists };
+    use MIP::Processmanagement::Processes qw{ submit_recipe };
+    use MIP::Program::Bcftools qw{ bcftools_concat bcftools_sort bcftools_view };
+    use MIP::Program::Htslib qw{ htslib_tabix };
+    use MIP::Program::Vep qw{ variant_effect_predictor };
+    use MIP::Recipe qw{ parse_recipe_prerequisites };
+    use MIP::Recipes::Analysis::Xargs qw{ xargs_command };
+    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Script::Setup_script qw{ setup_script };
+
+    ### PREPROCESSING:
+
+    ## Constants
+    Readonly my $VEP_FORK_NUMBER => 4;
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger($LOG_NAME);
+
+    ## Unpack parameters
+    ## Get the io infiles per chain and id
+    my %io = get_io_files(
+        {
+            id             => $case_id,
+            file_info_href => $file_info_href,
+            parameter_href => $parameter_href,
+            recipe_name    => $recipe_name,
+            stream         => q{in},
+        }
+    );
+
+    my $infile_name_prefix = $io{in}{file_name_prefix};
+    my $infile_path_prefix = $io{in}{file_path_prefix};
+    my $infile_path        = $io{in}{file_path};
+
+    my $genome_reference_version = $file_info_href->{human_genome_reference_version};
+
+    my %recipe = parse_recipe_prerequisites(
+        {
+            active_parameter_href => $active_parameter_href,
+            parameter_href        => $parameter_href,
+            recipe_name           => $recipe_name,
+        }
+    );
+
+    %io = parse_io_outfiles(
+        {
+            chain_id               => $recipe{job_id_chain},
+            id                     => $case_id,
+            file_info_href         => $file_info_href,
+            file_name_prefixes_ref => [$infile_name_prefix],
+            outdata_dir            => $active_parameter_href->{outdata_dir},
+            parameter_href         => $parameter_href,
+            recipe_name            => $recipe_name,
+        }
+    );
+    my $outdir_path_prefix  = $io{out}{dir_path_prefix};
+    my $outfile_path_prefix = $io{out}{file_path_prefix};
+    my $outfile_suffix      = $io{out}{file_constant_suffix};
+    my $outfile_path        = $io{out}{file_path};
+
+    ## Filehandles
+    # Create anonymous filehandle
+    my $filehandle = IO::Handle->new();
+
+    ## Creates recipe directories (info & data & script), recipe script filenames and writes sbatch header
+    my ( $recipe_file_path, $recipe_info_path ) = setup_script(
+        {
+            active_parameter_href => $active_parameter_href,
+            core_number           => $recipe{core_number},
+            directory_id          => $case_id,
+            filehandle            => $filehandle,
+            job_id_href           => $job_id_href,
+            memory_allocation     => $recipe{memory},
+            process_time          => $recipe{time},
+            recipe_directory      => $recipe_name,
+            recipe_name           => $recipe_name,
+            temp_directory        => $temp_directory,
+        }
+    );
+
+    ### SHELL:
+
+    ## Get the vep synonyms file path for if required (grch38)
+    my $vep_synonyms_file_path = create_vep_synonyms_file(
+        {
+            outfile_path => catfile( $outdir_path_prefix, q{synonyms.tsv} ),
+            version      => $genome_reference_version,
+        }
+    );
+
+    ## Varianteffectpredictor
+    say {$filehandle} q{## Varianteffectpredictor};
+
+    my $assembly_version =
+      $file_info_href->{human_genome_reference_source} . $genome_reference_version;
+
+    ## Get genome source and version to be compatible with VEP
+    $assembly_version = _get_assembly_name( { assembly_version => $assembly_version, } );
+
+    # VEP custom annotations
+    my @custom_annotations = _get_custom_annotation_cmds(
+        {
+            vep_custom_annotation_href => $active_parameter_href->{vep_custom_annotation},
+        }
+    );
+
+    ## VEP plugins
+    my @plugins =
+      _get_plugin_cmds( { vep_plugin_href => $active_parameter_href->{sv_vep_plugin}, } );
+
+    ## Get contigs
+    my ( $mt_contig_ref, $contigs_ref ) = get_splitted_lists(
+        {
+            regexp   => qr/M/,
+            list_ref => $file_info_href->{bam_contigs},
+        }
+    );
+
+    ## VEP features
+    my @vep_features;
+
+  FEATURE:
+    foreach my $vep_feature ( @{ $active_parameter_href->{vep_features} } ) {
+
+        # Add VEP features to the output.
+        push @vep_features, $vep_feature;
+    }
+
+    ## Special annotation distance for the MT means that we do two calls to vep
+    bcftools_view(
+        {
+            filehandle  => $filehandle,
+            targets     => q{^} . $mt_contig_ref->[0],
+            infile_path => $infile_path,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    my $vep_non_mt_outfile_path = $outfile_path_prefix . q{_non_MT} . $outfile_suffix;
+    variant_effect_predictor(
+        {
+            assembly           => $assembly_version,
+            cache_directory    => $active_parameter_href->{vep_directory_cache},
+            compress_output    => 1,
+            distance           => $ANNOTATION_DISTANCE,
+            filehandle         => $filehandle,
+            fork               => $VEP_FORK_NUMBER,
+            outfile_format     => q{vcf},
+            outfile_path       => $vep_non_mt_outfile_path,
+            plugins_dir_path   => $active_parameter_href->{vep_plugins_dir_path},
+            plugins_ref        => \@plugins,
+            reference_path     => $active_parameter_href->{human_genome_reference},
+            synonyms_file_path => $vep_synonyms_file_path,
+            vep_features_ref   => \@vep_features,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    htslib_tabix(
+        {
+            filehandle  => $filehandle,
+            force       => 1,
+            infile_path => $vep_non_mt_outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    bcftools_view(
+        {
+            filehandle  => $filehandle,
+            infile_path => $infile_path,
+            regions_ref => [ $contigs_ref->[20], $mt_contig_ref->[0] ],
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    ## Special case for mitochondrial contig annotation
+    my @mt_vep_features = map { ( $_ eq q{refseq} ) ? q{all_} . $_ : $_ } @vep_features;
+    variant_effect_predictor(
+        {
+            assembly           => $assembly_version,
+            cache_directory    => $active_parameter_href->{vep_directory_cache},
+            distance           => $ANNOTATION_DISTANCE_MT,
+            filehandle         => $filehandle,
+            fork               => $VEP_FORK_NUMBER,
+            outfile_format     => q{vcf},
+            outfile_path       => q{STDOUT},
+            plugins_dir_path   => $active_parameter_href->{vep_plugins_dir_path},
+            plugins_ref        => \@plugins,
+            reference_path     => $active_parameter_href->{human_genome_reference},
+            synonyms_file_path => $vep_synonyms_file_path,
+            vep_features_ref   => \@mt_vep_features,
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    my $vep_mt_outfile_path = $outfile_path_prefix . q{_MT} . $outfile_suffix;
+    bcftools_view(
+        {
+            filehandle   => $filehandle,
+            output_type  => q{z},
+            outfile_path => $vep_mt_outfile_path,
+            targets      => $mt_contig_ref->[0],
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    htslib_tabix(
+        {
+            filehandle  => $filehandle,
+            force       => 1,
+            infile_path => $vep_mt_outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    bcftools_concat(
+        {
+            allow_overlaps   => 1,
+            filehandle       => $filehandle,
+            infile_paths_ref => [ $vep_non_mt_outfile_path, $vep_mt_outfile_path ],
+            output_type      => q{u},
+            threads          => $recipe{core_number},
+        }
+    );
+    print {$filehandle} $PIPE . $SPACE;
+
+    bcftools_sort(
+        {
+            filehandle     => $filehandle,
+            output_type    => q{z},
+            outfile_path   => $outfile_path,
+            temp_directory => $temp_directory,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    htslib_tabix(
+        {
+            filehandle  => $filehandle,
+            force       => 1,
+            infile_path => $outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
+
+    close $filehandle;
+
+    if ( $recipe{mode} == 1 ) {
+
+        ## Collect QC metadata info for later use
+        set_recipe_outfile_in_sample_info(
+            {
+                path             => $outfile_path,
+                recipe_name      => $recipe_name,
+                sample_info_href => $sample_info_href,
+            }
+        );
         submit_recipe(
             {
                 base_command                      => $profile_base_command,
