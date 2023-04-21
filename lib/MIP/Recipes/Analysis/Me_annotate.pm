@@ -113,7 +113,7 @@ sub analysis_me_annotate {
 
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
-    use MIP::Program::Bcftools qw{ bcftools_annotate };
+    use MIP::Program::Bcftools qw{ bcftools_view };
     use MIP::Program::Htslib qw{ htslib_tabix };
     use MIP::Program::Svdb qw{ svdb_query };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
@@ -243,16 +243,10 @@ sub analysis_me_annotate {
         say {$filehandle} $NEWLINE;
     }
 
-    my $header =
-      q{<(echo '##INFO=<ID=IN_EXON,Number=0,Type=Flag,Description="Breakpoint in exon">')};
-    bcftools_annotate(
+    bcftools_view(
         {
-            annotations_file_path => $active_parameter_href->{me_annotate_exons_bed},
-            columns_name          => q{CHROM,FROM,TO},
             filehandle            => $filehandle,
-            headerfile_path       => $header,
             infile_path           => $svdb_outfile_path,
-            mark_sites            => q{IN_EXON},
             outfile_path          => $outfile_path,
             output_type           => q{z},
         }
