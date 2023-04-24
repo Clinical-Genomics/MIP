@@ -489,9 +489,7 @@ sub _build_bcftools_frequency_filter {
 
     ## build filter
     my $exclude_filter =
-        $DOUBLE_QUOTE
-      . join( $SPACE . $PIPE . $SPACE . q{INFO/}, @frequency_filters )
-      . $DOUBLE_QUOTE;
+      $DOUBLE_QUOTE . join( $SPACE . $PIPE . $SPACE, @frequency_filters ) . $DOUBLE_QUOTE;
 
     return $exclude_filter;
 }
