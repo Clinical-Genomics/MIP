@@ -130,7 +130,7 @@ sub parse_rd_dna {
     Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES => qw{ cnvnator_ar delly_reformat tiddit };
     Readonly my @ONLY_WGS_RECIPIES =>
       qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter
-      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata me_annotate me_merge_bam me_merge_vcfs
+      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata me_annotate me_filter me_merge_bam me_merge_vcfs
       me_varianteffectpredictor mitodel retroseq samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
@@ -475,7 +475,8 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
-    use MIP::Recipes::Analysis::Me_annotate qw{ analysis_me_annotate};
+    use MIP::Recipes::Analysis::Me_annotate qw{ analysis_me_annotate };
+    use MIP::Recipes::Analysis::Me_filter qw{ analysis_me_filter };
     use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
@@ -591,6 +592,7 @@ sub pipeline_analyse_rd_dna {
         manta                              => \&analysis_manta,
         markduplicates                     => \&analysis_markduplicates,
         me_annotate                        => \&analysis_me_annotate,
+        me_filter                          => \&analysis_me_filter,
         me_merge_bam                       => \&analysis_samtools_merge_panel,
         me_merge_vcfs                      => \&analysis_me_merge_vcfs,
         me_varianteffectpredictor          => \&analysis_vep_me,
