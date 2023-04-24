@@ -1238,14 +1238,6 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
-        q{me_annotate_exons_bed} => (
-            documentation => q{Exon definitions in bed format},
-            is            => q{rw},
-            isa           => Str,
-        )
-    );
-
-    option(
         q{me_varianteffectpredictor} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Annotate mobile elements with VEP},

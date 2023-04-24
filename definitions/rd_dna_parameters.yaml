@@ -1353,14 +1353,6 @@ me_annotate_query_bnd_distance:
   data_type: SCALAR
   default: 150
   type: recipe_argument
-me_annotate_exons_bed:
-  associated_recipe:
-    - me_annotate
-  data_type: SCALAR
-  exists_check: file
-  is_reference: 1
-  reference: reference_dir
-  type: path
 me_varianteffectpredictor:
   analysis_mode: case
   associated_recipe:
