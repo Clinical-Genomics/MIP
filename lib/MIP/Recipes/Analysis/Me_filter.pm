@@ -18,7 +18,8 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ %ANALYSIS $DOT $DOUBLE_QUOTE $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
+use MIP::Constants
+  qw{ %ANALYSIS $DOT $DOUBLE_QUOTE $EMPTY_STR $LOG_NAME $NEWLINE $PIPE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -137,6 +138,7 @@ sub analysis_me_filter {
     use MIP::Analysis qw{ get_vcf_parser_analysis_suffix };
     use MIP::File_info qw{ get_io_files parse_io_outfiles };
     use MIP::List qw{ check_element_exist_hash_of_array };
+    use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_concat bcftools_sort bcftools_view };
     use MIP::Program::Htslib qw{ htslib_tabix };
@@ -227,10 +229,12 @@ sub analysis_me_filter {
     my @select_feature_annotation_columns;
     my $select_file;
     my $select_file_matching_column;
-    my $non_mt_outfile_path        = $outfile_path_prefix . q{_non_MT} . $outfile_suffixes[0];
-    my $select_non_mt_outfile_path = $outfile_path_prefix . q{_non_MT} . $outfile_suffixes[1];
-    my $mt_outfile_path            = $outfile_path_prefix . q{_MT} . $outfile_suffixes[0];
-    my $select_mt_outfile_path     = $outfile_path_prefix . q{_MT} . $outfile_suffixes[1];
+    my ( $no_gz_file_ending, $select_no_gz_file_ending ) =
+      map { s/[.]gz\z/$EMPTY_STR/r } @outfile_suffixes;
+    my $non_mt_outfile_path        = $outfile_path_prefix . q{_non_MT} . $no_gz_file_ending;
+    my $select_non_mt_outfile_path = $outfile_path_prefix . q{_non_MT} . $select_no_gz_file_ending;
+    my $mt_outfile_path            = $outfile_path_prefix . q{_MT} . $no_gz_file_ending;
+    my $select_mt_outfile_path     = $outfile_path_prefix . q{_MT} . $select_no_gz_file_ending;
 
     if ( $active_parameter_href->{sv_vcfparser_select_file} ) {
 
