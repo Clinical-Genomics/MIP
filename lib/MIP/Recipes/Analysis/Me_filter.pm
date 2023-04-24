@@ -280,7 +280,7 @@ sub analysis_me_filter {
             range_feature_file_path => $active_parameter_href->{sv_vcfparser_range_feature_file},
             select_feature_annotation_columns_ref => \@select_feature_annotation_columns,
             stdoutfile_path                       => $non_mt_outfile_path,
-            select_feature_file_path              => $select_non_mt_outfile_path,
+            select_feature_file_path              => $select_file,
             select_feature_matching_column        => $select_file_matching_column,
             select_outfile                        => $select_non_mt_outfile_path,
             variant_type                          => q{sv},
