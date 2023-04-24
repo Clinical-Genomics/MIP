@@ -141,7 +141,7 @@ sub analysis_me_filter {
     use MIP::File::Path qw{ remove_file_path_suffix };
     use MIP::Processmanagement::Processes qw{ submit_recipe };
     use MIP::Program::Bcftools qw{ bcftools_concat bcftools_sort bcftools_view };
-    use MIP::Program::Htslib qw{ htslib_tabix };
+    use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
     use MIP::Program::Mip qw{ mip_vcfparser };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
     use MIP::Sample_info
@@ -331,18 +331,50 @@ sub analysis_me_filter {
       ? $mt_outfile_path
       : $select_mt_outfile_path;
 
+    my @files_to_compress_and_index = (
+        $mt_outfile_path,        $non_mt_outfile_path,
+        $select_mt_outfile_path, $select_non_mt_outfile_path,
+    );
+
+    say {$filehandle} q{## Compress and index vcfparser output};
+  FILE_TO_COMPRESS_AND_INDEX:
+    foreach my $file_to_compress_and_index (@files_to_compress_and_index) {
+
+        htslib_bgzip(
+            {
+                infile_path => $file_to_compress_and_index,
+                force       => 1,
+                filehandle  => $filehandle,
+                threads     => $recipe{core_number},
+            }
+        );
+        say {$filehandle} $NEWLINE;
+
+        htslib_tabix(
+            {
+                filehandle  => $filehandle,
+                force       => 1,
+                infile_path => $file_to_compress_and_index . q{.gz},
+            }
+        );
+        say {$filehandle} $NEWLINE;
+    }
+
     ## Concatenate MT variants with the rest
     my @file_sets = (
         {
-            files_to_concat_ref => [ $non_mt_outfile_path, $mt_outfile_path ],
+            files_to_concat_ref => [ $non_mt_outfile_path . q{.gz}, $mt_outfile_path . q{.gz} ],
             outfile             => $outfile_paths[0],
         },
         {
-            files_to_concat_ref => [ $select_non_mt_outfile_path, $select_mt_outfile_path ],
-            outfile             => $outfile_paths[1],
+            files_to_concat_ref =>
+              [ $select_non_mt_outfile_path . q{.gz}, $select_mt_outfile_path . q{.gz} ],
+            outfile => $outfile_paths[1],
         },
     );
 
+    say {$filehandle} q{## Concatenate, sort and index};
+  OUTFILE_SET:
     foreach my $outfile_set (@file_sets) {
 
         bcftools_concat(
