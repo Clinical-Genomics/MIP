@@ -1131,7 +1131,7 @@ sub analysis_mip_vcfparser_sv_wes {
 
 sub analysis_mip_vcfparser_sv_wgs {
 
-## Function : Vcfparser performs parsing of varianteffectpredictor annotated ws SV variants
+## Function : Vcfparser performs parsing of varianteffectpredictor annotated wgs SV variants
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id

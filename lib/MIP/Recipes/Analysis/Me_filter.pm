@@ -38,7 +38,7 @@ Readonly my $MT_CONTIG_ID_REGEXP    => q{MT | M | chrM};
 
 sub analysis_me_filter {
 
-## Function : Vcfparser performs parsing of varianteffectpredictor annotated ws SV variants
+## Function : Filters mobile elements on frequency and split the vcf in aclinical and research vcf using vcfparser.
 ## Returns  :
 ## Arguments: $active_parameter_href   => Active parameters for this analysis hash {REF}
 ##          : $case_id                 => Family id
