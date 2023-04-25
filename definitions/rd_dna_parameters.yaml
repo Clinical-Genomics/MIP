@@ -227,6 +227,7 @@ recipe_core_number:
     manta: 36
     markduplicates: 13
     me_annotate: 2
+    me_filter: 2
     me_merge_bam: 5
     me_merge_vcfs: 2
     me_varianteffectpredictor: 4
@@ -362,6 +363,7 @@ recipe_time:
     manta: 30
     markduplicates: 20
     me_annotate: 2
+    me_filter: 1
     me_merge_bam: 5
     me_merge_vcfs: 2
     me_varianteffectpredictor: 3
@@ -1366,6 +1368,25 @@ me_varianteffectpredictor:
     - tabix
     - vep
   type: recipe
+me_filter:
+  analysis_mode: case
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _filter
+  outfile_suffix: ".vcf.gz"
+  program_executables:
+    - bcftools
+    - mip
+    - tabix
+  type: recipe
+me_filter_frequency_threshold:
+  associated_recipe:
+    - me_filter
+  data_type: SCALAR
+  default: 0.1
+  type: recipe_argument
 ## GATK CollectReadCounts
 gatk_collectreadcounts:
   analysis_mode: sample

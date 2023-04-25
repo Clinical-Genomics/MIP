@@ -1247,6 +1247,25 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
     );
 
     option(
+        q{me_filter} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Filter mobile elements},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{me_filter_frequency_threshold} => (
+            cmd_tags      => [q{Default: 0.1}],
+            documentation =>
+              q{Threshold frequency for variants to be filtered out, set to 0 to disable},
+            is  => q{rw},
+            isa => Num,
+        )
+    );
+
+    option(
         q{gatk_haplotypecaller} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Variant discovery using GATK HaplotypeCaller},

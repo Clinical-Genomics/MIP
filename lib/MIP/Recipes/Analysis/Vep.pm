@@ -43,6 +43,7 @@ Readonly my $ANNOTATION_DISTANCE    => $ANALYSIS{ANNOTATION_DISTANCE};
 Readonly my $ANNOTATION_DISTANCE_MT => $ANALYSIS{ANNOTATION_DISTANCE_MT};
 Readonly my $BUFFER_SIZE            => 20_000;
 Readonly my $BUFFER_SIZE_SV         => 100;
+Readonly my $CONTIG_20              => 20;
 
 sub analysis_vep_wgs {
 
@@ -1626,8 +1627,8 @@ sub analysis_vep_me {
     bcftools_view(
         {
             filehandle  => $filehandle,
-            targets     => q{^} . $mt_contig_ref->[0],
             infile_path => $infile_path,
+            targets     => q{^} . $mt_contig_ref->[0],
         }
     );
     print {$filehandle} $PIPE . $SPACE;
@@ -1665,7 +1666,7 @@ sub analysis_vep_me {
         {
             filehandle  => $filehandle,
             infile_path => $infile_path,
-            regions_ref => [ $contigs_ref->[20], $mt_contig_ref->[0] ],
+            regions_ref => [ $contigs_ref->[$CONTIG_20], $mt_contig_ref->[0] ],
         }
     );
     print {$filehandle} $PIPE . $SPACE;
