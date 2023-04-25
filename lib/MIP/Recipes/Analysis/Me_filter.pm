@@ -325,18 +325,13 @@ sub analysis_me_filter {
     );
     say {$filehandle} $NEWLINE;
 
-    ### Special case: replace all clinical mitochondrial variants with research mitochondrial variants
-    $select_mt_outfile_path =
-        $active_parameter_href->{sv_vcfparser_add_all_mt_var}
-      ? $mt_outfile_path
-      : $select_mt_outfile_path;
+    say {$filehandle} q{## Compress and index vcfparser output};
 
     my @files_to_compress_and_index = (
         $mt_outfile_path,        $non_mt_outfile_path,
         $select_mt_outfile_path, $select_non_mt_outfile_path,
     );
 
-    say {$filehandle} q{## Compress and index vcfparser output};
   FILE_TO_COMPRESS_AND_INDEX:
     foreach my $file_to_compress_and_index (@files_to_compress_and_index) {
 
@@ -360,6 +355,12 @@ sub analysis_me_filter {
         say {$filehandle} $NEWLINE;
     }
 
+    ### Special case: replace all clinical mitochondrial variants with research mitochondrial variants
+    $select_mt_outfile_path =
+        $active_parameter_href->{sv_vcfparser_add_all_mt_var}
+      ? $mt_outfile_path
+      : $select_mt_outfile_path;
+
     ## Concatenate MT variants with the rest
     my @file_sets = (
         {
@@ -374,6 +375,7 @@ sub analysis_me_filter {
     );
 
     say {$filehandle} q{## Concatenate, sort and index};
+
   OUTFILE_SET:
     foreach my $outfile_set (@file_sets) {
 
