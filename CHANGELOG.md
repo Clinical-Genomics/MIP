@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - Adds retroseq for mobile element detection
 
+### Databases
+
+- expansionhunter variant catalog: v4.0.2 -> v5.0.0
+
 ### Tools
 
 - RetroSeq: 9d4f3b5
