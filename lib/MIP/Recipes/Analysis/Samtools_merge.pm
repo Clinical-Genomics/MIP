@@ -587,7 +587,6 @@ sub analysis_samtools_merge_panel {
                 output_format      => q{bam},
                 referencefile_path => ${active_parameter_href}->{human_genome_reference},
                 thread_number      => $core_number - 1,
-                write_index        => 1,
             }
         );
         say {$filehandle} $NEWLINE;
@@ -604,16 +603,16 @@ sub analysis_samtools_merge_panel {
             }
         );
         say {$filehandle} $NEWLINE;
-
-        samtools_index(
-            {
-                bai_format  => 1,
-                filehandle  => $filehandle,
-                infile_path => $outfile_path,
-            }
-        );
-        say {$filehandle} $NEWLINE;
     }
+
+    samtools_index(
+        {
+            bai_format  => 1,
+            filehandle  => $filehandle,
+            infile_path => $outfile_path,
+        }
+    );
+    say {$filehandle} $NEWLINE;
 
     close $filehandle;
 
