@@ -93,6 +93,7 @@ rd_dna:
     - picard
     - plink
     - python
+    - retroseq
     - rhocall
     - rtg-tools
     - sambamba

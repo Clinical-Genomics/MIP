@@ -60,6 +60,7 @@ sub bcftools_annotate {
 ##          : $headerfile_path        => File with lines which should be appended to the VCF header
 ##          : $include                => Include only sites for which the expression is true
 ##          : $infile_path            => Infile path to read from
+##          : mark_sites              => Mark sites that are present in annotation file
 ##          : $outfile_path           => Outfile path to write to
 ##          : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##          : $regions_ref            => Regions to process {REF}
@@ -80,6 +81,7 @@ sub bcftools_annotate {
     my $include;
     my $infile_path;
     my $headerfile_path;
+    my $mark_sites;
     my $outfile_path;
     my $regions_ref;
     my $remove_ids_ref;
@@ -100,6 +102,7 @@ sub bcftools_annotate {
         headerfile_path       => { store => \$headerfile_path, strict_type => 1, },
         include               => { store => \$include,         strict_type => 1, },
         infile_path           => { store => \$infile_path,     strict_type => 1, },
+        mark_sites            => { store => \$mark_sites,      strict_type => 1, },
         outfile_path          => { store => \$outfile_path,    strict_type => 1, },
         output_type           => {
             allow       => [qw{ b u z v}],
@@ -156,6 +159,11 @@ sub bcftools_annotate {
     if ($include) {
 
         push @commands, q{--include} . $SPACE . $include;
+    }
+
+    if ($mark_sites) {
+
+        push @commands, q{--mark-sites} . $SPACE . $mark_sites;
     }
 
     if ( @{$remove_ids_ref} ) {

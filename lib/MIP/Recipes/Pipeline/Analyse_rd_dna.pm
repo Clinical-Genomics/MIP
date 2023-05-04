@@ -128,10 +128,10 @@ sub parse_rd_dna {
     ## Constants
     Readonly my @MIP_VEP_PLUGINS                 => qw{ sv_vep_plugin vep_plugin };
     Readonly my @ONLY_WGS_VARIANT_CALLER_RECIPES => qw{ cnvnator_ar delly_reformat tiddit };
-    Readonly my @ONLY_WGS_RECIPIES               =>
+    Readonly my @ONLY_WGS_RECIPIES =>
       qw{ chromograph_rhoviz cnvnator_ar delly_call delly_reformat expansionhunter
-      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata mitodel
-      samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
+      gatk_collectreadcounts gatk_denoisereadcounts gens_generatedata me_annotate me_filter me_merge_bam me_merge_vcfs
+      me_varianteffectpredictor mitodel retroseq samtools_subsample_mt smncopynumbercaller star_caller telomerecat_ar tiddit };
     Readonly my @REMOVE_CONFIG_KEYS => qw{ associated_recipe };
 
     ## Set analysis constants
@@ -475,6 +475,8 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Gzip_fastq qw{ analysis_gzip_fastq };
     use MIP::Recipes::Analysis::Manta qw{ analysis_manta };
     use MIP::Recipes::Analysis::Markduplicates qw{ analysis_markduplicates };
+    use MIP::Recipes::Analysis::Me_annotate qw{ analysis_me_annotate };
+    use MIP::Recipes::Analysis::Me_filter qw{ analysis_me_filter };
     use MIP::Recipes::Analysis::Mip_qccollect qw{ analysis_mip_qccollect };
     use MIP::Recipes::Analysis::Mip_vcfparser qw{ analysis_mip_vcfparser };
     use MIP::Recipes::Analysis::Mip_vercollect qw{ analysis_mip_vercollect };
@@ -491,17 +493,20 @@ sub pipeline_analyse_rd_dna {
       qw{ analysis_prepareforvariantannotationblock };
     use MIP::Recipes::Analysis::Rankvariant
       qw{ analysis_rankvariant analysis_rankvariant_unaffected analysis_rankvariant_sv analysis_rankvariant_sv_unaffected };
+    use MIP::Recipes::Analysis::Retroseq qw{ analysis_retroseq };
     use MIP::Recipes::Analysis::Rhocall qw{ analysis_rhocall_annotate analysis_rhocall_viz };
     use MIP::Recipes::Analysis::Rtg_vcfeval qw{ analysis_rtg_vcfeval  };
     use MIP::Recipes::Analysis::Sacct qw{ analysis_sacct };
     use MIP::Recipes::Analysis::Sambamba_depth qw{ analysis_sambamba_depth };
-    use MIP::Recipes::Analysis::Samtools_merge qw{ analysis_samtools_merge };
+    use MIP::Recipes::Analysis::Samtools_merge
+      qw{ analysis_samtools_merge analysis_samtools_merge_panel };
     use MIP::Recipes::Analysis::Samtools_subsample_mt qw{ analysis_samtools_subsample_mt };
     use MIP::Recipes::Analysis::Smncopynumbercaller qw{ analysis_smncopynumbercaller };
     use MIP::Recipes::Analysis::Star_caller qw{ analysis_star_caller };
     use MIP::Recipes::Analysis::Sv_annotate qw{ analysis_sv_annotate };
     use MIP::Recipes::Analysis::Sv_reformat qw{ analysis_reformat_sv };
     use MIP::Recipes::Analysis::Sv_combinevariantcallsets qw{ analysis_sv_combinevariantcallsets };
+    use MIP::Recipes::Analysis::Svdb_merge_me qw{ analysis_me_merge_vcfs };
     use MIP::Recipes::Analysis::Telomerecat qw{ analysis_telomerecat };
     use MIP::Recipes::Analysis::Tiddit qw{ analysis_tiddit };
     use MIP::Recipes::Analysis::Tiddit_coverage qw{ analysis_tiddit_coverage };
@@ -509,7 +514,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Varg qw{ analysis_varg };
     use MIP::Recipes::Analysis::Variant_annotation qw{ analysis_variant_annotation };
     use MIP::Recipes::Analysis::Vcf2cytosure qw{ analysis_vcf2cytosure };
-    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_wgs };
+    use MIP::Recipes::Analysis::Vep qw{ analysis_vep_me analysis_vep_wgs };
     use MIP::Recipes::Build::Rd_dna qw{build_rd_dna_meta_files};
 
     ### Pipeline specific checks
@@ -581,11 +586,16 @@ sub pipeline_analyse_rd_dna {
         gatk_variantevalall         => \&analysis_gatk_variantevalall,
         gatk_variantevalexome       => \&analysis_gatk_variantevalexome,
         gatk_variantrecalibration   => undef,    # Depends on analysis type and/or number of samples
-        gens_generatedata           => \&analysis_gens_generatedata,
+        gens_generatedata                  => \&analysis_gens_generatedata,
         glnexus_merge                      => \&analysis_glnexus,
         gzip_fastq                         => \&analysis_gzip_fastq,
         manta                              => \&analysis_manta,
         markduplicates                     => \&analysis_markduplicates,
+        me_annotate                        => \&analysis_me_annotate,
+        me_filter                          => \&analysis_me_filter,
+        me_merge_bam                       => \&analysis_samtools_merge_panel,
+        me_merge_vcfs                      => \&analysis_me_merge_vcfs,
+        me_varianteffectpredictor          => \&analysis_vep_me,
         mitodel                            => \&analysis_mitodel,
         mt_annotation                      => \&analysis_mt_annotation,
         multiqc_ar                         => \&analysis_multiqc,
@@ -596,6 +606,7 @@ sub pipeline_analyse_rd_dna {
         prepareforvariantannotationblock   => \&analysis_prepareforvariantannotationblock,
         qccollect_ar                       => \&analysis_mip_qccollect,
         rankvariant               => undef,                             # Depends on sample features
+        retroseq                  => \&analysis_retroseq,
         rhocall_ar                => \&analysis_rhocall_annotate,
         rhocall_viz               => \&analysis_rhocall_viz,
         rtg_vcfeval               => \&analysis_rtg_vcfeval,
