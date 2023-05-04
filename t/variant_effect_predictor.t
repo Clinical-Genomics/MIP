@@ -22,16 +22,13 @@ use Readonly;
 use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Vep}   => [qw{ variant_effect_predictor }],
-);
+    my %perl_module = ( q{MIP::Program::Vep} => [qw{ variant_effect_predictor }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -96,9 +93,11 @@ my %specific_argument = (
     },
     cache_directory => {
         input           => catdir( q{test_dir}, q{test_cache_dir} ),
-        expected_output => q{--dir_cache}
-          . $SPACE
-          . catdir( q{test_dir}, q{test_cache_dir} ),
+        expected_output => q{--dir_cache} . $SPACE . catdir( q{test_dir}, q{test_cache_dir} ),
+    },
+    compress_output => {
+        input           => 1,
+        expected_output => q{--compress_output bgzip},
     },
     custom_annotations_ref => {
         inputs_ref => [
@@ -107,8 +106,7 @@ my %specific_argument = (
                 q{path_1key_1,file_type_1,annotation_type_1,force_report_coordinates_1}
             )
         ],
-        expected_output =>
-          q{--custom path,key,file_type,annotation_type,force_report_coordinates}
+        expected_output => q{--custom path,key,file_type,annotation_type,force_report_coordinates}
           . $SPACE
           . q{--custom path_1key_1,file_type_1,annotation_type_1,force_report_coordinates_1},
     },
@@ -130,9 +128,7 @@ my %specific_argument = (
     },
     infile_path => {
         input           => catfile( q{test_dir}, q{infile.vcf} ),
-        expected_output => q{--input_file}
-          . $SPACE
-          . catfile( q{test_dir}, q{infile.vcf} ),
+        expected_output => q{--input_file} . $SPACE . catfile( q{test_dir}, q{infile.vcf} ),
     },
     max_sv_size => {
         input           => 1,
@@ -148,9 +144,7 @@ my %specific_argument = (
     },
     outfile_path => {
         input           => catfile( q{test_dir}, q{infile.vcf} ),
-        expected_output => q{--output_file}
-          . $SPACE
-          . catfile( q{test_dir}, q{infile.vcf} ),
+        expected_output => q{--output_file} . $SPACE . catfile( q{test_dir}, q{infile.vcf} ),
     },
     plugins_dir_path => {
         input           => catdir(qw{ test_dir plugins }),

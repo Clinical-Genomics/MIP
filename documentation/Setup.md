@@ -64,6 +64,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [PicardTools] (version: 2.27.2)
 - [PLINK] (version: 1.90b3x35)
 - [Preseq] (version: 3.1.2)
+- [RetroSeq] (version: 9d4f3b5)
 - [Rhocall] (version: 0.5.1)
 - [RSeQC] (version: 4.0.0)
 - [rtg-tools] (version: 3.12)
@@ -195,6 +196,7 @@ Corresponding MIP references:
 [PicardTools]: http://broadinstitute.github.io/picard/
 [PLINK]: https://www.cog-genomics.org/plink2
 [Preseq]: http://smithlabresearch.org/software/preseq/
+[RetroSeq]: https://github.com/tk2/RetroSeq
 [Rhocall]: https://github.com/dnil/rhocall
 [RSeQC]: http://rseqc.sourceforge.net/
 [rtg-tools]: https://github.com/RealTimeGenomics/rtg-tools

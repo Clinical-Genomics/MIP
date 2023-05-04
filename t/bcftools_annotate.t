@@ -92,6 +92,10 @@ my %specific_argument = (
         input           => q{infile.test},
         expected_output => q{infile.test},
     },
+    mark_sites => {
+        input           => q{TAG},
+        expected_output => q{--mark-sites TAG},
+    },
     outfile_path => {
         input           => q{outfile.txt},
         expected_output => q{-o outfile.txt},

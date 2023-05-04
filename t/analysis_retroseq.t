@@ -20,7 +20,7 @@ use Test::Trap;
 
 ## MIPs lib/
 use lib catdir( dirname($Bin), q{lib} );
-use MIP::Constants qw{ $COLON $COMMA $SPACE set_container_constants };
+use MIP::Constants qw{ $COLON $COMMA $SPACE };
 use MIP::Test::Fixtures qw{ test_add_io_for_recipe test_log test_mip_hashes };
 
 BEGIN {
@@ -30,16 +30,16 @@ BEGIN {
 ### Check all internal dependency modules and imports
 ## Modules with import
     my %perl_module = (
-        q{MIP::Recipes::Analysis::Deepvariant} => [qw{ analysis_deepvariant }],
+        q{MIP::Recipes::Analysis::Retroseq} => [qw{ analysis_retroseq }],
         q{MIP::Test::Fixtures} => [qw{ test_add_io_for_recipe test_log test_mip_hashes }],
     );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
 
-use MIP::Recipes::Analysis::Deepvariant qw{ analysis_deepvariant };
+use MIP::Recipes::Analysis::Retroseq qw{ analysis_retroseq };
 
-diag(   q{Test analysis_deepvariant from Deepvariant.pm}
+diag(   q{Test analysis_retroseq from Retroseq.pm}
       . $COMMA
       . $SPACE . q{Perl}
       . $SPACE
@@ -50,7 +50,7 @@ diag(   q{Test analysis_deepvariant from Deepvariant.pm}
 test_log( { log_name => q{MIP}, no_screen => 1, } );
 
 ## Given analysis parameters
-my $recipe_name    = q{deepvariant};
+my $recipe_name    = q{retroseq};
 my $slurm_mock_cmd = catfile( $Bin, qw{ data modules slurm-mock.pl } );
 
 my %active_parameter = test_mip_hashes(
@@ -62,16 +62,9 @@ my %active_parameter = test_mip_hashes(
 
 $active_parameter{$recipe_name}                     = 1;
 $active_parameter{recipe_core_number}{$recipe_name} = 1;
-$active_parameter{recipe_gpu_number}{$recipe_name}  = 1;
 $active_parameter{recipe_time}{$recipe_name}        = 1;
-$active_parameter{container_manager}                = q{singularity};
+$active_parameter{mobile_element_reference} = { catfile(qw{ path to herv_file }) => q{HERV} };
 my $sample_id = $active_parameter{sample_ids}[0];
-
-set_container_constants(
-    {
-        active_parameter_href => \%active_parameter,
-    }
-);
 
 my %file_info = test_mip_hashes(
     {
@@ -100,7 +93,7 @@ test_add_io_for_recipe(
 
 my %sample_info;
 
-my $is_ok = analysis_deepvariant(
+my $is_ok = analysis_retroseq(
     {
         active_parameter_href => \%active_parameter,
         file_info_href        => \%file_info,

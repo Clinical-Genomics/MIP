@@ -49,6 +49,13 @@ CHAIN_ALL:
       - sv_rankvariant
       - sv_reformat
       - vcf2cytosure_ar
+    - CHAIN_MOBILE_ELEMENTS:
+      - me_merge_bam
+      - retroseq
+      - me_merge_vcfs
+      - me_annotate
+      - me_varianteffectpredictor
+      - me_filter
   - CHAIN_MAIN:
     # PARALLEL chains, which inherit from MAIN in initiation, but are merged back to CHAIN_MAIN after execution
     - PARALLEL:

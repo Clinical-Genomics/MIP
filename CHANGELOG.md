@@ -3,10 +3,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [11.2.0]
+## [Develop]
 
 - Increased memory allocation for salmon and picardtools_mergersamfiles (RNA)
-- Updates expansionhunter variant catalog
 - Changes sv annotation overlap back to 0.8 (from 0.5) with the new tiddit update
 - New version of MegaFusion. A bug in the previous version prevented SVDB from writing the format and sample field in the vcf.
 - Remove the RSeQC read duplication analysis as it often fails.
@@ -28,11 +27,24 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - STAR-Fusion 1.11.0 -> 1.12.0
 - SVDB: 2.7.0 -> 2.8.1
 - Tiddit 3.3.2 -> 3.4.0
+
 ### Databases
 
 clinvar: 20220829 -> 20230218
 loqusdb snapshot: 20230208 -> 20230214
 hmtvar: oct2022
+
+## [11.2.0]
+
+- Adds retroseq for mobile element detection
+
+### Databases
+
+- expansionhunter variant catalog: v4.0.2 -> v5.0.0
+
+### Tools
+
+- RetroSeq: 9d4f3b5
 
 ## [11.1.3]
 
