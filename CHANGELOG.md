@@ -3,6 +3,37 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Develop]
+
+- Increased memory allocation for salmon and picardtools_mergersamfiles (RNA)
+- Changes sv annotation overlap back to 0.8 (from 0.5) with the new tiddit update
+- New version of MegaFusion. A bug in the previous version prevented SVDB from writing the format and sample field in the vcf.
+- Remove the RSeQC read duplication analysis as it often fails.
+- Increased run time allocation for gatk_asereadcounter.
+- Increased the default required length for a trimmed rna read to be retained from 20 bp to 40 bp. Configurable via CLI or config.
+- Fixed a bug where gnomad SV version 2.0 instead of version 2.1 was used to annotate SVs
+- One-pass instead of two-pass mapping with STAR-Fusion, as recommended for STAR-Fusion 1.12
+
+### Tools
+
+- Arriba 2.3.0 -> 2.4.0
+- DeepVariant 1.4.0 -> 1.5.0
+- FastQC: 0.11.9 -> 0.12.1
+- GATK: 4.2.6.1 -> 4.4.0.0
+- Gffcompare 0.11.2 -> 0.12.6
+- Htslib 1.15.1 -> 1.16
+- MegaFusion 66a3a80 -> d3feacf
+- Picard 2.27.2 -> 2.27.5
+- STAR-Fusion 1.11.0 -> 1.12.0
+- SVDB: 2.7.0 -> 2.8.1
+- Tiddit 3.3.2 -> 3.4.0
+
+### Databases
+
+clinvar: 20220829 -> 20230218
+loqusdb snapshot: 20230208 -> 20230214
+hmtvar: oct2022
+
 ## [11.2.0]
 
 - Adds retroseq for mobile element detection
@@ -72,7 +103,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - dbnsfp: 4.1a -> 4.3a (grch38 only)
 - gnomad: r3.1.1 -> r3.1.2 (grch38 only)
 - giab: 3.3.2 -> 4.2.1
-- loqusdb dump: 20210921 -> 20220905
+- loqusdb dump: 20210921 -> c
 - nist: v3.3.2 -> v4.2.1
 - vcf2cytosure blacklist: 200520
 

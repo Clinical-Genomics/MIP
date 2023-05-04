@@ -1037,8 +1037,9 @@ sub analysis_star_fusion_aln {
             outfile_name_prefix                    => $outfile_path_prefix . $DOT,
             pe_overlap_mmp                         => $PE_OVERLAP_MMP,
             pe_overlap_nbases_min                  => $PE_OVERLAP_NBASES_MIN,
+            quant_mode                             => q{GeneCounts},
             thread_number                          => $recipe{core_number},
-            two_pass_mode                          => q{Basic},
+            two_pass_mode                          => q{None},
         },
     );
     say {$filehandle} $NEWLINE;
@@ -1052,21 +1053,6 @@ sub analysis_star_fusion_aln {
         }
     );
     say {$filehandle} $NEWLINE;
-
-    ## Remove intermediary files
-  FILE_TAG:
-    foreach my $file_tag (qw{ _STARgenome _STARpass1 }) {
-
-        gnu_rm(
-            {
-                filehandle  => $filehandle,
-                force       => 1,
-                infile_path => $outfile_path_prefix . $DOT . $file_tag,
-                recursive   => 1,
-            }
-        );
-        print {$filehandle} $NEWLINE;
-    }
 
     ## Close filehandle
     close $filehandle or $log->logcroak(q{Could not close filehandle});
