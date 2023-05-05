@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [11.2.1]
 
-- Patching of gens pre processing container to solve in issue with incomplete bed files.
+- Patching of gens pre processing container to solve an issue with incomplete bed files.
 
 ### Tools
 gens_preproc 1.0.2 -> 1.0.8
