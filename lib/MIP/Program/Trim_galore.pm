@@ -37,6 +37,7 @@ sub trim_galore {
 ##          : $filehandle             => Filehandle to write to
 ##          : $gzip_output            => Gzip output fastq file
 ##          : $infile_paths_ref       => Infile paths {REF}
+##          : $length                 => Minimum length of trimmed read to retain
 ##          : $outdir_path            => Outdirectory path
 ##          : $paired_reads           => Do paired end trimming
 ##          : $stderrfile_path        => Stderrfile path
@@ -50,6 +51,7 @@ sub trim_galore {
     my $cores;
     my $filehandle;
     my $infile_paths_ref;
+    my $length;
     my $outdir_path;
     my $paired_reads;
     my $stderrfile_path;
@@ -86,6 +88,11 @@ sub trim_galore {
             default     => [],
             required    => 1,
             store       => \$infile_paths_ref,
+            strict_type => 1,
+        },
+        length => {
+            allow       => [ undef, qr/\A \d+ \z/xms ],
+            store       => \$length,
             strict_type => 1,
         },
         outdir_path => {
@@ -135,6 +142,10 @@ sub trim_galore {
 
     if ($paired_reads) {
         push @commands, q{--paired};
+    }
+
+    if ($length) {
+        push @commands, q{--length} . $SPACE . $length;
     }
 
     push @commands, join $SPACE, @{$infile_paths_ref};

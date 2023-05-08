@@ -201,7 +201,7 @@ sub download_gnomad {
             },
             method => \&_annotate,
         },
-        q{r2.1.1_sv} => {
+        q{r2.1_sv} => {
             arg_href => {
                 info_keys_ref => [qw{ INFO/AC INFO/AF INFO/POPMAX_AF }],
             },
@@ -723,7 +723,7 @@ sub _build_af_file {
             strict_type => 1,
         },
         reference_version => {
-            allow       => [qw{ r2.0.1 r2.1.1 r2.1.1_sv r3.1.1 r3.1.2 }],
+            allow       => [qw{ r2.0.1 r2.1.1 r2.1_sv r3.1.1 r3.1.2 }],
             required    => 1,
             store       => \$reference_version,
             strict_type => 1,
@@ -737,7 +737,7 @@ sub _build_af_file {
     use MIP::Program::Htslib qw{ htslib_bgzip htslib_tabix };
 
     ## Don't build file for SV:s
-    return if ( $reference_version eq q{r2.1.1_sv} );
+    return if ( $reference_version eq q{r2.1_sv} );
 
     my $outfile_no_suffix = remove_file_path_suffix(
         {
