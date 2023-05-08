@@ -34,6 +34,14 @@ clinvar: 20220829 -> 20230218
 loqusdb snapshot: 20230208 -> 20230214
 hmtvar: oct2022
 
+## [11.2.1]
+
+- Patching of gens pre processing container to solve an issue with incomplete bed files.
+
+### Tools
+
+gens_preproc 1.0.2 -> 1.0.8
+
 ## [11.2.0]
 
 - Adds retroseq for mobile element detection
