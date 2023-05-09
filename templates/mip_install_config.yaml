@@ -93,7 +93,7 @@ container:
   gens_preproc:
     executable:
       generate_gens_data.pl:
-    uri: docker.io/raysloks/gens_preproc:1.0.8
+    uri: docker.io/raysloks/gens_preproc:1.0.11
   gffcompare:
     executable:
       gffcompare:
