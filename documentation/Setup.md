@@ -78,7 +78,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [StringTie] (version: 2.1.3b)
 - [Svdb] (version: 2.4.0)
 - [Telomerecat] (version: 3.4.0)
-- [Tiddit] (version: 2.12.1)
+- [Tiddit] (version: 3.4.0)
 - [Upd] (version: 0.1.1)
 - [Varg] (version: 1.2.0)
 - [Vcf2cytosure] (version: 0.5.1)

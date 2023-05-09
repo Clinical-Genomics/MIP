@@ -977,6 +977,14 @@ q{Regular expression file containing the regular expression to be used for each 
     );
 
     option(
+        q{trim_min_length} => (
+            documentation => q{Discard trimmed reads shorter than this},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
         q{vcfparser_ar} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Parse variants using vcfparser},
