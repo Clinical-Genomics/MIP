@@ -377,7 +377,7 @@ recipe_time:
     prepareforvariantannotationblock: 5
     qccollect_ar: 1
     rankvariant: 10
-    retroseq: 5
+    retroseq: 15
     rhocall_ar: 5
     rhocall_viz: 1
     rtg_vcfeval: 1
