@@ -33,8 +33,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Databases
 
-clinvar: 20220829 -> 20230218
-loqusdb snapshot: 20230208 -> 20230214
+clinvar: 20220829 -> 20230508
+loqusdb snapshot: 20230208 -> 20230512
 hmtvar: oct2022
 
 ## [11.2.2]
