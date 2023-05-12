@@ -5,8 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Develop]
 
+- Set overlap requirement for merging two SVs to 0.8, down from the 0.95 default
+- Set overlap requirement for SV annotation to 0.6, up from 0.5
+- Update Tiddit to improve SV positioning
 - Increased memory allocation for salmon and picardtools_mergersamfiles (RNA)
-- Changes sv annotation overlap back to 0.8 (from 0.5) with the new tiddit update
 - New version of MegaFusion. A bug in the previous version prevented SVDB from writing the format and sample field in the vcf.
 - Remove the RSeQC read duplication analysis as it often fails.
 - Increased run time allocation for gatk_asereadcounter.
@@ -25,8 +27,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - MegaFusion 66a3a80 -> d3feacf
 - Picard 2.27.2 -> 2.27.5
 - STAR-Fusion 1.11.0 -> 1.12.0
-- SVDB: 2.7.0 -> 2.8.1
-- Tiddit 3.3.2 -> 3.4.0
+- SVDB: 2.7.0 -> 2.8.2
+- Tiddit 3.3.2 -> 3.6.0
 
 ### Databases
 

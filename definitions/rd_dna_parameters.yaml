@@ -959,6 +959,12 @@ sv_svdb_merge_prioritize:
   data_type: SCALAR
   default: tiddit,cnvnator,manta
   type: recipe_argument
+sv_svdb_merge_overlap:
+  associated_recipe:
+    - sv_combinevariantcallsets
+  data_type: SCALAR
+  default: 0.8
+  type: recipe_argument
 sv_decompose:
   associated_recipe:
     - sv_combinevariantcallsets
@@ -1015,7 +1021,7 @@ sv_svdb_query_overlap:
   associated_recipe:
     - sv_annotate
   data_type: SCALAR
-  default: 0.8
+  default: 0.6
   type: recipe_argument
 sv_vcfanno_config:
   associated_recipe:

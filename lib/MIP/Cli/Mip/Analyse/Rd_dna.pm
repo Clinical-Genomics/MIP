@@ -828,6 +828,14 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
     );
 
     option(
+        q{sv_svdb_merge_overlap} => (
+            documentation => q{Required overlap to merge two structural variants},
+            is            => q{rw},
+            isa           => Num,
+        )
+    );
+
+    option(
         q{sv_svdb_merge_prioritize} => (
             documentation => q{Prioritization order of structural variant callers},
             is            => q{rw},
@@ -897,7 +905,7 @@ q{Default: grch37_dbsnp_-138-.vcf, grch37_1000g_indels_-phase1-.vcf, grch37_mill
         q{sv_svdb_query_overlap} => (
             documentation => q{Database file(s) for annotation},
             is            => q{rw},
-            isa           => Str,
+            isa           => Num,
         )
     );
 

@@ -280,8 +280,9 @@ sub analysis_sv_combinevariantcallsets {
         {
             filehandle       => $filehandle,
             infile_paths_ref => \@svdb_infile_paths,
-            priority         => $active_parameter_href->{sv_svdb_merge_prioritize},
+            overlap          => $active_parameter_href->{sv_svdb_merge_overlap},
             pass_only        => 1,
+            priority         => $active_parameter_href->{sv_svdb_merge_prioritize},
             same_order       => 1,
             stdoutfile_path  => $outfile_path,
         }
@@ -425,13 +426,7 @@ sub _add_to_parallel_chain {
     check( $tmpl, $arg_href, 1 ) or croak q{Could not parse arguments!};
 
     ## If element is not part of array
-    if (
-        not any {
-            $_ eq $structural_variant_caller_chain
-        }
-        @{$parallel_chains_ref}
-      )
-    {
+    if ( not any { $_ eq $structural_variant_caller_chain } @{$parallel_chains_ref} ) {
         push @{$parallel_chains_ref}, $structural_variant_caller_chain;
     }
     return;
