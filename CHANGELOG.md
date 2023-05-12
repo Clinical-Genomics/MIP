@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Develop]
 
-- Set overlap requirement for merging two SVs to 0.6
+- Set overlap requirement for merging two SVs to 0.8, down from the 0.95 default
 - Set overlap requirement for SV annotation to 0.6, up from 0.5
 - Update Tiddit to improve SV positioning
 - Increased memory allocation for salmon and picardtools_mergersamfiles (RNA)
