@@ -15,6 +15,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Increased the default required length for a trimmed rna read to be retained from 20 bp to 40 bp. Configurable via CLI or config.
 - Fixed a bug where gnomad SV version 2.0 instead of version 2.1 was used to annotate SVs
 - One-pass instead of two-pass mapping with STAR-Fusion, as recommended for STAR-Fusion 1.12
+- Bump max run time for retroseq to 15 hours.
 
 ### Tools
 
