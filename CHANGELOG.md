@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Develop]
+## [12.0.0]
 
 - Set overlap requirement for merging two SVs to 0.8, down from the 0.95 default
 - Set overlap requirement for SV annotation to 0.6, up from 0.5
