@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [11.2.3]
+
+- Patching regexp for parsing fastq files version 1.4.
+
 ## [11.2.2]
 
 - New patch of gens pre processing container.

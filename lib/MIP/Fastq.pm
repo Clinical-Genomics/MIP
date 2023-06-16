@@ -48,7 +48,7 @@ sub casava_header_features {
     my ($arg_href) = @_;
 
     my %casava_header_feature = (
-        q{1.4} => [qw{ instrument_id run_number flowcell lane tile x_pos y_pos direction }],
+        q{1.4} => [qw{ instrument_id run_number lane tile x_pos y_pos index direction }],
         q{1.8} => [
             qw{ instrument_id run_number flowcell lane tile x_pos y_pos direction filtered control_bit index }
         ],
@@ -376,16 +376,14 @@ q{Will add fake date '00010101' to follow file convention since this is not reco
         );
     }
     ## Adds information derived from infile name to hashes
-    $log->info(
-            q{Found following information from fastq header: lane=}
+    $log->info( q{Found following information from fastq header: lane=}
           . $fastq_header_info{lane}
           . q{ flow-cell=}
           . $fastq_header_info{flowcell}
           . q{ index=}
           . $fastq_header_info{index}
           . q{ direction=}
-          . $fastq_header_info{direction},
-    );
+          . $fastq_header_info{direction}, );
     return;
 }
 
