@@ -619,7 +619,6 @@ sub _get_fastq_header_v1_4 {
 
     ## Get header features
     $get_fastq_header_regexp .=
-q?my ($instrument_id, $run_number, $flowcell, $lane, $tile, $x_pos, $y_pos, $direction) = /^(@[^:]*):(\d+):(\w+):(\d+):(\d+):(\d+):(\d+)[\/](\d+)/; ?;
 q?my ($instrument_id, $lane, $tile, $x_pos, $y_pos, $index, $direction) = /^(@[^:]*):(\d+):(\d+):(\d+):(\d+)[#]([^\/]*)[\/](\d+)/; ?;
 
     ## If  we found correct header version
