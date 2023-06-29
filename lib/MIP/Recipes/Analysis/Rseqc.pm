@@ -292,16 +292,6 @@ sub analysis_rseqc {
     );
     say {$filehandle} $NEWLINE;
 
-    say {$filehandle} q{## Rseqc read_duplication};
-    rseqc_read_duplication(
-        {
-            filehandle           => $filehandle,
-            infile_path          => $infile_path,
-            outfiles_path_prefix => $outfile_path_prefix . $UNDERSCORE . q{read_duplication},
-        }
-    );
-    say {$filehandle} $NEWLINE;
-
     close $filehandle;
 
     if ( $recipe{mode} == 1 ) {

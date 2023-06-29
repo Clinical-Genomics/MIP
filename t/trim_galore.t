@@ -23,16 +23,13 @@ use lib catdir( dirname($Bin), q{lib} );
 use MIP::Constants qw{ $COMMA $SPACE };
 use MIP::Test::Commands qw{ test_function };
 
-
 BEGIN {
 
     use MIP::Test::Fixtures qw{ test_import };
 
 ### Check all internal dependency modules and imports
 ## Modules with import
-    my %perl_module = (
-        q{MIP::Program::Trim_galore} => [qw{ trim_galore }],
-);
+    my %perl_module = ( q{MIP::Program::Trim_galore} => [qw{ trim_galore }], );
 
     test_import( { perl_module_href => \%perl_module, } );
 }
@@ -47,7 +44,8 @@ diag(   q{Test trim_galore from Trim_galore.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $CORES => 12;
+Readonly my $CORES      => 12;
+Readonly my $MIN_LENGTH => 30;
 
 ## Base arguments
 my @function_base_commands = qw{ trim_galore };
@@ -96,6 +94,10 @@ my %specific_argument = (
     infile_paths_ref => {
         inputs_ref      => [qw{ file_1.fastq file_2.fastq }],
         expected_output => q{file_1.fastq} . $SPACE . q{file_2.fastq},
+    },
+    length => {
+        input           => $MIN_LENGTH,
+        expected_output => q{--length} . $SPACE . $MIN_LENGTH,
     },
     outdir_path => {
         input           => catdir(qw{ output dir }),
