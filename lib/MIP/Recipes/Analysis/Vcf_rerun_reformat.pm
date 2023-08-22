@@ -401,7 +401,7 @@ sub analysis_vcf_rerun_reformat {
     );
 
     my $outfile_path_prefix = $io{out}{file_path_prefix};
-    my $outfile_suffix      = $io{out}{file_suffix};
+    my $outfile_suffix      = $io{out}{file_constant_suffix};
 
     ## Filehandles
     # Create anonymous filehandle
@@ -431,16 +431,25 @@ sub analysis_vcf_rerun_reformat {
             filehandle   => $filehandle,
             infile_path  => $infile_path,
             outfile_path => $view_outfile_path,
-            output_type  => q{v},
+            output_type  => q{z},
+        }
+    );
+    say {$filehandle} $NEWLINE;
+    
+    htslib_tabix(
+        {
+            infile_path => $view_outfile_path,
+            filehandle => $filehandle,
         }
     );
     say {$filehandle} $NEWLINE;
 
+
     ## Close filehandleS
     close $filehandle or $log->logcroak(q{Could not close filehandle});
 
+    $file_info_href->{max_parallel_processes_count} = {};
     if ( $recipe{mode} == 1 ) {
-
         submit_recipe(
             {
                 base_command                      => $profile_base_command,
