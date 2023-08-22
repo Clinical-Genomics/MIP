@@ -1,0 +1,163 @@
+---
+## Environment
+analysis_constant_path: case_id!/analysis
+cluster_constant_path: /home/tor.bjorgen/repos/cg/mip/cases
+conda_path: /home/proj/stage/bin/miniconda3
+load_env:
+  D_mip_torb:
+    method: conda
+    mip:
+max_cores_per_node: 36
+node_ram_memory: 192
+project_id: development
+slurm_quality_of_service: low
+recipe_bind_path:
+  fastqc_ar:
+    - /home/proj/stage/rare-disease/
+    - /home/proj/stage/housekeeper-bundles
+    - /home/proj/production/housekeeper-bundles
+    - /home/proj/production/demultiplexed-runs
+    - /home/proj/production/external-data
+  bwa_mem:
+    - /home/proj/stage/rare-disease/
+    - /home/proj/stage/housekeeper-bundles
+    - /home/proj/production/housekeeper-bundles
+    - /home/proj/production/demultiplexed-runs
+    - /home/proj/production/external-data
+  bwa_mem2:
+    - /home/proj/stage/rare-disease/
+    - /home/proj/stage/housekeeper-bundles
+    - /home/proj/production/housekeeper-bundles
+    - /home/proj/production/demultiplexed-runs
+    - /home/proj/production/external-data
+  sv_vcfparser:
+    - cluster_constant_path!/case_id!
+  vcfparser_ar:
+    - cluster_constant_path!/case_id!
+## Input
+pedigree_file: cluster_constant_path!/case_id!/pedigree.yaml
+reference_dir: /home/proj/stage/rare-disease/references/references_12.0
+## Output
+config_file_analysis: cluster_constant_path!/analysis_constant_path!/case_id!_config.yaml
+outdata_dir: cluster_constant_path!/analysis_constant_path!
+outscript_dir: cluster_constant_path!/analysis_constant_path!/scripts
+sample_info_file: cluster_constant_path!/analysis_constant_path!/case_id!_qc_sample_info.yaml
+## References
+vcfanno_config: grch37_vcfanno_config_-v1.19-.toml
+gatk_genotypegvcfs_ref_gvcf: grch37_gatk_merged_reference_samples.txt
+genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
+human_genome_reference: grch37_homo_sapiens_-d5-.fasta
+me_annotate_query_files:
+  # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
+  grch37_alu_swegen.vcf.gz: swegen_alu_|FRQ|OCC|FRQ|OCC|1
+  grch37_herv_swegen.vcf.gz: swegen_herv_|FRQ|OCC|FRQ|OCC|1
+  grch37_l1_swegen.vcf.gz: swegen_l1_|FRQ|OCC|FRQ|OCC|1
+  grch37_sva_swegen.vcf.gz: swegen_sva_|FRQ|OCC|FRQ|OCC|1
+mobile_element_reference:
+  grch37_g1k_alu.bed: ALU
+  grch37_g1k_l1.bed: L1
+  grch37_g1k_herv.bed: HERV
+  grch37_g1k_sva.bed: SVA
+rank_model_file: rank_model_-v1.35-.ini
+sambamba_depth_bed: grch37_scout_exons_-2017-01-.bed
+sv_vcfanno_config: grch37_sv_vcfanno_config_-v1.4-.toml
+sv_genmod_models_reduced_penetrance_file: grch37_cust003-cmms-red-pen_-2017-.tsv
+sv_rank_model_file: svrank_model_-v1.10-.ini
+sv_svdb_query_db_files:
+  # FORMAT: filename|OUT_FREQUENCY_INFO_KEY|OUT_ALLELE_COUNT_INFO_KEY|IN_FREQUENCY_INFO_KEY|IN_ALLELE_COUNT_INFO_KEY|USE_IN_FREQUENCY_FILTER
+  grch37_clinvar_sv_pathogenic_-20230306-.bedpe: clinvar_pathogenic|Occ|Frq
+  grch37_clinvar_sv_non_pathogenic_-20230306-.bedpe: clinvar_non_pathogenic|Occ|Frq
+  grch37_gnomad.genomes_-r2.1.1_sv-.vcf: gnomad_sv|AF|AC|AF|AC|1
+  grch37_loqusdb_sv_variants_export-20220905-.vcf: clinical_genomics_loqus|Frq|Obs|Frq|Obs|1
+  grch37_mip_sv_svdb_export_-2018-10-09-.vcf: clinical_genomics_mip|AF|OCC|FRQ|OCC|1
+  grch37_svdb_query_decipher_-v1.0.0-.vcf: decipher|AF|OCC|FRQ|OCC
+  grch37_svdb_query_clingen_cgh_benign_-v1.0.0-.vcf: clingen_cgh_benign
+  grch37_svdb_query_clingen_cgh_pathogenic_-v2.0.0-.vcf: clingen_cgh_pathogenic
+  grch37_svdb_query_clingen_ngi_-v1.0.0-.vcf: clingen_ngi|AF|OCC|FRQ|OCC|1
+  grch37_swegen_concat_sort_-20170830-.vcf: swegen|AF|OCC|FRQ|OCC|1
+qccollect_eval_metric_file: qc_eval_metric_-v1.3-.yaml
+qccollect_regexp_file: qc_regexp_-v1.27-.yaml
+vcf2cytosure_blacklist: grch37_cytosure_blacklist_-1.0-.bed
+### Analysis
+## Programs
+  sv_vcf_rerun_reformat: 0
+  sv_annotate: 0
+  sv_varianteffectpredictor: 0
+  sv_vcfparser: 0
+  sv_rankvariant: 0
+  sv_reformat: 0
+## Parameters
+fqf_annotations:
+  - GNOMADAF
+  - GNOMADAF_popmax
+  - SWEGENAF
+gatk_path: /usr
+picardtools_path: /usr/picard/
+qccollect_sampleinfo_file: cluster_constant_path!/analysis_constant_path!/case_id!_qc_sample_info.yaml
+sv_genmod_models_case_type: cmms
+sv_vep_plugin:
+  pLI:
+    exists_check:
+      - type: file
+        path: /home/proj/stage/rare-disease/references/references_12.0/gnomad_pli_per_gene_-_r2.1.1-.txt
+    parameters:
+      - /home/proj/stage/rare-disease/references/references_12.0/gnomad_pli_per_gene_-_r2.1.1-.txt
+vep_custom_annotation:
+  genomic_superdups_frac_match:
+    annotation_type: overlap
+    force_report_coordinates: 0
+    key: genomic_superdups_frac_match
+    file_type: bed
+    path: /home/proj/stage/rare-disease/references/references_12.0/grch37_genomic_superdups_reformated_-20181009-.bed.gz
+  clinvar:
+    annotation_type: exact
+    force_report_coordinates: 0
+    key: CLINVAR
+    file_type: vcf
+    path: /home/proj/stage/rare-disease/references/references_12.0/grch37_clinvar_reformated_-20220829-.vcf.gz
+    vcf_fields: CLNSIG,CLNVID,CLNREVSTAT
+vep_directory_cache: /home/proj/stage/rare-disease/references/references_12.0/ensembl-tools-release-107/cache
+vep_plugins_dir_path: /home/proj/stage/rare-disease/references/references_12.0/ensembl-tools-release-107/cache/Plugins
+vep_plugin:
+  dbNSFP:
+    exists_check:
+      - type: file
+        path: /home/proj/stage/rare-disease/references/references_12.0/grch37_dbnsfp_-v3.5a-.txt.gz
+    parameters:
+      - /home/proj/stage/rare-disease/references/references_12.0/grch37_dbnsfp_-v3.5a-.txt.gz
+      - GERP++_RS
+      - GERP++_NR
+      - phyloP100way_vertebrate
+      - phastCons100way_vertebrate
+      - REVEL_rankscore
+      - REVEL_score
+      - rs_dbSNP150
+  pLI:
+    exists_check:
+      - type: file
+        path: /home/proj/stage/rare-disease/references/references_12.0/gnomad_pli_per_gene_-_r2.1.1-.txt
+    parameters:
+      - /home/proj/stage/rare-disease/references/references_12.0/gnomad_pli_per_gene_-_r2.1.1-.txt
+  LoFtool:
+    exists_check:
+      - type: file
+        path: /home/proj/stage/rare-disease/references/references_12.0/ensembl-tools-release-107/cache/Plugins/LoFtool_scores.txt
+    parameters:
+      - /home/proj/stage/rare-disease/references/references_12.0/ensembl-tools-release-107/cache/Plugins/LoFtool_scores.txt
+  MaxEntScan:
+    exists_check:
+      - type: directory
+        path: /home/proj/stage/rare-disease/references/references_12.0/ensembl-tools-release-107/cache/Plugins/fordownload
+    parameters:
+      - /home/proj/stage/rare-disease/references/references_12.0/ensembl-tools-release-107/cache/Plugins/fordownload
+      - SWA
+      - NCSS
+  SpliceAI:
+    exist_check:
+      - type: file
+        path: /home/proj/stage/rare-disease/references/references_12.0/grch37_spliceai_scores_raw_indel_-v1.3-.vcf.gz
+      - type: file
+        path: /home/proj/stage/rare-disease/references/references_12.0/grch37_spliceai_scores_raw_snv_-v1.3-.vcf.gz
+    parameters:
+      - snv=/home/proj/stage/rare-disease/references/references_12.0/grch37_spliceai_scores_raw_snv_-v1.3-.vcf.gz
+      - indel=/home/proj/stage/rare-disease/references/references_12.0/grch37_spliceai_scores_raw_indel_-v1.3-.vcf.gz
