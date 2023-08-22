@@ -139,7 +139,7 @@ sv_vcf_rerun_reformat:
   data_type: SCALAR
   default: 1
   file_tag: _vrn
-  outfile_suffix: ".vcf"
+  outfile_suffix: ".vcf.gz"
   program_executables:
     - bcftools
   type: recipe
@@ -407,7 +407,7 @@ vcf_rerun_reformat:
   data_type: SCALAR
   default: 1
   file_tag: _vrn
-  outfile_suffix: ".vcf"
+  outfile_suffix: ".vcf.gz"
   program_executables:
     - bcftools
   type: recipe
