@@ -11,5 +11,5 @@ samples:
     mother: '0'
     sample_display_name: NA19909
     phenotype: affected
-    sex: male
+    sex: female
     expected_coverage: 30
