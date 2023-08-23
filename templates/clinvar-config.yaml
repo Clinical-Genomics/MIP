@@ -70,6 +70,7 @@ sv_varianteffectpredictor: 0
 sv_vcfparser: 0
 sv_rankvariant: 0
 sv_reformat: 0
+rhocall_ar: 0
 ## Parameters
 cadd_vcf_header_file: cadd_to_vcf_header_-1.0-.txt
 rhocall_frequency_file: grch37_gnomad.genomes_-r2.1.1-.tab.gz
