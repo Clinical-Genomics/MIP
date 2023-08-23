@@ -1,0 +1,15 @@
+---
+default_gene_panels:
+  - IEM
+customer: 'clinvarcust'
+case: 'anderstestdata'
+samples:
+  - analysis_type: vrn
+    sample_id: NA19909 
+    capture_kit: agilent_sureselect_cre.v1
+    father: '0'
+    mother: '0'
+    sample_display_name: NA19909
+    phenotype: affected
+    sex: male
+    expected_coverage: 30
