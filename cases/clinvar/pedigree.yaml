@@ -1,0 +1,15 @@
+---
+default_gene_panels:
+  - IEM
+customer: 'clinvarcust'
+case: 'clinvar'
+samples:
+  - analysis_type: vrn
+    sample_id: NOTASAMPLE
+    capture_kit: agilent_sureselect_cre.v1
+    father: '0'
+    mother: '0'
+    sample_display_name: NOTASAMPLE
+    phenotype: affected
+    sex: female
+    expected_coverage: 30
