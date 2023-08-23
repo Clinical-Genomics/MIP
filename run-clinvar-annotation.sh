@@ -1,0 +1,1 @@
+perl mip analyse rd_dna_vcf_rerun anderstestdata --container_config /home/proj/stage/bin/miniconda3/envs/D_mip_torb/bin/templates/mip_container_config.yaml -c templates/clinvar-config.yaml --vcf_rerun_file cases/anderstestdata/pathogenic_fixed.vcf.gz --sv_vcf_rerun_file cases/anderstestdata/pathogenic_fixed.vcf.gz
