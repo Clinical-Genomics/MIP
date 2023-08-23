@@ -1,0 +1,1000 @@
+    4  find -name "*annotate_models_score*"
+    5  ls /home/proj/development/rare-disease/rankscore_normalization
+    6  ls genmod_v3.7.3/
+    7  find -name "mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked*"
+    8  sha256sum ./exploration-rankscore/mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz-ref.hd5 ./exploration-rankscore/2023-05-31/mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz.hd5
+    9  less mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz.tbi
+   10  gunzip  -c mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz > vcf
+   11  grep 1_789141_G_C vcf 
+   12  realpath 
+   13  cd sv/genmod_compound/
+   14  realpath *
+   15  realpath 
+   16  cd sv/genmod_compound/
+   17  realpath *
+   18  find *.log
+   19  tail -f slurm-4798492.out
+   20  top -u tor.bjo
+   21  top 
+   22  top -u hiseq*
+   23  top -u hiseq
+   24  top -u hiseq+
+   25  top -u hiseq.c+
+   26  man top
+   27  top --help
+   28  users
+   29  top -u hiseq.clinical
+   30  rm slurm-4786901.out 
+   31  cd data/
+   32  cd genmod-rankscore-normalization/
+   33  cd rankscore_normalization/
+   34  ls /home/proj/development/rare-disease/rankscore_normalization/genmod_v3.7.3
+   35  ls /home/proj/development/rare-disease/rankscore_normalization/
+   36  cp -r /home/proj/development/rare-disease/rankscore_normalization/genmod_v3.7.3 genmod_v3.7.3
+   37  gunzip -C mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz | head 
+   38  gunzip  --help
+   39  gunzip  --stdout mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz | head 
+   40  gunzip  --stdout mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz | head -n 500
+   41  gunzip  --stdout mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz | head -n 200
+   42  gunzip  --stdout mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz | head -n 300
+   43  realpath mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz
+   44  cd 
+   45  cd repos/cg/raredisease-ml/
+   46  tail -f slurm-4786904.out 
+   47  scontrol show jobid [JOBID]
+   48  scontrol show jobid JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+   49  rm tmp/exploration-rankscore/mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed*
+   50  ps ax 
+   51  os 
+   52  ps 
+   53  sacct --help
+   54  sacct --help | less
+   55  sacct -u tor.bjorgen
+   56  getrusage --help
+   57  man sacct
+   58  man sstat
+   59  ls tmp/exploration-rankscore/
+   60  git checkout refs/heads/rankscore-analysis 
+   61  cat rankscore-data-analysis.sh 
+   62  jobinfo --help
+   63  scontrol show job 4786904 | less
+   64  vim src/rdds/exploration_rankscore/rankscore_normalization_tests.py 
+   65  scontrol job info 4786904
+   66  scontrol inf 4786904
+   67  scontrol info 4786904
+   68  scontrol --help
+   69  scontrol show 4786904
+   70  scontrol show jobid 4786904
+   71  cd tmp/rankscore-eval/
+   72  gunzip  --keep mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz | head 
+   73  man gunz
+   74  man gunzip
+   75  gunzip  -c mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz | head 
+   76  gunzip  -c mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz | head -n 500
+   77  gunzip  -c mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz | head -n 1000 > short.vcf
+   78  cd genmod_score/
+   79  head -n 1000 mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed.annotate_models_score.vcf > short.vcf
+   80  diff
+   81  diff ./genmod_v3.7.3/short.vcf ./snv_indel/genmod_score/short.vcf
+   82  find -name short.vcf
+   83  realpath `find name short.vcf`
+   84  realpath `find -name short.vcf`
+   85  realpath `find -name short.vcf`
+   86  git checkout refs/heads/rankscore-analysis 
+   87  gasa
+   88  diff ./genmod_v3.7.3/short.vcf ./snv_indel/genmod_score/short.vcf
+   89  find -name short.vcf
+   90  realpath `find name short.vcf`
+   91  realpath `find -name short.vcf`
+   92  less testnormalizedrankscore.log 
+   93  cat rankscore-data-analysis.sh 
+   94  tail -f slurm-4790536.out
+   95  realpath rankscore-data-analysis.sh 
+   96  cat slurm-4790536.out
+   97  cd tmp/exploration-rankscore/
+   98  chmod a-w *
+   99  grep -nr RankScoreNormalized
+  100  ls ../../
+  101  mv ../../*.log .
+  102  tail -f slurm-4796255.out
+  103  cat ~/.gitconfig 
+  104  git config --global -l 
+  105  git checkout rankscore-analysis 
+  106  git diff --colours
+  107  git diff --colors
+  108  git --color diff
+  109  git diff --color
+  110  git config --global color.ui true
+  111  git commit -m "Rankscore integrity test fixup"
+  112  ls tmp/
+  113  realpath tmp/debug.1_789141_G_C 
+  114  find -name "mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked*"
+  115  mkdir 2023-06-02
+  116  mv mutacc-20230512_comb_ann_vep_parsed.annotate_models_score.vcf-sv.hd5 2023-06-02/
+  117  mv mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed.annotate_models_score.vcf-snv.hd5 2023-06-02/
+  118  cp mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed_ranked.vcf.gz-ref.hd5 2023-06-02
+  119  cp *.log 2023-06-02/
+  120  rm *.log
+  121  git add -p sr
+  122  git add -p src/
+  123  git commit -m "rankscore compile data: select compound files
+  124  Use compound files instead of score output files.
+  125  This is necessary because compound edits the VCF
+  126  and this breaks the integrity check in
+  127  rankscore_exploration."
+  128  ls . 2023-06-02
+  129  cd ../rankscore-eval/
+  130  ls genmod_v3.7.3/
+  131  wc -l genmod_v3.7.3/vcf 
+  132  wc -l snv_indel/input_data/mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed.vcf 
+  133  head snv_indel/input_data/mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed.vcf
+  134  head genmod_v3.7.3/vcf
+  135  tail genmod_v3.7.3/vcf
+  136  tail snv_indel/input_data/mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed.vcf
+  137  gunzip  -c causative-variants.vcf.gz > vcf
+  138  less vcf
+  139  vc -l vcf 
+  140  wc -l vcf 
+  141  ls ../
+  142  ls ../../exploration-rankscore/
+  143  ls 2023-06-02
+  144  cd..
+  145  cat slurm-4798492.out
+  146  tail dset_sv.log dset.log
+  147  ls  tmp/exploration-rankscore/
+  148  cd cg/
+  149  cd raredisease-ml/
+  150  git dif 
+  151  git diff
+  152  tail -f slurm-4809615.out
+  153  cat /home/tor.bjorgen/repos/cg/raredisease-ml/.git/index.lock
+  154  rm /home/tor.bjorgen/repos/cg/raredisease-ml/.git/index.lock
+  155  git commit -m "rankscore normalization test: Use pandas.DF"
+  156  git commit -m "test_compare_rankscore: Improve readability"
+  157  git commit -m "test_compare_rankscore: DF len tests"
+  158  git commit -m "test_rankscore_normalization: Check tested variants count"
+  159  pwd
+  160  vim rankscore-data-analysis.sh 
+  161  cp rankscore-data-analysis.sh src/rdds/exploration_rankscore/rankscore-data-analysis.sh 
+  162  git commit -m "rank score analysis sh: Updates"
+  163  realpath .
+  164  mkdir 2023-06-07
+  165  cp *.hd5 2023-06-07/
+  166  cp *.png 2023-06-07/
+  167  ls 2023-06-07
+  168  cd 2023-06-07
+  169  vim README
+  170  cp testnormalizedrankscore.log 2023-06-07/
+  171  vim 2023-06-07/R
+  172  vim 2023-06-07/README 
+  173  find ../mutacc-20230512_truth/
+  174  less causative-variants.vcf.gz 
+  175  wc -l vcf
+  176  less rankscore-data-analysis.sh 
+  177  cd genmod_v3.7.3/
+  178  head -n 1000 vcf 
+  179  head -n 1000 vcf > vcf_short
+  180  realpath vcf_short 
+  181  realpath causative-variants.vcf.gz
+  182  head -n 800 mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed.annotate_models_score_compund.vcf > short.vcf
+  183  realpath short.vcf 
+  184  cd ../exploration-rankscore/
+  185  grep 94466422 mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed.annotate_models_score_compund.vcf
+  186  cd exploration-rankscore/
+  187  cp mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed.annotate_models_score_compund.vcf-snv.hd5 mutacctest.hd5
+  188  less causative-variants.vcf.gz
+  189  cd genmod_annotate/
+  190  cd ../genmod_compound/
+  191  grep -nrl 949680
+  192  grep -nr 949680
+  193  s
+  194  head -n 1500 mutacc-20230512_gatkcomb_rhocall_norm_af_mt_frqf_cadd_vep_parsed.annotate_models_score_compund.vcf > short.vcf
+  195  cd ../
+  196  cd mutacc-20230512_truth/
+  197  less vcf 
+  198  git add -p
+  199  git commit -m "Add MUTACC TP variants"
+  200  git checkout refs/heads/rankscore-stats 
+  201  git checkout rankscore-stats 
+  202  diff rankscore-data-analysis.sh src/rdds/exploration_rankscore/rankscore-data-analysis.sh 
+  203  rm rankscore-data-analysis.sh 
+  204  ln -s src/rdds/exploration_rankscore/rankscore-data-analysis.sh rankscore-data-analysis.sh
+  205  scancel 4809615
+  206  git commit -s -m "Increase SLURM devenv resources"
+  207  vim build/devenv/devenv.slurm 
+  208  git commit --amend 
+  209  git show 
+  210  gsa
+  211  sbatch build/devenv/devenv.slurm 
+  212  history 
+  213  squeue -u tor.bjorgen
+  214  lks
+  215  tail -f slurm-4811999.out
+  216  git diff 
+  217  git add -p 
+  218  git diff -c-ac
+  219  gsaa
+  220  git diff --cached 
+  221  git commit -m "rankscore-data-analysis.sh: cleanup"
+  222  top
+  223  top -u tor.bjorgen
+  224  less dset_sv.log
+  225  tail -f *.log
+  226  cd src/
+  227  cd tmp/
+  228  cd rankscore-eval/
+  229  ls 
+  230  cd snv_indel/
+  231  cd genmod_compound/
+  232  less short.vcf 
+  233  cd ../../
+  234  cd ..
+  235  ls
+  236  tail *.log
+  237  top -u tor.bjorgen
+  238  less dset_sv.log
+  239  tail -f *.log
+  240  cd src/
+  241  cd tmp/
+  242  cd rankscore-eval/
+  243  ls 
+  244  cd snv_indel/
+  245  cd genmod_compound/
+  246  less short.vcf 
+  247  cd ../../
+  248  cd ..
+  249  tail *.log
+  250  tail _log
+  251  tail *log
+  252  mv *.log tmp/exploration-rankscore/
+  253  ls tmp/exploration-rankscore/
+  254  sbatch build/devenv/devenv.slurm 
+  255  tail -f slurm-4813250.out
+  256  ls
+  257  git diff 
+  258  git checkout HEAD
+  259  git checkout refs/heads/rankscore-stats 
+  260  git diff rankscore-stats 
+  261  git checkout rankscore-stats 
+  262  gsaa
+  263  squeue -u tor.bjorgen
+  264  scancel 4813250
+  265  cd tmp/exploration-rankscore/
+  266  ls
+  267  realpath :
+  268  realpath .
+  269  cd src/rdds/exploration_rankscore/
+  270  ls
+  271  vim rankscore_stats.py
+  272  top
+  273  cd src/rdds/exploration_rankscore/
+  274  vim rankscore_stats.py
+  275  top
+  276  gsaa
+  277  git diff 
+  278  git add -p 
+  279  git diff -c-ac
+  280  git diff --cached 
+  281  git commit -m "Bugfixes running rankscore performance"
+  282  git log -p
+  283  git log 
+  284  cd ..
+  285  cd -
+  286  ls
+  287  ./rankscore-data-analysis.sh 
+  288  git checkout rankscore-stats 
+  289  scancel 4813250
+  290  git checkout rankscorestats/integration 
+  291  git diff 
+  292  git checkout -f rankscorestats/integration 
+  293  gsaa
+  294  sbatch build/devenv/devenv.slurm 
+  295  squeue -u tor.bjorgen
+  296  ls
+  297  tail -f slurm-4815987.out
+  298  squeue -u tor.bjorgen
+  299  scancel 4815987
+  300  scancel 4815987
+  301  ls
+  302  gasa
+  303  gsaa
+  304  git diff 
+  305  git status
+  306  git diff 
+  307  gasa
+  308  gsaa
+  309  git checkout refs/heads/rankscore-stats 
+  310  gsaa
+  311  ls
+  312  cd tmp/exploration-rankscore/
+  313  ls
+  314  realpath .
+  315  git commit -m "Bugfixes running rankscore performance"
+  316  git log -p
+  317  git log 
+  318  cd -
+  319  ./rankscore-data-analysis.sh 
+  320  git checkout rankscore-stats 
+  321  scancel 4813250
+  322  git checkout rankscorestats/integration 
+  323  git checkout -f rankscorestats/integration 
+  324  tail -f slurm-4815987.out
+  325  scancel 4815987
+  326  scancel 4815987
+  327  gasa
+  328  git status
+  329  gasa
+  330  cd tmp/devenv/
+  331  sha256sum rdds.sif 
+  332  git checkout refs/heads/rankscore-stats 
+  333  git diff 
+  334  git checkout -f refs/heads/rankscore-stats 
+  335  gsaa
+  336  cd ../
+  337  less rankscore
+  338  less rankscore-data-analysis.sh 
+  339  cd tmp/exploration-rankscore/
+  340  mkdir old-images
+  341  mv *.png old-images/
+  342  cd ..
+  343  sbatch build/devenv/devenv.slurm 
+  344  ls
+  345  squeue -u tor.bjorgen
+  346  tail -f slurm-4826827.out
+  347  tail *log
+  348  mv *.log tmp/exploration-rankscore/
+  349  ls tmp/exploration-rankscore/
+  350  sbatch build/devenv/devenv.slurm 
+  351  tail -f slurm-4813250.out
+  352  git checkout HEAD
+  353  git checkout refs/heads/rankscore-stats 
+  354  git diff rankscore-stats 
+  355  squeue -u tor.bjorgen
+  356  scancel 4813250
+  357  realpath :
+  358  realpath .
+  359  cd src/rdds/exploration_rankscore/
+  360  vim rankscore_stats.py
+  361  top
+  362  cd src/rdds/exploration_rankscore/
+  363  vim rankscore_stats.py
+  364  top
+  365  git commit -m "Bugfixes running rankscore performance"
+  366  git log -p
+  367  git log 
+  368  cd -
+  369  ./rankscore-data-analysis.sh 
+  370  scancel 4813250
+  371  git checkout rankscorestats/integration 
+  372  git checkout -f rankscorestats/integration 
+  373  sbatch build/devenv/devenv.slurm 
+  374  squeue -u tor.bjorgen
+  375  tail -f slurm-4815987.out
+  376  squeue -u tor.bjorgen
+  377  scancel 4815987
+  378  scancel 4815987
+  379  git status
+  380  git checkout refs/heads/rankscore-stats 
+  381  realpath .
+  382  git commit -m "Bugfixes running rankscore performance"
+  383  git log -p
+  384  git log 
+  385  cd -
+  386  ./rankscore-data-analysis.sh 
+  387  scancel 4813250
+  388  git checkout rankscorestats/integration 
+  389  git checkout -f rankscorestats/integration 
+  390  tail -f slurm-4815987.out
+  391  scancel 4815987
+  392  scancel 4815987
+  393  git status
+  394  cd tmp/devenv/
+  395  sha256sum rdds.sif 
+  396  git checkout refs/heads/rankscore-stats 
+  397  git checkout -f refs/heads/rankscore-stats 
+  398  less rankscore
+  399  mkdir old-images
+  400  mv *.png old-images/
+  401  sbatch build/devenv/devenv.slurm 
+  402  squeue -u tor.bjorgen
+  403  tail -f slurm-4826827.out
+  404  less rankscorestats-sv.log
+  405  less rankscorestats-snv.log
+  406  less rankscore-data-analysis.sh 
+  407  less rankscoreperformance.txt
+  408  cd tmp/exploration-rankscore/
+  409  git diff -c-ac
+  410  git commit -m "rankscore data analysis sh: Fix for ampersand, dollars"
+  411  gsa
+  412  git tag keep
+  413  git checkout rankscore-stats 
+  414  gasa
+  415  git cherry-pick keep 
+  416  git merge 2d4fd5d
+  417  git commit --fixup=aa9f004
+  418  git show 
+  419  cd ../
+  420  rm *.out
+  421  rm %1
+  422  git status 
+  423  cd src/rdds/
+  424  cd lib/
+  425  cd ../exploration_rankscore/
+  426  vim rankscore_performance.py 
+  427  grep -nr k_fold
+  428  grep -nr k_fold_sub
+  429  vim rankscore_stats.py 
+  430  cd exploration_rankscore/
+  431  ls
+  432  vim __main__.py 
+  433  git diff
+  434  vim rankscore-data-analysis.sh 
+  435  ls 
+  436  cat rankscore-data-analysis.sh 
+  437  wc -l /rdds/tmp/rankscore-eval/sv/genmod_compound/mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf
+  438  less /rdds/tmp/rankscore-eval/sv/genmod_compound/mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf
+  439  cd ../../
+  440  cd ..
+  441  wc -l tmp/rankscore-eval/sv/genmod_compound/mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf
+  442  vim src/rdds/exploration_rankscore/rankscore-data-analysis.sh 
+  443  git diff 
+  444  git add -p 
+  445  git diff --cached 
+  446  git commit -m "Add k_fold_subset_size as cmd argument"
+  447  gsaa
+  448  git tag -d keep 
+  449  cd exploration_rankscore/
+  450  vim __main__.py 
+  451  git diff
+  452  cat rankscore-data-analysis.sh 
+  453  wc -l /rdds/tmp/rankscore-eval/sv/genmod_compound/mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf
+  454  less /rdds/tmp/rankscore-eval/sv/genmod_compound/mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf
+  455  cd ../../
+  456  cd ..
+  457  wc -l tmp/rankscore-eval/sv/genmod_compound/mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf
+  458  vim src/rdds/exploration_rankscore/rankscore-data-analysis.sh 
+  459  git commit -m "Add k_fold_subset_size as cmd argument"
+  460  git tag -d keep 
+  461  git checkout 8621d3f
+  462  gasa
+  463  git checkout b82e344
+  464  vim src/rdds/exploration_rankscore/__main__.py 
+  465  vim rankscore-data-analysis.sh 
+  466  git diff 
+  467  git diff HEAD~1
+  468  git diff -w HEAD~1..HEAD
+  469  git diff -w HEAD~1
+  470  git add -p 
+  471  vim src/rdds/exploration_rankscore/rankscore_stats.py 
+  472  git diff -cac
+  473  git diff --cached 
+  474  ls
+  475  git commit --fixup=HEAD
+  476  git show 
+  477  gsa
+  478  gsaa
+  479  ls 
+  480  cat rankscorestats-snv.log
+  481  ps ax
+  482  ls
+  483  vim ~/.bashrc 
+  484  ls
+  485  top
+  486  man wall
+  487  ls
+  488  top
+  489  ps ax
+  490  ps ax | grep python
+  491  ps ax
+  492  top
+  493  ls
+  494  cd lib/
+  495  cd ../exploration_rankscore/
+  496  vim rankscore_performance.py 
+  497  grep -nr k_fold
+  498  grep -nr k_fold_sub
+  499  vim rankscore_stats.py 
+  500  cd exploration_rankscore/
+  501  vim __main__.py 
+  502  git diff
+  503  cat rankscore-data-analysis.sh 
+  504  wc -l /rdds/tmp/rankscore-eval/sv/genmod_compound/mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf
+  505  less /rdds/tmp/rankscore-eval/sv/genmod_compound/mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf
+  506  cd ../../
+  507  vim src/rdds/exploration_rankscore/rankscore-data-analysis.sh 
+  508  git diff --cached 
+  509  git commit -m "Add k_fold_subset_size as cmd argument"
+  510  git tag -d keep 
+  511  cd src/
+  512  vim rdds/exploration_rankscore/rankscore_performance.py
+  513  gsa
+  514  gasa
+  515  git commit -m "Remove note on metrics AUC"
+  516  grep -nr TODO
+  517  cat rankscorestats-snv.log
+  518  git status 
+  519  cat rankscorestats-sv.log
+  520  cd tmp/exploration-rankscore/
+  521  less dset_sv.log
+  522  wc -l tmp/rankscore-eval/sv/genmod_compound/mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf
+  523  wc -l ../../tmp/rankscore-eval/sv/genmod_compound/mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf
+  524  tail dset_sv.log
+  525  cd ..
+  526  vim rankscore-data-analysis.sh 
+  527  git diff 
+  528  git add -p 
+  529  git commit --fixup=a2b730e
+  530  git show 
+  531  gsaa
+  532  ls 
+  533  sbatch build/devenv/devenv.s
+  534  sbatch build/devenv/devenv.slurm 
+  535  ls
+  536  squeue -u tor.bjorgen
+  537  tail -f slurm-4828906.out 
+  538  whoami
+  539  ls
+  540  cd tmp/exploration-rankscore/
+  541  ls
+  542  less dset.log 
+  543  pwd
+  544  ls
+  545  ls
+  546  cd tmp/exploration-rankscore/
+  547  ls
+  548  cd 2023-06-15-d347d79778562e9117485a5a787f7cfcfc20e1c5
+  549  ls
+  550  cat rankscorestats-sv.log 
+  551  ls
+  552  cd ..
+  553  ls
+  554  cd 2023-06-15-8621d3fe9138de96936e31a76aeb81524ad045f7
+  555  ls
+  556  cat rankscorestats-snv.log
+  557  ls 
+  558  cd ..
+  559  ls
+  560  cd ..
+  561  ls
+  562  cd ..
+  563  ls
+  564  cat rankscorestats-snv.log
+  565  ls
+  566   ls 
+  567  vim rankscore-data-analysis.sh 
+  568  ls 
+  569  gsaa
+  570  git diff
+  571  git show 
+  572  gsaa
+  573  git tag keep
+  574  gsaa
+  575  git checkout rankscore-stats 
+  576  gsaa
+  577  git show keep 
+  578  gsaa
+  579  git merge keep 
+  580  gsaa
+  581  git tag -d keep
+  582  gsaa
+  583  git diff 
+  584  git checkout -p 
+  585  gsaa
+  586  ls
+  587  less *.log
+  588  less rankscorestats-sv.log
+  589  cd tmp/exploration-rankscore/
+  590  ls
+  591  gsaa
+  592  git checkout refs/heads/rankscore-stats 
+  593  ls
+  594  gsaa
+  595  git checkout refs/heads/rankscore-stats 
+  596  gsaa
+  597  ls
+  598  cd ../
+  599  ls
+  600  cd ..
+  601  ls
+  602  cd tmp/exploration-rankscore/
+  603  ls
+  604  rm *.png 
+  605  ls 
+  606  cd ..
+  607  ls
+  608  vim rankscore-data-analysis.sh 
+  609  sbatch build/devenv/devenv.slurm 
+  610  squeue -u tor.bjorgen
+  611  ls
+  612  tail -f slurm-4844493.out
+  613  ls
+  614  tail -f slurm-4844493.out
+  615  squeue -u tor.bjorgen
+  616  tail -f slurm-4844493.out
+  617  squeue -u tor.bjorgen
+  618  scancel 4844493
+  619  squeue -u tor.bjorgen
+  620  ls
+  621  cat slurm-4844493.out
+  622  sbatch build/devenv/devenv.slurm 
+  623  squeue -u tor.bjorgen
+  624  tail -f slurm-4844518.out 
+  625  ls /tmp/archive-787307557
+  626  ls
+  627  df -h 
+  628  top
+  629  ls
+  630  cat slurm-4844518.out
+  631  squeue -u tor.bjorgen
+  632  ls /tmp/
+  633  du -sh /tmp/
+  634  ls /tmp/
+  635  ls 
+  636  sbatch build/devenv/devenv.slurm 
+  637  squeue -u tor.bjorgen
+  638  ls
+  639  tail -f slurm-4844561.out
+  640  squeue -u tor.bjorgen
+  641  scancel 4844561
+  642  squeue -u tor.bjorgen
+  643  sbatch build/devenv/devenv.slurm 
+  644  ls
+  645  tail -f slurm-4844563.out
+  646  squeue -u tor.bjorgen
+  647  scancel 4844563
+  648  ls 
+  649  squeue -u tor.bjorgen
+  650  sbatch build/devenv/devenv.slurm 
+  651  squeue -u tor.bjorgen
+  652  watch squeue -u tor.bjorgen
+  653  squeue -u tor.bjorgen
+  654  journalctl -f
+  655  journalctl -b
+  656  ls
+  657  squeue -u tor.bjorgen
+  658  vim build/devenv/devenv.slurm 
+  659  vim Makefile 
+  660  git diff 
+  661  ls
+  662  sbatch build/devenv/devenv.slurm 
+  663  ls
+  664  tail -f slurm-4844816.out
+  665  mdkir singularitycache
+  666  mkdir singularitycache
+  667  sbatch build/devenv/devenv.slurm 
+  668  ls 
+  669  tail -f slurm-4844817.out
+  670  ls singularitycache/
+  671  tail -f slurm-4844817.out
+  672  squeue -u tor.bjorgen
+  673  scancel 4844817
+  674  squeue -u tor.bjorgen
+  675  ls 
+  676  cd tmp/
+  677  ls
+  678  cd rankscore-eval/
+  679  ls
+  680  cd ..
+  681  ls
+  682  cd ..
+  683  ls
+  684  ls tmp/exploration-rankscore/
+  685  ls
+  686  cd src/
+  687  ls
+  688  cd ../
+  689  ls
+  690  cd tmp/
+  691  ls
+  692  cd exploration-rankscore/
+  693  ls
+  694  less dset.log 
+  695  less dsetref.log
+  696  less mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf-sv.hd5
+  697  less dset_sv.log
+  698  gsaa
+  699  git diff 
+  700  vim Mak
+  701  pwd
+  702  cd ../../
+  703  ls
+  704  ls tmp/
+  705  ls tmp/devenv/
+  706  realpath tmp/devenv/
+  707  vim Makefile 
+  708  git diff 
+  709  gsaa
+  710  git checkout rankscore-stats 
+  711  gsaa
+  712  top
+  713  git add -p 
+  714  git diff --cached 
+  715  git commit -s -m "Devenv singularity: Dont use /tmp as singularity cachedir"
+  716  gsaa
+  717  git checkout refs/heads/rankscore-stats 
+  718  gsaa
+  719  git checkout refs/heads/rankscore-stats 
+  720  gsaa
+  721  git diff 
+  722  git checkout -f refs/heads/rankscore-stats 
+  723  gsaa
+  724  ls
+  725  vim rankscore-data-analysis.sh 
+  726  cd tmp/exploration-rankscore/
+  727  ls
+  728  cd ../../
+  729  ls
+  730  ./rankscore-data-analysis.sh 
+  731  cd tmp/exploration-rankscore/
+  732  ls
+  733  cat rankscorestats-sv.log
+  734  gsaa
+  735  git checkout -f refs/heads/rankscore-stats 
+  736  pwd
+  737  ls
+  738  rm testnormalizedrankscore.log
+  739  ls
+  740  cd ../rankscore-eval/
+  741  ls
+  742  cd snv_indel/
+  743  cd ../sv/
+  744  ls
+  745  cd temp_dir/
+  746  ls
+  747  cd ../input_data/
+  748  ls
+  749  grep MantaDEL:117077:0:0:0:2:0 mutacc-20230512_comb_ann_vep_parsed.vcf 
+  750  ls
+  751  cd ../
+  752  ls
+  753  cd genmod_compound/
+  754  ls
+  755  grep -nr MantaDEL:117077:0:0:0:2:0 mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf 
+  756  ls
+  757  cd ../
+  758  ls
+  759  cd genmod_score/
+  760  grep -nr MantaDEL:117077:0:0:0:2:0 mutacc-20230512_comb_ann_vep_parsed.annotate_models_score_compound.vcf 
+  761  grep -nr MantaDEL:117077:0:0:0:2:0 mutacc-20230512_comb_ann_vep_parsed.annotate_models_score.vcf 
+  762  gsaa
+  763  ls
+  764  gsaa
+  765  git checkout refs/heads/rankscore-stats 
+  766  gsaa
+  767  git checkout refs/heads/rankscore-analysis 
+  768  gsaa
+  769  git diff 
+  770  gsaa
+  771  ls 
+  772  cd tmp/
+  773  ls
+  774  cd exploration-rankscore/
+  775  ls
+  776  rm *.png
+  777  ls
+  778  rm rankscorestats-s* testnormalizedrankscore-s*
+  779  ls
+  780  ls 
+  781  cd ../../
+  782  ls
+  783  sbatch build/devenv/devenv.slurm 
+  784  squeue -u tor.bjorgen
+  785  ls 
+  786  tail -f slurm-4847535.out
+  787  squeue -u tor.bjorgen
+  788  ls
+  789  cd tmp/exploration-rankscore/
+  790  ls
+  791  cat testnormalizedrankscore-snv.log
+  792  ls
+  793  cat rankscorestats-snv.log
+  794  ls
+  795  ps ax
+  796  ls
+  797  tail rankscorestats-snv.log
+  798  ls 
+  799  cd tmp/exploration-rankscore/
+  800  ls
+  801  realpath .
+  802  ls 
+  803  cd tmp/exploration-rankscore/
+  804  ls
+  805  cd tmp/
+  806  ls
+  807  cd rankscore-eval/
+  808  ls
+  809  cd genmod_v3.7.3/
+  810  ls
+  811  less vcf
+  812  pwd
+  813  cd ..
+  814  ls
+  815  cd sv/
+  816  ls
+  817  cd ..
+  818  ls
+  819  cd mutacc-20230512_truth/
+  820  ls
+  821  cd ..
+  822  ls
+  823  top
+  824  ls 
+  825  cd tmp/exploration-rankscore/
+  826  cd tmp/
+  827  cd rankscore-eval/
+  828  cd genmod_v3.7.3/
+  829  less vcf
+  830  cd sv/
+  831  cd mutacc-20230512_truth/
+  832  top
+  833  ls 
+  834  mkdir mip
+  835  cd mip/
+  836  git init 
+  837  ls 
+  838  vim ~/.bashrc 
+  839  source ~/.bashrc 
+  840  pwd
+  841  cd ..
+  842  cd mip
+  843  ls
+  844  echo $MIP_HOME
+  845  vim ~/.bashrc 
+  846  source ~/.bashrc 
+  847  cd mip
+  848  us 
+  849  echo $MIP_HOME
+  850  cd ../mip/
+  851  git --help
+  852  l s
+  853  pwd
+  854  cd ..
+  855  rm -r mip
+  856  git clone git@github.com:Clinical-Genomics/MIP.git mip
+  857  git clone https://github.com/Clinical-Genomics/MIP.git mip
+  858  ls 
+  859  cd mip/
+  860  ls
+  861  less mip_install_perl.sh 
+  862  vim mip_install_perl.sh 
+  863  # bash mip_install_perl.sh -e D_mip_torb -p /home/proj/stage/bin/miniconda3/ 
+  864  vim ~/.bashrc 
+  865  source ~/.bashrc 
+  866  cd mip
+  867  us 
+  868  echo $MIP_HOME
+  869  cd ../mip/
+  870  git --help
+  871  l s
+  872  pwd
+  873  cd ..
+  874  rm -r mip
+  875  git clone git@github.com:Clinical-Genomics/MIP.git mip
+  876  git clone https://github.com/Clinical-Genomics/MIP.git mip
+  877  ls 
+  878  cd mip/
+  879  ls
+  880  less mip_install_perl.sh 
+  881  vim mip_install_perl.sh 
+  882  # bash mip_install_perl.sh -e D_mip_torb -p /home/proj/stage/bin/miniconda3/ 
+  883  history 
+  884  history 
+  885  cat ~/.bashrc 
+  886  cd ~
+  887  ls
+  888  cat .bashrc 
+  889  echo "source /home/proj/production/servers/config/hasta.scilifelab.se/bashrc" >> init-cg-conda
+  890  cat init-cg-conda 
+  891  vim ~/.bashrc 
+  892  cd tmp/exploration-rankscore/
+  893  cd tmp/exploration-rankscore/
+  894  cd tmp/
+  895  cd rankscore-eval/
+  896  cd genmod_v3.7.3/
+  897  less vcf
+  898  cd sv/
+  899  cd mutacc-20230512_truth/
+  900  top
+  901  cd tmp/exploration-rankscore/
+  902  cd tmp/
+  903  cd rankscore-eval/
+  904  cd genmod_v3.7.3/
+  905  less vcf
+  906  cd sv/
+  907  cd mutacc-20230512_truth/
+  908  top
+  909  mkdir mip
+  910  cd mip/
+  911  git init 
+  912  vim ~/.bashrc 
+  913  source ~/.bashrc 
+  914  cd mip
+  915  echo $MIP_HOME
+  916  vim ~/.bashrc 
+  917  source ~/.bashrc 
+  918  cd mip
+  919  echo $MIP_HOME
+  920  git --help
+  921  l s
+  922  rm -r mip
+  923  git clone git@github.com:Clinical-Genomics/MIP.git mip
+  924  git clone https://github.com/Clinical-Genomics/MIP.git mip
+  925  cd mip/
+  926  less mip_install_perl.sh 
+  927  vim mip_install_perl.sh 
+  928  # bash mip_install_perl.sh -e D_mip_torb -p /home/proj/stage/bin/miniconda3/ 
+  929  vim ~/.bashrc 
+  930  source ~/.bashrc 
+  931  cd mip
+  932  echo $MIP_HOME
+  933  git --help
+  934  l s
+  935  rm -r mip
+  936  git clone git@github.com:Clinical-Genomics/MIP.git mip
+  937  git clone https://github.com/Clinical-Genomics/MIP.git mip
+  938  cd mip/
+  939  less mip_install_perl.sh 
+  940  vim mip_install_perl.sh 
+  941  # bash mip_install_perl.sh -e D_mip_torb -p /home/proj/stage/bin/miniconda3/ 
+  942  us 
+  943  history 
+  944  cd ../mip/
+  945  bash mip_install_perl.sh -e D_mip_torb -p /home/proj/stage/bin/miniconda3/
+  946  conda activate D_mip_torb
+  947  perl mip install --help
+  948  perl mip install --conda_path /home/proj/stage/bin/miniconda3 --environment_name D_mip_torb --reference_dir /home/proj/stage/rare-disease/references/references_12.0 --singularity_local_install --vep_auto_flag a
+  949  echo $?
+  950  cd andertestdata/
+  951  realpath .
+  952  cp /home/proj/stage/rare-disease/cases/justhusky/gene_panels.bed .
+  953  vim pedigree.yaml 
+  954  mip analysis rd_dna_vcf_rerun anderstestdata -c templates/clinvar-config.yaml --vcf_rerun_file cases/andertestdata/pathogenic_fixed.vcf.gz --sv_vcf_rerun_file cases/andertestdata/pathogenic_fixed.vcf.gz --dra 
+  955  vim cases/andertestdata/pedigree.yaml 
+  956  stat /home/tor.bjorgen/repos/cg/mip/cases/anderstestdata/pedigree.yaml
+  957  grep -nr anderstestdata cases/
+  958  cd cases/
+  959  tree
+  960  ll ander*
+  961  mv andertestdata anderstestdata
+  962  cd ..
+  963  ls cases/
+  964  ls cases/anderstestdata/
+  965  cd cases/anderstestdata/
+  966  mv andertestdata/* .
+  967  ls
+  968  rmdir andertestdata 
+  969  cd ../../
+  970  mip analyse rd_dna_vcf_rerun anderstestdata -c templates/clinvar-config.yaml --vcf_rerun_file cases/andertestdata/pathogenic_fixed.vcf.gz --sv_vcf_rerun_file cases/andertestdata/pathogenic_fixed.vcf.gz --dra 
+  971  vim cases/anderstestdata/pedigree.yaml 
+  972  stat /home/proj/stage/rare-disease/references/references_12.0/grch37_cadd_to_vcf_header_-1.0-.txt
+  973  find -name grch37_cadd_to_vcf_header_-1.0-.txt /home/proj/stage/rare-disease/references
+  974  vim templates/clinvar-config.yaml 
+  975  mip analyse rd_dna_vcf_rerun anderstestdata -c templates/clinvar-config.yaml --vcf_rerun_file cases/anderstestdata/pathogenic_fixed.vcf.gz --sv_vcf_rerun_file cases/anderstestdata/pathogenic_fixed.vcf.gz --dra 
+  976  vim lib/MIP/Recipes/Analysis/Vcf_rerun_reformat.pm
+  977  vim lib/MIP/Recipes/Analysis/Rhocall.pm 
+  978  mip analyse rd_dna_vcf_rerun anderstestdata -c templates/clinvar-config.yaml --vcf_rerun_file cases/anderstestdata/pathogenic_fixed.vcf.gz --sv_vcf_rerun_file cases/anderstestdata/pathogenic_fixed.vcf.gz 
+  979  myjobinfo 
+  980  squeue -u tor.bjorgen
+  981  squeue -j 5034205
+  982  git diff list 
+  983  ls 
+  984  git diff --stat
+  985  vim /home/tor.bjorgen/repos/cg/mip/lib/MIP/Processmanagement/Processes.pm
+  986  pwd
+  987  git checkout -p 
+  988  grep -nr max_parallel_processes_count lib
+  989  grep -nr max_parallel_processes_count lib | less
+  990  vim lib/MIP/Recipes/Analysis/Vcf_rerun_reformat.pm 
+  991  perl mip analyse rd_dna_vcf_rerun anderstestdata --container_config /home/proj/stage/bin/miniconda3/envs/D_mip_torb/bin/templates/mip_container_config.yaml -c templates/clinvar-config.yaml --vcf_rerun_file cases/anderstestdata/pathogenic_fixed.vcf.gz --sv_vcf_rerun_file cases/anderstestdata/pathogenic_fixed.vcf.gz 
+  992  git diff lib
+  993  git status 
+  994  git stash create --help
+  995  git dif 
+  996  git stash --help
+  997  git stash save -u -m "debugging MIP pipeline for clinvar dataset"
+  998  git stash save -u "debugging MIP pipeline for clinvar dataset"
+  999  git log --oneline --decorate --graph --all
+ 1000  git diff 
+ 1001  history 
+ 1002  pwd
+ 1003  history > mip/install-mip-clinvar-annotation
