@@ -302,7 +302,7 @@ sub analysis_rankvariant {
         print {$xargsfilehandle} $PIPE . $SPACE;
 
         ## Genmod Models
-        $genmod_module .= $UNDERSCORE . q{models};
+        $genmod_module .= q{_models_score_compound};
         my $models_stderrfile_path =
           $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
 
@@ -312,7 +312,7 @@ sub analysis_rankvariant {
                 case_file                    => $case_file_path,
                 case_type                    => $active_parameter_href->{genmod_models_case_type},
                 infile_path                  => $genmod_indata,
-                outfile_path                 => $genmod_outfile_path,
+                outfile_path                 => $outfile_path{$contig_index},,
                 reduced_penetrance_file_path =>
                   $active_parameter_href->{genmod_models_reduced_penetrance_file},
                 stderrfile_path     => $models_stderrfile_path,
@@ -321,43 +321,6 @@ sub analysis_rankvariant {
                 vep                 => $use_vep,
                 verbosity           => q{v},
                 whole_gene          => $active_parameter_href->{genmod_models_whole_gene},
-            }
-        );
-        print {$xargsfilehandle} $PIPE . $SPACE;
-
-        ## Genmod Score
-        $genmod_module .= $UNDERSCORE . q{score};
-        my $score_stderrfile_path = $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
-
-        genmod_score(
-            {
-                case_file            => $case_file_path,
-                case_type            => $active_parameter_href->{genmod_models_case_type},
-                filehandle           => $xargsfilehandle,
-                infile_path          => $genmod_indata,
-                outfile_path         => $genmod_outfile_path,
-                rank_result          => 1,
-                rank_model_file_path => $active_parameter_href->{rank_model_file},
-                stderrfile_path      => $score_stderrfile_path,
-                verbosity            => q{v},
-            }
-        );
-        print {$xargsfilehandle} $PIPE . $SPACE;
-
-        ## Genmod Compound
-        $genmod_module .= q{_compound};
-        my $compound_stderrfile_path =
-          $stderrfile_path_prefix . $genmod_module . $DOT . q{stderr.txt};
-
-        genmod_compound(
-            {
-                filehandle          => $xargsfilehandle,
-                infile_path         => $genmod_indata,
-                outfile_path        => $outfile_path{$contig_index},
-                stderrfile_path     => $compound_stderrfile_path,
-                temp_directory_path => $temp_directory,
-                verbosity           => q{v},
-                vep                 => $use_vep,
             }
         );
         say {$xargsfilehandle} $NEWLINE;
@@ -963,7 +926,7 @@ sub analysis_rankvariant_sv {
                 filehandle          => $filehandle,
                 genome_build        => $file_info_href->{human_genome_reference_version},
                 infile_path         => $genmod_indata,
-                outfile_path        => $genmod_outfile_path,
+                outfile_path        => $outfile_paths[$infile_index],
                 stderrfile_path     => $recipe_info_path . $genmod_module . $DOT . q{stderr.txt},
                 temp_directory_path => $temp_directory,
                 verbosity           => q{v},
@@ -978,7 +941,7 @@ sub analysis_rankvariant_sv {
         $genmod_indata = $DASH;
 
         ## Genmod models
-        $genmod_module .= $UNDERSCORE . q{models};
+        $genmod_module .= q{_models_score_compound};
 
         genmod_models(
             {
@@ -999,50 +962,6 @@ sub analysis_rankvariant_sv {
                 vep                 => $use_vep,
                 verbosity           => q{v},
                 whole_gene          => $active_parameter_href->{sv_genmod_models_whole_gene},
-            }
-        );
-
-        # Pipe
-        print {$filehandle} $PIPE . $SPACE;
-
-        ## Genmod score
-        $genmod_module .= $UNDERSCORE . q{score};
-        genmod_score(
-            {
-                filehandle           => $filehandle,
-                case_file            => $fam_file_path,
-                case_type            => $active_parameter_href->{sv_genmod_models_case_type},
-                infile_path          => $genmod_indata,
-                outfile_path         => catfile( dirname( devnull() ), q{stdout} ),
-                rank_model_file_path => $active_parameter_href->{sv_rank_model_file},
-                rank_result          => 1,
-                stderrfile_path      => $recipe_info_path
-                  . $genmod_module
-                  . $outfile_suffixes[$infile_index]
-                  . $DOT
-                  . q{stderr.txt},
-                verbosity => q{v},
-            }
-        );
-
-        # Pipe
-        print {$filehandle} $PIPE . $SPACE;
-
-        ## Genmod compound
-        $genmod_module .= $UNDERSCORE . q{compound};
-        genmod_compound(
-            {
-                filehandle      => $filehandle,
-                infile_path     => $genmod_indata,
-                outfile_path    => $outfile_paths[$infile_index],
-                stderrfile_path => $recipe_info_path
-                  . $genmod_module
-                  . $outfile_suffixes[$infile_index]
-                  . $DOT
-                  . q{stderr.txt},
-                temp_directory_path => $temp_directory,
-                vep                 => $use_vep,
-                verbosity           => q{v},
             }
         );
 
