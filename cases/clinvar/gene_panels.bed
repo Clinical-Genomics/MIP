@@ -50,6 +50,7 @@
 ##contig=Y
 ##contig=MT
 #chromosome	gene_start	gene_stop	hgnc_id	hgnc_symbol
+1	934344	935477	24149	HES4
 1	901877	911245	25284	PLEKHN1
 1	948803	949920	4053	ISG15
 1	955503	991496	329	AGRN
