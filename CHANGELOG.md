@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## Develop
+
+- Store PCT_PF_READS_IMPROPER_PAIRS in qc file
+- Evaluate and fail analysis where PCT_PF_READS_IMPROPER_PAIRS is above 5 %
+
 ## [12.0.0]
 
 - Set overlap requirement for merging two SVs to 0.8, down from the 0.95 default
