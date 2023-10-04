@@ -49,20 +49,20 @@ diag(   q{Test parse_sample_qc_metric from Qccollect.pm}
 
 ## Constants
 Readonly my $PCT_TARGET_BASES_10X         => 0.95;
+Readonly my $FAIL_PCT_TARGET_BASES_10X    => 0.90;
 Readonly my $PERCENTAGE_MAPPED_READS_EVAL => 95;
 Readonly my $PERCENTAGE_MAPPED_READS_PASS => 99;
 
 ## Given sample qc data when metric lacks a header
-my $infile    = q{an_infile};
-my $metric    = q{percentage_mapped_reads};
+my $infile        = q{an_infile};
+my $metric        = q{percentage_mapped_reads};
 my $header_recipe = q{collecthsmetrics};
 my $header_metric = q{PCT_TARGET_BASES_10X};
-my $recipe    = q{bamstats};
-my $sample_id = q{ADM1059A1};
-my %qc_data   = (
+my $recipe        = q{bamstats};
+my $sample_id     = q{ADM1059A1};
+my %qc_data       = (
     sample => {
-        $sample_id =>
-          { $infile => { $recipe => { $metric => $PERCENTAGE_MAPPED_READS_PASS }, }, },
+        $sample_id => { $infile => { $recipe => { $metric => $PERCENTAGE_MAPPED_READS_PASS }, }, },
     }
 );
 
@@ -104,9 +104,13 @@ my $is_ok = parse_sample_qc_metric(
 );
 ok( $is_ok, q{Parsed sample qc data metrics} );
 
-## Given sample qc data when metric has a header
-my $data_header   = q{first_of_pair};
-$qc_data{sample}{$sample_id}{$infile}{$header_recipe}{header}{$data_header}{$header_metric} = $PCT_TARGET_BASES_10X;
+## Given sample qc data when metric has headers
+my $data_header = q{first_of_pair};
+$qc_data{sample}{$sample_id}{$infile}{$header_recipe}{header}{$data_header}{$header_metric} =
+  $PCT_TARGET_BASES_10X;
+my $second_data_header = q{second_of_pair};
+$qc_data{sample}{$sample_id}{$infile}{$header_recipe}{header}{$second_data_header}{$header_metric}
+  = $FAIL_PCT_TARGET_BASES_10X;
 
 ## Alias
 my $qc_data_header_recipe_href =
@@ -121,6 +125,14 @@ $is_ok = parse_sample_qc_metric(
         sample_id            => $sample_id,
     }
 );
+
+## Then parses format OK...
 ok( $is_ok, q{Parsed sample qc data header metrics} );
+
+## ... and fails qc check for the second header
+my $failed_evaluation =
+  q{FAILED:collecthsmetrics_PCT_TARGET_BASES_10X:} . $FAIL_PCT_TARGET_BASES_10X;
+is( $qc_data{evaluation}{collecthsmetrics}[0],
+    $failed_evaluation, q{Fails qc on second data header} );
 
 done_testing();
