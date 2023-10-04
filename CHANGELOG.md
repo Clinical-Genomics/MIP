@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Develop
 
+- Adds loqudb and gnomad frequencies to vcf2cytosure filtering
 - Store PCT_PF_READS_IMPROPER_PAIRS in qc file
 - Evaluate and fail analysis where PCT_PF_READS_IMPROPER_PAIRS is above 5 %
 
