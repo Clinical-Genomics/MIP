@@ -47,7 +47,7 @@ my %qc_data = (
     sample => {
         sample_id => {
             recipe_output_file => {
-                collectmultiplemetrics => {
+                variantevalall => {
                     header => q{data},
                 },
             },
@@ -68,7 +68,7 @@ parse_limit_qc_output(
     }
 );
 
-## Then remove key collectmultiplemetrics
+## Then remove key variantevallall
 my %expected_qc_data = (
     sample => {
         sample_id => {
