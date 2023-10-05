@@ -68,7 +68,7 @@ parse_limit_qc_output(
     }
 );
 
-## Then remove key variantevallall
+## Then remove key variantevalall
 my %expected_qc_data = (
     sample => {
         sample_id => {
