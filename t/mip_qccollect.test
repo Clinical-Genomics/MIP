@@ -32,7 +32,7 @@ our $USAGE = build_usage( {} );
 my $VERBOSE = 1;
 ## Set paths
 my $cluster_constant_path = catdir( dirname($Bin), qw{ t data} );
-my $eval_metric_file      = catfile( dirname($Bin), qw{ templates qc_eval_metric_-v1.3-.yaml } );
+my $eval_metric_file      = catfile( dirname($Bin), qw{ templates qc_eval_metric_-v1.4-.yaml } );
 my $mip_path              = catfile( dirname($Bin), q{mip} );
 my $log_file_path         = catfile( cwd(),         q{qc_metrics_qccollect.log} );
 my $test_reference_path   = catdir( $cluster_constant_path, q{references} );
