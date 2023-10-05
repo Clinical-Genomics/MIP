@@ -47,8 +47,9 @@ diag(   q{Test define_evaluate_metric from Qccollect.pm}
       . $SPACE
       . $EXECUTABLE_NAME );
 
-Readonly my $PCT_ADAPTER          => 0.0005;
-Readonly my $PCT_PF_READS_ALIGNED => 0.95;
+Readonly my $PCT_ADAPTER                 => 0.0005;
+Readonly my $PCT_PF_READS_ALIGNED        => 0.95;
+Readonly my $PCT_PF_READS_IMPROPER_PAIRS => 0.05;
 
 my $log = test_log( { no_screen => 1, } );
 
@@ -59,7 +60,7 @@ my %sample_info = test_mip_hashes(
 );
 
 ## Given a file with evaluation metrics
-my $eval_metric_file = catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.3-.yaml} );
+my $eval_metric_file = catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.4-.yaml} );
 
 ## When defining the evaluation metrics based on the analysis
 my %evaluate_metric = define_evaluate_metric(
@@ -83,6 +84,9 @@ my %expected = (
             PCT_PF_READS_ALIGNED => {
                 lt => $PCT_PF_READS_ALIGNED,
             },
+            PCT_PF_READS_IMPROPER_PAIRS => {
+                gt => $PCT_PF_READS_IMPROPER_PAIRS,
+            },
         },
     },
     ADM1059A2 => {
@@ -97,6 +101,9 @@ my %expected = (
             },
             PCT_PF_READS_ALIGNED => {
                 lt => $PCT_PF_READS_ALIGNED,
+            },
+            PCT_PF_READS_IMPROPER_PAIRS => {
+                gt => $PCT_PF_READS_IMPROPER_PAIRS,
             },
         },
     },
