@@ -28,6 +28,8 @@ wgs:
   collectmultiplemetrics:
     PCT_PF_READS_ALIGNED:
       lt: 0.95
+    PCT_PF_READS_IMPROPER_PAIRS:
+      gt: 0.05
     PCT_ADAPTER:
       gt: 0.0005
   markduplicates:
@@ -53,7 +55,7 @@ wes:
 wts:
   collectrnaseqmetrics:
     PCT_MRNA_BASES:
-      lt: 0.80
+      lt: 0.9
     PCT_RIBOSOMAL_BASES:
       gt: 0.05
   markduplicates:

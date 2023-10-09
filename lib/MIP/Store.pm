@@ -149,6 +149,10 @@ sub define_qc_metrics_to_store {
             analysis_mode => q{sample},
             recipe_name   => q{collecthsmetrics},
         },
+        PCT_PF_READS_IMPROPER_PAIRS => {
+            analysis_mode => q{sample},
+            recipe_name => q{collectmultiplemetrics},
+        },
         PCT_TARGET_BASES_10X => {
             analysis_mode => q{sample},
             recipe_name   => q{collecthsmetrics},

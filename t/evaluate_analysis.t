@@ -69,7 +69,7 @@ my %sample_info = test_mip_hashes(
     }
 );
 
-my $eval_metric_file = catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.3-.yaml} );
+my $eval_metric_file = catfile( dirname($Bin), qw{ t data references qc_eval_metric_-v1.4-.yaml} );
 
 ## Then set the relevant evaluation metrics for the analysis
 my $is_ok = evaluate_analysis(

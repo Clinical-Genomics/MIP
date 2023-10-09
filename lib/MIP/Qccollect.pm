@@ -455,7 +455,7 @@ sub define_evaluate_metric {
 
 sub evaluate_analysis {
 
-## Function  : Read in aevaluate metrics and evaluate on sample and case level
+## Function  : Read in evaluation metrics and evaluate on sample and case level
 ## Returns   :
 ## Arguments : eval_metric_file  => File with evaluation metrics
 ##           : qc_data_href      => QC data {REF}
@@ -896,7 +896,6 @@ sub parse_sample_qc_metric {
                       $evaluate_metric_href->{$sample_id}{$recipe_name}{$metric},
                 }
             );
-            next METRIC;
         }
     }
     return 1;

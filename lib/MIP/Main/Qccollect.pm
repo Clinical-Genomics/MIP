@@ -555,7 +555,7 @@ sub parse_limit_qc_output {
 
     return if not $limit_qc_output;
 
-    Readonly my @SKIP_QC_METRICS => qw{ collectmultiplemetrics variantevalall variantevalexome };
+    Readonly my @SKIP_QC_METRICS => qw{ variantevalall variantevalexome };
 
     foreach my $delete_metric_key (@SKIP_QC_METRICS) {
 
