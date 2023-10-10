@@ -28,6 +28,8 @@ wgs:
   collectmultiplemetrics:
     PCT_PF_READS_ALIGNED:
       lt: 0.95
+    PCT_PF_READS_IMPROPER_PAIRS:
+      gt: 0.05
     PCT_ADAPTER:
       gt: 0.0005
   markduplicates:
