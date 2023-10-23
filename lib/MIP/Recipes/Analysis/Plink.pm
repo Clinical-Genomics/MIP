@@ -483,6 +483,17 @@ sub analysis_plink {
                     sample_info_href => $sample_info_href,
                 }
             );
+            if ($outfile_tag eq q{relation_check}) {
+
+                ## Used to identify samples in mibs
+                set_recipe_outfile_in_sample_info(
+                    {
+                        path             => $uniq_outfile_path,
+                        recipe_name      => q{pedigree_check},
+                        sample_info_href => $sample_info_href,
+                    }
+                );
+            }
 
         }
 
