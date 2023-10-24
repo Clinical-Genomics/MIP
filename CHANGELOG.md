@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [12.0.2]
+
+- Fixes the relatedness check in mip qccollect
+
 ## [12.0.1]
 
 - Adds loqudb and gnomad frequencies to vcf2cytosure filtering

@@ -453,15 +453,6 @@ sub analysis_gatk_variantrecalibration_wes {
             }
         );
 
-        # Used to find order of samples in qccollect downstream
-        set_recipe_outfile_in_sample_info(
-            {
-                path             => $outfile_path,
-                recipe_name      => q{pedigree_check},
-                sample_info_href => $sample_info_href,
-            }
-        );
-
         submit_recipe(
             {
                 base_command                      => $profile_base_command,
@@ -913,15 +904,6 @@ sub analysis_gatk_variantrecalibration_wgs {
             {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
-                sample_info_href => $sample_info_href,
-            }
-        );
-
-        # Used to find order of samples in qccollect downstream
-        set_recipe_outfile_in_sample_info(
-            {
-                path             => $outfile_path,
-                recipe_name      => q{pedigree_check},
                 sample_info_href => $sample_info_href,
             }
         );
