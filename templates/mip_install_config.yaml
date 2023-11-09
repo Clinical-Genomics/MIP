@@ -89,7 +89,7 @@ container:
   genmod:
     executable:
       genmod:
-    uri: docker.io/clinicalgenomics/genmod:3.7.3
+    uri: docker.io/clinicalgenomics/genmod:3.8.0
   gens_preproc:
     executable:
       generate_gens_data.pl:
@@ -125,7 +125,7 @@ container:
   mip:
     executable:
       mip:
-    uri: docker.io/clinicalgenomics/mip:v12.0.2
+    uri: docker.io/clinicalgenomics/mip:v12.0.3
   multiqc:
     executable:
       multiqc:
