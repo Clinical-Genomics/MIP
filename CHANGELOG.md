@@ -5,11 +5,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [12.0.3]
 
-- updates genmod to version 3.8.0, [#2055](https://github.com/Clinical-Genomics/MIP/issues/2055)
+- updates genmod to version 3.8.1, [#2055](https://github.com/Clinical-Genomics/MIP/issues/2055)
 
 ### Tools
 
-- Genmod 3.7.3 -> 3.8.0
+- Genmod 3.7.3 -> 3.8.1
 
 ## [12.0.2]
 
