@@ -14,7 +14,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Databases
 
 clinvar: 20230508 -> 20231203
-loqusdb snapshot: 20230512 -> 20231203
+loqusdb snapshot: 20230512 -> 20231204
 
 ## [12.0.2]
 
