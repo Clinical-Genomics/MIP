@@ -26,7 +26,7 @@ reference:
   chromograph_cytoband:
     - v1.0
   clinvar:
-    - 20220829
+    - 20231203
     - 20230508
   dbnsfp:
     - 3.5a
@@ -323,15 +323,6 @@ reference_feature:
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
   clinvar:
     grch37:
-      20220829:
-        file: clinvar_20220829.vcf.gz
-        file_check: clinvar_20220829.vcf.gz.md5
-        file_index: clinvar_20220829.vcf.gz.tbi
-        outfile: grch37_clinvar_-20220829-.vcf.gz
-        outfile_check: grch37_clinvar_-20220829-.vcf.gz.md5
-        outfile_index: grch37_clinvar_-20220829-.vcf.gz.tbi
-        outfile_check_method: md5sum
-        url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
       20230508:
         file: clinvar_20230508.vcf.gz
         file_check: clinvar_20230508.vcf.gz.md5
@@ -341,16 +332,16 @@ reference_feature:
         outfile_index: grch37_clinvar_-20230508-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
-    grch38:
-      20220829:
-        file: clinvar_20220829.vcf.gz
-        file_check: clinvar_20220829.vcf.gz.md5
-        file_index: clinvar_20220829.vcf.gz.tbi
-        outfile: grch38_clinvar_-20220829-.vcf.gz
-        outfile_check: grch38_clinvar_-20220829-.vcf.gz.md5
-        outfile_index: grch38_clinvar_-20220829-.vcf.gz.tbi
+      20231203:
+        file: clinvar_20231203.vcf.gz
+        file_check: clinvar_20231203.vcf.gz.md5
+        file_index: clinvar_20231203.vcf.gz.tbi
+        outfile: grch37_clinvar_-20231203-.vcf.gz
+        outfile_check: grch37_clinvar_-20231203-.vcf.gz.md5
+        outfile_index: grch37_clinvar_-20231203-.vcf.gz.tbi
         outfile_check_method: md5sum
-        url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
+        url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
+    grch38:
       20230508:
         file: clinvar_20230508.vcf.gz
         file_check: clinvar_20230508.vcf.gz.md5
@@ -358,6 +349,15 @@ reference_feature:
         outfile: grch38_clinvar_-20230508-.vcf.gz
         outfile_check: grch38_clinvar_-20230508-.vcf.gz.md5
         outfile_index: grch38_clinvar_-20230508-.vcf.gz.tbi
+        outfile_check_method: md5sum
+        url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
+      20231203:
+        file: clinvar_20231203.vcf.gz
+        file_check: clinvar_20231203.vcf.gz.md5
+        file_index: clinvar_20231203.vcf.gz.tbi
+        outfile: grch38_clinvar_-20231203-.vcf.gz
+        outfile_check: grch38_clinvar_-20231203-.vcf.gz.md5
+        outfile_index: grch38_clinvar_-20231203-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
   dbnsfp:

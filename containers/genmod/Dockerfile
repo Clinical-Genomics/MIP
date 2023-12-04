@@ -13,4 +13,4 @@ LABEL maintainer="Clinical-Genomics/MIP"
 
 RUN mamba install -y -c conda-forge -c bioconda pip pytabix python=3.8 && \
     /opt/conda/bin/conda clean -ya && \
-    pip install --no-cache-dir genmod==3.8.1
+    pip install --no-cache-dir genmod==3.8.2
