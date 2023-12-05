@@ -52,7 +52,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Deepvariant] (version: 1.4.0)
 - [Delly] (version 0.8.7)
 - [GATK] (version: 3.8.1 and 4.2.2.0)
-- [GENMOD] (version: 3.7.3)
+- [GENMOD] (version: 3.8.2)
 - [Gffcompare] (version: 0.11.2)
 - [Glnexus] (version: v1.4.1)
 - [Htslib] (version: 1.13)
