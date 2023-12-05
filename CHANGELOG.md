@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [12.0.3]
+
+- Updates genmod to version 3.8.2 to introduce normalized rankscore, [#2055](https://github.com/Clinical-Genomics/MIP/issues/2055)
+
+### Tools
+
+- Genmod 3.7.3 -> 3.8.2
+
+### Databases
+
+clinvar: 20230508 -> 20231203
+loqusdb snapshot: 20230512 -> 20231204
+
 ## [12.0.2]
 
 - Fixes the relatedness check in mip qccollect

@@ -1,21 +1,16 @@
 ################## BASE IMAGE ######################
 
-FROM clinicalgenomics/mip_base:2.1
+FROM condaforge/mambaforge:23.1.0-4
 
 ################## METADATA ######################
 
-LABEL base_image="clinicalgenomics/mip_base:2.1"
-LABEL version="1"
+LABEL base_image="condaforge/mambaforge:23.1.0-4"
+LABEL version="2"
 LABEL software="genmod"
-LABEL software.version="3.7.3"
+LABEL software.version="3.8.1"
 LABEL extra.binaries="genmod"
 LABEL maintainer="Clinical-Genomics/MIP"
 
-RUN conda install pip python=3.7
-
-## Clean up after conda
-RUN /opt/conda/bin/conda clean -tipsy
-
-RUN pip install --no-cache-dir genmod==3.7.3
-
-WORKDIR /data/
+RUN mamba install -y -c conda-forge -c bioconda pip pytabix python=3.8 && \
+    /opt/conda/bin/conda clean -ya && \
+    pip install --no-cache-dir genmod==3.8.2
