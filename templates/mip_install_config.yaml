@@ -125,7 +125,7 @@ container:
   mip:
     executable:
       mip:
-    uri: docker.io/clinicalgenomics/mip:v12.0.3
+    uri: docker.io/clinicalgenomics/mip:develop
   multiqc:
     executable:
       multiqc:
@@ -256,7 +256,7 @@ container:
   vep:
     executable:
       vep:
-    uri: docker.io/ensemblorg/ensembl-vep:release_107.0
+    uri: docker.io/ensemblorg/ensembl-vep:release_110.1
   vcf2cytosure:
     executable:
       vcf2cytosure:

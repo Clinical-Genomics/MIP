@@ -83,7 +83,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Varg] (version: 1.2.0)
 - [Vcf2cytosure] (version: 0.5.1)
 - [Vcfanno] (version: 0.3.2)
-- [VEP] (version: 107.0) with plugin "pLI", "MaxEntScan, LoFtool", "SpliceAI"
+- [VEP] (version: 110.1) with plugin "pLI", "MaxEntScan, LoFtool", "SpliceAI"
 
 The version number after the software name are tested for compatibility with MIP.
 
