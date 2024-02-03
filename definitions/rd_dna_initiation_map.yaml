@@ -6,6 +6,7 @@ CHAIN_ALL:
   - CHAIN_FASTQ:
     - fastqc_ar
   - CHAIN_MAIN:
+    - fastp
     - bwa_mem
     - bwa_mem2
     - samtools_merge
