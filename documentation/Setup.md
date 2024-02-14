@@ -47,6 +47,7 @@ You can speed up, for instance, the Readonly module by also installing the compa
 - [Cnvnator] (version: 0.4.1)
 - [Cyrius] (version: v1.1.1)
 - [Expansionhunter] (version 5.0.0)
+- [Fastp] (version: 0.23.4)
 - [FastQC] (version: 0.11.9)
 - [Deeptrio] (version: 1.4.0)
 - [Deepvariant] (version: 1.4.0)
@@ -181,6 +182,7 @@ Corresponding MIP references:
 [Delly]: https://github.com/dellytools/delly
 [Deepvariant]: https://github.com/google/deepvariant
 [Expansionhunter]: https://github.com/Illumina/ExpansionHunter
+[Fastp]: https://github.com/OpenGene/fastp
 [FastQC]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 [GATK]: http://www.broadinstitute.org/gatk/
 [GENMOD]: https://github.com/moonso/genmod/
