@@ -342,7 +342,7 @@ q?'my ($version) = /Version:\s+(.*)/xms; if($version) {chomp $version;print $ver
         fastp => {
             version_cmd => q{--version 2>&1 >/dev/null},
             version_regexp =>
-              q?my ($version) = /fastp\s(\S+)/xms; if($version) {print $version;last;}?,
+              q?'my ($version) = /fastp\s(\S+)/xms; if($version) {print $version;last;}?,
           },
         fastqc => {
             version_cmd    => q{--version},
