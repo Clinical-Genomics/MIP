@@ -458,6 +458,7 @@ sub pipeline_analyse_rd_dna {
     use MIP::Recipes::Analysis::Delly_reformat qw{ analysis_delly_reformat };
     use MIP::Recipes::Analysis::Endvariantannotationblock qw{ analysis_endvariantannotationblock };
     use MIP::Recipes::Analysis::Expansionhunter qw{ analysis_expansionhunter };
+    use MIP::Recipes::Analysis::Fastp qw{ analysis_fastp };
     use MIP::Recipes::Analysis::Fastqc qw{ analysis_fastqc };
     use MIP::Recipes::Analysis::Frequency_filter qw{ analysis_frequency_filter };
     use MIP::Recipes::Analysis::Gatk_baserecalibration qw{ analysis_gatk_baserecalibration };
@@ -574,6 +575,7 @@ sub pipeline_analyse_rd_dna {
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
+        fastp_ar => \&analysis_fastp,
         fastqc_ar                   => \&analysis_fastqc,
         frequency_filter            => \&analysis_frequency_filter,
         gatk_baserecalibration      => \&analysis_gatk_baserecalibration,
