@@ -247,6 +247,8 @@ sub analysis_fastp {
         ## Outfile(s)
         my $first_outfile_path = $outfile_path_prefixes[$infile_index] . $outfile_suffix;
         my $second_outfile_path;
+        my $report_html = $outfile_path_prefixes[$infile_index] . q{.html};
+        my $report_json = $outfile_path_prefixes[$infile_index] . q{.json};
 
         # If second read direction is present
         if ( $sequence_run_type eq q{paired-end} ) {
@@ -277,6 +279,8 @@ sub analysis_fastp {
                 low_complexity_filter => $active_parameter_href->{fastp_low_complexity_filter},
                 overrepresentation_analysis =>
                   $active_parameter_href->{fastp_overrepresentation_analysis},
+                report_html         => $report_html,
+                report_json         => $report_json,
                 second_infile_path  => $second_fastq_file_path,
                 second_outfile_path => $second_outfile_path,
                 threads             => $recipe{core_number},

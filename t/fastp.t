@@ -5,7 +5,7 @@ use Carp;
 use charnames qw{ :full :short };
 use English qw{ -no_match_vars };
 use File::Basename qw{ dirname };
-use File::Spec::Functions qw{ catdir };
+use File::Spec::Functions qw{ catdir catfile };
 use FindBin qw{ $Bin };
 use open qw{ :encoding(UTF-8) :std };
 use Params::Check qw{ allow check last_error };
@@ -36,7 +36,7 @@ BEGIN {
 
 ## Constants
 Readonly my $REQUIRED_LENGTH => 50;
-Readonly my $THREADS => 4;
+Readonly my $THREADS         => 4;
 
 use MIP::Program::Fastp qw{ fastp };
 
@@ -81,6 +81,14 @@ my %required_argument = (
         input           => q{read_trim_1.fq.gz},
         expected_output => q{--out1 read_trim_1.fq.gz},
     },
+    report_html => {
+        input           => catfile(qw{ path to report.html }),
+        expected_output => q{--html} . $SPACE . catfile(qw{ path to report.html }),
+    },
+    report_json => {
+        input           => catfile(qw{ path to report.json }),
+        expected_output => q{--json} . $SPACE . catfile(qw{ path to report.json }),
+    },
 );
 
 my %specific_argument = (
@@ -97,7 +105,7 @@ my %specific_argument = (
         expected_output => q{--out1 read_trim_1.fq.gz},
     },
     interleaved_in => {
-        input => 1,
+        input           => 1,
         expected_output => q{--interleaved_in},
     },
     length_required => {
@@ -121,8 +129,8 @@ my %specific_argument = (
         expected_output => q{--out2 read_trim_2.fq.gz},
     },
     threads => {
-        input             => $THREADS,
-          expected_output => q{--thread 4}
+        input           => $THREADS,
+        expected_output => q{--thread 4}
     },
     trim_poly_g => {
         input           => 1,

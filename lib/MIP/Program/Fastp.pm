@@ -43,12 +43,14 @@ sub fastp {
 ##          : $length_required             => Minimum required length after trimming
 ##          : $low_complexity_filter       => Filter low complexity regions
 ##          : $overrepresentation_analysis => Enable overrepresentation analysis
+##          : $report_html                 => Trimming report in html format
+##          : $report_json                 => Trimming report in json format
 ##          : $second_infile_path          => Path to input read 2 fastq
 ##          : $second_outfile_path         => Path to output read 2 fastq
 ##          : $stderrfile_path             => Stderrfile path
 ##          : $stderrfile_path_append      => Append stderr info to file path
 ##          : $stdoutfile_path             => Stdoutfile path
-##          : $threads                     => Number of threads
+##          : $thread                      => Number of threads
 ##          : $trim_poly_g                 => Force poly g trimming
 
     my ($arg_href) = @_;
@@ -63,6 +65,8 @@ sub fastp {
     my $length_required;
     my $low_complexity_filter;
     my $overrepresentation_analysis;
+    my $report_html;
+    my $report_json;
     my $second_infile_path;
     my $second_outfile_path;
     my $stderrfile_path;
@@ -114,6 +118,18 @@ sub fastp {
             store       => \$overrepresentation_analysis,
             strict_type => 1,
         },
+        report_html => {
+            allow       => qr/ \S.html \z/xms,
+            required    => 1,
+            store       => \$report_html,
+            strict_type => 1,
+        },
+        report_json => {
+            allow       => qr/ \S.json \z/xms,
+            required    => 1,
+            store       => \$report_json,
+            strict_type => 1,
+        },
         second_infile_path => {
             store       => \$second_infile_path,
             strict_type => 1,
@@ -139,7 +155,7 @@ sub fastp {
             defined     => 1,
             store       => \$threads,
             strict_type => 1,
-          },
+        },
         trim_poly_g => {
             allow       => [ 0, 1 ],
             store       => \$trim_poly_g,
@@ -154,6 +170,10 @@ sub fastp {
     push @commands, q{--in1} . $SPACE . $first_infile_path;
 
     push @commands, q{--out1} . $SPACE . $first_outfile_path;
+
+    push @commands, q{--html} . $SPACE . $report_html;
+
+    push @commands, q{--json} . $SPACE . $report_json;
 
     if ($detect_pe_adapter) {
 
