@@ -74,6 +74,10 @@ container:
     executable:
       ExpansionHunter:
     uri: docker.io/clinicalgenomics/expansionhunter:5.0.0
+  fastp:
+    executable:
+      fastp:
+    uri: quay.io/biocontainers/fastp:0.23.4--h5f740d0_0
   fastqc:
     executable:
       fastqc:
@@ -125,7 +129,7 @@ container:
   mip:
     executable:
       mip:
-    uri: docker.io/clinicalgenomics/mip:v12.0.3
+    uri: docker.io/clinicalgenomics/mip:develop
   multiqc:
     executable:
       multiqc:
@@ -256,7 +260,7 @@ container:
   vep:
     executable:
       vep:
-    uri: docker.io/ensemblorg/ensembl-vep:release_107.0
+    uri: docker.io/ensemblorg/ensembl-vep:release_110.1
   vcf2cytosure:
     executable:
       vcf2cytosure:

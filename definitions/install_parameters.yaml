@@ -76,6 +76,7 @@ rd_dna:
     - deeptrio
     - delly
     - expansionhunter
+    - fastp
     - fastqc
     - gatk
     - gatk4
