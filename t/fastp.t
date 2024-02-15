@@ -36,6 +36,7 @@ BEGIN {
 
 ## Constants
 Readonly my $REQUIRED_LENGTH => 50;
+Readonly my $THREADS => 4;
 
 use MIP::Program::Fastp qw{ fastp };
 
@@ -120,8 +121,8 @@ my %specific_argument = (
         expected_output => q{--out2 read_trim_2.fq.gz},
     },
     threads => {
-        input => 4,
-        expected_output => q{--threads 4}
+        input             => $THREADS,
+          expected_output => q{--thread 4}
     },
     trim_poly_g => {
         input           => 1,

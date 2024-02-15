@@ -192,7 +192,7 @@ sub fastp {
 
     if ($threads) {
 
-        push @commands, q{--threads} . $SPACE . $threads;
+        push @commands, q{--thread} . $SPACE . $threads;
     }
 
     if ($trim_poly_g) {
