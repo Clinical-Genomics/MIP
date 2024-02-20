@@ -47,6 +47,8 @@ plink_sexcheck:
   sample_sexcheck: "perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\\s+/,$_);push(@sexCheckFactor,$temp[2].\":\".$temp[4]); print $sexCheckFactor[0], \"\\t\"; }' "
 relation_check:
   sample_relation_check: "perl -nae 'print $_;' "
+sex_check:
+  peddy_sexcheck: "perl -F, -lne 'BEGIN {my @sex_checks;} next if $. == 1; push @sex_checks, $F[7]; END{ if ( grep $_ eq q{True}, @sex_checks ) { print q{FAIL}; } else { print q{PASS};} }'"
 star_log:
   percentage_uniquely_mapped_reads: "perl -nae 'if(m/Uniquely\\smapped\\sreads\\s%\\s\\|\\t(\\d+\\.\\d+) /xms) {print $1; last;}' "
 sv_varianteffectpredictor:
