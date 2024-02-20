@@ -11,6 +11,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - Fastp: 0.23.4
 
+### Databases
+
+clinvar: 20231203 -> 20240215
+loqusdb snapshot: 20231204 -> 20240220
+
 ## [12.0.3]
 
 - Updates genmod to version 3.8.2 to introduce normalized rankscore, [#2055](https://github.com/Clinical-Genomics/MIP/issues/2055)
