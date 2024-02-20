@@ -235,4 +235,4 @@ MIP will place any generated data files in the output data directory specified b
 [Perl]:https://www.perl.org/
 [Rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/rank_model_-v1.34-.ini
 [SV rank model file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/svrank_model_-v1.9-.ini
-[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/qc_regexp_-v1.26-.yaml
+[Qc regexp file]: https://github.com/Clinical-Genomics/MIP/blob/master/templates/qc_regexp_-v1.28-.yaml

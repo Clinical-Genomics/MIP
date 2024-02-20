@@ -212,6 +212,10 @@ q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@s
     # Get entire sample relation check file
     $regexp{relation_check}{sample_relation_check} = q?perl -nae 'print $_;' ?;
 
+    # Return True if peddy has detected realtionship error
+    $regexp{ped_check}{peddy_kinship} =
+q?perl -F, -ne 'BEGIN {my @ped_checks;} next if $. == 1; push @ped_checks, $F[12]; END{ if ( grep $_ eq q{True}, @ped_checks ) { print q{FAIL}; } else { print q{PASS};} }' ?;
+
     # Return fraction duplicates
     $regexp{markduplicates}{fraction_duplicates} =
       q?perl -nae 'if($_=~/Fraction Duplicates\: (\S+)/) {print $1;}' ?;

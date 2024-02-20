@@ -89,7 +89,7 @@ sub install_mip_scripts {
               mip_rd_rna_config.yaml
               program_test_cmds.yaml
               qc_eval_metric_-v1.4-.yaml
-              qc_regexp_-v1.26-.yaml
+              qc_regexp_-v1.28-.yaml
               rank_model_-v1.34-.ini
               svrank_model_-v1.9-.ini
             }

@@ -124,7 +124,7 @@ sub analysis_peddy {
     use MIP::Program::Bcftools qw{ bcftools_view_and_index_vcf };
     use MIP::Program::Peddy qw{ peddy };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_metafile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -249,6 +249,18 @@ sub analysis_peddy {
                     sample_info_href => $sample_info_href,
                 }
             );
+
+            if ( $outfile_tag eq q{ped_check} ) {
+
+                ## Duplicate ped_check tag one level out in sample_info. To be used for automatic kinship test
+                set_recipe_outfile_in_sample_info(
+                    {
+                        path             => $outfile_path,
+                        recipe_name      => $outfile_tag,
+                        sample_info_href => $sample_info_href,
+                    }
+                );
+            }
 
             set_file_path_to_store(
                 {
