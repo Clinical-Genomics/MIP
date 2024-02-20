@@ -250,7 +250,7 @@ sub analysis_peddy {
                 }
             );
 
-            if ( $outfile_tag eq q{ped_check} ) {
+            if ( $outfile_tag eq q{ped_check} || q{sex_check} ) {
 
                 ## Duplicate ped_check tag one level out in sample_info. To be used for automatic kinship test
                 set_recipe_outfile_in_sample_info(

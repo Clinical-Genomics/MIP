@@ -6,7 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [develop]
 
 - Adds optional trimming of reads with Fastp for the DNA workflow, turned on by default
-- Adds automatic fail in analaysisrunstatus for cases where the peddy detects errors in he pedigree
+- Adds automatic fail in analaysisrunstatus for cases where the peddy detects errors in the pedigree
+- Adds automatic fail in analaysisrunstatus for cases where the peddy detects a discrepancy between the given and calculated gender
 
 ### Tools
 
