@@ -1,0 +1,112 @@
+---
+bamstats:
+  percentage_mapped_reads: "perl -nae 'if($_=~/percentage mapped reads:\\s+(\\S+)/) {print $1;last}' "
+  raw_total_sequences: "perl -nae 'if($_=~/raw total sequences:\\s+(\\S+)/) {print $1;last}' "
+  reads_mapped: "perl -nae 'if($_=~/reads mapped:\\s+(\\S+)/) {print $1;last}' "
+chanjo_sexcheck:
+  gender: "perl -nae 'if( ($F[0]!~/^#/) && ($F[2] =~/\\S+/) ) {print $F[2];}' "
+collecthsmetrics:
+  data: "perl -nae' if ( ($. ==8) && ($_ =~/(\\S+)/) ) {print $_;last;}' "
+  header: "perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' "
+collectmultiplemetrics:
+  first_of_pair: "perl -nae' if ($_ =~/^FIRST_OF_PAIR/ ) {print $_;last;}' "
+  header: "perl -nae' if ($_ =~/^CATEGORY/ ) {print $_;last;}' "
+  pair: "perl -nae' if ($_ =~/^PAIR/ ) {print $_;last;}'  "
+  second_of_pair: "perl -nae' if ($_ =~/^SECOND_OF_PAIR/ ) {print $_;last;}' "
+collectmultiplemetricsinsertsize:
+  data: "perl -nae' if ( ($. ==8) && ($_ =~/(\\S+)/) ) {print $_;last;}' "
+  header: "perl -nae' if ($_ =~/^MEDIAN_INSERT_SIZE/ ) {print $_;last;}' "
+collectrnaseqmetrics:
+  data: "perl -nae' if ( ($. ==8) && ($_ =~/(\\S+)/) ) {print $_;last;}' "
+  header: "perl -nae' if ($_ =~/^PF_BASES/ ) {print $_;last;}' "
+fastqc_ar:
+  basic_statistics: "perl -nae' if ($_=~/>>Basic Statistics\\s+(\\S+)/) {print $1;last;}' "
+  encoding: "perl -nae' if ($_=~/Encoding\\s+(\\S+\\s\\S+\\s\\S+\\s\\S+|\\S+\\s\\S+)/) { my $encoding = $1;$encoding=~s/\\s/\\_/g; print $encoding;last;}' "
+  gc: "perl -nae' if ($_=~/%GC\\s(\\d+)/) {print $1;last;}' "
+  kmer_content: "perl -nae' if ($_=~/>>Kmer Content\\s+(\\S+)/) {print $1;last;}' "
+  overrepresented_sequences: "perl -nae' if ($_=~/>>Overrepresented sequences\\s+(\\S+)/) {print $1;last;}' "
+  per_base_gc_content: "perl -nae' if ($_=~/>>Per base GC content\\s+(\\S+)/) {print $1;last;}' "
+  per_base_n_content: "perl -nae' if ($_=~/>>Per base N content\\s+(\\S+)/) {print $1;last;}' "
+  per_base_sequence_content: "perl -nae' if ($_=~/>>Per base sequence content\\s+(\\S+)/) {print $1;last;}' "
+  per_base_sequence_quality: "perl -nae' if ($_=~/>>Per base sequence quality\\s+(\\S+)/) {print $1;last;}' "
+  per_sequence_gc_content: "perl -nae' if ($_=~/>>Per sequence GC content\\s+(\\S+)/) {print $1;last;}' "
+  per_sequence_quality_scores: "perl -nae' if ($_=~/>>Per sequence quality scores\\s+(\\S+)/) {print $1;last;}' "
+  sequence_duplication: "perl -nae' if ($_=~/#Total Duplicate Percentage\\s+(\\d+.\\d)/) {print $1;last;}' "
+  sequence_duplication_levels: "perl -nae' if ($_=~/>>Sequence Duplication Levels\\s+(\\S+)/) {print $1;last;}' "
+  sequence_length: "perl -nae' if ($_=~/Sequence length\\s(\\d+)/) {print $1;last;}' "
+  total_number_of_reads: "perl -nae' if ($_=~/Total Sequences\\s(\\d+)/) {print $1;last;}' "
+inbreeding_factor:
+  sample_inbreeding_factor: "perl -nae 'my @inbreedingFactor; if ($. > 1) {my @temp = split(/\\s/,$_);push(@inbreedingFactor, $F[0].\":\".$F[5]); print $inbreedingFactor[0], \"\\t\"; }' "
+markduplicates:
+  fraction_duplicates: "perl -nae 'if($_=~/Fraction Duplicates\\: (\\S+)/) {print $1;}' "
+ped_check:
+  peddy_kinship: "perl -F, -ne 'BEGIN {my @ped_checks;} next if $. == 1; push @ped_checks, $F[12]; END{ if ( grep $_ eq q{True}, @ped_checks ) { print q{FAIL}; } else { print q{PASS};} }' "
+pedigree_check:
+  sample_order: "perl -nae 'if ($_=~/^#CHROM/) {chomp $_; my @line = split(/\\t/,$_); for (my $sample=9;$sample<scalar(@line);$sample++) { print $line[$sample], \"\\t\";}last;}' "
+plink_sexcheck:
+  sample_sexcheck: "perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\\s+/,$_);push(@sexCheckFactor,$temp[2].\":\".$temp[4]); print $sexCheckFactor[0], \"\\t\"; }' "
+relation_check:
+  sample_relation_check: "perl -nae 'print $_;' "
+sex_check:
+  peddy_sexcheck: "perl -F, -lne 'BEGIN {my @sex_checks;} next if $. == 1; push @sex_checks, $F[7]; END{ if ( grep $_ eq q{True}, @sex_checks ) { print q{FAIL}; } else { print q{PASS};} }'"
+star_log:
+  percentage_uniquely_mapped_reads: "perl -nae 'if(m/Uniquely\\smapped\\sreads\\s%\\s\\|\\t(\\d+\\.\\d+) /xms) {print $1; last;}' "
+sv_varianteffectpredictor:
+  assembly: "perl -nae 'if($_=~/##VEP=/ && $_=~/assembly=(\\S+)/) {print $1;last;}' "
+  cache: "perl -nae 'if($_=~/##VEP=\\w+\\s+cache=(\\S+)/) {print $1;last;}' "
+  gencode: "perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\\S+\\s+(\\d+)/) {print $1;last;}' "
+  gene_build: "perl -nae 'if($_=~/##VEP=/ && $_=~/genebuild=(\\S+)/) {print $1;last;}' "
+  hgmd_public: "perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\\S+)/) {print $1;last;}' "
+  polyphen: "perl -nae 'if($_=~/##VEP=/ && $_=~/polyphen=(\\S+)/) {print $1;last;}' "
+  reg_build: "perl -nae 'if($_=~/##VEP=/ && $_=~/regbuild=(\\S+)/) {print $1;last;}' "
+  sift: "perl -nae 'if($_=~/##VEP=/ && $_=~/sift=sift(\\S+)/) {print $1;last;}' "
+  version: "perl -nae 'if($_=~/##VEP=\"(\\w+)\"/) {print $1;last;}' "
+sv_vcfparser:
+  version: "perl -nae 'if($_=~/##Software=<ID=mip,Version=(\\d+.\\d+.\\d+)/) {print $1;last;} else { if($_=~/#CHROM/) {last;} }' "
+trim_galore_stats:
+  percentage_bp_after_trimming: "perl -nae 'if( m/Total\\swritten\\s\\([^(]+\\((\\d+\\.\\d+) /xms ){ print $1; last;}' "
+  percentage_reads_after_trimming: "perl -nae 'if( m/Reads\\swritten\\s\\([^(]+\\((\\d+\\.\\d+) /xms ){ print $1; last;}' "
+  percentage_reads_with_adapter: "perl -nae 'if( m/Reads\\swith\\sadapters[^(]+\\((\\d+\\.\\d+) /xms ){ print $1; last;}' "
+varianteffectpredictor:
+  assembly: "perl -nae 'if($_=~/##VEP=/ && $_=~/assembly=(\\S+)/) {print $1;last;}' "
+  cache: "perl -nae 'if($_=~/##VEP=\\w+\\s+cache=(\\S+)/) {print $1;last;}' "
+  gencode: "perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\\S+\\s+(\\d+)/) {print $1;last;}' "
+  gene_build: "perl -nae 'if($_=~/##VEP=/ && $_=~/genebuild=(\\S+)/) {print $1;last;}' "
+  hgmd_public: "perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\\S+)/) {print $1;last;}' "
+  polyphen: "perl -nae 'if($_=~/##VEP=/ && $_=~/polyphen=(\\S+)/) {print $1;last;}' "
+  reg_build: "perl -nae 'if($_=~/##VEP=/ && $_=~/regbuild=(\\S+)/) {print $1;last;}' "
+  sift: "perl -nae 'if($_=~/##VEP=/ && $_=~/sift=sift(\\S+)/) {print $1;last;}' "
+  version: "perl -nae 'if($_=~/##VEP=\"(\\w+)\"/) {print $1;last;}' "
+variantevalall: &1
+  comp_overlap_data_all: "perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print $_;last;}' "
+  comp_overlap_data_header: "perl -nae' if ($_ =~/^CompOverlap\\s+CompFeatureInput/ ) {print $_;last;}' "
+  comp_overlap_data_known: "perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  comp_overlap_data_novel: "perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  count_variants_data_all: "perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/all\\s/) ) {print $_;last;}' "
+  count_variants_data_header: "perl -nae' if ($_ =~/^CountVariants\\s+CompFeatureInput/ ) {print $_;last;}' "
+  count_variants_data_known: "perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  count_variants_data_novel: "perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  indel_summary_data_all: "perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/all\\s/) ) {print $_;last;}' "
+  indel_summary_data_header: "perl -nae' if ($_ =~/^IndelSummary\\s+CompFeatureInput/ ) {print $_;last;}' "
+  indel_summary_data_known: "perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  indel_summary_data_novel: "perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  multiallelic_summary_data_all: "perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/all\\s/) ) {print $_;last;}' "
+  multiallelic_summary_data_header: "perl -nae' if ($_ =~/^MultiallelicSummary\\s+CompFeatureInput/ ) {print $_;last;}' "
+  multiallelic_summary_data_known: "perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  multiallelic_summary_data_novel: "perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  titv_variant_evaluator_data_all: "perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/all\\s/) ) {print $_;last;}' "
+  titv_variant_evaluator_data_header: "perl -nae' if ($_ =~/^TiTvVariantEvaluator\\s+CompFeatureInput/ ) {print $_;last;}' "
+  titv_variant_evaluator_data_known: "perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  titv_variant_evaluator_data_novel: "perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  validation_report_data_all: "perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/all\\s/) && ($_ =~/none\\s/)) {print $_;last;}' "
+  validation_report_data_known: "perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  validation_report_data_novel: "perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  validation_report_header: "perl -nae' if ($_ =~/^ValidationReport\\s+CompFeatureInput/ ) {print $_;last;}' "
+  variant_summary_data_all: "perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\\s/) ) {print $_;last;}' "
+  variant_summary_data_known: "perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\\s/) ) {print $_;last;}' "
+  variant_summary_data_novel: "perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\\s/) ) {print $_;last;}' "
+  variant_summary_header: "perl -nae' if ($_ =~/^VariantSummary\\s+CompFeatureInput/ ) {print $_;last;}' "
+variantevalexome: *1
+vcfparser_ar:
+  version: "perl -nae 'if($_=~/##Software=<ID=mip,Version=(\\d+.\\d+.\\d+)/) {print $1;last;}' "
+

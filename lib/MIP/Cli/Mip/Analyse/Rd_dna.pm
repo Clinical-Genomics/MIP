@@ -2110,7 +2110,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{qccollect_regexp_file} => (
-            cmd_tags      => [q{Default: qc_regexp_-v1.25-.yaml}],
+            cmd_tags      => [q{Default: qc_regexp_-v1.28-.yaml}],
             documentation =>
 q{Regular expression file containing the regular expression to be used for each program},
             is  => q{rw},
