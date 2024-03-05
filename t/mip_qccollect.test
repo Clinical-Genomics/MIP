@@ -36,7 +36,7 @@ my $eval_metric_file      = catfile( dirname($Bin), qw{ templates qc_eval_metric
 my $mip_path              = catfile( dirname($Bin), q{mip} );
 my $log_file_path         = catfile( cwd(),         q{qc_metrics_qccollect.log} );
 my $test_reference_path   = catdir( $cluster_constant_path, q{references} );
-my $regexp_file_path      = catfile( $test_reference_path, q{qc_regexp_-v1.26-.yaml} );
+my $regexp_file_path      = catfile( $test_reference_path, q{qc_regexp_-v1.28-.yaml} );
 my $sample_info_file =
   catfile( $cluster_constant_path, qw{ test_data 643594-miptest_qc_sample_info_ci.yaml } );
 my $outfile               = catfile( cwd(), q{qc_metrics.yaml} );

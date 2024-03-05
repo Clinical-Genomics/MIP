@@ -27,7 +27,7 @@ reference:
     - v1.0
   clinvar:
     - 20231203
-    - 20230508
+    - 20240215
   dbnsfp:
     - 3.5a
     - 4.1a
@@ -111,8 +111,8 @@ reference:
     - gold_standard_indels
   rank_model:
     - v0.2
-    - v1.35
     - v1.36
+    - v1.37
   reduced_penetrance:
     - 2017
   scout_exons:
@@ -131,8 +131,8 @@ reference:
     - 200520
   vcfanno_config:
     - v0.2
-    - v1.19
     - v1.20
+    - v1.21
   vcfanno_functions:
     - v1.0
 reference_feature:
@@ -323,15 +323,6 @@ reference_feature:
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/region/
   clinvar:
     grch37:
-      20230508:
-        file: clinvar_20230508.vcf.gz
-        file_check: clinvar_20230508.vcf.gz.md5
-        file_index: clinvar_20230508.vcf.gz.tbi
-        outfile: grch37_clinvar_-20230508-.vcf.gz
-        outfile_check: grch37_clinvar_-20230508-.vcf.gz.md5
-        outfile_index: grch37_clinvar_-20230508-.vcf.gz.tbi
-        outfile_check_method: md5sum
-        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
       20231203:
         file: clinvar_20231203.vcf.gz
         file_check: clinvar_20231203.vcf.gz.md5
@@ -341,16 +332,16 @@ reference_feature:
         outfile_index: grch37_clinvar_-20231203-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
-    grch38:
-      20230508:
-        file: clinvar_20230508.vcf.gz
-        file_check: clinvar_20230508.vcf.gz.md5
-        file_index: clinvar_20230508.vcf.gz.tbi
-        outfile: grch38_clinvar_-20230508-.vcf.gz
-        outfile_check: grch38_clinvar_-20230508-.vcf.gz.md5
-        outfile_index: grch38_clinvar_-20230508-.vcf.gz.tbi
+      20240215:
+        file: clinvar_20240215.vcf.gz
+        file_check: clinvar_20240215.vcf.gz.md5
+        file_index: clinvar_20240215.vcf.gz.tbi
+        outfile: grch37_clinvar_-20240215-.vcf.gz
+        outfile_check: grch37_clinvar_-20240215-.vcf.gz.md5
+        outfile_index: grch37_clinvar_-20240215-.vcf.gz.tbi
         outfile_check_method: md5sum
-        url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
+        url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/
+    grch38:
       20231203:
         file: clinvar_20231203.vcf.gz
         file_check: clinvar_20231203.vcf.gz.md5
@@ -358,6 +349,15 @@ reference_feature:
         outfile: grch38_clinvar_-20231203-.vcf.gz
         outfile_check: grch38_clinvar_-20231203-.vcf.gz.md5
         outfile_index: grch38_clinvar_-20231203-.vcf.gz.tbi
+        outfile_check_method: md5sum
+        url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
+      20240215:
+        file: clinvar_20240215.vcf.gz
+        file_check: clinvar_20240215.vcf.gz.md5
+        file_index: clinvar_20240215.vcf.gz.tbi
+        outfile: grch38_clinvar_-20240215-.vcf.gz
+        outfile_check: grch38_clinvar_-20240215-.vcf.gz.md5
+        outfile_index: grch38_clinvar_-20240215-.vcf.gz.tbi
         outfile_check_method: md5sum
         url_prefix: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/
   dbnsfp:
@@ -900,18 +900,18 @@ reference_feature:
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   rank_model:
     grch37:
-      v1.35:
-        file: rank_model_-v1.35-.ini
-        file_check: rank_model_-v1.35-.ini.md5
-        outfile: rank_model_-v1.35-.ini
-        outfile_check: rank_model_-v1.35-.ini.md5
-        outfile_check_method: md5sum
-        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
       v1.36:
         file: rank_model_-v1.36-.ini
         file_check: rank_model_-v1.36-.ini.md5
         outfile: rank_model_-v1.36-.ini
         outfile_check: rank_model_-v1.36-.ini.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
+      v1.37:
+        file: rank_model_-v1.37-.ini
+        file_check: rank_model_-v1.37-.ini.md5
+        outfile: rank_model_-v1.37-.ini
+        outfile_check: rank_model_-v1.37-.ini.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
     grch38:
@@ -1017,25 +1017,18 @@ reference_feature:
         url_prefix: https://www.encodeproject.org/files/ENCFF356LFX/@@download/
   vcfanno_config:
     grch37:
-      v1.18:
-        file: grch37_vcfanno_config_-v1.18-.toml
-        file_check: grch37_vcfanno_config_-v1.18-.toml.md5
-        outfile: grch37_vcfanno_config_-v1.18-.toml
-        outfile_check: grch37_vcfanno_config_-v1.18-.toml.md5
-        outfile_check_method: md5sum
-        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
-      v1.19:
-        file: grch37_vcfanno_config_-v1.19-.toml
-        file_check: grch37_vcfanno_config_-v1.19-.toml.md5
-        outfile: grch37_vcfanno_config_-v1.19-.toml
-        outfile_check: grch37_vcfanno_config_-v1.19-.toml.md5
-        outfile_check_method: md5sum
-        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
       v1.20:
         file: grch37_vcfanno_config_-v1.20-.toml
         file_check: grch37_vcfanno_config_-v1.20-.toml.md5
         outfile: grch37_vcfanno_config_-v1.20-.toml
         outfile_check: grch37_vcfanno_config_-v1.20-.toml.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
+      v1.21:
+        file: grch37_vcfanno_config_-v1.21-.toml
+        file_check: grch37_vcfanno_config_-v1.21-.toml.md5
+        outfile: grch37_vcfanno_config_-v1.21-.toml
+        outfile_check: grch37_vcfanno_config_-v1.21-.toml.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/annotation/
     grch38:

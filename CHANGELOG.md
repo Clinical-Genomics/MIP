@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [12.1.0]
+
+- Adds optional trimming of reads with Fastp for the DNA workflow, turned on by default
+- Adds automatic fail in analaysisrunstatus for cases where the peddy detects errors in the pedigree
+- Adds automatic fail in analaysisrunstatus for cases where the peddy detects a discrepancy between the given and calculated gender
+
+### Tools
+
+- Fastp: 0.23.4
+
+### Databases
+
+clinvar: 20231203 -> 20240215
+loqusdb snapshot: 20231204 -> 20240220
+
 ## [12.0.3]
 
 - Updates genmod to version 3.8.2 to introduce normalized rankscore, [#2055](https://github.com/Clinical-Genomics/MIP/issues/2055)

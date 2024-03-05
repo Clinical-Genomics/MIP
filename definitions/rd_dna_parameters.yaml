@@ -209,6 +209,7 @@ recipe_core_number:
     endvariantannotationblock: 1
     expansionhunter: 3
     fastqc_ar: 0
+    fastp_ar: 12
     variant_annotation: 13
     frequency_filter: 13
     gatk_baserecalibration: 13
@@ -345,6 +346,7 @@ recipe_time:
     endvariantannotationblock: 2
     expansionhunter: 3
     fastqc_ar: 10
+    fastp_ar: 3
     variant_annotation: 3
     frequency_filter: 2
     gatk_baserecalibration: 20
@@ -445,6 +447,48 @@ fastqc_ar:
   program_executables:
     - fastqc
   type: recipe
+## Fastp
+fastp_ar:
+  analysis_mode: sample
+  associated_recipe:
+    - mip
+  data_type: SCALAR
+  default: 1
+  file_tag: _fastp
+  outfile_suffix: ".fastq.gz"
+  program_executables:
+    - fastp
+  type: recipe
+fastp_detect_pe_adapter:
+  associated_recipe:
+    - fastp_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
+fastp_length_required:
+  associated_recipe:
+    - fastp_ar
+  data_type: SCALAR
+  default: 25
+  type: recipe_argument
+fastp_low_complexity_filter:
+  associated_recipe:
+    - fastp_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
+fastp_overrepresentation_analysis:
+  associated_recipe:
+    - fastp_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
+fastp_trim_poly_g:
+  associated_recipe:
+    - fastp_ar
+  data_type: SCALAR
+  default: 1
+  type: recipe_argument
 ## BWA
 bwa_mem:
   analysis_mode: sample
@@ -2329,7 +2373,7 @@ qccollect_regexp_file:
   associated_recipe:
     - qccollect_ar
   data_type: SCALAR
-  default: qc_regexp_-v1.27-.yaml
+  default: qc_regexp_-v1.28-.yaml
   exists_check: file
   is_reference: 1
   reference: reference_dir

@@ -302,6 +302,55 @@ q{gatk_baserecalibration_known_sites, gatk_haplotypecaller_snp_known_set, gatk_v
     );
 
     option(
+        q{fastp} => (
+            cmd_tags      => [q{Analysis recipe switch}],
+            documentation => q{Sequence quality trimming using FastP},
+            is            => q{rw},
+            isa           => enum( [ 0, 1, 2 ] ),
+        )
+    );
+
+    option(
+        q{fastp_detect_pe_adapter} => (
+            documentation => q{Automatically detect paired end adapters},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{fastp_length_required} => (
+            documentation => q{Required length to keep trimmed read pair},
+            is            => q{rw},
+            isa           => Int,
+        )
+    );
+
+    option(
+        q{fastp_low_complexity_filter} => (
+            documentation => q{Apply Fastp low complexity filter},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{fastp_overrepresentation_analysis} => (
+            documentation => q{Do an overrepresentation analysis on the fastq files},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
+        q{fastp_trim_poly_g} => (
+            documentation => q{Trim poly g sequences from fastq files},
+            is            => q{rw},
+            isa           => Bool,
+        )
+    );
+
+    option(
         q{bwa_mem} => (
             cmd_tags      => [q{Analysis recipe switch}],
             documentation => q{Align reads using Bwa Mem},
@@ -2061,7 +2110,7 @@ q{Default: hgvs, symbol, numbers, sift, polyphen, humdiv, domains, protein, ccds
 
     option(
         q{qccollect_regexp_file} => (
-            cmd_tags      => [q{Default: qc_regexp_-v1.25-.yaml}],
+            cmd_tags      => [q{Default: qc_regexp_-v1.28-.yaml}],
             documentation =>
 q{Regular expression file containing the regular expression to be used for each program},
             is  => q{rw},
