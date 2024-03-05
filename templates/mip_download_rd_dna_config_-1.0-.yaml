@@ -111,8 +111,8 @@ reference:
     - gold_standard_indels
   rank_model:
     - v0.2
-    - v1.35
     - v1.36
+    - v1.37
   reduced_penetrance:
     - 2017
   scout_exons:
@@ -900,18 +900,18 @@ reference_feature:
         url_prefix: https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/
   rank_model:
     grch37:
-      v1.35:
-        file: rank_model_-v1.35-.ini
-        file_check: rank_model_-v1.35-.ini.md5
-        outfile: rank_model_-v1.35-.ini
-        outfile_check: rank_model_-v1.35-.ini.md5
-        outfile_check_method: md5sum
-        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
       v1.36:
         file: rank_model_-v1.36-.ini
         file_check: rank_model_-v1.36-.ini.md5
         outfile: rank_model_-v1.36-.ini
         outfile_check: rank_model_-v1.36-.ini.md5
+        outfile_check_method: md5sum
+        url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
+      v1.37:
+        file: rank_model_-v1.37-.ini
+        file_check: rank_model_-v1.37-.ini.md5
+        outfile: rank_model_-v1.37-.ini
+        outfile_check: rank_model_-v1.37-.ini.md5
         outfile_check_method: md5sum
         url_prefix: https://raw.githubusercontent.com/Clinical-Genomics/reference-files/master/rare-disease/rank_model/
     grch38:

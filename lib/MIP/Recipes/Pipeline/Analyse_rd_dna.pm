@@ -575,7 +575,7 @@ sub pipeline_analyse_rd_dna {
         delly_reformat              => \&analysis_delly_reformat,
         endvariantannotationblock   => \&analysis_endvariantannotationblock,
         expansionhunter             => \&analysis_expansionhunter,
-        fastp_ar => \&analysis_fastp,
+        fastp_ar                    => \&analysis_fastp,
         fastqc_ar                   => \&analysis_fastqc,
         frequency_filter            => \&analysis_frequency_filter,
         gatk_baserecalibration      => \&analysis_gatk_baserecalibration,
