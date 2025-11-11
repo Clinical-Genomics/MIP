@@ -16,7 +16,7 @@ use autodie qw{ :all };
 use Readonly;
 
 ## MIPs lib/
-use MIP::Constants qw{ $CONTAINER_MANAGER $EQUALS $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
+use MIP::Constants qw{ $CONTAINER_MANAGER $DOT $EQUALS $LOG_NAME $NEWLINE $SPACE $UNDERSCORE };
 
 BEGIN {
 
@@ -124,7 +124,7 @@ sub analysis_deepvariant {
     use MIP::Program::Gnu::Bash qw{ gnu_export };
     use MIP::Program::Deepvariant qw{ deepvariant };
     use MIP::Recipe qw{ parse_recipe_prerequisites };
-    use MIP::Sample_info qw{ set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
+    use MIP::Sample_info qw{ set_file_path_to_store set_recipe_metafile_in_sample_info set_recipe_outfile_in_sample_info };
     use MIP::Script::Setup_script qw{ setup_script };
 
     ### PREPROCESSING:
@@ -235,6 +235,16 @@ sub analysis_deepvariant {
                 path             => $outfile_path,
                 recipe_name      => $recipe_name,
                 sample_id        => $sample_id,
+                sample_info_href => $sample_info_href,
+            }
+        );
+
+        set_file_path_to_store(
+            {
+                format           => q{meta},
+                id               => $sample_id,
+                path             => $outfile_path_prefix . $DOT . q{visual_report.html},
+                recipe_name      => $recipe_name,
                 sample_info_href => $sample_info_href,
             }
         );
