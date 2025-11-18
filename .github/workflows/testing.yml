@@ -40,6 +40,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate mip_ci
+          bcftools --version
           prove -lrs -f -j 2 t
 
       - name: Run MIP download test
