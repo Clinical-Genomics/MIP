@@ -25,7 +25,7 @@ jobs:
       - name: Install bcftools in conda test env
         shell: bash -l {0}
         run: |
-          conda create -n mip_ci --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4
+          conda create -n mip_ci --channel bioconda --channel conda-forge bcftools=1.9=ha228f0b_4 openssl=1.0
 
       - name: Run MIP install test
         shell: bash -l {0}
