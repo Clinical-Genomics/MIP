@@ -108,6 +108,11 @@ sub ipc_open3 {
     # System call
     my $pid = open3( $writer, $reader, $error, qq{$command_string} );
 
+    # Check if open3 succeeded
+    unless (defined $pid) {
+        croak(qq{open3 failed for command "$command_string": $OS_ERROR});
+    }
+
     # Terminate process
     waitpid $pid, 0 or croak(qq{Child process died: $OS_ERROR});
 
